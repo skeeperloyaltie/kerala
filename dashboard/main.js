@@ -2064,41 +2064,73 @@ $(document).ready(function () {
 
   // Populate Doctor Dropdown for Bills
   function populateDoctorDropdown(selectId, specialtyId) {
+    const doctorSelect = $(`#${selectId}`);
+    if (!doctorSelect.length) {
+      console.error(`❌ Select element #${selectId} not found in DOM`);
+      return;
+    }
+  
+    // Clear existing options and set loading state
+    doctorSelect.empty().append('<option value="" disabled>Loading doctors...</option>');
+  
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        const doctorSelect = $(`#${selectId}`);
+        console.log(`🟢 Doctor API response for ${selectId}:`, data);
         doctorSelect.empty();
+  
+        // Handle selectId-specific options
         if (selectId === "serviceDoctors") {
           doctorSelect.append('<option value="all">All Doctors</option>');
         } else {
           doctorSelect.append('<option value="" selected>Select Doctor</option>');
         }
-        data.doctors.forEach(doctor => {
-          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
-        });
   
+        // Validate and populate doctor options
+        const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+        if (doctors.length === 0) {
+          console.warn(`⚠️ No doctors returned from API for ${selectId}`);
+          doctorSelect.append('<option value="" disabled>No doctors available</option>');
+        } else {
+          doctors.forEach(doctor => {
+            if (doctor.id && doctor.first_name) {
+              doctorSelect.append(
+                `<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name || ''}</option>`
+              );
+            } else {
+              console.warn(`⚠️ Skipping invalid doctor entry:`, doctor);
+            }
+          });
+        }
+  
+        // Initialize or reinitialize Select2 for serviceDoctors
         if (selectId === "serviceDoctors") {
-          // Initialize Select2 for multi-select
+          // Destroy existing Select2 instance to prevent duplicates
+          if (doctorSelect.hasClass('select2-hidden-accessible')) {
+            doctorSelect.select2('destroy');
+          }
           doctorSelect.select2({
             placeholder: "Select doctors or All Doctors",
             allowClear: true,
             width: '100%'
           });
+          console.log(`✅ Initialized Select2 for #${selectId}`);
         }
   
+        // Handle specialty field updates
         if (specialtyId) {
-          doctorSelect.on('change', function () {
-            const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
+          doctorSelect.off('change.specialty').on('change.specialty', function () {
+            const selectedDoctor = doctors.find(d => d.id == $(this).val());
             $(`#${specialtyId}`).val(selectedDoctor ? selectedDoctor.specialization : '');
           });
         }
       },
       error: function (xhr) {
-        console.error(`Failed to fetch doctors: ${xhr.status}`, xhr.responseJSON);
-        alert("Failed to fetch doctors.");
+        console.error(`❌ Failed to fetch doctors for ${selectId}: ${xhr.status}`, xhr.responseJSON);
+        doctorSelect.empty().append('<option value="" disabled>Failed to load doctors</option>');
+        alert("Failed to fetch doctors. Please check your connection or try again.");
       }
     });
   }
