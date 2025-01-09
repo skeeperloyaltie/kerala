@@ -1,0 +1,5 @@
+Django>=4.0,<5.8
+djangorestframework
+psycopg2-binary
+Pillow
+django-cors-headers
