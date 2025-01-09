@@ -15,6 +15,7 @@ services:
       context: .
     volumes:
       - ./assets:/usr/share/nginx/html/assets
+      - ./index.html:/usr/share/nginx/html/index.html
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
       - "80:80"
