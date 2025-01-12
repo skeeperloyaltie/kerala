@@ -82,6 +82,10 @@
       </div>
     </div>
 
+    <div id="notification" class="alert d-none" role="alert"></div>
+
+
+
     <div class="tab-buttons">
       <button id="usernameTab" class="btn btn-primary btn-sm">Login with Username & Password</button>
       <button id="otpTab" class="btn btn-secondary btn-sm">Login with OTP</button>
@@ -91,78 +95,90 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
   <script>
-  $(document).ready(function () {
-    // Function to get CSRF token
-    function getCSRFToken() {
-      return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    }
-  
-    // Setup AJAX to include CSRF token in headers
-    $.ajaxSetup({
-      headers: {
-        "X-CSRFToken": getCSRFToken(),
-      },
-    });
-  
-    // AJAX for Username/Password Login
-    $('#usernameForm').submit(function (e) {
-      e.preventDefault();
-      const username = $('#usernameForm #login').val();
-      const password = $('#usernameForm #password').val();
-  
-      $.ajax({
-        url: 'http://127.0.0.1:8000/users/login/',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ username, password }),
-        success: function (response) {
-          alert(response.message + " User Type: " + response.user_type);
-          // Redirect based on user type
-          if (response.user_type === 'Admin') {
-            window.location.href = '/admin/';
-          } else if (response.user_type === 'Receptionist') {
-            window.location.href = '/receptionist/dashboard/';
-          } else if (response.user_type === 'Doctor') {
-            window.location.href = '/doctor/dashboard/';
-          }
-        },
-        error: function (xhr) {
-          alert(xhr.responseJSON.error || 'Login failed');
-        },
+    $(document).ready(function () {
+      function showNotification(message, type) {
+        const notification = $('#notification');
+        notification.removeClass('d-none alert-success alert-danger');
+        notification.addClass(`alert-${type}`);
+        notification.text(message);
+    
+        // Show the notification and hide it after 3 seconds
+        notification.fadeIn(300).delay(3000).fadeOut(300);
+      }
+    
+      // AJAX for Username/Password Login
+      $('#usernameForm').submit(function (e) {
+        e.preventDefault();
+        const username = $('#usernameForm #login').val();
+        const password = $('#usernameForm #password').val();
+    
+        $.ajax({
+          url: 'http://127.0.0.1:8000/users/login/',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ username, password }),
+          success: function (response) {
+            showNotification(response.message + " Welcome, " + response.user_type, 'success');
+            // Redirect based on user type
+            if (response.user_type === 'Admin') {
+              window.location.href = '/admin/';
+            } else if (response.user_type === 'Receptionist') {
+              window.location.href = '/receptionist/dashboard/';
+            } else if (response.user_type === 'Doctor') {
+              window.location.href = '/doctor/dashboard/';
+            }
+          },
+          error: function (xhr) {
+            showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
+          },
+        });
+      });
+    
+      // AJAX for OTP Login
+      $('#otpForm').submit(function (e) {
+        e.preventDefault();
+        const username = $('#otpForm #login').val();
+        const otp = $('#otpForm #otp').val();
+    
+        $.ajax({
+          url: 'http://127.0.0.1:8000/users/otp-login/',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ username, otp }),
+          success: function (response) {
+            showNotification(response.message + " Welcome, " + response.user_type, 'success');
+            // Redirect based on user type
+            if (response.user_type === 'Admin') {
+              window.location.href = '/admin/';
+            } else if (response.user_type === 'Receptionist') {
+              window.location.href = '/receptionist/dashboard/';
+            } else if (response.user_type === 'Doctor') {
+              window.location.href = '/doctor/dashboard/';
+            }
+          },
+          error: function (xhr) {
+            showNotification(xhr.responseJSON.error || 'OTP verification failed', 'danger');
+          },
+        });
+      });
+    
+      // Toggle between Username/Password and OTP login forms
+      $('#usernameTab').on('click', function () {
+        $('#usernameForm').removeClass('d-none').addClass('active-form');
+        $('#otpForm').addClass('d-none');
+        $('#usernameTab').removeClass('btn-secondary').addClass('btn-primary');
+        $('#otpTab').removeClass('btn-primary').addClass('btn-secondary');
+      });
+    
+      $('#otpTab').on('click', function () {
+        $('#otpForm').removeClass('d-none').addClass('active-form');
+        $('#usernameForm').addClass('d-none');
+        $('#otpTab').removeClass('btn-secondary').addClass('btn-primary');
+        $('#usernameTab').removeClass('btn-primary').addClass('btn-secondary');
       });
     });
-  
-    // AJAX for OTP Login
-    $('#otpForm').submit(function (e) {
-      e.preventDefault();
-      const username = $('#otpForm #login').val();
-      const otp = $('#otpForm #otp').val();
-  
-      $.ajax({
-        url: 'http://127.0.0.1:8000/users/otp-login/',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ username, otp }),
-        success: function (response) {
-          alert(response.message + " User Type: " + response.user_type);
-          // Redirect based on user type
-          if (response.user_type === 'Admin') {
-            window.location.href = '/admin/';
-          } else if (response.user_type === 'Receptionist') {
-            window.location.href = '/receptionist/dashboard/';
-          } else if (response.user_type === 'Doctor') {
-            window.location.href = '/doctor/dashboard/';
-          }
-        },
-        error: function (xhr) {
-          alert(xhr.responseJSON.error || 'OTP verification failed');
-        },
-      });
-    });
-  });
-  
-  
 
+    
   
     $(document).ready(function () {
       // Toggle between Username/Password and OTP login forms
