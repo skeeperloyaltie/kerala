@@ -20,26 +20,54 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n(3pq+#r7gu#u^kr*x=tpnd7x#0b!u4thj@oq^y=b=55153ke2'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+import os
+
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-insecure-key')
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost',  # Example: React frontend during development
+    'http://127.0.0.1:8000',
+]
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only when DEBUG is True
+
+
+ALLOWED_HOSTS = [
+    '*'
+    ]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Core Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'users',
 ]
 
+
+AUTH_USER_MODEL = 'users.User'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
+
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Add this at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -51,10 +79,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'kerala.urls'
 
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # Ensure your templates directory is correctly set up
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,13 +102,41 @@ WSGI_APPLICATION = 'kerala.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('POSTGRES_DB', 'kerala'),
+#         'USER': os.getenv('POSTGRES_USER', 'postgres'),
+#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', '1391'),
+#         'HOST': os.getenv('POSTGRES_HOST', 'db'),
+#         'PORT': os.getenv('POSTGRES_PORT', '5432'),
+#     }
+# }
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": {
+        'ENGINE': 'django.db.backends.postgresql',
+        "NAME": os.environ.get('DATABASE_NAME', 'kerala'),  # Default to 'flips'
+        "USER": os.environ.get('DATABASE_USER', 'postgres'),  # Default to 'flipsintel'
+        "PASSWORD": os.environ.get('DATABASE_PASSWORD', '1391'),  # Default to '1391'
+        "HOST": os.environ.get('DATABASE_HOST', 'db'),  # Use 'db' to connect to the Docker container
+        "PORT": os.environ.get('DATABASE_PORT', '5432'),  # Default PostgreSQL port
+    },
 }
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -121,3 +178,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # For collecting static files during deployment
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # For local static files in development
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

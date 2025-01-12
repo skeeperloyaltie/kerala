@@ -1,113 +1,185 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Centered Login System</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Login Page</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <style>
     body {
+      font-family: "Poppins", sans-serif;
+      height: 100vh;
+      background: #56baed;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background-color: #f8f9fa;
-      margin: 0;
     }
-    .login-card {
+    .wrapper {
       width: 100%;
       max-width: 400px;
       padding: 20px;
-      background: #ffffff;
+      background: #fff;
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s;
-      opacity: 1;
-      transform: scale(1);
-      visibility: visible;
+      box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
     }
-    .login-card.hidden {
-      opacity: 0;
-      transform: scale(0.9);
-      visibility: hidden;
+    #formContent {
+      padding: 30px;
+      text-align: center;
     }
-    .login-card.active {
-      opacity: 1;
-      transform: scale(1);
-      visibility: visible;
+    #formFooter {
+      margin-top: 20px;
     }
-    .logo {
-      display: block;
-      margin: 0 auto 20px;
-      width: 50px;
-      height: 50px;
-      object-fit: contain;
+    .fadeIn {
+      animation: fadeIn ease-in 1s;
     }
-    .nav-button {
-      margin: 0 10px;
-      cursor: pointer;
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    .underlineHover:hover {
+      color: #56baed;
+    }
+    .tab-buttons {
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
+  <div class="wrapper fadeInDown">
+    <div id="formContent">
+      <!-- Tabs Titles -->
+      
 
-  <!-- Navigation -->
-  <div class="text-center mb-4">
-    <button class="btn btn-link nav-button" onclick="switchToLoginWithUsernamePassword()">Login with Username & Password</button>
-    <button class="btn btn-link nav-button" onclick="switchToLoginWithOTP()">Login with OTP</button>
+      <!-- Icon -->
+      <div class="fadeIn first">
+        <img src="assets/img/logo.png" id="icon" alt="User Icon" />
+      </div>
+
+      <!-- Login with Username & Password Form -->
+      <form id="usernameForm" class="active-form">
+        <input type="text" id="login" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
+        <input type="password" id="password" class="fadeIn third form-control mb-3" name="password" placeholder="Password">
+        <input type="submit" class="fadeIn fourth btn btn-primary btn-block" value="Log In">
+      </form>
+
+      <!-- Login with OTP Form -->
+      <form id="otpForm" class="inactive-form d-none">
+        <input type="text" id="login" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
+        <input type="text" id="otp" class="fadeIn second form-control mb-3" name="otp" placeholder="Enter OTP">
+        <input type="submit" class="fadeIn fourth btn btn-secondary btn-block" value="Verify OTP">
+      </form>
+
+      <!-- Forgot Password -->
+      <div id="formFooter">
+        <a class="underlineHover" href="#">Forgot Password?</a>
+      </div>
+    </div>
+
+    <div class="tab-buttons">
+      <button id="usernameTab" class="btn btn-primary btn-sm">Login with Username & Password</button>
+      <button id="otpTab" class="btn btn-secondary btn-sm">Login with OTP</button>
+    </div>
   </div>
 
-  <!-- Login System -->
-  <div class="login-card active" id="loginWithUsernamePassword">
-    <img src="logo.png" alt="Logo" class="logo">
-    <h4 class="text-center mb-4">Login with Username & Password</h4>
-    <form>
-      <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
-        <input type="text" class="form-control" id="username" placeholder="Enter your username">
-      </div>
-      <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="password" placeholder="Enter your password">
-      </div>
-      <div class="d-grid">
-        <button type="submit" class="btn btn-primary">Login</button>
-      </div>
-    </form>
-  </div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-  <div class="login-card hidden" id="loginWithOTP">
-    <img src="logo.png" alt="Logo" class="logo">
-    <h4 class="text-center mb-4">Login with OTP</h4>
-    <form>
-      <div class="mb-3">
-        <label for="otp" class="form-label">Enter OTP</label>
-        <input type="text" class="form-control" id="otp" placeholder="Enter OTP">
-      </div>
-      <div class="d-grid">
-        <button type="submit" class="btn btn-primary">Verify OTP</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- JavaScript -->
   <script>
-    const loginWithUsernamePassword = document.getElementById('loginWithUsernamePassword');
-    const loginWithOTP = document.getElementById('loginWithOTP');
-
-    function switchToLoginWithUsernamePassword() {
-      loginWithOTP.classList.add('hidden');
-      loginWithUsernamePassword.classList.remove('hidden');
-      loginWithUsernamePassword.classList.add('active');
+  $(document).ready(function () {
+    // Function to get CSRF token
+    function getCSRFToken() {
+      return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     }
+  
+    // Setup AJAX to include CSRF token in headers
+    $.ajaxSetup({
+      headers: {
+        "X-CSRFToken": getCSRFToken(),
+      },
+    });
+  
+    // AJAX for Username/Password Login
+    $('#usernameForm').submit(function (e) {
+      e.preventDefault();
+      const username = $('#usernameForm #login').val();
+      const password = $('#usernameForm #password').val();
+  
+      $.ajax({
+        url: 'http://127.0.0.1:8000/users/login/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ username, password }),
+        success: function (response) {
+          alert(response.message + " User Type: " + response.user_type);
+          // Redirect based on user type
+          if (response.user_type === 'Admin') {
+            window.location.href = '/admin/';
+          } else if (response.user_type === 'Receptionist') {
+            window.location.href = '/receptionist/dashboard/';
+          } else if (response.user_type === 'Doctor') {
+            window.location.href = '/doctor/dashboard/';
+          }
+        },
+        error: function (xhr) {
+          alert(xhr.responseJSON.error || 'Login failed');
+        },
+      });
+    });
+  
+    // AJAX for OTP Login
+    $('#otpForm').submit(function (e) {
+      e.preventDefault();
+      const username = $('#otpForm #login').val();
+      const otp = $('#otpForm #otp').val();
+  
+      $.ajax({
+        url: 'http://127.0.0.1:8000/users/otp-login/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ username, otp }),
+        success: function (response) {
+          alert(response.message + " User Type: " + response.user_type);
+          // Redirect based on user type
+          if (response.user_type === 'Admin') {
+            window.location.href = '/admin/';
+          } else if (response.user_type === 'Receptionist') {
+            window.location.href = '/receptionist/dashboard/';
+          } else if (response.user_type === 'Doctor') {
+            window.location.href = '/doctor/dashboard/';
+          }
+        },
+        error: function (xhr) {
+          alert(xhr.responseJSON.error || 'OTP verification failed');
+        },
+      });
+    });
+  });
+  
+  
 
-    function switchToLoginWithOTP() {
-      loginWithUsernamePassword.classList.add('hidden');
-      loginWithOTP.classList.remove('hidden');
-      loginWithOTP.classList.add('active');
-    }
+  
+    $(document).ready(function () {
+      // Toggle between Username/Password and OTP login forms
+      $('#usernameTab').on('click', function () {
+        $('#usernameForm').removeClass('d-none').addClass('active-form');
+        $('#otpForm').addClass('d-none');
+        $('#usernameTab').removeClass('btn-secondary').addClass('btn-primary');
+        $('#otpTab').removeClass('btn-primary').addClass('btn-secondary');
+      });
+
+      $('#otpTab').on('click', function () {
+        $('#otpForm').removeClass('d-none').addClass('active-form');
+        $('#usernameForm').addClass('d-none');
+        $('#otpTab').removeClass('btn-secondary').addClass('btn-primary');
+        $('#usernameTab').removeClass('btn-primary').addClass('btn-secondary');
+      });
+    });
   </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
