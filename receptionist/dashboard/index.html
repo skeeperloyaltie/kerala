@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            width: 90%;
+            max-width: 1200px;
+            height: 90%;
+        }
+        .dashboard-card {
+            background: #ffffff;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .dashboard-card h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .dashboard-card p {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Top Left -->
+        <div class="dashboard-card">
+            <h3>Overview</h3>
+            <p>Appointments: 10</p>
+            <p>Patients: 35</p>
+        </div>
+        <!-- Top Right -->
+        <div class="dashboard-card">
+            <h3>Notifications</h3>
+            <p>3 New Notifications</p>
+        </div>
+        <!-- Bottom Left -->
+        <div class="dashboard-card">
+            <h3>Quick Actions</h3>
+            <p><a href="#">Add Patient</a></p>
+            <p><a href="#">Schedule Appointment</a></p>
+        </div>
+        <!-- Bottom Right -->
+        <div class="dashboard-card">
+            <h3>Profile</h3>
+            <p><a href="#">View Profile</a></p>
+            <p><a href="#">Settings</a></p>
+        </div>
+    </div>
+</body>
+</html>

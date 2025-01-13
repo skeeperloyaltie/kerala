@@ -205,11 +205,11 @@
 
       function redirectToDashboard(userType) {
         if (userType === 'Admin') {
-          window.location.href = '/admin/';
+          window.location.href = 'http://localhost:8000/admin/';
         } else if (userType === 'Receptionist') {
-          window.location.href = '/receptionist/dashboard/';
+          window.location.href = '/receptionist/dashboard/index.html';
         } else if (userType === 'Doctor') {
-          window.location.href = '/doctor/dashboard/';
+          window.location.href = '/doctor/dashboard/index.html';
         }
       }
 
