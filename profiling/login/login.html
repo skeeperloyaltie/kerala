@@ -54,9 +54,6 @@
 <body>
   <div class="wrapper fadeInDown">
     <div id="formContent">
-      <!-- Tabs Titles -->
-      
-
       <!-- Icon -->
       <div class="fadeIn first">
         <img src="assets/img/logo.png" id="icon" alt="User Icon" />
@@ -64,15 +61,16 @@
 
       <!-- Login with Username & Password Form -->
       <form id="usernameForm" class="active-form">
-        <input type="text" id="login" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
-        <input type="password" id="password" class="fadeIn third form-control mb-3" name="password" placeholder="Password">
+        <input type="text" id="usernameLogin" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
+        <input type="password" id="passwordLogin" class="fadeIn third form-control mb-3" name="password" placeholder="Password">
         <input type="submit" class="fadeIn fourth btn btn-primary btn-block" value="Log In">
       </form>
 
       <!-- Login with OTP Form -->
       <form id="otpForm" class="inactive-form d-none">
-        <input type="text" id="login" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
+        <input type="text" id="usernameOtp" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
         <input type="text" id="otp" class="fadeIn second form-control mb-3" name="otp" placeholder="Enter OTP">
+        <div id="otpCountdown" class="text-danger mb-3"></div>
         <input type="submit" class="fadeIn fourth btn btn-secondary btn-block" value="Verify OTP">
       </form>
 
@@ -84,48 +82,77 @@
 
     <div id="notification" class="alert d-none" role="alert"></div>
 
-
-
     <div class="tab-buttons">
       <button id="usernameTab" class="btn btn-primary btn-sm">Login with Username & Password</button>
       <button id="otpTab" class="btn btn-secondary btn-sm">Login with OTP</button>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- OTP Verification Modal -->
+  <div class="modal fade" id="otpModal" tabindex="-1" role="dialog" aria-labelledby="otpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="otpModalLabel">Verify OTP</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="modalOtpForm">
+            <input type="text" id="modalOtpInput" class="form-control mb-3" name="otp" placeholder="Enter OTP">
+            <button type="submit" class="btn btn-primary btn-block">Verify</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
     $(document).ready(function () {
+      let otpTimer;
+      const otpTimeout = 60; // Countdown timer duration in seconds
+
       function showNotification(message, type) {
         const notification = $('#notification');
         notification.removeClass('d-none alert-success alert-danger');
         notification.addClass(`alert-${type}`);
         notification.text(message);
-    
-        // Show the notification and hide it after 3 seconds
         notification.fadeIn(300).delay(3000).fadeOut(300);
       }
-    
-      // AJAX for Username/Password Login
+
+      function startOtpCountdown() {
+        let timeLeft = otpTimeout;
+        $('#otpCountdown').text(`You can request another OTP in ${timeLeft} seconds.`);
+        otpTimer = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            clearInterval(otpTimer);
+            $('#otpCountdown').text('');
+          } else {
+            $('#otpCountdown').text(`You can request another OTP in ${timeLeft} seconds.`);
+          }
+        }, 1000);
+      }
+
+      // Handle Username/Password Login
       $('#usernameForm').submit(function (e) {
         e.preventDefault();
-        const username = $('#usernameForm #login').val();
-        const password = $('#usernameForm #password').val();
-    
+        const username = $('#usernameLogin').val();
+        const password = $('#passwordLogin').val();
+
         $.ajax({
           url: 'http://127.0.0.1:8000/users/login/',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({ username, password }),
           success: function (response) {
-            showNotification(response.message + " Welcome, " + response.user_type, 'success');
-            // Redirect based on user type
-            if (response.user_type === 'Admin') {
-              window.location.href = '/admin/';
-            } else if (response.user_type === 'Receptionist') {
-              window.location.href = '/receptionist/dashboard/';
-            } else if (response.user_type === 'Doctor') {
-              window.location.href = '/doctor/dashboard/';
+            if (response.requires_otp) {
+              $('#otpModal').modal('show'); // Show OTP modal
+            } else {
+              showNotification(response.message + " Welcome, " + response.user_type, 'success');
+              redirectToDashboard(response.user_type);
             }
           },
           error: function (xhr) {
@@ -133,13 +160,34 @@
           },
         });
       });
-    
-      // AJAX for OTP Login
+
+      // Handle OTP Verification for Modal
+      $('#modalOtpForm').submit(function (e) {
+        e.preventDefault();
+        const otp = $('#modalOtpInput').val();
+
+        $.ajax({
+          url: 'http://127.0.0.1:8000/users/verify-otp/',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ otp }),
+          success: function (response) {
+            $('#otpModal').modal('hide'); // Close modal
+            showNotification(response.message + " Welcome, " + response.user_type, 'success');
+            redirectToDashboard(response.user_type);
+          },
+          error: function (xhr) {
+            showNotification(xhr.responseJSON.error || 'OTP verification failed', 'danger');
+          },
+        });
+      });
+
+      // Handle OTP Login
       $('#otpForm').submit(function (e) {
         e.preventDefault();
-        const username = $('#otpForm #login').val();
-        const otp = $('#otpForm #otp').val();
-    
+        const username = $('#usernameOtp').val();
+        const otp = $('#otp').val();
+
         $.ajax({
           url: 'http://127.0.0.1:8000/users/otp-login/',
           type: 'POST',
@@ -147,41 +195,25 @@
           data: JSON.stringify({ username, otp }),
           success: function (response) {
             showNotification(response.message + " Welcome, " + response.user_type, 'success');
-            // Redirect based on user type
-            if (response.user_type === 'Admin') {
-              window.location.href = '/admin/';
-            } else if (response.user_type === 'Receptionist') {
-              window.location.href = '/receptionist/dashboard/';
-            } else if (response.user_type === 'Doctor') {
-              window.location.href = '/doctor/dashboard/';
-            }
+            redirectToDashboard(response.user_type);
           },
           error: function (xhr) {
             showNotification(xhr.responseJSON.error || 'OTP verification failed', 'danger');
           },
         });
       });
-    
-      // Toggle between Username/Password and OTP login forms
-      $('#usernameTab').on('click', function () {
-        $('#usernameForm').removeClass('d-none').addClass('active-form');
-        $('#otpForm').addClass('d-none');
-        $('#usernameTab').removeClass('btn-secondary').addClass('btn-primary');
-        $('#otpTab').removeClass('btn-primary').addClass('btn-secondary');
-      });
-    
-      $('#otpTab').on('click', function () {
-        $('#otpForm').removeClass('d-none').addClass('active-form');
-        $('#usernameForm').addClass('d-none');
-        $('#otpTab').removeClass('btn-secondary').addClass('btn-primary');
-        $('#usernameTab').removeClass('btn-primary').addClass('btn-secondary');
-      });
-    });
 
-    
-  
-    $(document).ready(function () {
-      // Toggle between Username/Password and OTP login forms
+      function redirectToDashboard(userType) {
+        if (userType === 'Admin') {
+          window.location.href = '/admin/';
+        } else if (userType === 'Receptionist') {
+          window.location.href = '/receptionist/dashboard/';
+        } else if (userType === 'Doctor') {
+          window.location.href = '/doctor/dashboard/';
+        }
+      }
+
+      // Toggle between forms
       $('#usernameTab').on('click', function () {
         $('#usernameForm').removeClass('d-none').addClass('active-form');
         $('#otpForm').addClass('d-none');
@@ -194,6 +226,7 @@
         $('#usernameForm').addClass('d-none');
         $('#otpTab').removeClass('btn-secondary').addClass('btn-primary');
         $('#usernameTab').removeClass('btn-primary').addClass('btn-secondary');
+        startOtpCountdown(); // Start OTP countdown when switching to OTP login
       });
     });
   </script>
