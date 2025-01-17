@@ -122,6 +122,31 @@
         }, 1000);
       }
 
+       // Handle Username/Password Login
+       $('#usernameForm').submit(function (e) {
+        e.preventDefault();
+        const username = $('#usernameLogin').val();
+        const password = $('#passwordLogin').val();
+
+        $.ajax({
+          url: 'http://127.0.0.1:8000/users/login/',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ username, password }),
+          success: function (response) {
+            if (response.requires_otp) {
+              $('#otpModal').modal('show'); // Show OTP modal
+            } else {
+              showNotification(response.message + " Welcome, " + response.user_type, 'success');
+              redirectToDashboard(response.user_type);
+            }
+          },
+          error: function (xhr) {
+            showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
+          },
+        });
+      });
+
       // Handle Send OTP
       $('#sendOtp').on('click', function () {
         const username = $('#usernameOtp').val();
