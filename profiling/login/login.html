@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Page</title>
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <style>
@@ -69,9 +68,13 @@
       <!-- Login with OTP Form -->
       <form id="otpForm" class="inactive-form d-none">
         <input type="text" id="usernameOtp" class="fadeIn second form-control mb-3" name="login" placeholder="Username">
-        <input type="text" id="otp" class="fadeIn second form-control mb-3" name="otp" placeholder="Enter OTP">
-        <div id="otpCountdown" class="text-danger mb-3"></div>
-        <input type="submit" class="fadeIn fourth btn btn-secondary btn-block" value="Verify OTP">
+        <button type="button" id="sendOtp" class="btn btn-primary btn-block">Send OTP</button>
+        <div id="otpSection" class="d-none">
+          <input type="text" id="otp" class="fadeIn second form-control mb-3" name="otp" placeholder="Enter OTP">
+          <div id="otpCountdown" class="text-danger mb-3"></div>
+          <button type="button" id="resendOtp" class="btn btn-secondary btn-block d-none">Resend OTP</button>
+          <input type="submit" class="fadeIn fourth btn btn-primary btn-block" value="Verify OTP">
+        </div>
       </form>
 
       <!-- Forgot Password -->
@@ -85,26 +88,6 @@
     <div class="tab-buttons">
       <button id="usernameTab" class="btn btn-primary btn-sm">Login with Username & Password</button>
       <button id="otpTab" class="btn btn-secondary btn-sm">Login with OTP</button>
-    </div>
-  </div>
-
-  <!-- OTP Verification Modal -->
-  <div class="modal fade" id="otpModal" tabindex="-1" role="dialog" aria-labelledby="otpModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="otpModalLabel">Verify OTP</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form id="modalOtpForm">
-            <input type="text" id="modalOtpInput" class="form-control mb-3" name="otp" placeholder="Enter OTP">
-            <button type="submit" class="btn btn-primary btn-block">Verify</button>
-          </form>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -125,71 +108,62 @@
       function startOtpCountdown() {
         let timeLeft = otpTimeout;
         $('#otpCountdown').text(`You can request another OTP in ${timeLeft} seconds.`);
+        $('#resendOtp').addClass('d-none');
+
         otpTimer = setInterval(() => {
           timeLeft--;
           if (timeLeft <= 0) {
             clearInterval(otpTimer);
             $('#otpCountdown').text('');
+            $('#resendOtp').removeClass('d-none');
           } else {
             $('#otpCountdown').text(`You can request another OTP in ${timeLeft} seconds.`);
           }
         }, 1000);
       }
 
-      // Handle Username/Password Login
-      $('#usernameForm').submit(function (e) {
-        e.preventDefault();
-        const username = $('#usernameLogin').val();
-        const password = $('#passwordLogin').val();
+      // Handle Send OTP
+      $('#sendOtp').on('click', function () {
+        const username = $('#usernameOtp').val();
+        if (!username) {
+          showNotification('Please enter your username.', 'danger');
+          return;
+        }
 
         $.ajax({
-          url: 'http://127.0.0.1:8000/users/login/',
+          url: 'http://127.0.0.1:8000/users/send-otp/',
           type: 'POST',
           contentType: 'application/json',
-          data: JSON.stringify({ username, password }),
+          data: JSON.stringify({ username }),
           success: function (response) {
-            if (response.requires_otp) {
-              $('#otpModal').modal('show'); // Show OTP modal
-            } else {
-              showNotification(response.message + " Welcome, " + response.user_type, 'success');
-              redirectToDashboard(response.user_type);
-            }
+            $('#otpSection').removeClass('d-none');
+            showNotification('OTP sent successfully.', 'success');
+            startOtpCountdown();
           },
           error: function (xhr) {
-            showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
+            showNotification(xhr.responseJSON.error || 'Failed to send OTP.', 'danger');
           },
         });
       });
 
-      // Handle OTP Verification for Modal
-      $('#modalOtpForm').submit(function (e) {
-        e.preventDefault();
-        const otp = $('#modalOtpInput').val();
-
-        $.ajax({
-          url: 'http://127.0.0.1:8000/users/verify-otp/',
-          type: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({ otp }),
-          success: function (response) {
-            $('#otpModal').modal('hide'); // Close modal
-            showNotification(response.message + " Welcome, " + response.user_type, 'success');
-            redirectToDashboard(response.user_type);
-          },
-          error: function (xhr) {
-            showNotification(xhr.responseJSON.error || 'OTP verification failed', 'danger');
-          },
-        });
+      // Handle Resend OTP
+      $('#resendOtp').on('click', function () {
+        $('#sendOtp').trigger('click');
       });
 
-      // Handle OTP Login
+      // Handle OTP Verification
       $('#otpForm').submit(function (e) {
         e.preventDefault();
         const username = $('#usernameOtp').val();
         const otp = $('#otp').val();
 
+        if (!otp) {
+          showNotification('Please enter the OTP.', 'danger');
+          return;
+        }
+
         $.ajax({
-          url: 'http://127.0.0.1:8000/users/otp-login/',
+          url: 'http://127.0.0.1:8000/users/otp/',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({ username, otp }),
@@ -198,7 +172,7 @@
             redirectToDashboard(response.user_type);
           },
           error: function (xhr) {
-            showNotification(xhr.responseJSON.error || 'OTP verification failed', 'danger');
+            showNotification(xhr.responseJSON.error || 'OTP verification failed.', 'danger');
           },
         });
       });
@@ -226,7 +200,6 @@
         $('#usernameForm').addClass('d-none');
         $('#otpTab').removeClass('btn-secondary').addClass('btn-primary');
         $('#usernameTab').removeClass('btn-primary').addClass('btn-secondary');
-        startOtpCountdown(); // Start OTP countdown when switching to OTP login
       });
     });
   </script>

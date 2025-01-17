@@ -41,5 +41,7 @@ services:
       - "80:80"
     depends_on:
       - django
+    environment:
+      - DEBUG=True  # Set Django debug mode for development
     restart: always  # Restart the container if it fails
 

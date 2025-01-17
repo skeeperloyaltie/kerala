@@ -1,7 +1,12 @@
+from datetime import timedelta
+import logging
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils import timezone
 import random
+import logging
+
+logger = logging.getLogger(__name__)
 
 class User(AbstractUser):
     USER_TYPE_CHOICES = (
@@ -33,9 +38,14 @@ class OTPVerification(models.Model):
     expires_at = models.DateTimeField()
     verified = models.BooleanField(default=False)
 
+    
+
     def generate_otp(self):
-        self.otp = str(random.randint(10000, 99999))  # Generate a 5-digit OTP
+        self.otp = str(random.randint(10000, 99999))
+        self.expires_at = timezone.now() + timedelta(minutes=10)
         self.save()
+        logger.info(f"OTP generated for {self.user.username} with expiry at {self.expires_at}")
+
 
     def is_expired(self):
         return timezone.now() > self.expires_at

@@ -3,75 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Doctor Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
             background-color: #f4f4f9;
+            overflow: hidden;
         }
         .dashboard-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 20px;
-            width: 90%;
-            max-width: 1200px;
-            height: 90%;
+            width: 150px;
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
         }
-        .dashboard-card {
+        .dashboard-container h3 {
+            color: #ffffff;
+            margin: 0 0 20px;
+        }
+        .dashboard-container a {
+            color: #ddd;
+            text-decoration: none;
+            margin: 10px 0;
+            display: block;
+            transition: color 0.2s ease;
+        }
+        .dashboard-container a:hover {
+            color: #ffffff;
+        }
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: margin-right 0.3s ease;
+        }
+        .row {
+            display: flex;
+            gap: 20px;
+        }
+        .card {
             background: #ffffff;
             box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             padding: 20px;
+            flex: 1;
+            transition: transform 0.2s ease;
+        }
+        .card:hover {
+            transform: scale(1.05);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .tab {
+            background: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .tab:hover {
+            background: #0056b3;
+        }
+        .right-sidebar {
+            width: 150px;
+            background: #ffffff;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease;
+            transform: translateX(0);
+        }
+        .right-sidebar.hidden {
+            transform: translateX(100%);
+        }
+        .toggle-btn {
+            position: absolute;
+            top: 10px;
+            left: -40px;
+            width: 30px;
+            height: 30px;
+            background: #007bff;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
             justify-content: center;
             align-items: center;
-            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, background 0.2s ease;
         }
-        .dashboard-card h3 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: #333;
+        .toggle-btn:hover {
+            background: #0056b3;
+            transform: scale(1.1);
         }
-        .dashboard-card p {
-            margin-top: 10px;
-            font-size: 1rem;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    <div class="dashboard-container">
-        <!-- Top Left -->
-        <div class="dashboard-card">
-            <h3>Overview</h3>
-            <p>Appointments: 10</p>
-            <p>Patients: 35</p>
-        </div>
-        <!-- Top Right -->
-        <div class="dashboard-card">
-            <h3>Notifications</h3>
-            <p>3 New Notifications</p>
-        </div>
-        <!-- Bottom Left -->
-        <div class="dashboard-card">
-            <h3>Quick Actions</h3>
-            <p><a href="#">Add Patient</a></p>
-            <p><a href="#">Schedule Appointment</a></p>
-        </div>
-        <!-- Bottom Right -->
-        <div class="dashboard-card">
-            <h3>Profile</h3>
-            <p><a href="#">View Profile</a></p>
-            <p><a href="#">Settings</a></p>
-        </div>
-    </div>
-</body>
-</html>
+   
+                /* Existing styles retained */
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    height: 100vh;
+                    background-color: #f4f4f9;
+                    overflow: hidden;
+                }
+                .dashboard-container {
+                    width: 150px;
+                    background-color: #333;
+                    color: white;
+                    padding: 15px;
+                    display: flex;
+                    flex-direction: column;
+                    transition: transform 0.3s ease;
+                }
+                .dashboard-container h3 {
+                    color: #ffffff;
+                    margin: 0 0 20px;
+                }
+                .dashboard-container a {
+                    color: #ddd;
+                    text-decoration: none;
+                    margin: 10px 0;
+                    display: block;
+                    transition: color 0.2s ease;
+                    cursor: pointer;
+                }
+                .dashboard-container a:hover {
+                    color: #ffffff;
+                }
+                .content-area {
+                    flex: 1;
+                    padding: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                    transition: margin-right 0.3s ease;
+                }
+                .card {
+                    background: #ffffff;
+                    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+                    border-radius: 10px;
+                    padding: 20px;
+                    flex: 1;
+                    transition: transform 0.2s ease;
+                }
+                .card:hover {
+                    transform: scale(1.05);
+                }
+            </style>
+        </head>
+        <body>
+            <div class="dashboard-container">
+                <h3>Navigation</h3>
+                <a href="#" onclick="loadContent('dashboard')">Dashboard</a>
+                <a href="#" onclick="loadContent('patients')">Patients</a>
+                <a href="#" onclick="loadContent('appointments')">Appointments</a>
+                <a href="#" onclick="loadContent('settings')">Settings</a>
+            </div>
+        
+            <div class="content-area" id="content-area">
+                <div id="main-content">
+                    <div class="card">
+                        <div class="tabs">
+                            <div class="tab">Upcoming Events</div>
+                            <div class="tab">Last Patient Vitals</div>
+                            <div class="tab">List Emergencies</div>
+                
+                            <div class="tab">List Patients</div>
+                
+                        </div>
+                
+                        <!-- Row 1 -->
+                        <div class="row">
+                            <!-- Upcoming Events -->
+                            <div class="card">
+                                <h3>Upcoming Appointments</h3>
+                                <p>Appointment 1: 10:00 AM</p>
+                                <p>Appointment 2: 11:30 AM</p>
+                                <p>Appointment 3: 2:00 PM</p>
+                            </div>
+                            <!-- Last Patient Vitals -->
+                            <div class="card">
+                                <h3>Last Patient Vitals</h3>
+                                <p>Blood Pressure: 120/80</p>
+                                <p>Heart Rate: 75 bpm</p>
+                                <p>Temperature: 98.6°F</p>
+                            </div>
+                        </div>
+                
+                        <!-- Row 2 -->
+                        <div class="row">
+                            <!-- Medicines Assigned -->
+                            <div class="card">
+                                <h3>Medicines Assigned</h3>
+                                <p>Paracetamol: 500mg</p>
+                                <p>Amoxicillin: 250mg</p>
+                            </div>
+                            <!-- Current Appointments -->
+                            <div class="card">
+                                <h3>Current Appointments</h3>
+                                <p>Patient: John Doe - 10:00 AM</p>
+                                <p>Patient: Jane Smith - 11:30 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <script>
+                // Function to load content dynamically
+                function loadContent(section) {
+                    const contentArea = document.getElementById('main-content');
+                    let content = '';
+        
+                    switch (section) {
+                        case 'dashboard':
+                            content = `
+                                <div class="card">
+                                    <h3>Dashboard</h3>
+                                    <p>This is the main dashboard area.</p>
+                                </div>`;
+                            break;
+        
+                        case 'patients':
+                            content = `
+                                <div class="card">
+                                    <h3>Patients</h3>
+                                    <p>Here you can view and manage patients.</p>
+                                </div>`;
+                            break;
+        
+                        case 'appointments':
+                            content = `
+                                <div class="card">
+                                    <h3>Appointments</h3>
+                                    <p>Manage your appointments here.</p>
+                                </div>`;
+                            break;
+        
+                        case 'settings':
+                            content = `
+                                <div class="card">
+                                    <h3>Settings</h3>
+                                    <p>Update your profile and preferences here.</p>
+                                </div>`;
+                            break;
+        
+                        default:
+                            content = `
+                                <div class="card">
+                                    <h3>Error</h3>
+                                    <p>Section not found.</p>
+                                </div>`;
+                    }
+        
+                    // Replace the existing content
+                    contentArea.innerHTML = content;
+                }
+            </script>
+        </body>
+        </html>
+        

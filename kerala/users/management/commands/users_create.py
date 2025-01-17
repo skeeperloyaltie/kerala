@@ -10,26 +10,26 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         default_users = [
             {
-                "username": "admin_user",
+                "username": "admin",
                 "password": "AdminPass123",
                 "user_type": "Admin",
-                "email": "admin@kerala.com",
+                "email": "flipsgodfrey@gmail.com",
             },
             {
-                "username": "doctor_user",
+                "username": "doctor",
                 "password": "DoctorPass123",
                 "user_type": "Doctor",
-                "email": "doctor@kerala.com",
+                "email": "flipsgodfrey@gmail.com",
                 "extra": {
                     "specialization": "Cardiology",
                     "contact_number": "1234567890",
                 },
             },
             {
-                "username": "receptionist_user",
+                "username": "receptionist",
                 "password": "ReceptionistPass123",
                 "user_type": "Receptionist",
-                "email": "receptionist@kerala.com",
+                "email": "flipsgodfrey@gmail.com",
                 "extra": {
                     "contact_number": "9876543210",
                 },
