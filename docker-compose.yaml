@@ -14,6 +14,8 @@ services:
       POSTGRES_PASSWORD: 1391
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   django:
     build:
@@ -45,3 +47,5 @@ services:
       - DEBUG=True  # Set Django debug mode for development
     restart: always  # Restart the container if it fails
 
+volumes:
+  postgres_data:
