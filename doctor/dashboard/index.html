@@ -223,280 +223,121 @@
               <nav aria-label="breadcrumb">
                 <ul class="breadcrumb">
                   <li class="breadcrumb-item active" aria-current="page">
-                    <span></span>Kerala Doctors <i class="mdi mdi-alert-circle-outline icon-sm text-primary align-middle"></i>
+                    <span></span>Welcome, Dr. David Grey - Good <span id="timeOfDay">Morning</span>
                   </li>
                 </ul>
               </nav>
             </div>
+        
             <div class="row">
-              <div class="col-md-4 stretch-card grid-margin">
-                <div class="card bg-gradient-danger card-img-holder text-white">
-                  <div class="card-body">
-                    <img src="assets/images/dashboard/circle.svg" class="card-img-absolute" alt="circle-image" />
-                    <h4 class="font-weight-normal mb-3">Current Patient <i class="mdi mdi-account-circle mdi-24px float-end"></i></h4>
-                    <h2 class="mb-5">John Doe</h2>
-                    <h6 class="card-text">Age: 45 | Status: Critical</h6>
-                    <button class="btn btn-light btn-sm mt-4">View Details</button>
-                  </div>
-                </div>
-              </div>
-            
-              <div class="col-md-4 stretch-card grid-margin">
-                <div class="card bg-gradient-info card-img-holder text-white">
-                  <div class="card-body">
-                    <img src="assets/images/dashboard/circle.svg" class="card-img-absolute" alt="circle-image" />
-                    <h4 class="font-weight-normal mb-3">Previous Patient <i class="mdi mdi-account-clock mdi-24px float-end"></i></h4>
-                    <h2 class="mb-5">Jane Smith</h2>
-                    <h6 class="card-text">Age: 50 | Status: Stable</h6>
-                    <button class="btn btn-light btn-sm mt-4">View Details</button>
-                  </div>
-                </div>
-              </div>
-            
-              <div class="col-md-4 stretch-card grid-margin">
-                <div class="card bg-gradient-success card-img-holder text-white">
-                  <div class="card-body">
-                    <img src="assets/images/dashboard/circle.svg" class="card-img-absolute" alt="circle-image" />
-                    <h4 class="font-weight-normal mb-3">Next on Line <i class="mdi mdi-account mdi-24px float-end"></i></h4>
-                    <h2 class="mb-5">Mike Brown</h2>
-                    <h6 class="card-text">Age: 30 | Status: Waiting</h6>
-                    <button class="btn btn-light btn-sm mt-4">View Details</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row">
-              <!-- Left Section: Serviced Patients -->
-              <div class="col-md-7 grid-margin stretch-card">
+              <!-- Tabbed Table Section -->
+              <div class="col-md-12 stretch-card">
                 <div class="card">
                   <div class="card-body">
-                    <h4 class="card-title">Serviced Patients</h4>
-                    <div class="table-responsive">
-                      <table class="table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Illness</th>
-                            <th>Status</th>
-                            <th>Dismissed</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>1</td>
-                            <td>John Doe</td>
-                            <td>Flu</td>
-                            <td>Recovered</td>
-                            <td>Yes</td>
-                          </tr>
-                          <tr>
-                            <td>2</td>
-                            <td>Jane Smith</td>
-                            <td>Fracture</td>
-                            <td>In Recovery</td>
-                            <td>No</td>
-                          </tr>
-                          <tr>
-                            <td>3</td>
-                            <td>Mike Ross</td>
-                            <td>COVID-19</td>
-                            <td>Discharged</td>
-                            <td>Yes</td>
-                          </tr>
-                          <tr>
-                            <td>4</td>
-                            <td>Emily Clark</td>
-                            <td>Asthma</td>
-                            <td>Under Observation</td>
-                            <td>No</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            
-              <!-- Right Section: Emergency Patients -->
-              <div class="col-md-5 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title text-dark">Emergency Patients</h4>
-                    <ul class="list-group">
-                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>
-                          <strong>Name:</strong> Sarah Lee <br>
-                          <strong>Illness:</strong> Heart Attack
-                        </span>
-                        <span class="badge bg-gradient-danger">Critical</span>
+                    <h4 class="card-title">Current Patient Details & Appointments</h4>
+                    <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+                      <li class="nav-item">
+                        <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab" aria-controls="waiting" aria-selected="true">Waiting in Clinic</a>
                       </li>
-                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>
-                          <strong>Name:</strong> David Kim <br>
-                          <strong>Illness:</strong> Seizure
-                        </span>
-                        <span class="badge bg-gradient-warning">Urgent</span>
+                      <li class="nav-item">
+                        <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
                       </li>
-                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>
-                          <strong>Name:</strong> Laura Wilson <br>
-                          <strong>Illness:</strong> Severe Injury
-                        </span>
-                        <span class="badge bg-gradient-danger">Critical</span>
+                      <li class="nav-item">
+                        <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">Completed</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab" aria-controls="canceled" aria-selected="false">Canceled</a>
                       </li>
                     </ul>
+        
+                    <div class="tab-content mt-3" id="appointmentTabContent">
+                      <div class="tab-pane fade show active" id="waiting" role="tabpanel" aria-labelledby="waiting-tab">
+                        <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                          <table class="table">
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Patient Name</th>
+                                <th>Age</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>1</td>
+                                <td>John Doe</td>
+                                <td>45</td>
+                                <td>Flu</td>
+                                <td>Waiting</td>
+                                <td><button class="btn btn-success btn-sm">Start Consulting</button></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+        
+                      <div class="tab-pane fade" id="scheduled" role="tabpanel" aria-labelledby="scheduled-tab">
+                        <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                          <table class="table">
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Patient Name</th>
+                                <th>Age</th>
+                                <th>Reason</th>
+                                <th>Scheduled Time</th>
+                                <th>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>1</td>
+                                <td>Jane Smith</td>
+                                <td>50</td>
+                                <td>Fracture</td>
+                                <td>10:30 AM</td>
+                                <td><button class="btn btn-warning btn-sm">Edit</button></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+        
+                      <!-- Add similar structures for Active, Completed, and Canceled tabs -->
+        
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+         
+        
+        <script>
+          // Update greeting based on the time of day
+          const hour = new Date().getHours();
+          document.getElementById("timeOfDay").textContent = hour < 12 ? "Morning" : "Evening";
+        
+          // Highlight Home Button in Navigation
+          document.querySelector(".nav-item a[href='index.html']").classList.add("active");
+        </script>
+        
             
-            <div class="row">
-              <div class="col-md-7 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="clearfix">
-                      <h4 class="card-title float-start">Patient Visit and Health Statistics</h4>
-                      <div id="visit-health-chart-legend" class="rounded-legend legend-horizontal legend-top-right float-end"></div>
-                    </div>
-                    <canvas id="visit-health-chart" class="mt-4"></canvas>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-5 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">Appointment Sources</h4>
-                    <div class="doughnutjs-wrapper d-flex justify-content-center">
-                      <canvas id="appointment-chart"></canvas>
-                    </div>
-                    <div id="appointment-chart-legend" class="rounded-legend legend-vertical legend-bottom-left pt-4"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-12 grid-margin">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">Recent Appointments</h4>
-                    <div class="table-responsive">
-                      <table class="table">
-                        <thead>
-                          <tr>
-                            <th> Patient Name </th>
-                            <th> Concern </th>
-                            <th> Status </th>
-                            <th> Last Visit </th>
-                            <th> Appointment ID </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>
-                              <img src="assets/images/faces/face1.jpg" class="me-2" alt="image"> David Grey
-                            </td>
-                            <td> Annual Checkup </td>
-                            <td>
-                              <label class="badge badge-gradient-success">COMPLETED</label>
-                            </td>
-                            <td> Jan 10, 2025 </td>
-                            <td> AP-12345 </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <img src="assets/images/faces/face2.jpg" class="me-2" alt="image"> Stella Johnson
-                            </td>
-                            <td> High Blood Pressure </td>
-                            <td>
-                              <label class="badge badge-gradient-warning">IN PROGRESS</label>
-                            </td>
-                            <td> Jan 15, 2025 </td>
-                            <td> AP-12346 </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <img src="assets/images/faces/face3.jpg" class="me-2" alt="image"> Marina Michel
-                            </td>
-                            <td> Diabetes Follow-up </td>
-                            <td>
-                              <label class="badge badge-gradient-info">SCHEDULED</label>
-                            </td>
-                            <td> Jan 20, 2025 </td>
-                            <td> AP-12347 </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <img src="assets/images/faces/face4.jpg" class="me-2" alt="image"> John Doe
-                            </td>
-                            <td> Chest Pain Consultation </td>
-                            <td>
-                              <label class="badge badge-gradient-danger">CANCELLED</label>
-                            </td>
-                            <td> Jan 5, 2025 </td>
-                            <td> AP-12348 </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-lg-5 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body p-0 d-flex">
-                    <div id="inline-datepicker" class="datepicker datepicker-custom"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-7 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">Recent Updates</h4>
-                    <div class="d-flex">
-                      <div class="d-flex align-items-center me-4 text-muted font-weight-light">
-                        <i class="mdi mdi-account-outline icon-sm me-2"></i>
-                        <span>Dr. Jack Menqu</span>
-                      </div>
-                      <div class="d-flex align-items-center text-muted font-weight-light">
-                        <i class="mdi mdi-clock icon-sm me-2"></i>
-                        <span>January 20th, 2025</span>
-                      </div>
-                    </div>
-                    <div class="row mt-3">
-                      <div class="col-6 pe-1">
-                        <img src="assets/images/dashboard/medical_1.jpg" class="mb-2 mw-100 w-100 rounded" alt="image">
-                        <img src="assets/images/dashboard/medical_4.jpg" class="mw-100 w-100 rounded" alt="image">
-                      </div>
-                      <div class="col-6 ps-1">
-                        <img src="assets/images/dashboard/medical_2.jpg" class="mb-2 mw-100 w-100 rounded" alt="image">
-                        <img src="assets/images/dashboard/medical_3.jpg" class="mw-100 w-100 rounded" alt="image">
-                      </div>
-                    </div>
-                    <div class="d-flex mt-5 align-items-top">
-                      <img src="assets/images/faces/face3.jpg" class="img-sm rounded-circle me-3" alt="image">
-                      <div class="mb-0 flex-grow">
-                        <h5 class="me-2 mb-2">Heart Health Campaign</h5>
-                        <p class="mb-0 font-weight-light">A brief overview of the ongoing initiative to raise awareness about heart health among patients.</p>
-                      </div>
-                      <div class="ms-auto">
-                        <i class="mdi mdi-heart-outline text-muted"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+           
+          
             
             
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
             <div class="d-sm-flex justify-content-center justify-content-sm-between">
-              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="https://www.kerala.com/" target="_blank">Kerala. All rights reserved.</span>
+              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="" target="_blank">Kerala. All rights reserved.</span>
               <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Doctors Dashboard <i class="mdi mdi-heart text-danger"></i></span>
             </div>
           </footer>
