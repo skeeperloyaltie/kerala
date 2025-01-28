@@ -210,127 +210,209 @@
     </ul>
   </nav>
 
+<!-- partial -->
+<div class="main-panel">
+  <div class="content-wrapper">
+    <div class="page-header">
+      <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+          <i class="mdi mdi-home"></i>
+        </span> Dashboard
+      </h3>
+      <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item active" aria-current="page">
+            <span></span>Welcome, Dr. David Grey - Good <span id="timeOfDay">Morning</span>
+          </li>
+        </ul>
+      </nav>
+    </div>
 
-        <!-- partial -->
-        <div class="main-panel">
-          <div class="content-wrapper">
-            <div class="page-header">
-              <h3 class="page-title">
-                <span class="page-title-icon bg-gradient-primary text-white me-2">
-                  <i class="mdi mdi-home"></i>
-                </span> Dashboard
-              </h3>
-              <nav aria-label="breadcrumb">
-                <ul class="breadcrumb">
-                  <li class="breadcrumb-item active" aria-current="page">
-                    <span></span>Welcome, Dr. David Grey - Good <span id="timeOfDay">Morning</span>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-        
-            <div class="row">
-              <!-- Tabbed Table Section -->
-              <div class="col-md-12 stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">Current Patient Details & Appointments</h4>
-                    <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-                      <li class="nav-item">
-                        <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab" aria-controls="waiting" aria-selected="true">Waiting in Clinic</a>
-                      </li>
-                      <li class="nav-item">
-                        <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
-                      </li>
-                      <li class="nav-item">
-                        <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
-                      </li>
-                      <li class="nav-item">
-                        <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">Completed</a>
-                      </li>
-                      <li class="nav-item">
-                        <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab" aria-controls="canceled" aria-selected="false">Canceled</a>
-                      </li>
-                    </ul>
-        
-                    <div class="tab-content mt-3" id="appointmentTabContent">
-                      <div class="tab-pane fade show active" id="waiting" role="tabpanel" aria-labelledby="waiting-tab">
-                        <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                          <table class="table">
-                            <thead>
-                              <tr>
-                                <th>#</th>
-                                <th>Patient Name</th>
-                                <th>Age</th>
-                                <th>Reason</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td>1</td>
-                                <td>John Doe</td>
-                                <td>45</td>
-                                <td>Flu</td>
-                                <td>Waiting</td>
-                                <td><button class="btn btn-success btn-sm">Start Consulting</button></td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-        
-                      <div class="tab-pane fade" id="scheduled" role="tabpanel" aria-labelledby="scheduled-tab">
-                        <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                          <table class="table">
-                            <thead>
-                              <tr>
-                                <th>#</th>
-                                <th>Patient Name</th>
-                                <th>Age</th>
-                                <th>Reason</th>
-                                <th>Scheduled Time</th>
-                                <th>Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td>1</td>
-                                <td>Jane Smith</td>
-                                <td>50</td>
-                                <td>Fracture</td>
-                                <td>10:30 AM</td>
-                                <td><button class="btn btn-warning btn-sm">Edit</button></td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-        
-                      <!-- Add similar structures for Active, Completed, and Canceled tabs -->
-        
-                    </div>
-                  </div>
+    <div class="row">
+      <!-- Tabbed Table Section -->
+      <div class="col-md-12 stretch-card">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title">Current Patient Details & Appointments</h4>
+            <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab" aria-controls="waiting" aria-selected="true">Waiting in Clinic</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">Completed</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab" aria-controls="canceled" aria-selected="false">Canceled</a>
+              </li>
+            </ul>
+
+            <div class="tab-content mt-3" id="appointmentTabContent">
+              <!-- Example: Tab Template -->
+              <div class="tab-pane fade show active" id="waiting" role="tabpanel" aria-labelledby="waiting-tab">
+                <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Patient Name</th>
+                        <th>Age</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Repeat similar structure for other tabs -->
+              <!-- Example: Scheduled Tab -->
+              <div class="tab-pane fade" id="scheduled" role="tabpanel" aria-labelledby="scheduled-tab">
+                <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Patient Name</th>
+                        <th>Age</th>
+                        <th>Reason</th>
+                        <th>Scheduled Time</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
                 </div>
               </div>
             </div>
-         
-        
-        <script>
-          // Update greeting based on the time of day
-          const hour = new Date().getHours();
-          document.getElementById("timeOfDay").textContent = hour < 12 ? "Morning" : "Evening";
-        
-          // Highlight Home Button in Navigation
-          document.querySelector(".nav-item a[href='index.html']").classList.add("active");
-        </script>
-        
-            
-           
-          
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const sessionData = JSON.parse(localStorage.getItem("sessionData"));
+    const now = new Date().getTime();
+  
+    if (!sessionData || sessionData.role !== "Doctor" || now > sessionData.expiry) {
+      console.log("Session expired or unauthorized access. Redirecting to login page...");
+      localStorage.removeItem("sessionData");
+      window.location.href = "/login.html";
+      return;
+    }
+  
+    // Personalized Welcome Message
+    const doctorName = sessionData.name || "Doctor";
+    const currentTime = new Date().getHours();
+    const timeOfDay = currentTime < 12 ? "Morning" : currentTime < 18 ? "Afternoon" : "Evening";
+    document.querySelector(".breadcrumb-item.active span").innerHTML = 
+      `Welcome, Dr. ${doctorName} - Good <span id="timeOfDay">${timeOfDay}</span>`;
+  
+    // Fetch and Render Appointments
+    fetchAndRenderAppointments();
+  });
+  
+  function fetchAndRenderAppointments() {
+    const loader = document.querySelector("#appointmentsLoader");
+    loader.style.display = "block"; // Show loader
+  
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "http://127.0.0.1:8000/appointments/appointments/", true); // Replace with the actual endpoint
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        loader.style.display = "none"; // Hide loader
+        if (xhr.status === 200) {
+          try {
+            const appointments = JSON.parse(xhr.responseText);
+  
+            const tabs = ["waiting", "scheduled", "active", "completed", "canceled"];
+            tabs.forEach((tab) => {
+              const tbody = document.querySelector(`#${tab} table tbody`);
+              tbody.innerHTML = ""; // Clear existing rows
+  
+              if (appointments[tab].length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6">No appointments found in this category</td></tr>`;
+                return;
+              }
+  
+              appointments[tab].forEach((appointment, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${index + 1}</td>
+                  <td>${appointment.patientName}</td>
+                  <td>${appointment.age}</td>
+                  <td>${appointment.reason}</td>
+                  ${
+                    tab === "scheduled"
+                      ? `<td>${appointment.scheduledTime}</td>`
+                      : `<td>${appointment.status}</td>`
+                  }
+                  <td>
+                    <button class="btn ${
+                      tab === "waiting" ? "btn-success" : "btn-warning"
+                    } btn-sm">${tab === "waiting" ? "Start Consulting" : "Edit"}</button>
+                  </td>
+                `;
+                tbody.appendChild(row);
+              });
+            });
+  
+            // Alert for successful data fetch
+            alert("Appointments loaded successfully!");
+          } catch (error) {
+            console.error("Error parsing appointments:", error);
+            alert("Failed to process appointments data. Please try again.");
+          }
+        } else {
+          console.error("Error fetching appointments:", xhr.statusText);
+          alert("Failed to load appointments. Please check your connection and try again.");
+        }
+      }
+    };
+  
+    xhr.onerror = function () {
+      loader.style.display = "none"; // Hide loader
+      console.error("Network Error occurred while fetching appointments.");
+      alert("Network error. Please try again later.");
+    };
+  
+    xhr.send(); // Send the AJAX request
+  }
+  
+  // Logout Functionality with Confirmation Timer
+  document.querySelector("#logoutBtn").addEventListener("click", () => {
+    if (confirm("Are you sure you want to log out?")) {
+      alert("Logging out... Redirecting in 5 seconds.");
+  
+      let countdown = 5;
+      const timer = setInterval(() => {
+        if (countdown === 1) {
+          clearInterval(timer);
+          localStorage.removeItem("sessionData");
+          window.location.href = "/login.html";
+        } else {
+          countdown--;
+          console.log(`Redirecting in ${countdown} seconds...`);
+        }
+      }, 1000);
+    }
+  });
+</script>  
+  
+
+
             
             
           <!-- content-wrapper ends -->

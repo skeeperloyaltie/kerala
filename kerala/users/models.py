@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 class User(AbstractUser):
     USER_TYPE_CHOICES = (
-        ('Receptionist', 'Receptionist'),
-        ('Doctor', 'Doctor'),
-        ('Admin', 'Admin'),
+        ('receptionist', 'receptionist'),
+        ('doctor', 'doctor'),
+        ('admin', 'admin'),
     )
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='Receptionist')
 

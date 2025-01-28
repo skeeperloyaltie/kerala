@@ -5,7 +5,6 @@ from rest_framework import status
 from .models import Appointment, Patient, AppointmentTests
 from .serializers import AppointmentSerializer, PatientSerializer, AppointmentTestsSerializer
 from users.models import Doctor, Receptionist
-
 class CreateAppointmentView(APIView):
     """
     Endpoint for creating appointments, allowing different functionality for Doctors and Receptionists.
@@ -16,7 +15,7 @@ class CreateAppointmentView(APIView):
         user = request.user
         data = request.data
 
-        # Validate patient details
+        # Validate patient details and vitals
         patient_data = data.get("patient", None)
         if not patient_data:
             return Response({"error": "Patient details are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -25,7 +24,6 @@ class CreateAppointmentView(APIView):
         if not patient_serializer.is_valid():
             return Response(patient_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create or get the patient
         patient, created = Patient.objects.get_or_create(
             first_name=patient_data["first_name"],
             last_name=patient_data["last_name"],
@@ -41,7 +39,6 @@ class CreateAppointmentView(APIView):
         }
 
         if user.user_type == "Receptionist":
-            # Receptionists can only schedule appointments and assign a doctor
             doctor_id = data.get("doctor", None)
             if not doctor_id:
                 return Response({"error": "Doctor assignment is required for appointments."}, status=status.HTTP_400_BAD_REQUEST)
@@ -54,27 +51,16 @@ class CreateAppointmentView(APIView):
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
         elif user.user_type == "Doctor":
-            # Doctors can schedule appointments and add initial tests
             appointment_data["doctor"] = user.doctor.id
-
         else:
             return Response({"error": "Only Receptionists and Doctors can create appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Create the appointment
+        # Create appointment
         appointment_serializer = AppointmentSerializer(data=appointment_data)
         if not appointment_serializer.is_valid():
             return Response(appointment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         appointment = appointment_serializer.save()
-
-        # If a doctor is creating the appointment, handle initial tests
-        if user.user_type == "Doctor" and "tests" in data:
-            tests_data = data["tests"]
-            tests_serializer = AppointmentTestsSerializer(data=tests_data)
-            if not tests_serializer.is_valid():
-                return Response(tests_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-            tests_serializer.save(appointment=appointment)
 
         return Response(
             {
@@ -83,3 +69,11 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieve the list of doctors for the dropdown menu.
+        """
+        doctors = Doctor.objects.all()
+        doctor_data = [{"id": doc.id, "name": f"{doc.user.first_name} {doc.user.last_name}", "specialization": doc.specialization} for doc in doctors]
+        return Response(doctor_data, status=status.HTTP_200_OK)

@@ -3,10 +3,19 @@ from .models import Appointment, Patient, AppointmentTests
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'contact_number', 'email', 'date_of_birth')
+    list_display = ('first_name', 'last_name', 'contact_number', 'email', 'date_of_birth', 'get_status')
     search_fields = ('first_name', 'last_name', 'contact_number', 'email')
-    list_filter = ('date_of_birth',)
+    list_filter = ('date_of_birth',)  # Remove 'status' here
     ordering = ('last_name', 'first_name')
+
+    def get_status(self, obj):
+        """
+        Return the status of the latest appointment for the patient.
+        """
+        latest_appointment = Appointment.objects.filter(patient=obj).order_by('-appointment_date').first()
+        return latest_appointment.status if latest_appointment else "No Appointments"
+
+    get_status.short_description = 'Status'
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
