@@ -14,10 +14,7 @@
     <!-- Plugin css for this page -->
     <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css">
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
+
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- End layout styles -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
@@ -130,6 +127,9 @@
   </div>
 </nav>
 
+<div id="loginPrompt" style="display:none;">
+  <p>Your session has expired. Please <a href="/profiling/login/login.html">login</a> again.</p>
+</div>
       <!-- partial -->
 <div class="container-fluid page-body-wrapper">
   <!-- partial:partials/_sidebar.html -->
@@ -299,117 +299,111 @@
       </div>
     </div>
   </div>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const sessionData = JSON.parse(localStorage.getItem("sessionData"));
-    const now = new Date().getTime();
-  
-    if (!sessionData || sessionData.role !== "Doctor" || now > sessionData.expiry) {
-      console.log("Session expired or unauthorized access. Redirecting to login page...");
-      localStorage.removeItem("sessionData");
-      window.location.href = "/login.html";
-      return;
-    }
-  
-    // Personalized Welcome Message
-    const doctorName = sessionData.name || "Doctor";
-    const currentTime = new Date().getHours();
-    const timeOfDay = currentTime < 12 ? "Morning" : currentTime < 18 ? "Afternoon" : "Evening";
-    document.querySelector(".breadcrumb-item.active span").innerHTML = 
-      `Welcome, Dr. ${doctorName} - Good <span id="timeOfDay">${timeOfDay}</span>`;
-  
-    // Fetch and Render Appointments
-    fetchAndRenderAppointments();
-  });
-  
-  function fetchAndRenderAppointments() {
-    const loader = document.querySelector("#appointmentsLoader");
-    loader.style.display = "block"; // Show loader
-  
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://127.0.0.1:8000/appointments/appointments/", true); // Replace with the actual endpoint
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        loader.style.display = "none"; // Hide loader
-        if (xhr.status === 200) {
-          try {
-            const appointments = JSON.parse(xhr.responseText);
-  
-            const tabs = ["waiting", "scheduled", "active", "completed", "canceled"];
-            tabs.forEach((tab) => {
-              const tbody = document.querySelector(`#${tab} table tbody`);
-              tbody.innerHTML = ""; // Clear existing rows
-  
-              if (appointments[tab].length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6">No appointments found in this category</td></tr>`;
-                return;
-              }
-  
-              appointments[tab].forEach((appointment, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                  <td>${index + 1}</td>
-                  <td>${appointment.patientName}</td>
-                  <td>${appointment.age}</td>
-                  <td>${appointment.reason}</td>
-                  ${
-                    tab === "scheduled"
-                      ? `<td>${appointment.scheduledTime}</td>`
-                      : `<td>${appointment.status}</td>`
-                  }
-                  <td>
-                    <button class="btn ${
-                      tab === "waiting" ? "btn-success" : "btn-warning"
-                    } btn-sm">${tab === "waiting" ? "Start Consulting" : "Edit"}</button>
-                  </td>
-                `;
-                tbody.appendChild(row);
-              });
-            });
-  
-            // Alert for successful data fetch
-            alert("Appointments loaded successfully!");
-          } catch (error) {
-            console.error("Error parsing appointments:", error);
-            alert("Failed to process appointments data. Please try again.");
-          }
-        } else {
-          console.error("Error fetching appointments:", xhr.statusText);
-          alert("Failed to load appointments. Please check your connection and try again.");
-        }
+
+  <script>
+    // Function to retrieve the CSRF token from the page's meta tag or cookie
+    function getCSRFToken() {
+      // Check if the CSRF token is present in a meta tag
+      const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+      if (csrfTokenMeta) {
+        return csrfTokenMeta.getAttribute('content');
       }
-    };
-  
-    xhr.onerror = function () {
-      loader.style.display = "none"; // Hide loader
-      console.error("Network Error occurred while fetching appointments.");
-      alert("Network error. Please try again later.");
-    };
-  
-    xhr.send(); // Send the AJAX request
-  }
-  
-  // Logout Functionality with Confirmation Timer
-  document.querySelector("#logoutBtn").addEventListener("click", () => {
-    if (confirm("Are you sure you want to log out?")) {
-      alert("Logging out... Redirecting in 5 seconds.");
-  
-      let countdown = 5;
-      const timer = setInterval(() => {
-        if (countdown === 1) {
-          clearInterval(timer);
-          localStorage.removeItem("sessionData");
-          window.location.href = "/login.html";
-        } else {
-          countdown--;
-          console.log(`Redirecting in ${countdown} seconds...`);
-        }
-      }, 1000);
+      // If the CSRF token is not found in the meta tag, try retrieving it from the cookie
+      const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
+      if (csrfCookie) {
+        return csrfCookie[1];
+      }
+      return null;  // Return null if no CSRF token is found
     }
-  });
-</script>  
+  
+    // Function to handle session and local storage retrieval for headers
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      const username = localStorage.getItem('username');
+      const csrftoken = getCSRFToken();  // Retrieve the CSRF token from meta tag or cookie
+  
+      // Log the values retrieved from localStorage and the CSRF token for debugging
+      console.log('Retrieved token from localStorage:', token);
+      console.log('Retrieved username from localStorage:', username);
+      console.log('Retrieved CSRF token:', csrftoken);
+  
+      if (token && username && csrftoken) {
+        // Log the headers being returned
+        const headers = {
+          'Authorization': 'Token ' + token,
+          'X-CSRFToken': csrftoken,  // Include CSRF token in headers
+          'Username': username       // Optionally include the username if needed
+        };
+        console.log('Generated headers:', headers); // Log the headers
+        return headers;
+      }
+  
+      // If no token, username, or CSRF token is found, log that no valid credentials were found
+      console.log('No token, username, or CSRF token found in localStorage');
+      return {};
+    }
+  
+    // Validate session data by making an AJAX request to the backend
+    function validateUserSession() {
+      const headers = getAuthHeaders();
+  
+      if (Object.keys(headers).length === 0) {
+        console.log('No headers found, user is not authenticated.');
+        return;
+      }
+  
+      // Send AJAX request to the validation endpoint
+      $.ajax({
+        url: 'http://127.0.0.1:8000/cookie/check/',  // Endpoint to check session validity
+        type: 'GET',
+        headers: headers,  // Pass the generated headers
+        success: function(response) {
+          console.log('Session validated successfully:', response);
+  
+          // If the session is valid, proceed
+          if (response.message === 'Cookie is valid.') {
+            console.log('User is logged in and session is valid.');
+          } else {
+            // If the session is invalid, log the user out
+            console.log('Session is invalid or expired. Logging out...');
+            logoutUser();
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Error in validating session:', error);
+          // You can handle error here (e.g., redirect user to login)
+        }
+      });
+    }
+  
+    // Function to log the user out
+    function logoutUser() {
+      // Make an AJAX request to the logout endpoint
+      $.ajax({
+        url: 'http://127.0.0.1:8000/users/logout/',  // Endpoint to log out
+        type: 'POST',  // Assuming logout uses POST
+        success: function(response) {
+          console.log('User logged out successfully:', response);
+          // Redirect to the login page or home page
+          window.location.href = 'http://127.0.0.1:8000/login/'; // Redirect to login page
+        },
+        error: function(xhr, status, error) {
+          console.error('Error in logging out:', error);
+          // Handle any errors that occur during logout (e.g., show a message to the user)
+        }
+      });
+    }
+  
+    // Call the validateUserSession function
+    validateUserSession();
+  </script>
+  
+  
+  
+
   
 
 

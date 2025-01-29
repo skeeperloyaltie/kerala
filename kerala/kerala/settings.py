@@ -31,6 +31,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost',  # Example: React frontend during development
     'http://127.0.0.1:8000',
 ]
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'Username',  # Add the 'Username' header here
+]
+
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only when DEBUG is True
 
 
@@ -48,11 +54,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'rest_framework.authtoken',
+
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
     'users',
     'appointments',
+    'cookie',
 ]
 
 

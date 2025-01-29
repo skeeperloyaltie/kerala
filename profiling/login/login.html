@@ -97,6 +97,23 @@
       let otpTimer;
       const otpTimeout = 60; // Countdown timer duration in seconds
   
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+  
+      const csrftoken = getCookie('csrftoken');
+  
       function showNotification(message, type) {
         const notification = $('#notification');
         notification.removeClass('d-none alert-success alert-danger');
@@ -121,130 +138,184 @@
           }
         }, 1000);
       }
-  
-      // Handle Username/Password Login
-      $('#usernameForm').submit(function (e) {
-        e.preventDefault();
-        const username = $('#usernameLogin').val();
-        const password = $('#passwordLogin').val();
-  
-        $.ajax({
-          url: 'http://127.0.0.1:8000/users/login/',
-          type: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({ username, password }),
-          success: function (response) {
-            if (response.requires_otp) {
-              $('#otpModal').modal('show'); // Show OTP modal
-            } else {
-              // Save session data
-              const expiry = new Date().getTime() + 60 * 60 * 1000; // 1-hour session expiry
-              const sessionData = {
-                name: response.name || "User",
-                role: response.user_type,
-                expiry: expiry,
-                token: response.token, // JWT or session token
-              };
-              localStorage.setItem("sessionData", JSON.stringify(sessionData));
-  
-              showNotification(`${response.message} Welcome, ${response.user_type}`, 'success');
-  
-              setTimeout(() => {
-                redirectToDashboard(sessionData.role);
-              }, 5000); // Redirect after 5 seconds
+   // Handle Username/Password Login
+$('#usernameForm').submit(function (e) {
+  e.preventDefault();
+  const username = $('#usernameLogin').val();
+  const password = $('#passwordLogin').val();
+
+  console.log('Posting Login Data:', { username });
+
+  // First, send the login request to get the token
+  $.ajax({
+    url: 'http://127.0.0.1:8000/users/login/',
+    type: 'POST',
+    contentType: 'application/json',
+    headers: {
+      'X-CSRFToken': csrftoken,  // Add CSRF token for security
+    },
+    data: JSON.stringify({ username, password }),
+    success: function (response) {
+      console.log('Login Response:', response);
+
+      if (response.requires_otp) {
+        $('#otpModal').modal('show');
+      } else {
+        // Save token and username in localStorage or sessionStorage
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('username', username);
+
+        // Optionally, store the token and username in sessionStorage for immediate session usage
+        sessionStorage.setItem('token', response.token);
+        sessionStorage.setItem('username', username);
+
+        // Fetch the token from localStorage to send with the request
+        const token = localStorage.getItem('token');
+        console.log('Token Retrieved from LocalStorage:', token);
+
+        // Check if token exists, then verify
+        if (token) {
+          $.ajax({
+            url: 'http://127.0.0.1:8000/cookie/verify/',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+              'X-CSRFToken': csrftoken,
+              'Authorization': 'Token ' + token  // Attach the token in the Authorization header
+            },
+            data: JSON.stringify({ username }),
+            success: function (cookieResponse) {
+              console.log('Cookie Verification Response:', cookieResponse);
+              showNotification(cookieResponse.message, 'success');
+              redirectToDashboard(response.user_type);  // Handle redirection after successful login
+            },
+            error: function (xhr) {
+              console.error('Cookie Verification Error:', xhr.responseJSON);
+              showNotification(xhr.responseJSON.error || 'Cookie verification failed.', 'danger');
             }
-          },
-          error: function (xhr) {
-            showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
-          },
-        });
-      });
-  
-      // Handle Send OTP
-      $('#sendOtp').on('click', function () {
-        const username = $('#usernameOtp').val();
-        if (!username) {
-          showNotification('Please enter your username.', 'danger');
-          return;
-        }
-  
-        $.ajax({
-          url: 'http://127.0.0.1:8000/users/send-otp/',
-          type: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({ username }),
-          success: function (response) {
-            $('#otpSection').removeClass('d-none');
-            showNotification('OTP sent successfully.', 'success');
-            startOtpCountdown();
-          },
-          error: function (xhr) {
-            showNotification(xhr.responseJSON.error || 'Failed to send OTP.', 'danger');
-          },
-        });
-      });
-  
-      // Handle OTP Verification
-      $('#otpForm').submit(function (e) {
-        e.preventDefault();
-        const username = $('#usernameOtp').val();
-        const otp = $('#otp').val();
-  
-        if (!otp) {
-          showNotification('Please enter the OTP.', 'danger');
-          return;
-        }
-  
-        $.ajax({
-          url: 'http://127.0.0.1:8000/users/otp/',
-          type: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({ username, otp }),
-          success: function (response) {
-            // Save session data
-            const expiry = new Date().getTime() + 60 * 60 * 1000; // 1-hour session expiry
-            const sessionData = {
-              name: response.name || "User",
-              role: response.user_type,
-              expiry: expiry,
-              token: response.token,
-            };
-            localStorage.setItem("sessionData", JSON.stringify(sessionData));
-  
-            showNotification(`${response.message} Welcome, ${response.user_type}`, 'success');
-  
-            setTimeout(() => {
-              redirectToDashboard(sessionData.role);
-            }, 5000); // Redirect after 5 seconds
-          },
-          error: function (xhr) {
-            showNotification(xhr.responseJSON.error || 'OTP verification failed.', 'danger');
-          },
-        });
-      });
-  
-      function redirectToDashboard(role) {
-        if (role === 'Admin') {
-          window.location.href = 'http://localhost:8000/admin/';
-        } else if (role === 'Receptionist') {
-          window.location.href = '/receptionist/dashboard/index.html';
-        } else if (role === 'Doctor') {
-          window.location.href = '/doctor/dashboard/index.html';
+          });
         } else {
-          window.location.href = '/login.html';
+          console.error('Token not found after login.');
+          showNotification('Token generation failed. Please try again.', 'danger');
         }
       }
+    },
+    error: function (xhr) {
+      console.error('Login Error:', xhr.responseJSON);
+      showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
+    }
+  });
+});
+
+
+
+
+// Handle Send OTP
+$('#sendOtp').on('click', function () {
+  const username = $('#usernameOtp').val();
+  if (!username) {
+    showNotification('Please enter your username.', 'danger');
+    return;
+  }
+
+  console.log('Posting OTP Request for Username:', { username });
+
+  $.ajax({
+    url: 'http://127.0.0.1:8000/users/send-otp/',
+    type: 'POST',
+    contentType: 'application/json',
+    headers: {
+      'X-CSRFToken': csrftoken,
+    },
+    data: JSON.stringify({ username }),
+    success: function (response) {
+      console.log('OTP Response:', response);
+      $('#otpSection').removeClass('d-none');
+      showNotification('OTP sent successfully.', 'success');
+      startOtpCountdown();
+    },
+    error: function (xhr) {
+      console.error('OTP Error:', xhr.responseJSON);
+      showNotification(xhr.responseJSON.error || 'Failed to send OTP.', 'danger');
+    },
+  });
+});
+
+// Handle OTP Verification
+$('#otpForm').submit(function (e) {
+  e.preventDefault();
+  const username = $('#usernameOtp').val();
+  const otp = $('#otp').val();
+
+  if (!otp) {
+    showNotification('Please enter the OTP.', 'danger');
+    return;
+  }
+
+  console.log('Posting OTP Verification Data:', { username, otp });
+
+  $.ajax({
+    url: 'http://127.0.0.1:8000/users/otp/',
+    type: 'POST',
+    contentType: 'application/json',
+    headers: {
+      'X-CSRFToken': csrftoken,
+    },
+    data: JSON.stringify({ username, otp }),
+    success: function (response) {
+      console.log('OTP Verification Response:', response);
+
+      // Store session data in localStorage
+      localStorage.setItem('user_type', response.user_type);
+      localStorage.setItem('username', username);
+      localStorage.setItem('token', response.token);
+
+      // Now verify the token after OTP
+      const token = response.token;
+      console.log('Token Retrieved after OTP Verification:', token);
+      if (token) {
+        $.ajax({
+          url: 'http://127.0.0.1:8000/cookie/verify/',
+          type: 'POST',
+          contentType: 'application/json',
+          headers: {
+            'X-CSRFToken': csrftoken,
+            'Authorization': 'Token ' + token
+          },
+          data: JSON.stringify({ username }),
+          success: function (cookieResponse) {
+            console.log('Cookie Verification Response:', cookieResponse);
+            showNotification(cookieResponse.message, 'success');
+            redirectToDashboard(response.user_type);
+          },
+          error: function (xhr) {
+            console.error('Cookie Verification Error:', xhr.responseJSON);
+            showNotification(xhr.responseJSON.error || 'Cookie verification failed.', 'danger');
+          }
+        });
+      } else {
+        console.error('Token not found after OTP verification.');
+        showNotification('Token verification failed. Please try again.', 'danger');
+      }
+    },
+    error: function (xhr) {
+      console.error('OTP Verification Error:', xhr.responseJSON);
+      showNotification(xhr.responseJSON.error || 'OTP verification failed.', 'danger');
+    }
+  });
+});
+
+
   
-      // Check for existing session on page load
-      const sessionData = JSON.parse(localStorage.getItem("sessionData"));
-      if (sessionData) {
-        const now = new Date().getTime();
-        if (now > sessionData.expiry) {
-          showNotification('Session expired. Please log in again.', 'danger');
-          localStorage.removeItem("sessionData");
-        } else {
-          showNotification(`Welcome back, ${sessionData.role}!`, 'success');
-          redirectToDashboard(sessionData.role);
+      function redirectToDashboard(userType) {
+        console.log('Redirecting to Dashboard for User Type:', userType); // Log redirection action
+
+        if (userType === 'Admin') {
+          window.location.href = 'http://localhost:8000/admin/';
+        } else if (userType === 'Receptionist') {
+          window.location.href = '/receptionist/dashboard/index.html';
+        } else if (userType === 'Doctor') {
+          window.location.href = '/doctor/dashboard/index.html';
         }
       }
   
@@ -263,9 +334,8 @@
         $('#usernameTab').removeClass('btn-primary').addClass('btn-secondary');
       });
     });
-  </script>
-  
-  
+</script>
+
   
 </body>
 </html>
