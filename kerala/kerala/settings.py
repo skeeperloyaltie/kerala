@@ -43,7 +43,17 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only when DEBUG is True
 ALLOWED_HOSTS = [
     '*'
     ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://your-domain.com",  # If deployed, add the actual domain
+]
 
+CSRF_COOKIE_NAME = "csrftoken"
+CSRF_COOKIE_SECURE = False  # Set True in production if using HTTPS
+CSRF_COOKIE_SAMESITE = "Lax"  # Prevents cross-site issues
+CSRF_USE_SESSIONS = False
+SESSION_COOKIE_SAMESITE = "Lax"
 
 # Application definition
 

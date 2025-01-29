@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from datetime import date
 
 class Patient(models.Model):
     """
@@ -12,11 +13,23 @@ class Patient(models.Model):
     email = models.EmailField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     current_illness = models.TextField(null=True, blank=True)  # Add this field if needed
-    age = models.IntegerField()
-
+    age = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        if self.date_of_birth:
+            self.age = self.calculate_age()
+        super().save(*args, **kwargs)
+
+    def calculate_age(self):
+        today = date.today()
+        age = today.year - self.date_of_birth.year
+        if today.month < self.date_of_birth.month or (today.month == self.date_of_birth.month and today.day < self.date_of_birth.day):
+            age -= 1
+        return age
+
 
 class Appointment(models.Model):
     """
@@ -33,12 +46,14 @@ class Appointment(models.Model):
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     appointment_date = models.DateTimeField(default=timezone.now)
-    notes = models.TextField(null=True, blank=True)  # General notes
+    notes = models.TextField(null=True, blank=True)
+    is_emergency = models.BooleanField(default=False)  # Emergency flag
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Appointment for {self.patient} with {self.doctor} on {self.appointment_date}"
+
 
 class AppointmentTests(models.Model):
     """

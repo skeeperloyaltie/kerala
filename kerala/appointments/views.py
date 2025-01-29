@@ -17,8 +17,9 @@ from rest_framework import status
 from .models import Appointment, Patient, AppointmentTests
 from .serializers import AppointmentSerializer, PatientSerializer, AppointmentTestsSerializer
 from users.models import Doctor, Receptionist
+from django.views.decorators.csrf import csrf_exempt
 
-@method_decorator(csrf_protect, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
     """
     Endpoint for creating appointments while ensuring patients can have multiple appointments only if the last one is completed.
@@ -59,6 +60,7 @@ class CreateAppointmentView(APIView):
             "appointment_date": data.get("appointment_date"),
             "notes": data.get("notes", ""),
             "status": "Pending",  # Default to Pending
+            "is_emergency": data.get("is_emergency", False)  # Capture the emergency status
         }
 
         if user.user_type == "Receptionist":
@@ -73,8 +75,25 @@ class CreateAppointmentView(APIView):
             except Doctor.DoesNotExist:
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
+            # Allow vitals for emergencies only
+            if appointment_data["is_emergency"]:
+                vitals_data = data.get("vitals", None)
+                if vitals_data:
+                    vitals_serializer = AppointmentTestsSerializer(data=vitals_data)
+                    if not vitals_serializer.is_valid():
+                        return Response(vitals_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    vitals_serializer.save(appointment=appointment_data)
+
         elif user.user_type == "Doctor":
             appointment_data["doctor"] = user.doctor.id
+
+            # Automatically add vitals if a doctor creates an appointment
+            vitals_data = data.get("vitals", None)
+            if vitals_data:
+                vitals_serializer = AppointmentTestsSerializer(data=vitals_data)
+                if not vitals_serializer.is_valid():
+                    return Response(vitals_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                vitals_serializer.save(appointment=appointment_data)
 
         else:
             return Response({"error": "Only Receptionists and Doctors can create appointments."}, status=status.HTTP_403_FORBIDDEN)
@@ -103,6 +122,7 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
 
 
 from rest_framework.views import APIView

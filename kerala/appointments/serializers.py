@@ -15,6 +15,7 @@ class PatientSerializer(serializers.ModelSerializer):
             "email",
             "date_of_birth",
             "current_illness",
+            "age",
         ]
 
 
@@ -46,6 +47,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "receptionist",
             "receptionist_id",
             "appointment_date",
+            ''
             "status",
             "notes",
         ]
