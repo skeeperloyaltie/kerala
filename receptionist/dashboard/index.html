@@ -48,6 +48,107 @@
     </style>
 </head>
 <body>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  
+  
+    <script>
+      // Function to retrieve the CSRF token from the page's meta tag or cookie
+      function getCSRFToken() {
+        // Check if the CSRF token is present in a meta tag
+        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+        if (csrfTokenMeta) {
+          return csrfTokenMeta.getAttribute('content');
+        }
+        // If the CSRF token is not found in the meta tag, try retrieving it from the cookie
+        const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
+        if (csrfCookie) {
+          return csrfCookie[1];
+        }
+        return null;  // Return null if no CSRF token is found
+      }
+    
+      // Function to handle session and local storage retrieval for headers
+      function getAuthHeaders() {
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+        const csrftoken = getCSRFToken();  // Retrieve the CSRF token from meta tag or cookie
+    
+        // Log the values retrieved from localStorage and the CSRF token for debugging
+        console.log('Retrieved token from localStorage:', token);
+        console.log('Retrieved username from localStorage:', username);
+        console.log('Retrieved CSRF token:', csrftoken);
+    
+        if (token && username && csrftoken) {
+          // Log the headers being returned
+          const headers = {
+            'Authorization': 'Token ' + token,
+            'X-CSRFToken': csrftoken,  // Include CSRF token in headers
+            'Username': username       // Optionally include the username if needed
+          };
+          console.log('Generated headers:', headers); // Log the headers
+          return headers;
+        }
+    
+        // If no token, username, or CSRF token is found, log that no valid credentials were found
+        console.log('No token, username, or CSRF token found in localStorage');
+        return {};
+      }
+    
+      // Validate session data by making an AJAX request to the backend
+      function validateUserSession() {
+        const headers = getAuthHeaders();
+    
+        if (Object.keys(headers).length === 0) {
+          console.log('No headers found, user is not authenticated.');
+          return;
+        }
+    
+        // Send AJAX request to the validation endpoint
+        $.ajax({
+          url: 'http://127.0.0.1:8000/cookie/check/',  // Endpoint to check session validity
+          type: 'GET',
+          headers: headers,  // Pass the generated headers
+          success: function(response) {
+            console.log('Session validated successfully:', response);
+    
+            // If the session is valid, proceed
+            if (response.message === 'Cookie is valid.') {
+              console.log('User is logged in and session is valid.');
+            } else {
+              // If the session is invalid, log the user out
+              console.log('Session is invalid or expired. Logging out...');
+              logoutUser();
+            }
+          },
+          error: function(xhr, status, error) {
+            console.error('Error in validating session:', error);
+            // You can handle error here (e.g., redirect user to login)
+          }
+        });
+      }
+    
+      // Function to log the user out
+      function logoutUser() {
+        // Make an AJAX request to the logout endpoint
+        $.ajax({
+          url: 'http://127.0.0.1:8000/users/logout/',  // Endpoint to log out
+          type: 'POST',  // Assuming logout uses POST
+          success: function(response) {
+            console.log('User logged out successfully:', response);
+            // Redirect to the login page or home page
+            window.location.href = 'http://127.0.0.1:8000/login/'; // Redirect to login page
+          },
+          error: function(xhr, status, error) {
+            console.error('Error in logging out:', error);
+            // Handle any errors that occur during logout (e.g., show a message to the user)
+          }
+        });
+      }
+    
+      // Call the validateUserSession function
+      validateUserSession();
+    </script>
     <div class="dashboard-container">
         <!-- Top Left -->
         <div class="dashboard-card">
