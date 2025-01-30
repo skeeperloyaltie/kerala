@@ -36,6 +36,8 @@ class Appointment(models.Model):
     Stores appointment details for patients, linked to doctors and receptionists.
     """
     STATUS_CHOICES = (
+        ('Waiting', 'Waiting'),
+        ('Scheduled', 'Scheduled'),
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
         ('Cancelled', 'Cancelled'),
@@ -44,7 +46,7 @@ class Appointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Waiting')
     appointment_date = models.DateTimeField(default=timezone.now)
     notes = models.TextField(null=True, blank=True)
     is_emergency = models.BooleanField(default=False)  # Emergency flag

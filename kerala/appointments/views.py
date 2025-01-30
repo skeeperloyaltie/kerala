@@ -1,4 +1,5 @@
-from django.views.decorators.csrf import csrf_protect
+import logging
+from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -8,120 +9,110 @@ from .models import Appointment, Patient, AppointmentTests
 from .serializers import AppointmentSerializer, PatientSerializer, AppointmentTestsSerializer
 from users.models import Doctor, Receptionist
 
-from django.views.decorators.csrf import csrf_protect
-from django.utils.decorators import method_decorator
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .models import Appointment, Patient, AppointmentTests
-from .serializers import AppointmentSerializer, PatientSerializer, AppointmentTestsSerializer
-from users.models import Doctor, Receptionist
-from django.views.decorators.csrf import csrf_exempt
+# Configure logger
+logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
-    """
-    Endpoint for creating appointments while ensuring patients can have multiple appointments only if the last one is completed.
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
         data = request.data
 
-        # Validate patient details
-        patient_data = data.get("patient", None)
-        if not patient_data:
-            return Response({"error": "Patient details are required."}, status=status.HTTP_400_BAD_REQUEST)
+        logger.info(f"Received appointment creation request from user {user.id} ({user.username}): {data}")
 
-        # Check if the patient already exists
-        patient, created = Patient.objects.get_or_create(
-            first_name=patient_data["first_name"],
-            last_name=patient_data["last_name"],
-            contact_number=patient_data["contact_number"],
-            defaults={
-                "email": patient_data.get("email"),
-                "date_of_birth": patient_data.get("date_of_birth"),
-            },
-        )
+        required_fields = ["patient", "appointment_date"]
+        missing_fields = [field for field in required_fields if field not in data or not data[field]]
+        if missing_fields:
+            logger.warning(f"Missing fields in request: {missing_fields}")
+            return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ensure the patient can only have multiple appointments if the last one is completed
-        last_appointment = Appointment.objects.filter(patient=patient).order_by('-appointment_date').first()
-        if last_appointment and last_appointment.status != "Completed":
-            return Response(
-                {"error": "Patient already has an active appointment. Please complete or cancel the existing appointment before creating a new one."},
-                status=status.HTTP_400_BAD_REQUEST,
+        patient_data = data.get("patient")
+        if not isinstance(patient_data, dict):
+            logger.error("Invalid format for patient details.")
+            return Response({"error": "Patient details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Log patient data
+        logger.info(f"Patient data received: {patient_data}")
+
+        # Check if a patient with the same name exists
+        existing_patient = Patient.objects.filter(
+            first_name=patient_data["first_name"], 
+            last_name=patient_data["last_name"]
+        ).first()
+
+        if existing_patient:
+            last_appointment = Appointment.objects.filter(patient=existing_patient).order_by('-appointment_date').first()
+            last_status = last_appointment.status if last_appointment else "No previous appointments"
+
+            logger.info(f"Existing patient found: {existing_patient.id} ({existing_patient.first_name} {existing_patient.last_name}), last status: {last_status}")
+
+            if last_status != "Completed":
+                logger.warning(f"Attempt to create a new appointment for patient {existing_patient.id} with an active appointment.")
+                return Response(
+                    {"error": "Patient already has an active appointment. Please complete or cancel the existing appointment before creating a new one."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            patient = existing_patient  # Use the existing patient
+        else:
+            # Create a new patient
+            patient = Patient.objects.create(
+                first_name=patient_data["first_name"],
+                last_name=patient_data["last_name"],
+                contact_number=patient_data["contact_number"],
+                email=patient_data.get("email"),
+                date_of_birth=patient_data.get("date_of_birth"),
             )
+            logger.info(f"New patient created: {patient.id} ({patient.first_name} {patient.last_name})")
 
-        # Validate appointment details
+        # Proceed to create an appointment
         appointment_data = {
-            "patient": patient.id,
+            "patient": patient,
             "appointment_date": data.get("appointment_date"),
             "notes": data.get("notes", ""),
-            "status": "Pending",  # Default to Pending
-            "is_emergency": data.get("is_emergency", False)  # Capture the emergency status
+            "status": "Pending",
+            "is_emergency": data.get("is_emergency", False)
         }
 
         if user.user_type == "Receptionist":
-            doctor_id = data.get("doctor", None)
+            doctor_id = data.get("doctor")
             if not doctor_id:
+                logger.error("Doctor assignment is missing for Receptionist.")
                 return Response({"error": "Doctor assignment is required for appointments."}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 doctor = Doctor.objects.get(id=doctor_id)
-                appointment_data["doctor"] = doctor.id
-                appointment_data["receptionist"] = user.receptionist.id
+                appointment_data["doctor"] = doctor
+                appointment_data["receptionist"] = user.receptionist
+                logger.info(f"Doctor assigned: {doctor.id} ({doctor.first_name} {doctor.last_name})")
             except Doctor.DoesNotExist:
+                logger.error(f"Doctor with ID {doctor_id} not found.")
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Allow vitals for emergencies only
-            if appointment_data["is_emergency"]:
-                vitals_data = data.get("vitals", None)
-                if vitals_data:
-                    vitals_serializer = AppointmentTestsSerializer(data=vitals_data)
-                    if not vitals_serializer.is_valid():
-                        return Response(vitals_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                    vitals_serializer.save(appointment=appointment_data)
-
         elif user.user_type == "Doctor":
-            appointment_data["doctor"] = user.doctor.id
-
-            # Automatically add vitals if a doctor creates an appointment
-            vitals_data = data.get("vitals", None)
-            if vitals_data:
-                vitals_serializer = AppointmentTestsSerializer(data=vitals_data)
-                if not vitals_serializer.is_valid():
-                    return Response(vitals_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                vitals_serializer.save(appointment=appointment_data)
+            appointment_data["doctor"] = user.doctor
+            logger.info(f"Appointment assigned to doctor {user.doctor.id} ({user.doctor.first_name} {user.doctor.last_name})")
 
         else:
+            logger.error(f"Unauthorized user type {user.user_type} attempted to create an appointment.")
             return Response({"error": "Only Receptionists and Doctors can create appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Create the appointment
-        appointment_serializer = AppointmentSerializer(data=appointment_data)
-        if not appointment_serializer.is_valid():
-            return Response(appointment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        appointment = appointment_serializer.save()
-
-        # If a doctor is creating the appointment, handle initial tests
-        if user.user_type == "Doctor" and "tests" in data:
-            tests_data = data["tests"]
-            tests_serializer = AppointmentTestsSerializer(data=tests_data)
-            if not tests_serializer.is_valid():
-                return Response(tests_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-            tests_serializer.save(appointment=appointment)
+        # Save the appointment
+        appointment = Appointment.objects.create(**appointment_data)
+        logger.info(f"Appointment created successfully: {appointment.id} for patient {patient.id}")
 
         return Response(
             {
                 "message": "Appointment created successfully.",
-                "appointment": appointment_serializer.data,
+                "appointment": AppointmentSerializer(appointment).data,
                 "patient": PatientSerializer(patient).data,
             },
             status=status.HTTP_201_CREATED,
         )
+
+
 
 
 
@@ -132,11 +123,12 @@ from rest_framework import status
 from .models import Appointment
 from .serializers import AppointmentSerializer
 
+# views.py
+
 class AppointmentListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Get the status from query params, default to 'Pending'
         status_filter = request.query_params.get('status', 'Pending')
         user = request.user
 
@@ -147,6 +139,6 @@ class AppointmentListView(APIView):
         else:
             return Response({"error": "Only Doctors and Receptionists can view appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Serialize the appointment data
         serializer = AppointmentSerializer(appointments, many=True)
         return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+

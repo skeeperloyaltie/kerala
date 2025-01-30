@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Appointment, Patient, AppointmentTests
+from users.models import Doctor, Receptionist
+
 
 class PatientSerializer(serializers.ModelSerializer):
     """
@@ -23,18 +25,20 @@ class AppointmentSerializer(serializers.ModelSerializer):
     """
     Serializer for Appointment model, ensuring validation and including necessary relationships.
     """
-    patient = PatientSerializer(read_only=True)
+    patient = PatientSerializer(read_only=True)  # Serialize patient as an object
     patient_id = serializers.PrimaryKeyRelatedField(
         queryset=Patient.objects.all(), write_only=True, source="patient"
-    )
+    )  # Allow writing using patient ID
 
-    doctor_id = serializers.PrimaryKeyRelatedField(
-        queryset=Appointment.objects.all(), write_only=True, required=False, source="doctor"
-    )
-    
-    receptionist_id = serializers.PrimaryKeyRelatedField(
-        queryset=Appointment.objects.all(), write_only=True, required=False, source="receptionist"
-    )
+    doctor = serializers.PrimaryKeyRelatedField(
+        queryset=Doctor.objects.all(), required=False
+    )  # Direct relation to Doctor model
+    doctor_name = serializers.CharField(source="doctor.get_full_name", read_only=True)  # Add doctor's name for easier access
+
+    receptionist = serializers.PrimaryKeyRelatedField(
+        queryset=Receptionist.objects.all(), required=False
+    )  # Direct relation to Receptionist model
+    receptionist_name = serializers.CharField(source="receptionist.get_full_name", read_only=True)  # Add receptionist's name for easier access
 
     class Meta:
         model = Appointment
@@ -43,15 +47,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient",
             "patient_id",
             "doctor",
-            "doctor_id",
+            "doctor_name",
             "receptionist",
-            "receptionist_id",
+            "receptionist_name",
             "appointment_date",
-            ''
             "status",
             "notes",
         ]
-        read_only_fields = ["id", "status"]
+        read_only_fields = ["id", "status"]  # ID and status should not be writable
 
 
 class AppointmentTestsSerializer(serializers.ModelSerializer):

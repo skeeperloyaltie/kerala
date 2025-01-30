@@ -55,6 +55,8 @@ class OTPVerification(models.Model):
 
 class Receptionist(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100, default="receptionist")
+    last_name = models.CharField(max_length=100, default="receptionist")
     contact_number = models.CharField(max_length=15)
     email = models.EmailField()
 
@@ -63,6 +65,8 @@ class Receptionist(models.Model):
 
 class Doctor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100, default="doctor")
+    last_name = models.CharField(max_length=100, default="docctor")
     specialization = models.CharField(max_length=255)
     contact_number = models.CharField(max_length=15)
     email = models.EmailField()
