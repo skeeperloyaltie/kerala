@@ -233,39 +233,84 @@
     <div class="row">
       <!-- Appointment Booking Section -->
       <div class="col-md-6 grid-margin stretch-card">
-        <div class="card">
+
+        <div id="appointmentFormContainer" class="card" >
           <div class="card-body">
-            <h4 class="card-title">Book an Appointment</h4>
-            <form>
-              <div class="form-group">
-                <label for="patientName">Patient Name</label>
-                <input type="text" class="form-control" id="patientName" placeholder="Enter Patient Name">
+            <h5 class="card-title">Create New Appointment</h5>
+            <form id="appointmentForm">
+              <div class="row">
+                <div class="col-md-4">
+                  <label for="firstName">First Name</label>
+                  <input type="text" id="firstName" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="lastName">Last Name</label>
+                  <input type="text" id="lastName" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="contactNumber">Contact Number</label>
+                  <input type="text" id="contactNumber" class="form-control" required>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="doctorName">Doctor</label>
-                <select class="form-control" id="doctorName">
-                  <option>Dr. Smith</option>
-                  <option>Dr. Johnson</option>
-                  <option>Dr. Brown</option>
-                  <option>Dr. Lee</option>
-                </select>
+        
+              <div class="row mt-3">
+                <div class="col-md-4">
+                  <label for="dateOfBirth">Date of Birth</label>
+                  <input type="date" id="dateOfBirth" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="age">Age</label>
+                  <input type="number" id="age" class="form-control" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label for="currentIllness">Current Illness</label>
+                  <input type="text" id="currentIllness" class="form-control">
+                </div>
               </div>
-              <div class="form-group">
-                <label for="appointmentDate">Appointment Date</label>
-                <input type="date" class="form-control" id="appointmentDate">
+        
+              <div class="row mt-3">
+                <div class="col-md-4">
+                  <label for="appointmentDate">Appointment Date</label>
+                  <input type="datetime-local" id="appointmentDate" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="doctor">Doctor</label>
+                  <select id="doctor" class="form-control" required>
+                    <option value="{{ logged_in_user_default_doctor.id }}" selected>{{ logged_in_user_default_doctor.name }}</option>
+                    <!-- Dynamically populate doctors from the API -->
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="notes">Notes</label>
+                  <input type="text" id="notes" class="form-control">
+                </div>
               </div>
-              <div class="form-group">
-                <label for="appointmentTime">Appointment Time</label>
-                <input type="time" class="form-control" id="appointmentTime">
+              <div class="col-md-12 mt-3">
+                <label for="isEmergency">Is this an emergency?</label>
+                <input type="checkbox" id="isEmergency" class="form-check-input" onchange="toggleEmergencyVitals()">
               </div>
-              <div class="form-group">
-                <label for="illnessDescription">Description</label>
-                <textarea class="form-control" id="illnessDescription" rows="4" placeholder="Enter a brief description of the illness"></textarea>
+            </div>
+      
+            <div class="row mt-3" id="vitalsFields" style="display: none;">
+              <div class="col-md-4">
+                <label for="bloodPressure">Blood Pressure</label>
+                <input type="text" id="bloodPressure" class="form-control">
               </div>
-              <button type="submit" class="btn btn-gradient-primary btn-sm">Book Appointment</button>
+              <div class="col-md-4">
+                <label for="heartRate">Heart Rate</label>
+                <input type="text" id="heartRate" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label for="temperature">Temperature</label>
+                <input type="text" id="temperature" class="form-control">
+              </div>
+            </div>
+        
+              <div class="mt-3">
+                <button type="button" class="btn btn-success" onclick="addAppointment()">Submit</button>
+                <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
+              </div>
             </form>
-          </div>
-        </div>
       </div>
 
       <!-- Upcoming Appointments Section -->

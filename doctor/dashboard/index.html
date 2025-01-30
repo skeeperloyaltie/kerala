@@ -241,6 +241,9 @@
                 <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab" aria-controls="pending" aria-selected="false">Pending</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
               </li>
               <li class="nav-item">
@@ -288,6 +291,26 @@
                       </tr>
                     </thead>
                     <tbody id="Scheduled-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Scheduled Tab -->
+              <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Patient Name</th>
+                        <th>Age</th>
+                        <th>Reason</th>
+                        <th>Scheduled Time</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="Pending-tbody"></tbody>
                   </table>
                 </div>
               </div>
@@ -637,6 +660,9 @@
             case 'Scheduled':
                 actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
                 break;
+            case 'Pending':
+                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+                break;
             case 'Cancelled':
                 actionButtonHTML = `<button class="btn btn-primary btn-sm">Update</button>`;
                 break;
@@ -660,7 +686,7 @@
   
   // Call the fetchAppointments function for each status when the page loads
   $(document).ready(function () {
-      const statuses = ["Waiting", "Scheduled", "Active", "Completed", "Cancelled"];
+      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
       statuses.forEach((status) => {
           fetchAppointments(status);
       });
@@ -675,6 +701,7 @@
             first_name: $("#firstName").val(),
             last_name: $("#lastName").val(),
             contact_number: $("#contactNumber").val(),
+            dateOfBirth: $("#dateOfBirth").val(),
         },
         appointment_date: $("#appointmentDate").val(),
         doctor: $("#doctor").val(),
