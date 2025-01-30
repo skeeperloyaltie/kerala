@@ -595,43 +595,49 @@
   }
   
   function populateAppointmentsTable(status, appointments) {
-      let tbodyId = `${status}-tbody`; // e.g., 'waiting-tbody', 'scheduled-tbody'
-      let tbody = document.getElementById(tbodyId);
-      tbody.innerHTML = ""; // Clear existing rows
-  
-      appointments.forEach((appointment, index) => {
-          let row = document.createElement("tr");
-  
-          let numberCell = document.createElement("td");
-          numberCell.textContent = index + 1;
-          row.appendChild(numberCell);
-  
-          let patientCell = document.createElement("td");
-          patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
-          row.appendChild(patientCell);
-  
-          let ageCell = document.createElement("td");
-          ageCell.textContent = appointment.patient.age || "N/A"; // Handle cases where age might be missing
-          row.appendChild(ageCell);
-  
-          let reasonCell = document.createElement("td");
-          reasonCell.textContent = appointment.reason || "N/A"; // Handle cases where reason might be missing
-          row.appendChild(reasonCell);
-  
-          let statusCell = document.createElement("td");
-          statusCell.textContent = appointment.status || "N/A"; // Handle cases where status might be missing
-          row.appendChild(statusCell);
-  
-          let actionsCell = document.createElement("td");
-          // Add any action buttons like Edit or Delete here
-          actionsCell.innerHTML = `
-              <button class="btn btn-info btn-sm">Edit</button> 
-              <button class="btn btn-danger btn-sm">Delete</button>`;
-          row.appendChild(actionsCell);
-  
-          tbody.appendChild(row);
-      });
-  }
+    let tbodyId = `${status}-tbody`; // e.g., 'waiting-tbody', 'scheduled-tbody'
+    let tbody = document.getElementById(tbodyId);
+
+    if (!tbody) {
+        console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
+        return; // Stop execution if tbody is null
+    }
+
+    tbody.innerHTML = ""; // Clear existing rows
+
+    appointments.forEach((appointment, index) => {
+        let row = document.createElement("tr");
+
+        let numberCell = document.createElement("td");
+        numberCell.textContent = index + 1;
+        row.appendChild(numberCell);
+
+        let patientCell = document.createElement("td");
+        patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
+        row.appendChild(patientCell);
+
+        let ageCell = document.createElement("td");
+        ageCell.textContent = appointment.patient.age || "N/A"; // Handle missing age
+        row.appendChild(ageCell);
+
+        let reasonCell = document.createElement("td");
+        reasonCell.textContent = appointment.reason || "N/A"; // Handle missing reason
+        row.appendChild(reasonCell);
+
+        let statusCell = document.createElement("td");
+        statusCell.textContent = appointment.status || "N/A"; // Handle missing status
+        row.appendChild(statusCell);
+
+        let actionsCell = document.createElement("td");
+        actionsCell.innerHTML = `
+            <button class="btn btn-info btn-sm">Edit</button> 
+            <button class="btn btn-danger btn-sm">Delete</button>`;
+        row.appendChild(actionsCell);
+
+        tbody.appendChild(row);
+    });
+}
+
   
   // Call the fetchAppointments function for each status when the page loads
   $(document).ready(function () {
