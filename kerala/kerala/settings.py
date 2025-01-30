@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'users',
     'appointments',
     'cookie',
+    'info',
 ]
 
 

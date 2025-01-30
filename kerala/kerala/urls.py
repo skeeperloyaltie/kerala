@@ -22,6 +22,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('appointments/', include('appointments.urls')),
     path('cookie/', include('cookie.urls')),  # Include the cookie URLs
+    path('info/', include('info.urls')),
 
 
 ]

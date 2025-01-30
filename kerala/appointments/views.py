@@ -124,7 +124,7 @@ from .models import Appointment
 from .serializers import AppointmentSerializer
 
 # views.py
-
+@method_decorator(csrf_exempt, name='dispatch')
 class AppointmentListView(APIView):
     permission_classes = [IsAuthenticated]
 
