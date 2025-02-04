@@ -747,11 +747,17 @@ validateUserSession();
         contentType: 'application/json',
         success: function(response) {
             console.log('✅ Appointment created successfully:', response);
-            const appointmentId = response.id;  // Get the appointment ID from response
+            const appointmentId = response.appointment.id;  // Get the appointment ID from response
             
             // Show the Vitals modal and pass the appointment ID
             $("#vitalsModal").modal("show");
-            $("#vitalsModal").data("appointmentId", appointmentId);  // Store appointment ID in modal
+            $("#vitalsModal").data("appointmentId", response.appointment.id);  // Store appointment ID in modal
+            // id is set correctly, lets give an error if its invalid 
+
+            if (!appointmentId) {
+                alert("Appointment ID is missing. Please try again.");
+                return;
+            }
             
             // If vitals are required and emergency, submit them separately (can be done later in the modal form)
             if ($("#isEmergency").is(":checked")) {
@@ -774,8 +780,14 @@ validateUserSession();
 
 
 function saveVitals() {
-  // Retrieve the appointment ID from the modal
+  // Ensure that the appointment ID is being set properly after appointment creation
   const appointmentId = $("#vitalsModal").data("appointmentId");
+
+  // If appointmentId is not set, it means it was not properly initialized
+  if (!appointmentId) {
+      alert("Appointment ID is missing. Please try again.");
+      return;
+  }
 
   // Collect vitals data from the modal fields
   const vitalsData = {
@@ -799,7 +811,7 @@ function saveVitals() {
 
   // Submit vitals data using POST request
   $.ajax({
-      url: `http://127.0.0.1:8000/appointments/vitals/${appointmentId}`, // Ensure the endpoint matches your API
+      url: `http://127.0.0.1:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
       type: 'POST',
       headers: headers,
       data: JSON.stringify(vitalsData),
@@ -818,6 +830,7 @@ function saveVitals() {
       }
   });
 }
+
 
 
 

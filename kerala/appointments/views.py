@@ -159,7 +159,16 @@ from django.shortcuts import get_object_or_404
 from .models import Vitals
 from .serializers import VitalsSerializer
 
-# Set up logger
+# Set up import logging
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from .models import Vitals
+from .serializers import VitalsSerializer
+
+# Set up the logger
 logger = logging.getLogger(__name__)
 
 class VitalsAPIView(APIView):
@@ -185,7 +194,7 @@ class VitalsAPIView(APIView):
             logger.error(f"Error retrieving vitals for appointment ID: {appointment_id}. Error: {str(e)}")
             return Response({"error": "Vitals not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request):
+    def post(self, request, appointment_id=None):
         """
         Create vitals for an appointment. Only doctors and receptionists can add vitals.
         """
@@ -195,7 +204,8 @@ class VitalsAPIView(APIView):
             logger.warning(f"Unauthorized access attempt by user: {request.user.username}")
             return Response({"error": "Only doctors and receptionists can add vitals."}, status=status.HTTP_403_FORBIDDEN)
 
-        appointment_id = request.data.get("appointment")
+        # Use the appointment_id from the URL
+        appointment_id = appointment_id or request.data.get("appointment")
 
         if Vitals.objects.filter(appointment_id=appointment_id).exists():
             logger.warning(f"Vitals already exist for appointment ID: {appointment_id}")
@@ -203,7 +213,7 @@ class VitalsAPIView(APIView):
 
         serializer = VitalsSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(recorded_by=request.user)  # Assign the user who recorded vitals
+            serializer.save(appointment_id=appointment_id, recorded_by=request.user)  # Save the vitals
             logger.info(f"Vitals created successfully for appointment ID: {appointment_id} by user: {request.user.username}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 

@@ -118,6 +118,18 @@ class Vitals(models.Model):
 
     def __str__(self):
         return f"Vitals for Appointment ID {self.appointment.id}"
+    
+    def calculate_blood_sugar(self):
+        """Calculate an estimated blood sugar level based on BMI and weight."""
+        if self.bmi and self.weight:
+            # Example calculation: High BMI or weight may lead to higher blood sugar levels
+            if self.bmi > 30:  # Assuming BMI over 30 might suggest a risk of higher blood sugar
+                return round(self.weight * 0.4, 2)  # Hypothetical formula (weight * constant)
+            elif self.bmi > 25:  # Slightly above normal BMI
+                return round(self.weight * 0.3, 2)
+            else:
+                return round(self.weight * 0.2, 2)  # Lower blood sugar level for healthy weight/BMI
+        return None
 
     def calculate_bmi(self):
         """Calculate and return the BMI if height and weight are available."""
@@ -129,6 +141,7 @@ class Vitals(models.Model):
     def save(self, *args, **kwargs):
         """Automatically calculate BMI before saving."""
         self.bmi = self.calculate_bmi()
+        self.blood_sugar_level = self.calculate_blood_sugar()  # Calculate blood sugar as well
         super().save(*args, **kwargs)
 
 

@@ -39,7 +39,11 @@ class AppointmentTestsAdmin(admin.ModelAdmin):
 
 @admin.register(Vitals)
 class VitalsAdmin(admin.ModelAdmin):
-    list_display = ('appointment', 'blood_pressure', 'heart_rate', 'respiratory_rate', 'oxygen_saturation')
+    list_display = (
+        'appointment', 'blood_pressure', 'heart_rate', 'respiratory_rate', 
+        'oxygen_saturation', 'temperature', 'height', 'weight', 'blood_sugar_level', 
+        'bmi', 'recorded_at', 'recorded_by'
+    )
     search_fields = ('appointment__patient__first_name', 'appointment__patient__last_name')
     list_filter = ('appointment__appointment_date',)
     raw_id_fields = ('appointment',)
@@ -49,3 +53,4 @@ class VitalsAdmin(admin.ModelAdmin):
         """Optimize query to prefetch related appointment and patient."""
         queryset = super().get_queryset(request)
         return queryset.select_related('appointment__patient')
+
