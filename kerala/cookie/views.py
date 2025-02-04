@@ -15,6 +15,31 @@ import logging  # Adding logging to debug
 class CookieVerification(APIView):
     permission_classes = [AllowAny]
     authentication_classes = [TokenAuthentication]
+    # def get(self, request, *args, **kwargs):  # Change to GET request
+    #     token = request.headers.get('Authorization')
+    #     username = request.GET.get('username')  # Get username from query parameters
+
+    #     if not username or not token:
+    #         return Response({'error': 'Username or Token is missing.'}, status=400)
+
+    #     try:
+    #         user = User.objects.get(username=username)
+    #         if user.auth_token and user.auth_token.key == token.split(" ")[1]:
+    #             response = JsonResponse({'message': 'Cookie verification successful!'}, status=200)
+    #             response.set_cookie(
+    #                 'token', token, httponly=True, secure=request.is_secure(),
+    #                 max_age=60 * 60 * 24 * 30, path='/'
+    #             )
+    #             return response
+    #         else:
+    #             raise AuthenticationFailed('Invalid token.')
+
+    #     except User.DoesNotExist:
+    #         return Response({'error': 'User does not exist.'}, status=404)
+    #     except AuthenticationFailed as e:
+    #         return Response({'error': str(e)}, status=401)
+    #     except Exception as e:
+    #         return Response({'error': str(e)}, status=500)
 
     def post(self, request, *args, **kwargs):
         # Getting the token from the Authorization header
@@ -41,7 +66,7 @@ class CookieVerification(APIView):
                 
                 # Set the token as a cookie for subsequent requests
                 response.set_cookie(
-                    'auth_token', 
+                    'token', 
                     token, 
                     httponly=True,  # Prevent client-side JavaScript access
                     secure=True if request.is_secure() else False,  # Adjust based on environment
@@ -85,6 +110,8 @@ from django.http import JsonResponse
 from users.models import User
 from cookie.models import Cookie
 from datetime import datetime
+import logging
+from django.utils import timezone
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -94,66 +121,67 @@ class CheckCookie(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get(self, request, *args, **kwargs):
-        # Log the incoming request data for debugging
         logger.info("Received request to check cookie validity.")
-        logger.info(f"Request headers: {request.headers}")
+        logger.info(f"Request Headers: {request.headers}")
 
-        # Retrieve the token from localStorage (sent in the Authorization header)
-        token = request.headers.get('Authorization', '').split(' ')[-1]
-        logger.info(f"Retrieved token from headers: {token}")
+        # Extract headers
+        auth_header = request.headers.get('Authorization', '')
+        username = request.headers.get('Username', '').strip()
+        csrf_token = request.headers.get('X-CSRFToken', '')
 
-        # Retrieve the username from localStorage (sent as a custom header)
-        username = request.headers.get('Username')
-        logger.info(f"Retrieved username from headers: {username}")
+        # Validate token format
+        if not auth_header.startswith('Token '):
+            logger.warning("Invalid or missing Authorization header format.")
+            return Response({'error': 'Invalid Authorization header format.'}, status=400)
 
-        # Retrieve the CSRF token (if required for protection)
-        csrf_token = request.headers.get('X-CSRFToken')
-        logger.info(f"Retrieved CSRF token: {csrf_token}")
+        token = auth_header.split('Token ')[-1].strip()
+        logger.info(f"Extracted Token: {token if token else 'None'}")
+        logger.info(f"Extracted Username: {username if username else 'None'}")
+        logger.info(f"Extracted CSRF Token: {csrf_token if csrf_token else 'None'}")
 
-        # Check if the token is missing
+        # Validate presence of username and token
         if not token:
-            logger.warning("No auth_token in Authorization header.")
-            return Response({'error': 'No auth_token in Authorization header.'}, status=400)
-        
-        # Check if the username is missing
+            return Response({'error': 'Missing auth token in headers.'}, status=400)
         if not username:
-            logger.warning("No username in request header.")
-            return Response({'error': 'No username in request header.'}, status=400)
-        
-        try:
-            # Fetch the user based on the username (which should exist in the User model)
-            user = User.objects.get(username=username)
-            logger.info(f"User found: {user.username}")
+            return Response({'error': 'Missing username in headers.'}, status=400)
 
-            # Check if the user has a valid token in the cookie
+        try:
+            # Fetch user
+            user = User.objects.get(username=username)
+            logger.info(f"User Found: {user.username}")
+
+            # Fetch valid cookie token
             cookie_entry = Cookie.objects.filter(user=user, token=token, is_valid=True).first()
-            
+
             if not cookie_entry:
-                logger.warning(f"Token for user {username} not found in cookie records or expired.")
-                return Response({'error': 'Token not found in cookie records or expired.'}, status=401)
-            
-            # Ensure both datetimes are timezone-aware before comparing
+                logger.warning(f"Token for user {username} not found or expired.")
+                return Response({'error': 'Token not found or expired.'}, status=401)
+
+            # Ensure expires_at is timezone-aware
             if cookie_entry.expires_at and timezone.is_naive(cookie_entry.expires_at):
-                # Convert expires_at to timezone-aware datetime if it's naive
                 cookie_entry.expires_at = timezone.make_aware(cookie_entry.expires_at)
-            
-            # Compare the token expiration time
+
+            # Compare expiration time
             if cookie_entry.expires_at < timezone.now():
-                # Token has expired
                 cookie_entry.is_valid = False
                 cookie_entry.save()
                 logger.warning(f"Token for user {username} has expired. Logging out.")
+                return JsonResponse({'message': 'Token expired. Logging out.'}, status=401)
 
-                # Log the user out by redirecting to logout endpoint
-                return JsonResponse({'message': 'Token expired. Logging out.'}, status=401, safe=False)
+            # Validate CSRF token
+            expected_csrf_token = request.COOKIES.get('csrftoken', None)
+            if expected_csrf_token and expected_csrf_token != csrf_token:
+                logger.warning("CSRF token mismatch.")
+                return Response({'error': 'CSRF token mismatch.'}, status=403)
 
-            # If everything is valid, return success
             logger.info(f"Token for user {username} is valid.")
-            return JsonResponse({'message': 'Cookie is valid.'}, status=200)
+            return JsonResponse({'message': 'Cookie is valid.', 'username': username}, status=200)
 
         except User.DoesNotExist:
-            logger.error(f"User with username {username} does not exist.")
+            logger.error(f"User {username} does not exist.")
             return Response({'error': 'User does not exist.'}, status=404)
+
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")
             return Response({'error': str(e)}, status=500)
+

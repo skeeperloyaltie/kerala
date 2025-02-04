@@ -115,7 +115,6 @@ class CreateAppointmentView(APIView):
 
 
 
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -142,3 +141,96 @@ class AppointmentListView(APIView):
         serializer = AppointmentSerializer(appointments, many=True)
         return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
 
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import Vitals, Appointment
+from .serializers import VitalsSerializer
+
+import logging
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from .models import Vitals
+from .serializers import VitalsSerializer
+
+# Set up logger
+logger = logging.getLogger(__name__)
+
+class VitalsAPIView(APIView):
+    """
+    API view to create, update, and retrieve vitals for an appointment.
+    Only doctors and receptionists can add/update vitals.
+    Fetching vitals is allowed for all authenticated users.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, appointment_id=None):
+        """
+        Retrieve vitals for a specific appointment.
+        """
+        logger.info(f"GET request received for appointment ID: {appointment_id}")
+        
+        try:
+            vitals = get_object_or_404(Vitals, appointment_id=appointment_id)
+            serializer = VitalsSerializer(vitals)
+            logger.info(f"Vitals retrieved successfully for appointment ID: {appointment_id}")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error retrieving vitals for appointment ID: {appointment_id}. Error: {str(e)}")
+            return Response({"error": "Vitals not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request):
+        """
+        Create vitals for an appointment. Only doctors and receptionists can add vitals.
+        """
+        logger.info(f"POST request received with data: {request.data}")
+        
+        if not request.user.is_authenticated or not (hasattr(request.user, 'doctor') or hasattr(request.user, 'receptionist')):
+            logger.warning(f"Unauthorized access attempt by user: {request.user.username}")
+            return Response({"error": "Only doctors and receptionists can add vitals."}, status=status.HTTP_403_FORBIDDEN)
+
+        appointment_id = request.data.get("appointment")
+
+        if Vitals.objects.filter(appointment_id=appointment_id).exists():
+            logger.warning(f"Vitals already exist for appointment ID: {appointment_id}")
+            return Response({"error": "Vitals for this appointment already exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = VitalsSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(recorded_by=request.user)  # Assign the user who recorded vitals
+            logger.info(f"Vitals created successfully for appointment ID: {appointment_id} by user: {request.user.username}")
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        logger.error(f"Invalid data received for vitals creation: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, appointment_id=None):
+        """
+        Update vitals for a given appointment. Only doctors and receptionists can update vitals.
+        """
+        logger.info(f"PATCH request received for appointment ID: {appointment_id} with data: {request.data}")
+        
+        if not request.user.is_authenticated or not (hasattr(request.user, 'doctor') or hasattr(request.user, 'receptionist')):
+            logger.warning(f"Unauthorized access attempt by user: {request.user.username}")
+            return Response({"error": "Only doctors and receptionists can update vitals."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            vitals = get_object_or_404(Vitals, appointment_id=appointment_id)
+            serializer = VitalsSerializer(vitals, data=request.data, partial=True)
+
+            if serializer.is_valid():
+                serializer.save(recorded_by=request.user)  # Update the user who modified vitals
+                logger.info(f"Vitals updated successfully for appointment ID: {appointment_id} by user: {request.user.username}")
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            logger.error(f"Invalid data received for vitals update: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Error updating vitals for appointment ID: {appointment_id}. Error: {str(e)}")
+            return Response({"error": "Vitals not found."}, status=status.HTTP_404_NOT_FOUND)

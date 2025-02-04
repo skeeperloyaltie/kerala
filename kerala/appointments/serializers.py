@@ -3,22 +3,17 @@ from .models import Appointment, Patient, AppointmentTests
 from users.models import Doctor, Receptionist
 
 
+from rest_framework import serializers
+from .models import Patient
+
 class PatientSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Patient model, including additional fields like illness, DOB, and contact details.
-    """
+    date_of_birth = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+
     class Meta:
         model = Patient
-        fields = [
-            "id",
-            "first_name",
-            "last_name",
-            "contact_number",
-            "email",
-            "date_of_birth",
-            "current_illness",
-            "age",
-        ]
+        fields = '__all__'
+
+
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -64,3 +59,21 @@ class AppointmentTestsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentTests
         fields = ["id", "appointment", "test_name", "result"]
+
+
+from rest_framework import serializers
+from .models import Appointment, Patient, AppointmentTests, Vitals
+
+class VitalsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vitals
+        fields = '__all__'
+
+    def validate(self, data):
+        """
+        Ensure that an appointment can only have one vitals record.
+        """
+        appointment = data.get('appointment')
+        if Vitals.objects.filter(appointment=appointment).exists():
+            raise serializers.ValidationError("Vitals for this appointment already exist.")
+        return data

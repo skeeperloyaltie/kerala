@@ -10,7 +10,7 @@ class Cookie(models.Model):
     login_time = models.DateTimeField(default=timezone.now)  # Default to the current time
     expires_at = models.DateTimeField()  # Expiration timestamp
     is_valid = models.BooleanField(default=True)  # Whether the cookie is still valid
-    # login_time = models.DateTimeField(null=True, blank=True)  # Optional field
+    login_time = models.DateTimeField(null=True, blank=True)  # Optional field
     user_type = models.CharField(max_length=50, null=True, blank=True)  # Optional field
 
     def __str__(self):
@@ -19,5 +19,5 @@ class Cookie(models.Model):
     def save(self, *args, **kwargs):
         # Ensure expiration date is set
         if not self.expires_at:
-            self.expires_at = self.login_time + timedelta(days=30)  # Default expiration is 30 days
+            self.expires_at = self.login_time + timedelta(minutes=300)  # Default expiration is 30 days
         super().save(*args, **kwargs)

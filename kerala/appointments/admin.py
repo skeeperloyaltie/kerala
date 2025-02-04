@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Appointment, Patient, AppointmentTests
+from .models import Appointment, Patient, AppointmentTests, Vitals
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'contact_number', 'email', 'date_of_birth', 'get_status')
     search_fields = ('first_name', 'last_name', 'contact_number', 'email')
-    list_filter = ('date_of_birth',)  # Remove 'status' here
+    list_filter = ('date_of_birth',)
     ordering = ('last_name', 'first_name')
 
     def get_status(self, obj):
@@ -36,3 +36,16 @@ class AppointmentTestsAdmin(admin.ModelAdmin):
     list_display = ('appointment', 'temperature', 'height', 'weight', 'blood_pressure')
     search_fields = ('appointment__patient__first_name', 'appointment__patient__last_name')
     raw_id_fields = ('appointment',)
+
+@admin.register(Vitals)
+class VitalsAdmin(admin.ModelAdmin):
+    list_display = ('appointment', 'blood_pressure', 'heart_rate', 'respiratory_rate', 'oxygen_saturation')
+    search_fields = ('appointment__patient__first_name', 'appointment__patient__last_name')
+    list_filter = ('appointment__appointment_date',)
+    raw_id_fields = ('appointment',)
+    ordering = ('-appointment__appointment_date',)
+
+    def get_queryset(self, request):
+        """Optimize query to prefetch related appointment and patient."""
+        queryset = super().get_queryset(request)
+        return queryset.select_related('appointment__patient')
