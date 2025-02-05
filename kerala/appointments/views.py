@@ -113,6 +113,37 @@ class CreateAppointmentView(APIView):
         )
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from users.models import Doctor
+from .serializers import DoctorSerializer  # Ensure you have a serializer for doctors
+
+import logging
+
+# Set up the logger
+logger = logging.getLogger(__name__)
+
+class DoctorListView(APIView):
+    """
+    API view to fetch the list of available doctors.
+    Only authenticated users can access this endpoint.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieve the list of doctors.
+        """
+        logger.info(f"User {request.user.id} requested the list of doctors.")
+
+        doctors = Doctor.objects.all()
+        serializer = DoctorSerializer(doctors, many=True)
+
+        logger.info(f"Fetched {len(doctors)} doctors.")
+
+        return Response({"doctors": serializer.data}, status=status.HTTP_200_OK)
 
 
 from rest_framework.views import APIView

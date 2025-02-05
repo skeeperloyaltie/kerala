@@ -266,7 +266,7 @@ $('#otpForm').submit(function (e) {
       console.log('OTP Verification Response:', response);
 
       // Store session data in localStorage
-      localStorage.setItem('user_type', response.user_type);
+      //localStorage.setItem('user_type', response.user_type);
       localStorage.setItem('username', username);
       localStorage.setItem('token', response.token);
 
@@ -286,7 +286,7 @@ $('#otpForm').submit(function (e) {
           success: function (cookieResponse) {
             console.log('Cookie Verification Response:', cookieResponse);
             showNotification(cookieResponse.message, 'success');
-            redirectToDashboard(response.user_type);
+            redirectToDashboard(response.user_type);  // Handle redirection after successful login
           },
           error: function (xhr) {
             console.error('Cookie Verification Error:', xhr.responseJSON);

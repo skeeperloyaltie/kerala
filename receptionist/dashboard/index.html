@@ -472,37 +472,52 @@
               <form id="vitalsForm">
                   <div class="mb-3">
                       <label for="modalBloodPressure">Blood Pressure</label>
+                      <div class="input-group">
+
                       <input type="text" id="modalBloodPressure" class="form-control">
                       <div class="input-group-append">
                         <div class="input-group-text">mmHg</div> <!-- Blood Pressure unit -->
                       </div>
+                      </div>
                   </div>
                   <div class="mb-3">
                       <label for="modalHeartRate">Heart Rate</label>
+                      <div class="input-group">
+
                       <input type="text" id="modalHeartRate" class="form-control">
                       <div class="input-group-append">
                         <div class="input-group-text">bpm</div> <!-- Heart rate in beats per minute -->
                       </div>
+                      </div>
                   </div>
                   <div class="mb-3">
                       <label for="modalTemperature">Temperature</label>
+                      <div class="input-group">
+
                       <input type="text" id="modalTemperature" class="form-control">
                       <div class="input-group-append">
                         <div class="input-group-text">°C</div> <!-- Temperature unit in Celsius -->
                       </div>
+                      </div>
                   </div>
                   <div class="mb-3">
                       <label for="modalRespiratoryRate">Respiratory Rate</label>
+                      <div class="input-group">
+
                       <input type="text" id="modalRespiratoryRate" class="form-control">
                       <div class="input-group-append">
                         <div class="input-group-text">breaths/min</div> <!-- Respiratory rate per minute -->
                       </div>
+                      </div>
                   </div>
                   <div class="mb-3">
                       <label for="modalOxygenSaturation">Oxygen Saturation</label>
+                      <div class="input-group">
+
                       <input type="text" id="modalOxygenSaturation" class="form-control">
                       <div class="input-group-append">
                         <div class="input-group-text">%</div> <!-- Oxygen saturation in percentage -->
+                      </div>
                       </div>
                   </div>
                   <div class="mb-3">
@@ -634,7 +649,7 @@ function logoutUser() {
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          window.location.href = 'http://127.0.0.1:8000/login/';
+          window.location.href = 'http://127.0.0.1/';
       },
       error: function(xhr, status, error) {
           console.error('Logout error:', xhr.responseText);
@@ -666,12 +681,12 @@ function fetchAppointments(status) {
   if (endDate) url += `&end_date=${endDate}`;
 
   $.ajax({
-      url: url, // Correct endpoint with filters applied
+      url: url, 
       type: 'GET',
       headers: headers,
       success: function (response) {
           console.log(`Appointments for ${status}:`, response);
-          populateAppointmentsTable(status, response.appointments); // Populate the respective table
+          populateAppointmentsTable(status, response.appointments);
       },
       error: function (xhr, status, error) {
           console.error(`Error fetching ${status} appointments:`, error);
@@ -679,153 +694,161 @@ function fetchAppointments(status) {
   });
 }
 
-  function populateAppointmentsTable(status, appointments) {
-    let tbodyId = `${status}-tbody`;
-    let tbody = document.getElementById(tbodyId);
-    if (!tbody) {
-        console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
-        return;
-    }
-    tbody.innerHTML = ""; // Clear existing rows
+function populateAppointmentsTable(status, appointments) {
+  let tbodyId = `${status}-tbody`;
+  let tbody = document.getElementById(tbodyId);
+  if (!tbody) {
+      console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
+      return;
+  }
+  tbody.innerHTML = ""; // Clear existing rows
 
-    // Grouping by doctor for the count of patients per doctor
-    const doctorCount = {};
+  const doctorCount = {};
 
-    appointments.forEach((appointment, index) => {
-        // Check doctor count
-        const doctorName = `${appointment.doctor.first_name} ${appointment.doctor.last_name}`;
-        doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
+  appointments.forEach((appointment, index) => {
+      // Get doctor details correctly
+      let doctor = appointment.doctor || {}; 
+      let doctorName = doctor.first_name && doctor.last_name ? `${doctor.first_name} ${doctor.last_name}` : "Unknown Doctor";
+      let doctorAge = doctor.age || "N/A"; 
+      let doctorSpecialization = doctor.specialization || "N/A";
 
-        let row = document.createElement("tr");
-        let numberCell = document.createElement("td");
-        numberCell.textContent = index + 1;
-        row.appendChild(numberCell);
+      // Track patients per doctor
+      doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
 
-        let patientCell = document.createElement("td");
-        patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
-        row.appendChild(patientCell);
+      let row = document.createElement("tr");
 
-        let ageCell = document.createElement("td");
-        ageCell.textContent = appointment.patient.age || "N/A"; // Handle missing age
-        row.appendChild(ageCell);
+      row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${appointment.patient.first_name} ${appointment.patient.last_name}</td>
+          <td>${appointment.patient.age || "N/A"}</td>
+          <td>${appointment.reason || "N/A"}</td>
+          <td>${appointment.status || "N/A"}</td>
+          <td>${doctorName} (${doctorSpecialization})</td>
+          <td>${doctorAge} years</td>
+          <td>
+              ${getActionButton(appointment.status)}
+          </td>
+      `;
 
-        let reasonCell = document.createElement("td");
-        reasonCell.textContent = appointment.reason || "N/A"; // Handle missing reason
-        row.appendChild(reasonCell);
-
-        let statusCell = document.createElement("td");
-        statusCell.textContent = appointment.status || "N/A"; // Handle missing status
-        row.appendChild(statusCell);
-
-        let doctorCell = document.createElement("td");
-        doctorCell.textContent = doctorName;
-        row.appendChild(doctorCell);
-
-        // Action Buttons Based on Status
-        let actionsCell = document.createElement("td");
-        let actionButtonHTML = '';
-        switch (appointment.status) {
-            case 'Waiting':
-                actionButtonHTML = `<button class="btn btn-success btn-sm">Start Consulting</button>`;
-                break;
-            case 'Scheduled':
-                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-                break;
-            case 'Pending':
-                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-                break;
-            case 'Cancelled':
-                actionButtonHTML = `<button class="btn btn-primary btn-sm">Update</button>`;
-                break;
-            case 'Completed':
-                actionButtonHTML = `<button class="btn btn-info btn-sm">Review</button>`;
-                break;
-            default:
-                actionButtonHTML = `<button class="btn btn-secondary btn-sm">No Action</button>`;
-                break;
-        }
-        actionsCell.innerHTML = actionButtonHTML;
-        row.appendChild(actionsCell);
-        tbody.appendChild(row);
-    });
-
-    // Displaying doctor patient count (can be added in the UI dynamically as needed)
-    console.log("Doctor-wise Patient Count for " + status + ": ", doctorCount);
-}
-
-// Call the fetchAppointments function for each status when the page loads
-  $(document).ready(function () {
-      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
-      statuses.forEach((status) => {
-          fetchAppointments(status);
-      });
+      tbody.appendChild(row);
   });
-  function applyFilters() {
-    const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
-    statuses.forEach((status) => {
-        fetchAppointments(status); // Re-fetch appointments with the applied filters
-    });
+
+  console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
 
-  function addAppointment() {
-    // Collect appointment details
-    const appointmentData = {
-        patient: {
-            first_name: $("#firstName").val().trim(),
-            last_name: $("#lastName").val().trim(),
-            contact_number: $("#contactNumber").val().trim(),
-            date_of_birth: $("#dateOfBirth").val(),
-        },
-        appointment_date: $("#appointmentDate").val(),
-        doctor: $("#doctor").val(),
-        notes: $("#notes").val().trim(),
-        is_emergency: $("#isEmergency").is(":checked"),  // Boolean check
-    };
-    // Validate required fields
-    if (!appointmentData.patient.first_name || !appointmentData.patient.last_name || !appointmentData.patient.contact_number || !appointmentData.appointment_date || !appointmentData.doctor) {
-        alert("Please fill in all required fields.");
-        return;
-    }
-    const headers = getAuthHeaders();
-    // Submit appointment data first
-    $.ajax({
-        url: 'http://127.0.0.1:8000/appointments/create/',
-        type: 'POST',
-        headers: headers,
-        data: JSON.stringify(appointmentData),
-        contentType: 'application/json',
-        success: function(response) {
-            console.log('✅ Appointment created successfully:', response);
-            const appointmentId = response.appointment.id;  // Get the appointment ID from response
-            
-            // Show the Vitals modal and pass the appointment ID
-            $("#vitalsModal").modal("show");
-            $("#vitalsModal").data("appointmentId", response.appointment.id);  // Store appointment ID in modal
-            // id is set correctly, lets give an error if its invalid 
-
-            if (!appointmentId) {
-                alert("Appointment ID is missing. Please try again.");
-                return;
-            }
-            
-            // If vitals are required and emergency, submit them separately (can be done later in the modal form)
-            if ($("#isEmergency").is(":checked")) {
-                // Optionally you can directly trigger the vitals form submission
-                // submitVitals(appointmentId); 
-            }
-
-            // Hide the form and reset fields
-            hideAppointmentForm();
-            // Refresh the "Waiting" tab
-            $("#appointmentTabs a[href='#Scheduled']").tab("show");
-            fetchAppointments("Scheduled");
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Error creating appointment:', error);
-            alert("Failed to create appointment. Please check the details and try again.");
-        }
-    });
+function getActionButton(status) {
+  switch (status) {
+      case 'Waiting':
+          return `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+      case 'Scheduled':
+      case 'Pending':
+          return `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+      case 'Cancelled':
+          return `<button class="btn btn-primary btn-sm">Update</button>`;
+      case 'Completed':
+          return `<button class="btn btn-info btn-sm">Review</button>`;
+      default:
+          return `<button class="btn btn-secondary btn-sm">No Action</button>`;
+  }
 }
+
+// Call fetchAppointments for each status on page load
+$(document).ready(function () {
+  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
+  statuses.forEach(fetchAppointments);
+});
+
+function applyFilters() {
+  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
+  statuses.forEach(fetchAppointments);
+}
+
+function loadDoctors() {
+  const headers = getAuthHeaders(); // Ensure auth headers are set
+  $.ajax({
+      url: "http://127.0.0.1:8000/appointment/doctors/list/",
+      type: "GET",
+      headers: headers,
+      success: function (response) {
+          const doctorSelect = $("#doctor");
+          doctorSelect.empty(); // Clear existing options
+          doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+
+          response.doctors.forEach(doctor => {
+              doctorSelect.append(
+                  `<option value="${doctor.id}">
+                      Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialty}
+                  </option>`
+              );
+          });
+      },
+      error: function (xhr, status, error) {
+          console.error("Error fetching doctors:", error);
+      }
+  });
+}
+
+// Call function when the page loads
+$(document).ready(function () {
+  loadDoctors();
+});
+
+
+function addAppointment() {
+  const doctorId = $("#doctor").val(); // Ensure correct doctor ID is selected
+  if (!doctorId) {
+      alert("Please select a doctor for this appointment.");
+      return;
+  }
+
+  // Collect appointment details
+  const appointmentData = {
+      patient: {
+          first_name: $("#firstName").val().trim(),
+          last_name: $("#lastName").val().trim(),
+          contact_number: $("#contactNumber").val().trim(),
+          date_of_birth: $("#dateOfBirth").val(),
+      },
+      appointment_date: $("#appointmentDate").val(),
+      doctor: doctorId, // Ensure correct doctor ID is passed
+      notes: $("#notes").val().trim(),
+      is_emergency: $("#isEmergency").is(":checked"),
+  };
+
+  // Validate required fields
+  if (!appointmentData.patient.first_name || !appointmentData.patient.last_name || 
+      !appointmentData.patient.contact_number || !appointmentData.appointment_date) {
+      alert("Please fill in all required fields.");
+      return;
+  }
+
+  const headers = getAuthHeaders();
+  $.ajax({
+      url: "http://127.0.0.1:8000/appointments/create/",
+      type: "POST",
+      headers: headers,
+      data: JSON.stringify(appointmentData),
+      contentType: "application/json",
+      success: function(response) {
+          console.log("✅ Appointment created successfully:", response);
+          const appointmentId = response.appointment.id;
+          
+          if (!appointmentId) {
+              alert("Appointment ID is missing. Please try again.");
+              return;
+          }
+
+          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          hideAppointmentForm();
+          fetchAppointments("Scheduled"); // Refresh Scheduled appointments
+      },
+      error: function(xhr, status, error) {
+          console.error("❌ Error creating appointment:", error);
+          alert("Failed to create appointment. Please try again.");
+      }
+  });
+}
+
 
 
 function saveVitals() {

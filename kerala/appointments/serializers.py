@@ -67,11 +67,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "notes",
         ]
         read_only_fields = ["id", "status"]  # ID and status should not be writable
+        
+        
+from rest_framework import serializers
 
 class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
-        fields = ['first_name', 'last_name', 'specialty', 'contact_number']
+        fields = ['id', 'first_name', 'last_name', 'specialization']
+
         
         
 
