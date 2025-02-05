@@ -4,7 +4,7 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Kerala | Doctors </title>
+    <title>Kerala | Receptionist </title>
     <!-- plugins:css -->
     <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="assets/vendors/ti-icons/css/themify-icons.css">
@@ -18,6 +18,11 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- End layout styles -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
   </head>
   <body>
     <div class="container-scroller">
@@ -116,8 +121,8 @@
 
       <!-- Logout -->
       <li class="nav-item nav-logout d-none d-lg-block">
-        <a class="nav-link" href="#">
-          <i class="mdi mdi-power"></i>
+        <a class="nav-link" href="#" id="logoutButton">
+          <i class="mdi mdi-power"> Logout</i>
         </a>
       </li>
     </ul>
@@ -126,10 +131,6 @@
     </button>
   </div>
 </nav>
-
-<div id="loginPrompt" style="display:none;">
-  <p>Your session has expired. Please <a href="/profiling/login/login.html">login</a> again.</p>
-</div>
       <!-- partial -->
 <div class="container-fluid page-body-wrapper">
   <!-- partial:partials/_sidebar.html -->
@@ -160,10 +161,10 @@
           <i class="mdi mdi-account-group menu-icon"></i>
         </a>
       </li>
+ 
       <li class="nav-item">
         <a class="nav-link" href="appointments.html">
-          <span class="menu-title"><button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-          </span>
+          <span class="menu-title">Appointments</span>
           <i class="mdi mdi-calendar-check menu-icon"></i>
         </a>
       </li>
@@ -228,7 +229,7 @@
         </ul>
       </nav>
     </div>
-
+   
     <div class="row">
       <!-- Tabbed Table Section -->
       <div class="col-md-12 stretch-card">
@@ -241,6 +242,9 @@
               </li>
               <li class="nav-item">
                 <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab" aria-controls="pending" aria-selected="false">Pending</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
@@ -265,11 +269,12 @@
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Reason</th>
+                        <th>Doctor Name</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="waiting-tbody"></tbody>
+                    <tbody id="Waiting-tbody"></tbody>
                   </table>
                 </div>
               </div>
@@ -286,15 +291,39 @@
                         <th>Age</th>
                         <th>Reason</th>
                         <th>Scheduled Time</th>
+                        <th>Doctor Name</th>
+                        <th>Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="scheduled-tbody"></tbody>
+                    <tbody id="Scheduled-tbody"></tbody>
                   </table>
                 </div>
               </div>
     
-              <!-- Repeat similar structure for other tabs (Active, Completed, Canceled) -->
+              <!-- Pending Tab -->
+              <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Patient Name</th>
+                        <th>Age</th>
+                        <th>Reason</th>
+                        <th>Scheduled Time</th>
+                        <th>Doctor Name</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="Pending-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+    
+              <!-- Active Tab -->
               <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -306,14 +335,16 @@
                         <th>Age</th>
                         <th>Reason</th>
                         <th>Status</th>
+                        <th>Doctor Name</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="active-tbody"></tbody>
+                    <tbody id="Active-tbody"></tbody>
                   </table>
                 </div>
               </div>
     
+              <!-- Completed Tab -->
               <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -325,6 +356,7 @@
                         <th>Age</th>
                         <th>Reason</th>
                         <th>Status</th>
+                        <th>Doctor Name</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -333,6 +365,7 @@
                 </div>
               </div>
     
+              <!-- Canceled Tab -->
               <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="canceled-tab">
                 <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -344,10 +377,11 @@
                         <th>Age</th>
                         <th>Reason</th>
                         <th>Status</th>
+                        <th>Doctor Name</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="canceled-tbody"></tbody>
+                    <tbody id="Cancelled-tbody"></tbody>
                   </table>
                 </div>
               </div>
@@ -356,96 +390,150 @@
         </div>
       </div>
     </div>
+    
 
-    <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
-      <div class="card-body">
-        <h5 class="card-title">Create New Appointment</h5>
-        <form id="appointmentForm">
+    <!-- Appointment Form -->
+<div id="appointmentFormContainer" class="card mt-3" style="display: none;">
+  <div class="card-body">
+      <h5 class="card-title">Create New Appointment</h5>
+      <form id="appointmentForm">
           <div class="row">
-            <div class="col-md-4">
-              <label for="firstName">First Name</label>
-              <input type="text" id="firstName" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label for="lastName">Last Name</label>
-              <input type="text" id="lastName" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label for="contactNumber">Contact Number</label>
-              <input type="text" id="contactNumber" class="form-control" required>
-            </div>
+              <div class="col-md-4">
+                  <label for="firstName">First Name</label>
+                  <input type="text" id="firstName" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                  <label for="lastName">Last Name</label>
+                  <input type="text" id="lastName" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                  <label for="contactNumber">Contact Number</label>
+                  <input type="text" id="contactNumber" class="form-control" required>
+              </div>
           </div>
-    
+
           <div class="row mt-3">
-            <div class="col-md-4">
-              <label for="dateOfBirth">Date of Birth</label>
-              <input type="date" id="dateOfBirth" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label for="age">Age</label>
-              <input type="number" id="age" class="form-control" readonly>
-            </div>
-            <div class="col-md-4">
-              <label for="currentIllness">Current Illness</label>
-              <input type="text" id="currentIllness" class="form-control">
-            </div>
+              <div class="col-md-4">
+                  <label for="dateOfBirth">Date of Birth</label>
+                  <input type="date" id="dateOfBirth" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                  <label for="age">Age</label>
+                  <input type="number" id="age" class="form-control" readonly>
+              </div>
+              <div class="col-md-4">
+                  <label for="currentIllness">Current Illness</label>
+                  <input type="text" id="currentIllness" class="form-control">
+              </div>
           </div>
-    
+
           <div class="row mt-3">
-            <div class="col-md-4">
-              <label for="appointmentDate">Appointment Date</label>
-              <input type="datetime-local" id="appointmentDate" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label for="doctor">Doctor</label>
-              <select id="doctor" class="form-control" required>
-                <option value="{{ logged_in_user_default_doctor.id }}" selected>{{ logged_in_user_default_doctor.name }}</option>
-                <!-- Dynamically populate doctors from the API -->
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="notes">Notes</label>
-              <input type="text" id="notes" class="form-control">
-            </div>
+              <div class="col-md-4">
+                  <label for="appointmentDate">Appointment Date</label>
+                  <input type="datetime-local" id="appointmentDate" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                  <label for="doctor">Doctor</label>
+                  <select id="doctor" class="form-control" required>
+                      <option value="{{ logged_in_user_default_doctor.id }}" selected>
+                          {{ logged_in_user_default_doctor.name }}
+                      </option>
+                      <!-- Dynamically populate doctors -->
+                  </select>
+              </div>
+              <div class="col-md-4">
+                  <label for="notes">Notes</label>
+                  <input type="text" id="notes" class="form-control">
+              </div>
           </div>
+
           <div class="col-md-12 mt-3">
-            <label for="isEmergency">Is this an emergency?</label>
-            <input type="checkbox" id="isEmergency" class="form-check-input" onchange="toggleEmergencyVitals()">
+              <label for="isEmergency">Is this an emergency?</label>
+              <input type="checkbox" id="isEmergency" class="form-check-input">
           </div>
-        </div>
-  
-        <div class="row mt-3" id="vitalsFields" style="display: none;">
-          <div class="col-md-4">
-            <label for="bloodPressure">Blood Pressure</label>
-            <input type="text" id="bloodPressure" class="form-control">
-          </div>
-          <div class="col-md-4">
-            <label for="heartRate">Heart Rate</label>
-            <input type="text" id="heartRate" class="form-control">
-          </div>
-          <div class="col-md-4">
-            <label for="temperature">Temperature</label>
-            <input type="text" id="temperature" class="form-control">
-          </div>
-        </div>
-    
+
+
           <div class="mt-3">
-            <button type="button" class="btn btn-success" onclick="addAppointment()">Submit</button>
-            <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
+              <button type="button" class="btn btn-success" onclick="addAppointment()">Submit</button>
+              <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
           </div>
-        </form>
+      </form>
+      
+  </div>
+</div><!-- Vitals Modal -->
+<div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="vitalsModalLabel">Enter Patient Vitals</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form id="vitalsForm">
+                  <div class="mb-3">
+                      <label for="modalBloodPressure">Blood Pressure</label>
+                      <input type="text" id="modalBloodPressure" class="form-control">
+                      <div class="input-group-append">
+                        <div class="input-group-text">mmHg</div> <!-- Blood Pressure unit -->
+                      </div>
+                  </div>
+                  <div class="mb-3">
+                      <label for="modalHeartRate">Heart Rate</label>
+                      <input type="text" id="modalHeartRate" class="form-control">
+                      <div class="input-group-append">
+                        <div class="input-group-text">bpm</div> <!-- Heart rate in beats per minute -->
+                      </div>
+                  </div>
+                  <div class="mb-3">
+                      <label for="modalTemperature">Temperature</label>
+                      <input type="text" id="modalTemperature" class="form-control">
+                      <div class="input-group-append">
+                        <div class="input-group-text">°C</div> <!-- Temperature unit in Celsius -->
+                      </div>
+                  </div>
+                  <div class="mb-3">
+                      <label for="modalRespiratoryRate">Respiratory Rate</label>
+                      <input type="text" id="modalRespiratoryRate" class="form-control">
+                      <div class="input-group-append">
+                        <div class="input-group-text">breaths/min</div> <!-- Respiratory rate per minute -->
+                      </div>
+                  </div>
+                  <div class="mb-3">
+                      <label for="modalOxygenSaturation">Oxygen Saturation</label>
+                      <input type="text" id="modalOxygenSaturation" class="form-control">
+                      <div class="input-group-append">
+                        <div class="input-group-text">%</div> <!-- Oxygen saturation in percentage -->
+                      </div>
+                  </div>
+                  <div class="mb-3">
+                      <label for="modalWeight">Weight</label>
+                      <div class="input-group">
+                        <input type="text" id="modalWeight" class="form-control" placeholder="Enter weight">
+                        <div class="input-group-append">
+                          <div class="input-group-text">kg</div> <!-- Weight unit in kilograms -->
+                        </div>
+                      </div>
+                  </div>
+                  <div class="mb-3">
+                      <label for="modalHeight">Height</label>
+                      <div class="input-group">
+                        <input type="text" id="modalHeight" class="form-control" placeholder="Enter height">
+                        <div class="input-group-append">
+                          <div class="input-group-text">cm</div> <!-- Height unit in centimeters -->
+                        </div>
+                      </div>
+                  </div>
+              </form>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" onclick="saveVitals()">Save Vitals</button>
+          </div>
       </div>
-    </div>
-    
-    <script>
-      // Calculate age based on date of birth
-      document.getElementById('dateOfBirth').addEventListener('change', function () {
-        const dob = new Date(this.value);
-        const age = new Date().getFullYear() - dob.getFullYear();
-        document.getElementById('age').value = age;
-      });
-    </script>
-    
+  </div>
+</div>
+
+
 
   <script>
     function showAppointmentForm() {
@@ -459,206 +547,247 @@
       $("#appointmentForm")[0].reset();  // Clear all form fields
   }
   
-  function saveVitals() {
-    const vitalsData = {
-      blood_pressure: $('#modalBloodPressure').val(),
-      heart_rate: $('#modalHeartRate').val(),
-      temperature: $('#modalTemperature').val(),
-    };
-  
-    // You can submit this data to the backend here
-    console.log('Vitals to save:', vitalsData);
-  
-    // Close the modal after saving
-    $('#vitalsModal').modal('hide');
-  }
-  
+    // Calculate age based on date of birth
+    document.getElementById('dateOfBirth').addEventListener('change', function () {
+      const dob = new Date(this.value);
+      const age = new Date().getFullYear() - dob.getFullYear();
+      document.getElementById('age').value = age;
+    });
   </script>
   
     
   </div>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 
 
   <script>
-    // Function to retrieve the CSRF token from the page's meta tag or cookie
-    function getCSRFToken() {
-      // Check if the CSRF token is present in a meta tag
-      const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-      if (csrfTokenMeta) {
-        return csrfTokenMeta.getAttribute('content');
-      }
-      // If the CSRF token is not found in the meta tag, try retrieving it from the cookie
-      const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
-      if (csrfCookie) {
-        return csrfCookie[1];
-      }
-      return null;  // Return null if no CSRF token is found
-    }
-  
-    // Function to handle session and local storage retrieval for headers
-    function getAuthHeaders() {
-      const token = localStorage.getItem('token');
-      const username = localStorage.getItem('username');
-      const csrftoken = getCSRFToken();  // Retrieve the CSRF token from meta tag or cookie
-  
-      // Log the values retrieved from localStorage and the CSRF token for debugging
-      console.log('Retrieved token from localStorage:', token);
-      console.log('Retrieved username from localStorage:', username);
-      console.log('Retrieved CSRF token:', csrftoken);
-  
-      if (token && username && csrftoken) {
-        // Log the headers being returned
-        const headers = {
-          'Authorization': 'Token ' + token,
-          'X-CSRFToken': csrftoken,  // Include CSRF token in headers
-          'Username': username       // Optionally include the username if needed
-        };
-        console.log('Generated headers:', headers); // Log the headers
-        return headers;
-      }
-  
-      // If no token, username, or CSRF token is found, log that no valid credentials were found
-      console.log('No token, username, or CSRF token found in localStorage');
-      return {};
-    }
-  
-    // Validate session data by making an AJAX request to the backend
-    function validateUserSession() {
-      const headers = getAuthHeaders();
-  
-      if (Object.keys(headers).length === 0) {
-        console.log('No headers found, user is not authenticated.');
-        return;
-      }
-  
-      // Send AJAX request to the validation endpoint
-      $.ajax({
-        url: 'http://127.0.0.1:8000/cookie/check/',  // Endpoint to check session validity
-        type: 'GET',
-        headers: headers,  // Pass the generated headers
-        success: function(response) {
-          console.log('Session validated successfully:', response);
-  
-          // If the session is valid, proceed
-          if (response.message === 'Cookie is valid.') {
-            console.log('User is logged in and session is valid.');
-          } else {
-            // If the session is invalid, log the user out
-            console.log('Session is invalid or expired. Logging out...');
-            logoutUser();
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error('Error in validating session:', error);
-          // You can handle error here (e.g., redirect user to login)
-        }
-      });
-    }
-  
-    // Function to log the user out
-    function logoutUser() {
-      // Make an AJAX request to the logout endpoint
-      $.ajax({
-        url: 'http://127.0.0.1:8000/users/logout/',  // Endpoint to log out
-        type: 'POST',  // Assuming logout uses POST
-        success: function(response) {
-          console.log('User logged out successfully:', response);
-          // Redirect to the login page or home page
-          window.location.href = 'http://127.0.0.1:8000/login/'; // Redirect to login page
-        },
-        error: function(xhr, status, error) {
-          console.error('Error in logging out:', error);
-          // Handle any errors that occur during logout (e.g., show a message to the user)
-        }
-      });
-    }
-  
-    // Call the validateUserSession function
-    validateUserSession();
+   // Function to retrieve CSRF token from meta tag or cookie
+function getCSRFToken() {
+  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+  if (csrfTokenMeta) {
+      return csrfTokenMeta.getAttribute('content');
+  }
+  const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
+  return csrfCookie ? csrfCookie[1] : null;
+}
 
-    function fetchAppointments(status) {
-      const headers = getAuthHeaders(); // Assuming you already have a function to handle authentication headers
-  
-      $.ajax({
-          url: `http://127.0.0.1:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
-          type: 'GET',
-          headers: headers,
-          success: function(response) {
-              console.log(`Appointments for ${status}:`, response);
-              populateAppointmentsTable(status, response.appointments); // Populate the respective table
-          },
-          error: function(xhr, status, error) {
-              console.error(`Error fetching ${status} appointments:`, error);
+// Function to retrieve authentication headers
+function getAuthHeaders() {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const username = sessionStorage.getItem('username') || localStorage.getItem('username');
+  const csrftoken = getCSRFToken();
+
+  if (token && username && csrftoken) {
+      return {
+          'Authorization': 'Token ' + token,
+          'X-CSRFToken': csrftoken,
+          'Username': username
+      };
+  }
+  console.warn('Missing authentication details.');
+  return {};
+}
+
+// Validate user session
+function validateUserSession() {
+  const headers = getAuthHeaders();
+
+  if (!headers['Authorization']) {
+      console.warn('No valid token. User is not authenticated.');
+      return;
+  }
+
+  $.ajax({
+      url: 'http://127.0.0.1:8000/cookie/check/',
+      type: 'GET',
+      headers: headers,
+      success: function(response) {
+          console.log('Session validation success:', response);
+          if (response.message !== 'Cookie is valid.') {
+              alert('Invalid session. Logging out.');
+              logoutUser();
           }
-      });
+      },
+      error: function(xhr, status, error) {
+          console.error('Error validating session:', xhr.responseText);
+          logoutUser();
+      }
+  });
+}
+
+// Logout function
+function logoutUser() {
+  const headers = getAuthHeaders();
+
+  if (!headers['Authorization']) {
+      console.error('No authentication token. Redirecting to login...');
+      window.location.href = 'http://localhost/';
+      return;
   }
-  
+
+  $.ajax({
+      url: 'http://127.0.0.1:8000/users/logout/',
+      type: 'POST',
+      headers: headers,
+      success: function(response) {
+          console.log('User logged out successfully:', response);
+          sessionStorage.clear();
+          localStorage.clear();
+          document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          window.location.href = 'http://127.0.0.1:8000/login/';
+      },
+      error: function(xhr, status, error) {
+          console.error('Logout error:', xhr.responseText);
+      }
+  });
+}
+
+// Attach logout event
+$(document).ready(function() {
+  $('#logoutButton').on('click', function(event) {
+      event.preventDefault();
+      logoutUser();
+  });
+});
+
+// Validate session on page load
+validateUserSession();
+
+function fetchAppointments(status) {
+  const headers = getAuthHeaders(); // Assuming you have this function for auth headers
+  const doctor = $("#doctorFilter").val(); // Get selected doctor from the filter
+  const startDate = $("#startDateFilter").val(); // Get start date from the filter
+  const endDate = $("#endDateFilter").val(); // Get end date from the filter
+
+  // Build the query parameters string
+  let url = `http://127.0.0.1:8000/appointments/list/?status=${status}`;
+  if (doctor) url += `&doctor=${doctor}`;
+  if (startDate) url += `&start_date=${startDate}`;
+  if (endDate) url += `&end_date=${endDate}`;
+
+  $.ajax({
+      url: url, // Correct endpoint with filters applied
+      type: 'GET',
+      headers: headers,
+      success: function (response) {
+          console.log(`Appointments for ${status}:`, response);
+          populateAppointmentsTable(status, response.appointments); // Populate the respective table
+      },
+      error: function (xhr, status, error) {
+          console.error(`Error fetching ${status} appointments:`, error);
+      }
+  });
+}
+
   function populateAppointmentsTable(status, appointments) {
-      let tbodyId = `${status}-tbody`; // e.g., 'waiting-tbody', 'scheduled-tbody'
-      let tbody = document.getElementById(tbodyId);
-      tbody.innerHTML = ""; // Clear existing rows
-  
-      appointments.forEach((appointment, index) => {
-          let row = document.createElement("tr");
-  
-          let numberCell = document.createElement("td");
-          numberCell.textContent = index + 1;
-          row.appendChild(numberCell);
-  
-          let patientCell = document.createElement("td");
-          patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
-          row.appendChild(patientCell);
-  
-          let ageCell = document.createElement("td");
-          ageCell.textContent = appointment.patient.age || "N/A"; // Handle cases where age might be missing
-          row.appendChild(ageCell);
-  
-          let reasonCell = document.createElement("td");
-          reasonCell.textContent = appointment.reason || "N/A"; // Handle cases where reason might be missing
-          row.appendChild(reasonCell);
-  
-          let statusCell = document.createElement("td");
-          statusCell.textContent = appointment.status || "N/A"; // Handle cases where status might be missing
-          row.appendChild(statusCell);
-  
-          let actionsCell = document.createElement("td");
-          // Add any action buttons like Edit or Delete here
-          actionsCell.innerHTML = `
-              <button class="btn btn-info btn-sm">Edit</button> 
-              <button class="btn btn-danger btn-sm">Delete</button>`;
-          row.appendChild(actionsCell);
-  
-          tbody.appendChild(row);
-      });
-  }
-  
-  // Call the fetchAppointments function for each status when the page loads
+    let tbodyId = `${status}-tbody`;
+    let tbody = document.getElementById(tbodyId);
+    if (!tbody) {
+        console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
+        return;
+    }
+    tbody.innerHTML = ""; // Clear existing rows
+
+    // Grouping by doctor for the count of patients per doctor
+    const doctorCount = {};
+
+    appointments.forEach((appointment, index) => {
+        // Check doctor count
+        const doctorName = `${appointment.doctor.first_name} ${appointment.doctor.last_name}`;
+        doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
+
+        let row = document.createElement("tr");
+        let numberCell = document.createElement("td");
+        numberCell.textContent = index + 1;
+        row.appendChild(numberCell);
+
+        let patientCell = document.createElement("td");
+        patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
+        row.appendChild(patientCell);
+
+        let ageCell = document.createElement("td");
+        ageCell.textContent = appointment.patient.age || "N/A"; // Handle missing age
+        row.appendChild(ageCell);
+
+        let reasonCell = document.createElement("td");
+        reasonCell.textContent = appointment.reason || "N/A"; // Handle missing reason
+        row.appendChild(reasonCell);
+
+        let statusCell = document.createElement("td");
+        statusCell.textContent = appointment.status || "N/A"; // Handle missing status
+        row.appendChild(statusCell);
+
+        let doctorCell = document.createElement("td");
+        doctorCell.textContent = doctorName;
+        row.appendChild(doctorCell);
+
+        // Action Buttons Based on Status
+        let actionsCell = document.createElement("td");
+        let actionButtonHTML = '';
+        switch (appointment.status) {
+            case 'Waiting':
+                actionButtonHTML = `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+                break;
+            case 'Scheduled':
+                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+                break;
+            case 'Pending':
+                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+                break;
+            case 'Cancelled':
+                actionButtonHTML = `<button class="btn btn-primary btn-sm">Update</button>`;
+                break;
+            case 'Completed':
+                actionButtonHTML = `<button class="btn btn-info btn-sm">Review</button>`;
+                break;
+            default:
+                actionButtonHTML = `<button class="btn btn-secondary btn-sm">No Action</button>`;
+                break;
+        }
+        actionsCell.innerHTML = actionButtonHTML;
+        row.appendChild(actionsCell);
+        tbody.appendChild(row);
+    });
+
+    // Displaying doctor patient count (can be added in the UI dynamically as needed)
+    console.log("Doctor-wise Patient Count for " + status + ": ", doctorCount);
+}
+
+// Call the fetchAppointments function for each status when the page loads
   $(document).ready(function () {
-      const statuses = ["waiting", "scheduled", "active", "Completed", "canceled"];
+      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
       statuses.forEach((status) => {
           fetchAppointments(status);
       });
   });
-  
-    
-    
+  function applyFilters() {
+    const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
+    statuses.forEach((status) => {
+        fetchAppointments(status); // Re-fetch appointments with the applied filters
+    });
+}
 
   function addAppointment() {
+    // Collect appointment details
     const appointmentData = {
         patient: {
-            first_name: $("#firstName").val(),
-            last_name: $("#lastName").val(),
-            contact_number: $("#contactNumber").val(),
+            first_name: $("#firstName").val().trim(),
+            last_name: $("#lastName").val().trim(),
+            contact_number: $("#contactNumber").val().trim(),
+            date_of_birth: $("#dateOfBirth").val(),
         },
         appointment_date: $("#appointmentDate").val(),
         doctor: $("#doctor").val(),
-        notes: $("#notes").val(),
+        notes: $("#notes").val().trim(),
+        is_emergency: $("#isEmergency").is(":checked"),  // Boolean check
     };
-
+    // Validate required fields
+    if (!appointmentData.patient.first_name || !appointmentData.patient.last_name || !appointmentData.patient.contact_number || !appointmentData.appointment_date || !appointmentData.doctor) {
+        alert("Please fill in all required fields.");
+        return;
+    }
     const headers = getAuthHeaders();
-
+    // Submit appointment data first
     $.ajax({
         url: 'http://127.0.0.1:8000/appointments/create/',
         type: 'POST',
@@ -667,13 +796,29 @@
         contentType: 'application/json',
         success: function(response) {
             console.log('✅ Appointment created successfully:', response);
+            const appointmentId = response.appointment.id;  // Get the appointment ID from response
+            
+            // Show the Vitals modal and pass the appointment ID
+            $("#vitalsModal").modal("show");
+            $("#vitalsModal").data("appointmentId", response.appointment.id);  // Store appointment ID in modal
+            // id is set correctly, lets give an error if its invalid 
+
+            if (!appointmentId) {
+                alert("Appointment ID is missing. Please try again.");
+                return;
+            }
+            
+            // If vitals are required and emergency, submit them separately (can be done later in the modal form)
+            if ($("#isEmergency").is(":checked")) {
+                // Optionally you can directly trigger the vitals form submission
+                // submitVitals(appointmentId); 
+            }
 
             // Hide the form and reset fields
             hideAppointmentForm();
-
-            // Shift to the "Waiting" tab and refresh it
-            $("#appointmentTabs a[href='#waiting']").tab('show');
-            fetchAppointments('waiting');
+            // Refresh the "Waiting" tab
+            $("#appointmentTabs a[href='#Scheduled']").tab("show");
+            fetchAppointments("Scheduled");
         },
         error: function(xhr, status, error) {
             console.error('❌ Error creating appointment:', error);
@@ -683,50 +828,65 @@
 }
 
 
+function saveVitals() {
+  // Ensure that the appointment ID is being set properly after appointment creation
+  const appointmentId = $("#vitalsModal").data("appointmentId");
+
+  // If appointmentId is not set, it means it was not properly initialized
+  if (!appointmentId) {
+      alert("Appointment ID is missing. Please try again.");
+      return;
+  }
+
+  // Collect vitals data from the modal fields
+  const vitalsData = {
+      appointment: appointmentId, // Include appointment ID in data
+      blood_pressure: $("#modalBloodPressure").val().trim(),
+      heart_rate: $("#modalHeartRate").val().trim(),
+      temperature: $("#modalTemperature").val().trim(),
+      respiratory_rate: $("#modalRespiratoryRate").val().trim(),
+      oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
+      weight: $("#modalWeight").val().trim(),
+      height: $("#modalHeight").val().trim(),
+  };
+
+  // Validate required vitals fields
+  if (!vitalsData.blood_pressure || !vitalsData.heart_rate || !vitalsData.temperature || !vitalsData.respiratory_rate || !vitalsData.oxygen_saturation || !vitalsData.weight || !vitalsData.height) {
+      alert("Please fill in all required vitals.");
+      return;
+  }
+
+  const headers = getAuthHeaders();
+
+  // Submit vitals data using POST request
+  $.ajax({
+      url: `http://127.0.0.1:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
+      type: 'POST',
+      headers: headers,
+      data: JSON.stringify(vitalsData),
+      contentType: 'application/json',
+      success: function(response) {
+          console.log('✅ Vitals saved successfully:', response);
+          // Close the modal after saving vitals
+          $("#vitalsModal").modal("hide");
+          alert("Vitals saved successfully.");
+      },
+      error: function(xhr, status, error) {
+          console.error('❌ Error saving vitals:', error);
+          // Check if the error response provides feedback on validation
+          const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals. Please check the details and try again.";
+          alert(errorMessage);
+      }
+  });
+}
+
+
+
 
   </script>
   
   
-  
-<script>
-  // Function to check if the logged-in user is a doctor or receptionist from the headers
-function checkUserRoleAndEmergency() {
-  const headers = getAuthHeaders(); // Assuming headers include role information
 
-  // Extract the user role from the headers
-  const userRole = headers['X-User-Username']; // Adjust this key according to your header structure
-  console.log('User role:', userRole);
-  if (userRole === 'receptionist') {
-    $('#isEmergency').prop('disabled', false);  // Enable the emergency checkbox for receptionists
-  } else {
-    $('#isEmergency').prop('disabled', true);  // Disable for doctors
-  }
-}
-
-// Toggle visibility of vitals input fields when "Is Emergency" is checked
-function toggleEmergencyVitals() {
-  const isEmergency = $('#isEmergency').prop('checked');
-  const vitalsFields = $('#vitalsFields');
-
-  if (isEmergency) {
-    vitalsFields.show(); // Show vitals input fields
-  } else {
-    vitalsFields.hide(); // Hide vitals input fields
-  }
-}
-
-// Modal for vitals (optional)
-function showVitalsModal() {
-  if ($('#isEmergency').prop('checked')) {
-    $('#vitalsModal').modal('show');  // Show the modal to enter vitals information
-  }
-}
-
-$(document).ready(function() {
-  checkUserRoleAndEmergency(); // Check the user's role when the page loads
-});
-
-</script>
   
 
 

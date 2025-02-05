@@ -72,7 +72,7 @@ class CreateAppointmentView(APIView):
             "patient": patient,
             "appointment_date": data.get("appointment_date"),
             "notes": data.get("notes", ""),
-            "status": "Pending",
+            "status": "Scheduled",
             "is_emergency": data.get("is_emergency", False)
         }
 
@@ -122,24 +122,49 @@ from rest_framework import status
 from .models import Appointment
 from .serializers import AppointmentSerializer
 
-# views.py
+import logging
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from .models import Appointment
+from .serializers import AppointmentSerializer
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+# Set up a logger
+logger = logging.getLogger(__name__)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class AppointmentListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        status_filter = request.query_params.get('status', 'Pending')
+        status_filter = request.query_params.get('status', 'Scheduled')
         user = request.user
 
+        # Doctors can only view their own appointments and patients assigned to them
         if user.user_type == "Doctor":
             appointments = Appointment.objects.filter(doctor=user.doctor, status=status_filter)
+
+        # Receptionists can view all appointments
         elif user.user_type == "Receptionist":
-            appointments = Appointment.objects.filter(receptionist=user.receptionist, status=status_filter)
+            appointments = Appointment.objects.filter(status=status_filter)  # No doctor or patient filter for receptionists
+
+        # For other user types, return an error
         else:
             return Response({"error": "Only Doctors and Receptionists can view appointments."}, status=status.HTTP_403_FORBIDDEN)
 
+        # Serialize the appointments with full details
         serializer = AppointmentSerializer(appointments, many=True)
+
+        # Log the serialized data
+        logger.info(f"Fetched appointments: {serializer.data}")  # Logs the serialized appointment data
+
         return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+
+
+
 
 
 from rest_framework.views import APIView

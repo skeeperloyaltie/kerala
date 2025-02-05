@@ -623,8 +623,8 @@ function logoutUser() {
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          window.location.href = 'http://127.0.0.1:8000/login/';
-      },
+          window.location.href = 'http://localhost/';
+        },
       error: function(xhr, status, error) {
           console.error('Logout error:', xhr.responseText);
       }
@@ -768,8 +768,8 @@ validateUserSession();
             // Hide the form and reset fields
             hideAppointmentForm();
             // Refresh the "Waiting" tab
-            $("#appointmentTabs a[href='#waiting']").tab("show");
-            fetchAppointments("waiting");
+            $("#appointmentTabs a[href='#Scheduled']").tab("show");
+            fetchAppointments("Scheduled");
         },
         error: function(xhr, status, error) {
             console.error('❌ Error creating appointment:', error);
