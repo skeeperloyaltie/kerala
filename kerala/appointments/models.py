@@ -137,11 +137,16 @@ class Vitals(models.Model):
             height_m = self.height / 100  # Convert height to meters
             return round(self.weight / (height_m ** 2), 2)
         return None
-
+    def convert_fahrenheit_to_celsius(self, fahrenheit):
+        """Convert Fahrenheit to Celsius if needed."""
+        return round((fahrenheit - 32) * (5 / 9), 2)
+    
     def save(self, *args, **kwargs):
         """Automatically calculate BMI before saving."""
         self.bmi = self.calculate_bmi()
         self.blood_sugar_level = self.calculate_blood_sugar()  # Calculate blood sugar as well
+        if self.temperature and self.temperature > 50:  # Likely Fahrenheit
+            self.temperature = self.convert_fahrenheit_to_celsius(self.temperature)
         super().save(*args, **kwargs)
 
 
