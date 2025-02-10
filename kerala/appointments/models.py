@@ -62,6 +62,8 @@ class Appointment(models.Model):
     is_emergency = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('patient', 'appointment_date')  # Enforces uniqueness based on patient and datetime
 
     def __str__(self):
         return f"Appointment for {self.patient} with {self.doctor} on {self.appointment_date}"
