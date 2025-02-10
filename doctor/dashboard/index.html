@@ -688,6 +688,7 @@ validateUserSession();
               populateAppointmentsTable(status, response.appointments); // Populate the respective table
           },
           error: function(xhr, status, error) {
+              console.alert(`Error fetching ${status} appointments:`, error);
               console.error(`Error fetching ${status} appointments:`, error);
           }
       });
@@ -696,6 +697,7 @@ validateUserSession();
     let tbodyId = `${status}-tbody`;
     let tbody = document.getElementById(tbodyId);
     if (!tbody) {
+        
         console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
         return;
     }
@@ -796,23 +798,35 @@ validateUserSession();
         return;
     }
     // Create the appointment data object
-    const appointmentData = {
-      patient: {
-          first_name: firstName,
-          last_name: lastName,
-          contact_number: contactNumber,
-          date_of_birth: dateOfBirth,
-      },
-      appointment_date: appointmentDate,
-      doctor: doctor,
-      notes: notes,
-      is_emergency: isEmergency
-  };
-    // Validate required fields
-    if (!appointmentData.patient.first_name || !appointmentData.patient.last_name || !appointmentData.patient.contact_number || !appointmentData.appointment_date || !appointmentData.doctor) {
-        alert("Please fill in all required fields.");
-        return;
-    }
+   // Create the appointment data object
+const appointmentData = {
+  patient: {
+      first_name: firstName,
+      last_name: lastName,
+      contact_number: contactNumber,
+      date_of_birth: dateOfBirth,
+  },
+  appointment_date: appointmentDate,
+  doctor: doctor,
+  notes: notes,
+  is_emergency: isEmergency
+};
+
+// Validate required fields and track missing fields
+let missingFields = [];
+
+if (!appointmentData.patient.first_name) missingFields.push("First Name");
+if (!appointmentData.patient.last_name) missingFields.push("Last Name");
+if (!appointmentData.patient.contact_number) missingFields.push("Contact Number");
+if (!appointmentData.appointment_date) missingFields.push("Appointment Date");
+if (!appointmentData.doctor) missingFields.push("Doctor");
+
+// If any fields are missing, show an alert
+if (missingFields.length > 0) {
+  alert("Please fill in the following required fields:\n" + missingFields.join(", "));
+  return;
+}
+
     const headers = getAuthHeaders();
     // Submit appointment data first
     $.ajax({
@@ -866,22 +880,34 @@ function saveVitals() {
   }
 
   // Collect vitals data from the modal fields
-  const vitalsData = {
-      appointment: appointmentId, // Include appointment ID in data
-      blood_pressure: $("#modalBloodPressure").val().trim(),
-      heart_rate: $("#modalHeartRate").val().trim(),
-      temperature: $("#modalTemperature").val().trim(),
-      respiratory_rate: $("#modalRespiratoryRate").val().trim(),
-      oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
-      weight: $("#modalWeight").val().trim(),
-      height: $("#modalHeight").val().trim(),
-  };
+const vitalsData = {
+  appointment: appointmentId, // Include appointment ID in data
+  blood_pressure: $("#modalBloodPressure").val().trim(),
+  heart_rate: $("#modalHeartRate").val().trim(),
+  temperature: $("#modalTemperature").val().trim(),
+  respiratory_rate: $("#modalRespiratoryRate").val().trim(),
+  oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
+  weight: $("#modalWeight").val().trim(),
+  height: $("#modalHeight").val().trim(),
+};
 
-  // Validate required vitals fields
-  if (!vitalsData.blood_pressure || !vitalsData.heart_rate || !vitalsData.temperature || !vitalsData.respiratory_rate || !vitalsData.oxygen_saturation || !vitalsData.weight || !vitalsData.height) {
-      alert("Please fill in all required vitals.");
-      return;
-  }
+// Validate required vitals fields and track missing fields
+let missingVitals = [];
+
+if (!vitalsData.blood_pressure) missingVitals.push("Blood Pressure");
+if (!vitalsData.heart_rate) missingVitals.push("Heart Rate");
+if (!vitalsData.temperature) missingVitals.push("Temperature");
+if (!vitalsData.respiratory_rate) missingVitals.push("Respiratory Rate");
+if (!vitalsData.oxygen_saturation) missingVitals.push("Oxygen Saturation");
+if (!vitalsData.weight) missingVitals.push("Weight");
+if (!vitalsData.height) missingVitals.push("Height");
+
+// If any vitals are missing, show an alert
+if (missingVitals.length > 0) {
+  alert("Please fill in the following required vitals:\n" + missingVitals.join(", "));
+  return;
+}
+
 
   const headers = getAuthHeaders();
 
