@@ -18,8 +18,56 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- End layout styles -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
+    <script>
+         // Function to retrieve CSRF token from meta tag or cookie
+function getCSRFToken() {
+  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+  if (csrfTokenMeta) {
+      return csrfTokenMeta.getAttribute('content');
+  }
+  const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
+  return csrfCookie ? csrfCookie[1] : null;
+}
 
+// Function to retrieve authentication headers
+function getAuthHeaders() {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const username = sessionStorage.getItem('username') || localStorage.getItem('username');
+  const csrftoken = getCSRFToken();
 
+  if (token && username && csrftoken) {
+      return {
+          'Authorization': 'Token ' + token,
+          'X-CSRFToken': csrftoken,
+          'Username': username
+      };
+  }
+  console.warn('Missing authentication details.');
+  return {};
+}
+    </script>
+
+    <style>
+      .table {
+        table-layout: fixed;
+        width: 100%;
+      }
+      .table th, .table td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 14px;
+      }
+      .table-responsive {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+      .filter {
+        width: 100%;
+        font-size: 12px;
+        padding: 3px;
+      }
+    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
@@ -224,11 +272,53 @@
       <nav aria-label="breadcrumb">
         <ul class="breadcrumb">
           <li class="breadcrumb-item active" aria-current="page">
-            <span></span>Welcome, Dr. David Grey - Good <span id="timeOfDay">Morning</span>
+            <span></span>Welcome, <span id="userName">[User]</span> - Good <span id="timeOfDay">Morning</span>
           </li>
+          <script>
+            // Fetch logged-in user details using AJAX
+function fetchUserDetails() {
+  const headers = getAuthHeaders()
+
+  $.ajax({
+    url: "http://127.0.0.1:8000/users/profile/",
+    type: "GET",
+    headers: headers,
+    success: function(data) {
+      if (data.first_name && data.last_name && data.role) {
+        console.log("User data:", data);
+        $("#userName").text(`${data.role === 'Doctor' ? 'Dr. ' : ''}${data.first_name} ${data.last_name}`);
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error("Error fetching user data:", error);
+    }
+  });
+}
+
+fetchUserDetails();
+
+// Function to set greeting based on the time of day
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Morning";
+  if (hour < 18) return "Afternoon";
+  return "Evening";
+}
+
+$("#timeOfDay").text(getGreeting());
+
+
+document.getElementById("timeOfDay").textContent = getGreeting();
+
+// Call function to fetch user details
+fetchUserDetails();
+          </script>
         </ul>
       </nav>
     </div>
+    
+   
+    
    
     <div class="row">
       <!-- Tabbed Table Section -->
@@ -236,6 +326,58 @@
         <div class="card">
           <div class="card-body">
             <h4 class="card-title">Current Patient Details & Appointments</h4>
+            <div class="row mb-3">
+              <div class="col-md-4">
+                  <select id="doctorFilter" class="form-control" onchange="filterAppointments()">
+                      <option value="">Filter by Doctor</option>
+                      <!-- Options populated dynamically -->
+                  </select>
+              </div>
+              <div class="col-md-4">
+                  <select id="statusFilter" class="form-control" onchange="filterAppointments()">
+                      <option value="">Filter by Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Active">Active</option>
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                  </select>
+              </div>
+              <div class="col-md-4">
+                  <input type="date" id="dateFilter" class="form-control" onchange="filterAppointments()">
+              </div>
+
+              <!-- Add the filtered-tbody here an dalso be fore the results are correctly displated -->
+              <h4 class="card-title">Filtered Data</h4>
+
+              <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <tr>
+                        <th>#</th>
+                        <th><input type="text" class="filter" placeholder="Patient Name"></th>
+                        <th><input type="text" class="filter" placeholder="Age"></th>
+                        <th><input type="text" class="filter" placeholder="Illness"></th>
+                        <th><input type="text" class="filter" placeholder="Appointment Time"></th>
+                        <th><input type="text" class="filter" placeholder="Doctor Scheduled"></th>
+                        <th><input type="text" class="filter" placeholder="Status"></th>
+                        <th>Actions</th>
+                      </tr>
+                      <th>#</th>
+                      <th>Patient Name</th>
+                      <th>Age</th>
+                      <th>Illness</th>
+                      <th>Appointment Time</th>
+                      <th>Doctor Scheduled</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="filtered-tbody"></tbody>
+                </table>
+          </div>
+          
             <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
               <li class="nav-item">
                 <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab" aria-controls="waiting" aria-selected="true">Waiting in Clinic</a>
@@ -258,7 +400,7 @@
             </ul>
     
             <div class="tab-content mt-3" id="appointmentTabContent">
-              <!-- Waiting Tab -->
+              <!-- Tab Template -->
               <div class="tab-pane fade show active" id="waiting" role="tabpanel" aria-labelledby="waiting-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -266,10 +408,21 @@
                     <thead>
                       <tr>
                         <th>#</th>
+                        <th><input type="text" class="filter" placeholder="Patient Name"></th>
+                        <th><input type="text" class="filter" placeholder="Age"></th>
+                        <th><input type="text" class="filter" placeholder="Illness"></th>
+                        <th><input type="text" class="filter" placeholder="Appointment Time"></th>
+                        <th><input type="text" class="filter" placeholder="Doctor Scheduled"></th>
+                        <th><input type="text" class="filter" placeholder="Status"></th>
+                        <th>Actions</th>
+                      </tr>
+                      <tr>
+                        <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
-                        <th>Doctor Name</th>
+                        <th>Illness</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor Scheduled</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -279,7 +432,7 @@
                 </div>
               </div>
     
-              <!-- Scheduled Tab -->
+              <!-- Copy for Each Tab -->
               <div class="tab-pane fade" id="scheduled" role="tabpanel" aria-labelledby="scheduled-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -287,11 +440,21 @@
                     <thead>
                       <tr>
                         <th>#</th>
+                        <th><input type="text" class="filter" placeholder="Patient Name"></th>
+                        <th><input type="text" class="filter" placeholder="Age"></th>
+                        <th><input type="text" class="filter" placeholder="Illness"></th>
+                        <th><input type="text" class="filter" placeholder="Appointment Time"></th>
+                        <th><input type="text" class="filter" placeholder="Doctor Scheduled"></th>
+                        <th><input type="text" class="filter" placeholder="Status"></th>
+                        <th>Actions</th>
+                      </tr>
+                      <tr>
+                        <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
-                        <th>Scheduled Time</th>
-                        <th>Doctor Name</th>
+                        <th>Illness</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor Scheduled</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -301,7 +464,6 @@
                 </div>
               </div>
     
-              <!-- Pending Tab -->
               <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -311,9 +473,9 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
-                        <th>Scheduled Time</th>
-                        <th>Doctor Name</th>
+                        <th>Illness</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor Scheduled</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -323,19 +485,19 @@
                 </div>
               </div>
     
-              <!-- Active Tab -->
               <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <div class="table-responsive">
                   <table class="table">
                     <thead>
                       <tr>
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Illness</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor Scheduled</th>
                         <th>Status</th>
-                        <th>Doctor Name</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -344,19 +506,19 @@
                 </div>
               </div>
     
-              <!-- Completed Tab -->
               <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <div class="table-responsive">
                   <table class="table">
                     <thead>
                       <tr>
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Illness</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor Scheduled</th>
                         <th>Status</th>
-                        <th>Doctor Name</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -365,31 +527,56 @@
                 </div>
               </div>
     
-              <!-- Canceled Tab -->
               <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="canceled-tab">
-                <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                <div class="table-responsive">
                   <table class="table">
                     <thead>
                       <tr>
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Illness</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor Scheduled</th>
                         <th>Status</th>
-                        <th>Doctor Name</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="Cancelled-tbody"></tbody>
+                    <tbody id="Canceled-tbody"></tbody>
                   </table>
                 </div>
               </div>
+              
             </div>
+    
           </div>
         </div>
       </div>
     </div>
+    
+    <script>
+      // Function to filter the table dynamically
+      document.querySelectorAll('.filter').forEach(input => {
+        input.addEventListener('keyup', function () {
+          let table = this.closest('table'); // Find the table
+          let index = Array.from(this.parentElement.parentElement.children).indexOf(this.parentElement); // Get column index
+    
+          let filter = this.value.toLowerCase();
+          table.querySelectorAll('tbody tr').forEach(row => {
+            let cell = row.children[index];
+            if (cell && cell.innerText.toLowerCase().includes(filter)) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+        });
+      });
+    
+   
+    </script>
+    
     
 
     <!-- Appointment Form -->
@@ -460,7 +647,9 @@
       </form>
       
   </div>
-</div><!-- Vitals Modal -->
+</div>
+
+<!-- Vitals Modal -->
 <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
   <div class="modal-dialog">
       <div class="modal-content">
@@ -576,33 +765,6 @@
 
 
   <script>
-   // Function to retrieve CSRF token from meta tag or cookie
-function getCSRFToken() {
-  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-  if (csrfTokenMeta) {
-      return csrfTokenMeta.getAttribute('content');
-  }
-  const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
-  return csrfCookie ? csrfCookie[1] : null;
-}
-
-// Function to retrieve authentication headers
-function getAuthHeaders() {
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  const username = sessionStorage.getItem('username') || localStorage.getItem('username');
-  const csrftoken = getCSRFToken();
-
-  if (token && username && csrftoken) {
-      return {
-          'Authorization': 'Token ' + token,
-          'X-CSRFToken': csrftoken,
-          'Username': username
-      };
-  }
-  console.warn('Missing authentication details.');
-  return {};
-}
-
 // Validate user session
 function validateUserSession() {
   const headers = getAuthHeaders();
@@ -694,6 +856,8 @@ function fetchAppointments(status) {
   });
 }
 
+let filteredAppointments = []; // Store filtered data for re-rendering
+
 function populateAppointmentsTable(status, appointments) {
   let tbodyId = `${status}-tbody`;
   let tbody = document.getElementById(tbodyId);
@@ -703,31 +867,32 @@ function populateAppointmentsTable(status, appointments) {
   }
   tbody.innerHTML = ""; // Clear existing rows
 
-  const doctorCount = {};
+  filteredAppointments = appointments; // Store original data for filtering/sorting
+
+  const doctorCount = {}; // Track appointment count per doctor
 
   appointments.forEach((appointment, index) => {
-      // Get doctor details correctly
-      let doctor = appointment.doctor || {}; 
+      let patient = appointment.patient || {};
+      let doctor = appointment.doctor || {};
       let doctorName = doctor.first_name && doctor.last_name ? `${doctor.first_name} ${doctor.last_name}` : "Unknown Doctor";
-      let doctorAge = doctor.age || "N/A"; 
       let doctorSpecialization = doctor.specialization || "N/A";
 
       // Track patients per doctor
       doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
 
-      let row = document.createElement("tr");
+      // Convert appointment date into readable format
+      let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
 
+      let row = document.createElement("tr");
       row.innerHTML = `
           <td>${index + 1}</td>
-          <td>${appointment.patient.first_name} ${appointment.patient.last_name}</td>
-          <td>${appointment.patient.age || "N/A"}</td>
-          <td>${appointment.reason || "N/A"}</td>
+          <td>${patient.first_name} ${patient.last_name}</td>
+          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+          <td>${appointment.notes || "N/A"}</td>
+          <td>${appointmentTime}</td>
+          <td>Dr. ${doctorName} (${doctorSpecialization})</td>
           <td>${appointment.status || "N/A"}</td>
-          <td>${doctorName} (${doctorSpecialization})</td>
-          <td>${doctorAge} years</td>
-          <td>
-              ${getActionButton(appointment.status)}
-          </td>
+          <td>${getActionButton(appointment.status)}</td>
       `;
 
       tbody.appendChild(row);
@@ -736,6 +901,64 @@ function populateAppointmentsTable(status, appointments) {
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
 
+
+/* Sorting Function */
+function sortAppointments(column) {
+    let sortedAppointments = [...filteredAppointments];
+
+    sortedAppointments.sort((a, b) => {
+        let valA, valB;
+
+        switch (column) {
+            case "patient_name":
+                valA = `${a.patient.first_name} ${a.patient.last_name}`.toLowerCase();
+                valB = `${b.patient.first_name} ${b.patient.last_name}`.toLowerCase();
+                break;
+            case "age":
+                valA = a.patient.age || 0;
+                valB = b.patient.age || 0;
+                break;
+            case "appointment_time":
+                valA = new Date(a.appointment_time);
+                valB = new Date(b.appointment_time);
+                break;
+            case "doctor_name":
+                valA = (doctorMap[a.doctor_id]?.first_name || "") + " " + (doctorMap[a.doctor_id]?.last_name || "");
+                valB = (doctorMap[b.doctor_id]?.first_name || "") + " " + (doctorMap[b.doctor_id]?.last_name || "");
+                break;
+            case "status":
+                valA = a.status.toLowerCase();
+                valB = b.status.toLowerCase();
+                break;
+            default:
+                return 0;
+        }
+
+        return valA > valB ? 1 : -1;
+    });
+
+    populateAppointmentsTable("filtered", sortedAppointments);
+}
+
+/* Filtering Function */
+function filterAppointments() {
+    let doctorFilter = document.getElementById("doctorFilter").value;
+    let statusFilter = document.getElementById("statusFilter").value;
+    let dateFilter = document.getElementById("dateFilter").value;
+
+    let filteredData = filteredAppointments.filter(appointment => {
+        let doctorMatch = doctorFilter ? appointment.doctor_id == doctorFilter : true;
+        let statusMatch = statusFilter ? appointment.status == statusFilter : true;
+        let dateMatch = dateFilter ? appointment.appointment_time.startsWith(dateFilter) : true;
+
+        return doctorMatch && statusMatch && dateMatch;
+    });
+
+    populateAppointmentsTable("filtered", filteredData);
+}
+
+
+
 function getActionButton(status) {
   switch (status) {
       case 'Waiting':
@@ -743,7 +966,7 @@ function getActionButton(status) {
       case 'Scheduled':
       case 'Pending':
           return `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-      case 'Cancelled':
+      case 'Canceled':
           return `<button class="btn btn-primary btn-sm">Update</button>`;
       case 'Completed':
           return `<button class="btn btn-info btn-sm">Review</button>`;
@@ -763,30 +986,37 @@ function applyFilters() {
   statuses.forEach(fetchAppointments);
 }
 
-function loadDoctors() {
-  const headers = getAuthHeaders(); // Ensure auth headers are set
-  $.ajax({
-      url: "http://127.0.0.1:8000/appointment/doctors/list/",
-      type: "GET",
-      headers: headers,
-      success: function (response) {
-          const doctorSelect = $("#doctor");
-          doctorSelect.empty(); // Clear existing options
-          doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+let doctorMap = {}; // Global dictionary to store doctor details
 
-          response.doctors.forEach(doctor => {
-              doctorSelect.append(
-                  `<option value="${doctor.id}">
-                      Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialty}
-                  </option>`
-              );
-          });
-      },
-      error: function (xhr, status, error) {
-          console.error("Error fetching doctors:", error);
-      }
-  });
+function loadDoctors() {
+    const headers = getAuthHeaders(); // Ensure auth headers are set
+    $.ajax({
+        url: "http://127.0.0.1:8000/appointments/doctors/list/",
+        type: "GET",
+        headers: headers,
+        success: function (response) {
+            const doctorSelect = $("#doctor");
+            doctorSelect.empty(); // Clear existing options
+            doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+
+            response.doctors.forEach(doctor => {
+                doctorMap[doctor.id] = doctor; // Store doctor details in a dictionary
+                doctorSelect.append(
+                    `<option value="${doctor.id}">
+                        Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
+                    </option>`
+                );
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Error fetching doctors:", error);
+        }
+    });
 }
+
+// Call this function when the page loads
+loadDoctors();
+
 
 // Call function when the page loads
 $(document).ready(function () {
@@ -904,13 +1134,10 @@ function saveVitals() {
 }
 
 
-
-
   </script>
   
   
 
-  
 
 
             

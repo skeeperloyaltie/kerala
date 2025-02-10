@@ -212,3 +212,101 @@ class LogoutView(APIView):
         except Exception as e:
             logger.exception(f"Error during logout process: {e}")
             return Response({"error": "An error occurred during logout"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import RetrieveAPIView
+from .models import User, Receptionist, Doctor
+from .serializers import UserProfileSerializer
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.authtoken.models import Token
+import logging
+
+from users.serializers import UserProfileSerializer
+
+logger = logging.getLogger(__name__)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UserProfileView(RetrieveAPIView):
+    """
+    Fetches the authenticated user's profile details.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
+
+    def get_object(self):
+        """
+        Retrieves the user profile using the token in the Authorization header.
+        """
+        request = self.request
+        token = request.headers.get('Authorization')  # Retrieve the token from the request header
+
+        if not token:
+            logger.warning("Request received without an authorization token")
+            return Response({"error": "Authorization token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Extract token from 'Token <token_key>' format
+            token_key = token.split(' ')[1]
+            user_token = Token.objects.get(key=token_key)
+            user = user_token.user  # Get the user from the token
+        except (Token.DoesNotExist, IndexError):
+            logger.warning("Invalid or expired token provided")
+            return Response({"error": "Invalid token or token does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            logger.exception(f"Error retrieving user from token: {e}")
+            return Response({"error": "An error occurred while processing the request"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Fetch profile details based on user type
+        profile_data = {
+            "username": user.username,
+            "user_type": user.user_type,
+            "email": user.email
+        }
+
+        # Fetch Receptionist details if applicable
+        if user.user_type == "Receptionist":
+            try:
+                receptionist = Receptionist.objects.get(user=user)
+                profile_data.update({
+                    "first_name": receptionist.first_name,
+                    "last_name": receptionist.last_name,
+                    "contact_number": receptionist.contact_number
+                })
+            except Receptionist.DoesNotExist:
+                profile_data["error"] = "Receptionist profile not found"
+
+        # Fetch Doctor details if applicable
+        elif user.user_type == "Doctor":
+            try:
+                doctor = Doctor.objects.get(user=user)
+                profile_data.update({
+                    "first_name": doctor.first_name,
+                    "last_name": doctor.last_name,
+                    "specialization": doctor.specialization,
+                    "contact_number": doctor.contact_number
+                })
+            except Doctor.DoesNotExist:
+                profile_data["error"] = "Doctor profile not found"
+
+        return profile_data
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Override retrieve method to return custom profile data.
+        """
+        profile_data = self.get_object()
+        if isinstance(profile_data, Response):  
+            # If get_object() returned a Response (error case), return it directly
+            return profile_data
+
+        return Response(profile_data, status=status.HTTP_200_OK)

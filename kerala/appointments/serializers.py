@@ -30,6 +30,12 @@ class PatientSerializer(serializers.ModelSerializer):
 
     age = serializers.SerializerMethodField()
 
+from rest_framework import serializers
+
+class DoctorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = ['id', 'first_name', 'last_name', 'specialization']
 
 
 
@@ -42,10 +48,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
         queryset=Patient.objects.all(), write_only=True, source="patient"
     )  # Allow writing using patient ID
 
-    doctor = serializers.PrimaryKeyRelatedField(
-        queryset=Doctor.objects.all(), required=False
-    )  # Direct relation to Doctor model
-    doctor_name = serializers.CharField(source="doctor.get_full_name", read_only=True)  # Add doctor's name for easier access
+    doctor = DoctorSerializer(read_only=True)  # Use DoctorSerializer to return full doctor details
+    doctor_id = serializers.PrimaryKeyRelatedField(
+        queryset=Doctor.objects.all(), write_only=True, source="doctor"
+    )  # Allow writing using doctor ID
 
     receptionist = serializers.PrimaryKeyRelatedField(
         queryset=Receptionist.objects.all(), required=False
@@ -59,7 +65,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient",
             "patient_id",
             "doctor",
-            "doctor_name",
+            "doctor_id",
             "receptionist",
             "receptionist_name",
             "appointment_date",
@@ -67,14 +73,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "notes",
         ]
         read_only_fields = ["id", "status"]  # ID and status should not be writable
-        
-        
-from rest_framework import serializers
 
-class DoctorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Doctor
-        fields = ['id', 'first_name', 'last_name', 'specialization']
+        
+        
 
         
         
