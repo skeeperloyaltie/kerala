@@ -191,8 +191,8 @@ function getAuthHeaders() {
             <span class="login-status online"></span>
           </div>
           <div class="nav-profile-text d-flex flex-column">
-            <span class="font-weight-bold mb-2">Dr. David Grey</span>
-            <span class="text-secondary text-small">Cardiologist</span>
+            <span class="font-weight-bold mb-2" id="logged_in_user_name"></span>
+            <span class="text-secondary text-small" id="logged_in_user_name"></span>
           </div>
           <i class="mdi mdi-stethoscope text-primary nav-profile-badge"></i>
         </a>
@@ -332,6 +332,8 @@ function getAuthHeaders() {
                       <th>Illness</th>
                       <th>Appointment Time</th>
                       <th>Doctor Scheduled</th>
+                      <th>Created By</th>
+
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -385,6 +387,8 @@ function getAuthHeaders() {
                         <th>Illness</th>
                         <th>Appointment Time</th>
                         <th>Doctor Scheduled</th>
+                        <th>Created By</th>
+
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -417,6 +421,8 @@ function getAuthHeaders() {
                         <th>Illness</th>
                         <th>Appointment Time</th>
                         <th>Doctor Scheduled</th>
+                        <th>Created By</th>
+
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -438,6 +444,8 @@ function getAuthHeaders() {
                         <th>Illness</th>
                         <th>Appointment Time</th>
                         <th>Doctor Scheduled</th>
+                        <th>Created By</th>
+
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -459,6 +467,8 @@ function getAuthHeaders() {
                         <th>Illness</th>
                         <th>Appointment Time</th>
                         <th>Doctor Scheduled</th>
+                        <th>Created By</th>
+
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -480,6 +490,8 @@ function getAuthHeaders() {
                         <th>Illness</th>
                         <th>Appointment Time</th>
                         <th>Doctor Scheduled</th>
+                        <th>Created By</th>
+
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -501,6 +513,8 @@ function getAuthHeaders() {
                         <th>Illness</th>
                         <th>Appointment Time</th>
                         <th>Doctor Scheduled</th>
+                        <th>Created By</th>
+
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -581,19 +595,19 @@ function getAuthHeaders() {
                   <label for="appointmentDate">Appointment Date</label>
                   <input type="datetime-local" id="appointmentDate" class="form-control" required>
               </div>
-              <div class="col-md-4">
-                  <label for="doctor">Doctor</label>
-                  <select id="doctor" class="form-control" required>
-                      <option value="{{ logged_in_user_default_doctor.id }}" selected>
-                          {{ logged_in_user_default_doctor.name }}
-                      </option>
-                      <!-- Dynamically populate doctors -->
-                  </select>
-              </div>
-              <div class="col-md-4">
-                  <label for="notes">Notes</label>
-                  <input type="text" id="notes" class="form-control">
-              </div>
+              <div class="row mt-3">
+                <div class="col-md-4">
+                    <label for="doctor">Doctor</label>
+                    <select id="doctor" class="form-control" required>
+                        <option value="" disabled selected>Select a doctor</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="notes">Notes</label>
+                    <input type="text" id="notes" class="form-control">
+                </div>
+            </div>
+            
           </div>
 
           <div class="col-md-12 mt-3">
@@ -872,7 +886,10 @@ function populateAppointmentsTable(status, appointments) {
           <td>${appointment.notes || "N/A"}</td>
           <td>${appointmentTime}</td>
           <td>Dr. ${doctorName} (${doctorSpecialization})</td>
+                    <td>${appointment.created_by_username}</td> <!-- Display the creator -->
+
           <td>${appointment.status || "N/A"}</td>
+
           <td>${getActionButton(appointment.status)}</td>
       `;
 
@@ -958,14 +975,15 @@ function getActionButton(status) {
 
 // Call fetchAppointments for each status on page load
 $(document).ready(function () {
-  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
+  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled"];
   statuses.forEach(fetchAppointments);
 });
 
 function applyFilters() {
-  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
+  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled"];
   statuses.forEach(fetchAppointments);
 }
+
 
 let doctorMap = {}; // Global dictionary to store doctor details
 
@@ -990,10 +1008,16 @@ function loadDoctors() {
             });
         },
         error: function (xhr, status, error) {
-            console.error("Error fetching doctors:", error);
+            console.error("❌ Error fetching doctors:", error);
         }
     });
 }
+
+// Call this function when the page loads
+$(document).ready(function () {
+    loadDoctors();
+});
+
 
 // Call this function when the page loads
 loadDoctors();
@@ -1004,15 +1028,37 @@ $(document).ready(function () {
   loadDoctors();
 });
 
+$(document).ready(function () {
+
+  // Auto-calculate age when date of birth is selected
+  $("#dateOfBirth").on("change", function () {
+      const dob = new Date($(this).val());
+      if (!isNaN(dob)) {
+          const today = new Date();
+          let age = today.getFullYear() - dob.getFullYear();
+          const monthDiff = today.getMonth() - dob.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+              age--;
+          }
+          $("#age").val(age);
+      }
+  });
+
+  // Prevent vitals modal unless it's an emergency
+  $("#isEmergency").on("change", function () {
+      if (!$(this).is(":checked")) {
+          $("#vitalsModal").modal("hide");
+      }
+  });
+});
 
 function addAppointment() {
-  const doctorId = $("#doctor").val(); // Ensure correct doctor ID is selected
+  const doctorId = $("#doctor").val();
   if (!doctorId) {
       alert("Please select a doctor for this appointment.");
       return;
   }
 
-  // Collect appointment details
   const appointmentData = {
       patient: {
           first_name: $("#firstName").val().trim(),
@@ -1021,39 +1067,41 @@ function addAppointment() {
           date_of_birth: $("#dateOfBirth").val(),
       },
       appointment_date: $("#appointmentDate").val(),
-      doctor: doctorId, // Ensure correct doctor ID is passed
+      doctor: doctorId,  // ✅ Only send the doctor ID, not a dictionary
       notes: $("#notes").val().trim(),
       is_emergency: $("#isEmergency").is(":checked"),
   };
 
-  // Validate required fields
   if (!appointmentData.patient.first_name || !appointmentData.patient.last_name || 
       !appointmentData.patient.contact_number || !appointmentData.appointment_date) {
       alert("Please fill in all required fields.");
       return;
   }
 
-  const headers = getAuthHeaders();
   $.ajax({
       url: "http://127.0.0.1:8000/appointments/create/",
       type: "POST",
-      headers: headers,
+      headers: getAuthHeaders(),
       data: JSON.stringify(appointmentData),
       contentType: "application/json",
-      success: function(response) {
-          console.log("✅ Appointment created successfully:", response);
-          const appointmentId = response.appointment.id;
-          
+      success: function (response) {
+          console.log("✅ Appointment created:", response);
+          const appointmentId = response.appointment?.id;
+
           if (!appointmentId) {
-              alert("Appointment ID is missing. Please try again.");
+              alert("Error: Appointment ID missing.");
               return;
           }
 
-          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
           hideAppointmentForm();
-          fetchAppointments("Scheduled"); // Refresh Scheduled appointments
+          fetchAppointments("Scheduled");
+
+          // Open vitals modal if emergency is checked
+          if ($("#isEmergency").is(":checked")) {
+              $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          }
       },
-      error: function(xhr, status, error) {
+      error: function (xhr, status, error) {
           console.error("❌ Error creating appointment:", error);
           alert("Failed to create appointment. Please try again.");
       }
@@ -1063,18 +1111,15 @@ function addAppointment() {
 
 
 function saveVitals() {
-  // Ensure that the appointment ID is being set properly after appointment creation
   const appointmentId = $("#vitalsModal").data("appointmentId");
 
-  // If appointmentId is not set, it means it was not properly initialized
   if (!appointmentId) {
-      alert("Appointment ID is missing. Please try again.");
+      alert("Error: Appointment ID missing.");
       return;
   }
 
-  // Collect vitals data from the modal fields
   const vitalsData = {
-      appointment: appointmentId, // Include appointment ID in data
+      appointment: appointmentId,
       blood_pressure: $("#modalBloodPressure").val().trim(),
       heart_rate: $("#modalHeartRate").val().trim(),
       temperature: $("#modalTemperature").val().trim(),
@@ -1084,35 +1129,29 @@ function saveVitals() {
       height: $("#modalHeight").val().trim(),
   };
 
-  // Validate required vitals fields
-  if (!vitalsData.blood_pressure || !vitalsData.heart_rate || !vitalsData.temperature || !vitalsData.respiratory_rate || !vitalsData.oxygen_saturation || !vitalsData.weight || !vitalsData.height) {
-      alert("Please fill in all required vitals.");
+  if (!vitalsData.blood_pressure || !vitalsData.heart_rate || !vitalsData.temperature || 
+      !vitalsData.respiratory_rate || !vitalsData.oxygen_saturation || !vitalsData.weight || !vitalsData.height) {
+      alert("Please fill in all vitals.");
       return;
   }
 
-  const headers = getAuthHeaders();
-
-  // Submit vitals data using POST request
   $.ajax({
-      url: `http://127.0.0.1:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
-      type: 'POST',
-      headers: headers,
+      url: "http://127.0.0.1:8000/appointments/vitals/save/",
+      type: "POST",
+      headers: getAuthHeaders(),
       data: JSON.stringify(vitalsData),
-      contentType: 'application/json',
-      success: function(response) {
-          console.log('✅ Vitals saved successfully:', response);
-          // Close the modal after saving vitals
+      contentType: "application/json",
+      success: function (response) {
+          console.log("✅ Vitals saved successfully:", response);
           $("#vitalsModal").modal("hide");
-          alert("Vitals saved successfully.");
       },
-      error: function(xhr, status, error) {
-          console.error('❌ Error saving vitals:', error);
-          // Check if the error response provides feedback on validation
-          const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals. Please check the details and try again.";
-          alert(errorMessage);
+      error: function (xhr, status, error) {
+          console.error("❌ Error saving vitals:", error);
+          alert("Failed to save vitals. Please try again.");
       }
   });
 }
+
 
 
   </script>

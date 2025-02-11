@@ -57,6 +57,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         queryset=Receptionist.objects.all(), required=False
     )  # Direct relation to Receptionist model
     receptionist_name = serializers.CharField(source="receptionist.get_full_name", read_only=True)  # Add receptionist's name for easier access
+    created_by_username = serializers.CharField(source="created_by.username", read_only=True)  # Get username of creator
 
     class Meta:
         model = Appointment
@@ -71,8 +72,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date",
             "status",
             "notes",
+            "created_by_username",
         ]
-        read_only_fields = ["id", "status"]  # ID and status should not be writable
+        read_only_fields = ["id", "status", "created_by", "created_by_username"]  # Make sure created_by fields are read-only
 
         
         

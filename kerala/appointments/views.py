@@ -73,7 +73,9 @@ class CreateAppointmentView(APIView):
             "appointment_date": data.get("appointment_date"),
             "notes": data.get("notes", ""),
             "status": "Scheduled",
-            "is_emergency": data.get("is_emergency", False)
+            "is_emergency": data.get("is_emergency", False),
+            "created_by": user  # Set the user who created the appointment
+
         }
 
         if user.user_type == "Receptionist":
