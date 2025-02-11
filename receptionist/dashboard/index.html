@@ -121,8 +121,8 @@ function getAuthHeaders() {
             <span class="availability-status online"></span>
           </div>
           <div class="nav-profile-text">
-            <p class="mb-1 text-black" id="doctor-name">Dr. Placeholder Name</p>
-          </div>
+            <p class="mb-1 text-black"><span id="logged_in_user_name"></span>
+            </p>          </div>
         </a>
         <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
           <a class="dropdown-item" href="#">
@@ -265,57 +265,19 @@ function getAuthHeaders() {
   <div class="content-wrapper">
     <div class="page-header">
       <h3 class="page-title">
-        <span class="page-title-icon bg-gradient-primary text-white me-2">
-          <i class="mdi mdi-home"></i>
-        </span> Dashboard
+          <span class="page-title-icon bg-gradient-primary text-white me-2">
+              <i class="mdi mdi-home"></i>
+          </span> Dashboard
       </h3>
       <nav aria-label="breadcrumb">
-        <ul class="breadcrumb">
-          <li class="breadcrumb-item active" aria-current="page">
-            <span></span>Welcome, <span id="userName">[User]</span> - Good <span id="timeOfDay">Morning</span>
-          </li>
-          <script>
-            // Fetch logged-in user details using AJAX
-function fetchUserDetails() {
-  const headers = getAuthHeaders()
-
-  $.ajax({
-    url: "http://127.0.0.1:8000/users/profile/",
-    type: "GET",
-    headers: headers,
-    success: function(data) {
-      if (data.first_name && data.last_name && data.role) {
-        console.log("User data:", data);
-        $("#userName").text(`${data.role === 'Doctor' ? 'Dr. ' : ''}${data.first_name} ${data.last_name}`);
-      }
-    },
-    error: function(xhr, status, error) {
-      console.error("Error fetching user data:", error);
-    }
-  });
-}
-
-fetchUserDetails();
-
-// Function to set greeting based on the time of day
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Morning";
-  if (hour < 18) return "Afternoon";
-  return "Evening";
-}
-
-$("#timeOfDay").text(getGreeting());
-
-
-document.getElementById("timeOfDay").textContent = getGreeting();
-
-// Call function to fetch user details
-fetchUserDetails();
-          </script>
-        </ul>
+          <ul class="breadcrumb">
+              <li class="breadcrumb-item active" aria-current="page">
+                  <span></span>Welcome, <span id="logged_in_user_name"></span> - Good <span id="timeOfDay">Morning</span>
+              </li>
+          </ul>
       </nav>
-    </div>
+  </div>
+  
     
    
     
@@ -768,6 +730,7 @@ fetchUserDetails();
 // Validate user session
 function validateUserSession() {
   const headers = getAuthHeaders();
+  console.log(getAuthHeaders());
 
   if (!headers['Authorization']) {
       console.warn('No valid token. User is not authenticated.');
@@ -783,7 +746,12 @@ function validateUserSession() {
           if (response.message !== 'Cookie is valid.') {
               alert('Invalid session. Logging out.');
               logoutUser();
+              return;
           }
+
+          // Update navigation bar with user details
+          document.getElementById("logged_in_user_name").textContent = response.name;
+          document.getElementById("timeOfDay").textContent = getGreetingTime();
       },
       error: function(xhr, status, error) {
           console.error('Error validating session:', xhr.responseText);
@@ -791,6 +759,19 @@ function validateUserSession() {
       }
   });
 }
+
+// Function to get time of day greeting
+function getGreetingTime() {
+  const hours = new Date().getHours();
+  if (hours < 12) {
+      return "Morning";
+  } else if (hours < 18) {
+      return "Afternoon";
+  } else {
+      return "Evening";
+  }
+}
+
 
 // Logout function
 function logoutUser() {

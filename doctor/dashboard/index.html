@@ -73,7 +73,8 @@
             <span class="availability-status online"></span>
           </div>
           <div class="nav-profile-text">
-            <p class="mb-1 text-black" id="doctor-name">Dr. Placeholder Name</p>
+            <p class="mb-1 text-black"><span id="logged_in_user_name"></span>
+            </p>
           </div>
         </a>
         <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
@@ -217,18 +218,19 @@
   <div class="content-wrapper">
     <div class="page-header">
       <h3 class="page-title">
-        <span class="page-title-icon bg-gradient-primary text-white me-2">
-          <i class="mdi mdi-home"></i>
-        </span> Dashboard
+          <span class="page-title-icon bg-gradient-primary text-white me-2">
+              <i class="mdi mdi-home"></i>
+          </span> Dashboard
       </h3>
       <nav aria-label="breadcrumb">
-        <ul class="breadcrumb">
-          <li class="breadcrumb-item active" aria-current="page">
-            <span></span>Welcome, Dr. David Grey - Good <span id="timeOfDay">Morning</span>
-          </li>
-        </ul>
+          <ul class="breadcrumb">
+              <li class="breadcrumb-item active" aria-current="page">
+                  <span></span>Welcome, <span id="logged_in_user_name"></span> - Good <span id="timeOfDay">Morning</span>
+              </li>
+          </ul>
       </nav>
-    </div>
+  </div>
+  
    
     <div class="row">
       <!-- Tabbed Table Section -->
@@ -614,6 +616,7 @@ function getAuthHeaders() {
 // Validate user session
 function validateUserSession() {
   const headers = getAuthHeaders();
+  console.log(getAuthHeaders());
 
   if (!headers['Authorization']) {
       console.warn('No valid token. User is not authenticated.');
@@ -629,13 +632,30 @@ function validateUserSession() {
           if (response.message !== 'Cookie is valid.') {
               alert('Invalid session. Logging out.');
               logoutUser();
+              return;
           }
+
+          // Update navigation bar with user details
+          document.getElementById("logged_in_user_name").textContent = response.name;
+          document.getElementById("timeOfDay").textContent = getGreetingTime();
       },
       error: function(xhr, status, error) {
           console.error('Error validating session:', xhr.responseText);
           logoutUser();
       }
   });
+}
+
+// Function to get time of day greeting
+function getGreetingTime() {
+  const hours = new Date().getHours();
+  if (hours < 12) {
+      return "Morning";
+  } else if (hours < 18) {
+      return "Afternoon";
+  } else {
+      return "Evening";
+  }
 }
 
 // Logout function

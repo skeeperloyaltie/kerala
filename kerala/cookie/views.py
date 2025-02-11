@@ -15,31 +15,7 @@ import logging  # Adding logging to debug
 class CookieVerification(APIView):
     permission_classes = [AllowAny]
     authentication_classes = [TokenAuthentication]
-    # def get(self, request, *args, **kwargs):  # Change to GET request
-    #     token = request.headers.get('Authorization')
-    #     username = request.GET.get('username')  # Get username from query parameters
-
-    #     if not username or not token:
-    #         return Response({'error': 'Username or Token is missing.'}, status=400)
-
-    #     try:
-    #         user = User.objects.get(username=username)
-    #         if user.auth_token and user.auth_token.key == token.split(" ")[1]:
-    #             response = JsonResponse({'message': 'Cookie verification successful!'}, status=200)
-    #             response.set_cookie(
-    #                 'token', token, httponly=True, secure=request.is_secure(),
-    #                 max_age=60 * 60 * 24 * 30, path='/'
-    #             )
-    #             return response
-    #         else:
-    #             raise AuthenticationFailed('Invalid token.')
-
-    #     except User.DoesNotExist:
-    #         return Response({'error': 'User does not exist.'}, status=404)
-    #     except AuthenticationFailed as e:
-    #         return Response({'error': str(e)}, status=401)
-    #     except Exception as e:
-    #         return Response({'error': str(e)}, status=500)
+   
 
     def post(self, request, *args, **kwargs):
         # Getting the token from the Authorization header
@@ -175,7 +151,15 @@ class CheckCookie(APIView):
                 return Response({'error': 'CSRF token mismatch.'}, status=403)
 
             logger.info(f"Token for user {username} is valid.")
-            return JsonResponse({'message': 'Cookie is valid.', 'username': username}, status=200)
+
+            # Return user details in the response
+            return JsonResponse({
+                'message': 'Cookie is valid.',
+                'username': username,
+                'user_id': user.id,
+                'name': user.get_full_name() if user.get_full_name() else user.username,
+                'user_type': user.user_type if hasattr(user, 'user_type') else None
+            }, status=200)
 
         except User.DoesNotExist:
             logger.error(f"User {username} does not exist.")
@@ -184,4 +168,5 @@ class CheckCookie(APIView):
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")
             return Response({'error': str(e)}, status=500)
+
 
