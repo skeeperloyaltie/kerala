@@ -302,3 +302,131 @@ class VitalsAPIView(APIView):
         except Exception as e:
             logger.error(f"Error updating vitals for appointment ID: {appointment_id}. Error: {str(e)}")
             return Response({"error": "Vitals not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+import logging
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from .models import Appointment
+from .serializers import AppointmentSerializer
+from users.models import Doctor, Receptionist
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EditAppointmentView(APIView):
+    """
+    Allows doctors and receptionists to edit an appointment's details, including status.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, appointment_id):
+        user = request.user
+        data = request.data
+
+        logger.info(f"User {user.username} ({user.user_type}) attempting to edit appointment {appointment_id}.")
+
+        # Ensure user is a doctor or receptionist
+        if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
+            logger.warning(f"Unauthorized attempt to edit appointment {appointment_id} by {user.username}.")
+            return Response({"error": "Only doctors and receptionists can edit appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+
+        # Ensure doctor can only edit their own appointments
+        if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+            logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
+            return Response({"error": "You can only edit your own appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Update appointment fields
+        if 'status' in data:
+            appointment.status = data['status']
+        appointment.updated_by = user  # Track the user making the change
+
+        serializer = AppointmentSerializer(appointment, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            logger.info(f"Appointment {appointment_id} successfully updated by {user.username}.")
+            return Response({"message": "Appointment updated successfully.", "appointment": serializer.data}, status=status.HTTP_200_OK)
+
+        logger.error(f"Error updating appointment {appointment_id}: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CancelAppointmentView(APIView):
+    """
+    Allows doctors and receptionists to cancel an appointment with status update from the front end.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, appointment_id):
+        user = request.user
+        data = request.data
+
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+
+        logger.info(f"User {user.username} attempting to cancel appointment {appointment_id}.")
+
+        if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
+            logger.warning(f"Unauthorized attempt to cancel appointment {appointment_id} by {user.username}.")
+            return Response({"error": "Only doctors and receptionists can cancel appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+            logger.warning(f"Doctor {user.username} tried to cancel an appointment they don't own.")
+            return Response({"error": "You can only cancel your own appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Update status and track user making the change
+        appointment.status = data.get("status", "Canceled")
+        appointment.updated_by = user
+        appointment.save()
+
+        logger.info(f"Appointment {appointment_id} canceled successfully by {user.username}.")
+        return Response({"message": "Appointment canceled successfully."}, status=status.HTTP_200_OK)
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RescheduleAppointmentView(APIView):
+    """
+    Allows doctors and receptionists to reschedule an appointment, with status update from the front end.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, appointment_id):
+        user = request.user
+        data = request.data
+        new_date = data.get("appointment_date")
+
+        logger.info(f"User {user.username} attempting to reschedule appointment {appointment_id} to {new_date}.")
+
+        if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
+            logger.warning(f"Unauthorized attempt to reschedule appointment {appointment_id} by {user.username}.")
+            return Response({"error": "Only doctors and receptionists can reschedule appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+
+        if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+            logger.warning(f"Doctor {user.username} tried to reschedule an appointment they don't own.")
+            return Response({"error": "You can only reschedule your own appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not new_date:
+            logger.error(f"Reschedule request for appointment {appointment_id} is missing new date.")
+            return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update appointment date and status
+        appointment.appointment_date = new_date
+        appointment.status = data.get("status", "Rescheduled")
+        appointment.updated_by = user  # Track user making the change
+        appointment.save()
+
+        logger.info(f"Appointment {appointment_id} successfully rescheduled to {new_date} by {user.username}.")
+        return Response({"message": "Appointment rescheduled successfully."}, status=status.HTTP_200_OK)
+

@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'appointments',
     'cookie',
     'info',
+    'monitor',
 ]
 
 

@@ -49,25 +49,71 @@ function getAuthHeaders() {
 
     <style>
       .table {
-        table-layout: fixed;
+        table-layout: auto; /* Allow the table to adjust column widths dynamically */
         width: 100%;
+        border-collapse: collapse; /* Ensure clean spacing */
       }
+    
       .table th, .table td {
-        white-space: nowrap;
+        white-space: nowrap; /* Prevent text from breaking into multiple lines */
         overflow: hidden;
-        text-overflow: ellipsis;
+        text-overflow: ellipsis; /* Show "..." for long content */
         font-size: 14px;
+        padding: 8px;
+        text-align: left;
       }
+    
       .table-responsive {
-        max-width: 100%;
-        overflow-x: auto;
+        width: 100%;
+        overflow-x: auto; /* Allow horizontal scrolling */
       }
+    
+      /* Ensure buttons fit inside the table cells */
+      .table .btn {
+        font-size: 12px;
+        padding: 5px 8px;
+        margin: 2px;
+        white-space: nowrap;
+      }
+    
+      /* Ensure filters are compact */
       .filter {
         width: 100%;
         font-size: 12px;
         padding: 3px;
       }
+    
+      /* Prevent overlapping of long text in the table */
+      .table td, .table th {
+        word-wrap: break-word;
+      }
+    
+      /* Responsive adjustments for smaller screens */
+      @media (max-width: 768px) {
+        .table th, .table td {
+          font-size: 12px;
+          padding: 6px;
+        }
+    
+        .table .btn {
+          font-size: 10px;
+          padding: 4px 6px;
+        }
+      }
+    
+      @media (max-width: 480px) {
+        .table th, .table td {
+          font-size: 10px;
+          padding: 4px;
+        }
+    
+        .table .btn {
+          font-size: 9px;
+          padding: 3px 5px;
+        }
+      }
     </style>
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
@@ -714,6 +760,101 @@ function getAuthHeaders() {
 </div>
 
 
+<!-- Edit Appointment Modal -->
+<div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editAppointmentForm">
+          <!-- Read-only Fields -->
+          <div class="row">
+            <div class="col-md-6">
+              <label for="editAppointmentID">Appointment ID</label>
+              <input type="text" id="editAppointmentID" class="form-control" readonly>
+            </div>
+            <div class="col-md-6">
+              <label for="editPatientID">Patient ID</label>
+              <input type="text" id="editPatientID" class="form-control" readonly>
+            </div>
+          </div>
+
+          <!-- Editable Fields -->
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <label for="editFirstName">First Name</label>
+              <input type="text" id="editFirstName" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label for="editLastName">Last Name</label>
+              <input type="text" id="editLastName" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <label for="editContactNumber">Contact Number</label>
+              <input type="text" id="editContactNumber" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label for="editDateOfBirth">Date of Birth</label>
+              <input type="date" id="editDateOfBirth" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <label for="editAge">Age</label>
+              <input type="number" id="editAge" class="form-control" readonly>
+            </div>
+            <div class="col-md-6">
+              <label for="editCurrentIllness">Current Illness</label>
+              <input type="text" id="editCurrentIllness" class="form-control">
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <label for="editAppointmentDate">Appointment Date</label>
+              <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label for="editDoctor">Doctor</label>
+              <select id="editDoctor" class="form-control" required>
+                <option value="" disabled selected>Select a doctor</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-md-12">
+              <label for="editNotes">Notes</label>
+              <textarea id="editNotes" class="form-control"></textarea>
+            </div>
+          </div>
+
+          <div class="col-md-12 mt-3">
+            <label for="editIsEmergency">Is this an emergency?</label>
+            <input type="checkbox" id="editIsEmergency" class="form-check-input">
+          </div>
+
+          <div class="mt-3">
+            <button type="button" class="btn btn-success" onclick="updateAppointment()">Save Changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
 
   <script>
     function showAppointmentForm() {
@@ -733,6 +874,21 @@ function getAuthHeaders() {
       const age = new Date().getFullYear() - dob.getFullYear();
       document.getElementById('age').value = age;
     });
+
+      document.getElementById("editDateOfBirth").addEventListener("change", function() {
+          let dob = new Date(this.value);
+          let today = new Date();
+          let age = today.getFullYear() - dob.getFullYear();
+          let monthDiff = today.getMonth() - dob.getMonth();
+          
+          // Adjust age if birthdate hasn't occurred yet this year
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+              age--;
+          }
+    
+          document.getElementById("editAge").value = age >= 0 ? age : ""; // Ensure no negative age
+      });
+    
   </script>
   
     
@@ -880,17 +1036,16 @@ function populateAppointmentsTable(status, appointments) {
 
       let row = document.createElement("tr");
       row.innerHTML = `
-          <td>${index + 1}</td>
+          <td>${index + 1}</td> <!-- This is the row number -->
           <td>${patient.first_name} ${patient.last_name}</td>
           <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
           <td>${appointment.notes || "N/A"}</td>
           <td>${appointmentTime}</td>
           <td>Dr. ${doctorName} (${doctorSpecialization})</td>
-                    <td>${appointment.created_by_username}</td> <!-- Display the creator -->
-
+          <td>${appointment.created_by_username}</td> <!-- Display the creator -->
           <td>${appointment.status || "N/A"}</td>
 
-          <td>${getActionButton(appointment.status)}</td>
+          <td>${getActionButton(appointment.status, appointment, index)}</td>
       `;
 
       tbody.appendChild(row);
@@ -898,6 +1053,7 @@ function populateAppointmentsTable(status, appointments) {
 
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
+
 
 
 /* Sorting Function */
@@ -955,23 +1111,41 @@ function filterAppointments() {
     populateAppointmentsTable("filtered", filteredData);
 }
 
+function getActionButton(status, appointment, rowIndex) {
+  let buttons = "";
 
+  // Encode appointment data safely
+  let appointmentData = encodeURIComponent(JSON.stringify(appointment));
 
-function getActionButton(status) {
+  // Pass both appointmentData and rowIndex
+  buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+  buttons += `<button class="btn btn-danger btn-sm">Cancel</button> `;
+
   switch (status) {
       case 'Waiting':
-          return `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+          buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+          break;
       case 'Scheduled':
       case 'Pending':
-          return `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+          buttons += `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+          break;
       case 'Canceled':
-          return `<button class="btn btn-primary btn-sm">Update</button>`;
+          buttons += `<button class="btn btn-info btn-sm">Update</button>`;
+          break;
       case 'Completed':
-          return `<button class="btn btn-info btn-sm">Review</button>`;
+          buttons += `<button class="btn btn-secondary btn-sm">Review</button>`;
+          break;
       default:
-          return `<button class="btn btn-secondary btn-sm">No Action</button>`;
+          buttons += `<button class="btn btn-light btn-sm">No Action</button>`;
+          break;
   }
+
+  return buttons;
 }
+
+
+
+
 
 // Call fetchAppointments for each status on page load
 $(document).ready(function () {
@@ -1018,15 +1192,6 @@ $(document).ready(function () {
     loadDoctors();
 });
 
-
-// Call this function when the page loads
-loadDoctors();
-
-
-// Call function when the page loads
-$(document).ready(function () {
-  loadDoctors();
-});
 
 $(document).ready(function () {
 
@@ -1152,6 +1317,98 @@ function saveVitals() {
   });
 }
 
+
+
+
+
+let appointments = []; // Store fetched appointments here
+
+function openEditModal(appointmentData, rowIndex) {
+  let appointment = JSON.parse(decodeURIComponent(appointmentData));
+
+  console.log("Editing Row:", rowIndex, "Appointment Data:", appointment);
+
+  // Ensure all required fields are available
+  let fields = [
+      "editFirstName", "editLastName", "editContactNumber", "editDateOfBirth", 
+      "editAge", "editCurrentIllness", "editAppointmentDate", "editDoctor", 
+      "editNotes", "editAppointmentID", "editPatientID"
+  ];
+
+  for (let field of fields) {
+      if (!document.getElementById(field)) {
+          console.error(`Element with ID '${field}' is missing in the DOM.`);
+      }
+  }
+
+  // Fill in appointment details
+  document.getElementById("editFirstName").value = appointment.patient?.first_name || "";
+  document.getElementById("editLastName").value = appointment.patient?.last_name || "";
+  document.getElementById("editContactNumber").value = appointment.patient?.contact_number || "";
+  document.getElementById("editDateOfBirth").value = appointment.patient?.date_of_birth || "";
+  document.getElementById("editAge").value = appointment.patient?.age || "";
+  document.getElementById("editCurrentIllness").value = appointment.current_illness || "";
+  document.getElementById("editAppointmentDate").value = formatDateTime(appointment.appointment_date);
+  document.getElementById("editNotes").value = appointment.notes || "";
+
+  // Set readonly IDs
+  document.getElementById("editAppointmentID").value = appointment.id;
+  document.getElementById("editPatientID").value = appointment.patient?.id || "";
+
+  // Load doctors dynamically and select the assigned doctor
+  loadDoctors(appointment.doctor?.id);
+
+  // Show modal
+  $("#editAppointmentModal").modal("show");
+}
+
+// Format datetime to match datetime-local input
+function formatDateTime(dateTimeString) {
+  let date = new Date(dateTimeString);
+  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+}
+
+function updateAppointment() {
+  let updatedAppointment = {
+      id: document.getElementById("editAppointmentID").value,
+      patient_id: document.getElementById("editPatientID").value,
+      first_name: document.getElementById("editFirstName").value,
+      last_name: document.getElementById("editLastName").value,
+      contact_number: document.getElementById("editContactNumber").value,
+      date_of_birth: document.getElementById("editDateOfBirth").value,
+      age: document.getElementById("editAge").value,
+      current_illness: document.getElementById("editCurrentIllness").value,
+      appointment_date: document.getElementById("editAppointmentDate").value,
+      doctor_id: document.getElementById("editDoctor").value,
+      notes: document.getElementById("editNotes").value,
+      is_emergency: document.getElementById("editIsEmergency").checked,
+  };
+
+  fetch(`http://127.0.0.1:8000/appointments/edit/${updatedAppointment.id}/`, {
+    method: "PATCH",  // 🔄 Change PUT to PATCH
+    headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()  // Ensure this returns authentication headers properly
+      },
+      body: JSON.stringify(updatedAppointment)  // Use `body` instead of `data`
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log("Appointment updated successfully:", data);
+      alert("Appointment updated successfully!");
+      $('#editAppointmentModal').modal('hide'); // Close the modal
+      location.reload(); // Refresh the table
+  })
+  .catch(error => {
+      console.error("Error updating appointment:", error);
+      alert("Failed to update appointment: " + (error.detail || "Unknown error"));
+  });
+}
 
 
   </script>

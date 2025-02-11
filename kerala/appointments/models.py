@@ -64,6 +64,14 @@ class Appointment(models.Model):
     is_emergency = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="updated_appointments"
+    )
     class Meta:
         unique_together = ('patient', 'appointment_date')  # Enforces uniqueness based on patient and datetime
 
