@@ -60,8 +60,7 @@ class CookieVerification(APIView):
                     token=token,
                     login_time=user.last_login or user.date_joined,  # Assuming last_login is available
                     expires_at=expiration_time,
-                    is_valid=True,
-                    user_type=user.user_type  # Assuming 'user_type' is a field on the User model
+                    is_valid=True,                    
                 )
                 
                 return response

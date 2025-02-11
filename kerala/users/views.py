@@ -176,7 +176,8 @@ class OTPVerifyAndLoginView(APIView):
 
                 return Response({
                     "message": "OTP verified and login successful",
-                    "token": token.key  # Provide the token in the response
+                    "token": token.key,  # Provide the token in the response
+                    'user_type': user.user_type
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Invalid OTP"}, status=status.HTTP_401_UNAUTHORIZED)
