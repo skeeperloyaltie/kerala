@@ -56,6 +56,8 @@ class Appointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
+    # 14. When adding a patient appointment, we should have “byWhom” and “atWhatTime” it was added. Example : PatientID 101 , “Added By Doctor”, “DOCID1011”, “31-01-2024 22:15”. 
+
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)  # New field
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Waiting')
