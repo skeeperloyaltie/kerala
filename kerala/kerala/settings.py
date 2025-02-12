@@ -48,8 +48,10 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
-    "https://104.37.187.187",  # If deployed, add the actual domain
+    "https://104.37.187.187",
+    "http://104.37.187.187"  # Add both HTTP and HTTPS
 ]
+
 
 CSRF_COOKIE_NAME = "csrftoken"
 CSRF_COOKIE_SECURE = False  # Set True in production if using HTTPS
