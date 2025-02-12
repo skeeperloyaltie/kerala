@@ -677,7 +677,7 @@ function logoutUser() {
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          window.location.href = 'http://localhost/';
+          window.location.href = 'http://104.37.187.187/';
         },
       error: function(xhr, status, error) {
           console.error('Logout error:', xhr.responseText);
