@@ -795,21 +795,32 @@ function getActionButton(status, appointment, rowIndex) {
       statuses.forEach((status) => {
           fetchAppointments(status);
       });
-  });
-  function addAppointment() {
+  });function addAppointment() {
     // Collect input values
     const firstName = $("#firstName").val().trim();
     const lastName = $("#lastName").val().trim();
-    const contactNumber = $("#contactNumber").val().trim();
+    let contactNumber = $("#contactNumber").val().trim();
     const dateOfBirth = $("#dateOfBirth").val();
     const appointmentDate = $("#appointmentDate").val();
     const doctor = $("#doctor").val();
     const notes = $("#notes").val().trim();
     const isEmergency = $("#isEmergency").is(":checked");
 
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split("T")[0];
+
     // Basic validation for required fields
-    if (!firstName || !lastName || !contactNumber || !dateOfBirth || !appointmentDate || !doctor) {
-        alert("Please fill in all required fields.");
+    let missingFields = [];
+
+    if (!firstName) missingFields.push("First Name");
+    if (!lastName) missingFields.push("Last Name");
+    if (!contactNumber) missingFields.push("Contact Number");
+    if (!dateOfBirth) missingFields.push("Date of Birth");
+    if (!appointmentDate) missingFields.push("Appointment Date");
+    if (!doctor) missingFields.push("Doctor");
+
+    if (missingFields.length > 0) {
+        alert("Please fill in the following required fields:\n" + missingFields.join(", "));
         return;
     }
 
@@ -820,56 +831,46 @@ function getActionButton(status, appointment, rowIndex) {
         return;
     }
 
-    // Validate contact number (must be numeric and at least 10 digits)
-    const phoneRegex = /^\d{10,}$/;
+    // Validate and format phone number
+    const phoneRegex = /^\+?\d{1,4}[-\s]?\d{10}$/; // Allows country code + 10-digit number
     if (!phoneRegex.test(contactNumber)) {
-        alert("Please enter a valid contact number (at least 10 digits).");
+        alert("Please enter a valid phone number. Example: +91 9876543210");
         return;
     }
 
+    // If user enters only 10 digits, prepend the default +91 country code
+    if (/^\d{10}$/.test(contactNumber)) {
+        contactNumber = "+91" + contactNumber;
+    }
+
     // Validate Date of Birth (should not be in the future)
-    const today = new Date().toISOString().split("T")[0];
-    if (dateOfBirth >= today) {
+    if (dateOfBirth > today) {
         alert("Date of Birth cannot be in the future.");
         return;
     }
 
-    // Validate Appointment Date (should be in the future)
-    if (appointmentDate <= today) {
-        alert("Appointment Date must be in the future.");
+    // Validate Appointment Date (should be today or in the future)
+    if (appointmentDate < today) {
+        alert("Appointment Date must be today or a future date.");
         return;
     }
+
     // Create the appointment data object
-   // Create the appointment data object
-const appointmentData = {
-  patient: {
-      first_name: firstName,
-      last_name: lastName,
-      contact_number: contactNumber,
-      date_of_birth: dateOfBirth,
-  },
-  appointment_date: appointmentDate,
-  doctor: doctor,
-  notes: notes,
-  is_emergency: isEmergency
-};
-
-// Validate required fields and track missing fields
-let missingFields = [];
-
-if (!appointmentData.patient.first_name) missingFields.push("First Name");
-if (!appointmentData.patient.last_name) missingFields.push("Last Name");
-if (!appointmentData.patient.contact_number) missingFields.push("Contact Number");
-if (!appointmentData.appointment_date) missingFields.push("Appointment Date");
-if (!appointmentData.doctor) missingFields.push("Doctor");
-
-// If any fields are missing, show an alert
-if (missingFields.length > 0) {
-  alert("Please fill in the following required fields:\n" + missingFields.join(", "));
-  return;
-}
+    const appointmentData = {
+        patient: {
+            first_name: firstName,
+            last_name: lastName,
+            contact_number: contactNumber,
+            date_of_birth: dateOfBirth,
+        },
+        appointment_date: appointmentDate,
+        doctor: doctor,
+        notes: notes,
+        is_emergency: isEmergency
+    };
 
     const headers = getAuthHeaders();
+
     // Submit appointment data first
     $.ajax({
         url: 'http://104.37.187.187:8000/appointments/create/',
@@ -877,38 +878,44 @@ if (missingFields.length > 0) {
         headers: headers,
         data: JSON.stringify(appointmentData),
         contentType: 'application/json',
-        success: function(response) {
+        success: function (response) {
             console.log('✅ Appointment created successfully:', response);
-            const appointmentId = response.appointment.id;  // Get the appointment ID from response
+            const appointmentId = response.appointment?.id; // Safely get appointment ID
             
-            // Show the Vitals modal and pass the appointment ID
-            $("#vitalsModal").modal("show");
-            $("#vitalsModal").data("appointmentId", response.appointment.id);  // Store appointment ID in modal
-            // id is set correctly, lets give an error if its invalid 
-
+            // Check if appointment ID exists
             if (!appointmentId) {
                 alert("Appointment ID is missing. Please try again.");
                 return;
             }
-            
-            // If vitals are required and emergency, submit them separately (can be done later in the modal form)
-            if ($("#isEmergency").is(":checked")) {
-                // Optionally you can directly trigger the vitals form submission
-                // submitVitals(appointmentId); 
+
+            // Show the Vitals modal and pass the appointment ID
+            $("#vitalsModal").modal("show");
+            $("#vitalsModal").data("appointmentId", appointmentId);
+
+            // If emergency, trigger vitals submission (optional)
+            if (isEmergency) {
+                // submitVitals(appointmentId);
             }
 
             // Hide the form and reset fields
             hideAppointmentForm();
-            // Refresh the "Waiting" tab
+            // Refresh the "Scheduled" tab
             $("#appointmentTabs a[href='#Scheduled']").tab("show");
             fetchAppointments("Scheduled");
         },
-        error: function(xhr, status, error) {
-            console.error('❌ Error creating appointment:', error);
-            alert("Failed to create appointment. A user with the same Name and Phone Number exists.");
+        error: function (xhr) {
+            console.error('❌ Error creating appointment:', xhr.responseText);
+            let errorMessage = "A user with the same Name and Phone Number exists. ";
+            if (xhr.responseJSON?.detail) {
+                errorMessage += xhr.responseJSON.detail;
+            } else if (xhr.status === 400) {
+                errorMessage += "A user with the same Name and Phone Number exists.";
+            }
+            alert(errorMessage);
         }
     });
 }
+
 
 
 function saveVitals() {
