@@ -148,7 +148,7 @@ $('#usernameForm').submit(function (e) {
 
   // First, send the login request to get the token
   $.ajax({
-    url: 'http://127.0.0.1:8000/users/login/',
+    url: 'http://104.37.187.187:8000/users/login/',
     type: 'POST',
     contentType: 'application/json',
     headers: {
@@ -176,7 +176,7 @@ $('#usernameForm').submit(function (e) {
         // Check if token exists, then verify
         if (token) {
           $.ajax({
-            url: 'http://127.0.0.1:8000/cookie/verify/',
+            url: 'http://104.37.187.187:8000/cookie/verify/',
             type: 'POST',
             contentType: 'application/json',
             headers: {
@@ -221,7 +221,7 @@ $('#sendOtp').on('click', function () {
   console.log('Posting OTP Request for Username:', { username });
 
   $.ajax({
-    url: 'http://127.0.0.1:8000/users/send-otp/',
+    url: 'http://104.37.187.187:8000/users/send-otp/',
     type: 'POST',
     contentType: 'application/json',
     headers: {
@@ -255,7 +255,7 @@ $('#otpForm').submit(function (e) {
   console.log('Posting OTP Verification Data:', { username, otp });
 
   $.ajax({
-    url: 'http://127.0.0.1:8000/users/otp/',
+    url: 'http://104.37.187.187:8000/users/otp/',
     type: 'POST',
     contentType: 'application/json',
     headers: {
@@ -275,7 +275,7 @@ $('#otpForm').submit(function (e) {
       console.log('Token Retrieved after OTP Verification:', token);
       if (token) {
         $.ajax({
-          url: 'http://127.0.0.1:8000/cookie/verify/',
+          url: 'http://104.37.187.187:8000/cookie/verify/',
           type: 'POST',
           contentType: 'application/json',
           headers: {

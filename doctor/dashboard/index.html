@@ -624,7 +624,7 @@ function validateUserSession() {
   }
 
   $.ajax({
-      url: 'http://127.0.0.1:8000/cookie/check/',
+      url: 'http://104.37.187.187:8000/cookie/check/',
       type: 'GET',
       headers: headers,
       success: function(response) {
@@ -669,7 +669,7 @@ function logoutUser() {
   }
 
   $.ajax({
-      url: 'http://127.0.0.1:8000/users/logout/',
+      url: 'http://104.37.187.187:8000/users/logout/',
       type: 'POST',
       headers: headers,
       success: function(response) {
@@ -700,7 +700,7 @@ validateUserSession();
       const headers = getAuthHeaders(); // Assuming you already have a function to handle authentication headers
   
       $.ajax({
-          url: `http://127.0.0.1:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
+          url: `http://104.37.187.187:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
           type: 'GET',
           headers: headers,
           success: function(response) {
@@ -872,7 +872,7 @@ if (missingFields.length > 0) {
     const headers = getAuthHeaders();
     // Submit appointment data first
     $.ajax({
-        url: 'http://127.0.0.1:8000/appointments/create/',
+        url: 'http://104.37.187.187:8000/appointments/create/',
         type: 'POST',
         headers: headers,
         data: JSON.stringify(appointmentData),
@@ -955,7 +955,7 @@ if (missingVitals.length > 0) {
 
   // Submit vitals data using POST request
   $.ajax({
-      url: `http://127.0.0.1:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
+      url: `http://104.37.187.187:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
       type: 'POST',
       headers: headers,
       data: JSON.stringify(vitalsData),
@@ -1041,7 +1041,7 @@ function updateAppointment() {
       is_emergency: document.getElementById("editIsEmergency").checked,
   };
 
-  fetch(`http://127.0.0.1:8000/appointments/edit/${updatedAppointment.id}/`, {
+  fetch(`http://104.37.187.187:8000/appointments/edit/${updatedAppointment.id}/`, {
     method: "PATCH",  // 🔄 Change PUT to PATCH
     headers: {
           "Content-Type": "application/json",
