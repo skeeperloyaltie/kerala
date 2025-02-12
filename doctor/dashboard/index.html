@@ -270,7 +270,7 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Notes</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -290,7 +290,7 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Notes</th>
                         <th>Scheduled Time</th>
                         <th>Actions</th>
                       </tr>
@@ -310,7 +310,7 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Notes</th>
                         <th>Scheduled Time</th>
                         <th>Actions</th>
                       </tr>
@@ -330,7 +330,7 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Notes</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -349,7 +349,7 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Notes</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -368,7 +368,7 @@
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
-                        <th>Reason</th>
+                        <th>Notes</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -713,60 +713,82 @@ validateUserSession();
           }
       });
   }
-    function populateAppointmentsTable(status, appointments) {
+  function populateAppointmentsTable(status, appointments) {
     let tbodyId = `${status}-tbody`;
     let tbody = document.getElementById(tbodyId);
+
     if (!tbody) {
-        
         console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
         return;
     }
+
     tbody.innerHTML = ""; // Clear existing rows
+
     appointments.forEach((appointment, index) => {
         let row = document.createElement("tr");
+
         let numberCell = document.createElement("td");
         numberCell.textContent = index + 1;
         row.appendChild(numberCell);
+
         let patientCell = document.createElement("td");
         patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
         row.appendChild(patientCell);
+
         let ageCell = document.createElement("td");
         ageCell.textContent = appointment.patient.age || "N/A"; // Handle missing age
         row.appendChild(ageCell);
+
         let reasonCell = document.createElement("td");
-        reasonCell.textContent = appointment.reason || "N/A"; // Handle missing reason
+        reasonCell.textContent = appointment.notes || "N/A"; // Handle missing reason
         row.appendChild(reasonCell);
+
         let statusCell = document.createElement("td");
         statusCell.textContent = appointment.status || "N/A"; // Handle missing status
         row.appendChild(statusCell);
-        // Action Buttons Based on Status
+
+        // Use getActionButton function
         let actionsCell = document.createElement("td");
-        let actionButtonHTML = '';
-        switch (appointment.status) {
-            case 'Waiting':
-                actionButtonHTML = `<button class="btn btn-success btn-sm">Start Consulting</button>`;
-                break;
-            case 'Scheduled':
-                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-                break;
-            case 'Pending':
-                actionButtonHTML = `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-                break;
-            case 'Cancelled':
-                actionButtonHTML = `<button class="btn btn-primary btn-sm">Update</button>`;
-                break;
-            case 'Completed':
-                actionButtonHTML = `<button class="btn btn-info btn-sm">Review</button>`;
-                break;
-            default:
-                actionButtonHTML = `<button class="btn btn-secondary btn-sm">No Action</button>`;
-                break;
-        }
-        actionsCell.innerHTML = actionButtonHTML;
+        actionsCell.innerHTML = getActionButton(status, appointment, index);
         row.appendChild(actionsCell);
+
         tbody.appendChild(row);
     });
 }
+
+
+function getActionButton(status, appointment, rowIndex) {
+  let buttons = "";
+
+  // Encode appointment data safely
+  let appointmentData = encodeURIComponent(JSON.stringify(appointment));
+
+  // Pass both appointmentData and rowIndex
+  buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+  buttons += `<button class="btn btn-danger btn-sm">Cancel</button> `;
+
+  switch (status) {
+      case 'Waiting':
+          buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+          break;
+      case 'Scheduled':
+      case 'Pending':
+          buttons += `<button class="btn btn-warning btn-sm">Reschedule</button>`;
+          break;
+      case 'Canceled':
+          buttons += `<button class="btn btn-info btn-sm">Update</button>`;
+          break;
+      case 'Completed':
+          buttons += `<button class="btn btn-secondary btn-sm">Review</button>`;
+          break;
+      default:
+          buttons += `<button class="btn btn-light btn-sm">No Action</button>`;
+          break;
+  }
+
+  return buttons;
+}
+
 // Call the fetchAppointments function for each status when the page loads
   $(document).ready(function () {
       const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Cancelled"];
@@ -954,6 +976,96 @@ if (missingVitals.length > 0) {
 }
 
 
+
+
+let appointments = []; // Store fetched appointments here
+
+function openEditModal(appointmentData, rowIndex) {
+  let appointment = JSON.parse(decodeURIComponent(appointmentData));
+
+  console.log("Editing Row:", rowIndex, "Appointment Data:", appointment);
+
+  // Ensure all required fields are available
+  let fields = [
+      "editFirstName", "editLastName", "editContactNumber", "editDateOfBirth", 
+      "editAge", "editCurrentIllness", "editAppointmentDate", "editDoctor", 
+      "editNotes", "editAppointmentID", "editPatientID"
+  ];
+
+  for (let field of fields) {
+      if (!document.getElementById(field)) {
+          console.error(`Element with ID '${field}' is missing in the DOM.`);
+      }
+  }
+
+  // Fill in appointment details
+  document.getElementById("editFirstName").value = appointment.patient?.first_name || "";
+  document.getElementById("editLastName").value = appointment.patient?.last_name || "";
+  document.getElementById("editContactNumber").value = appointment.patient?.contact_number || "";
+  document.getElementById("editDateOfBirth").value = appointment.patient?.date_of_birth || "";
+  document.getElementById("editAge").value = appointment.patient?.age || "";
+  document.getElementById("editCurrentIllness").value = appointment.current_illness || "";
+  document.getElementById("editAppointmentDate").value = formatDateTime(appointment.appointment_date);
+  document.getElementById("editNotes").value = appointment.notes || "";
+
+  // Set readonly IDs
+  document.getElementById("editAppointmentID").value = appointment.id;
+  document.getElementById("editPatientID").value = appointment.patient?.id || "";
+
+  // Load doctors dynamically and select the assigned doctor
+  loadDoctors(appointment.doctor?.id);
+
+  // Show modal
+  $("#editAppointmentModal").modal("show");
+}
+
+// Format datetime to match datetime-local input
+function formatDateTime(dateTimeString) {
+  let date = new Date(dateTimeString);
+  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+}
+
+function updateAppointment() {
+  let updatedAppointment = {
+      id: document.getElementById("editAppointmentID").value,
+      patient_id: document.getElementById("editPatientID").value,
+      first_name: document.getElementById("editFirstName").value,
+      last_name: document.getElementById("editLastName").value,
+      contact_number: document.getElementById("editContactNumber").value,
+      date_of_birth: document.getElementById("editDateOfBirth").value,
+      age: document.getElementById("editAge").value,
+      current_illness: document.getElementById("editCurrentIllness").value,
+      appointment_date: document.getElementById("editAppointmentDate").value,
+      doctor_id: document.getElementById("editDoctor").value,
+      notes: document.getElementById("editNotes").value,
+      is_emergency: document.getElementById("editIsEmergency").checked,
+  };
+
+  fetch(`http://127.0.0.1:8000/appointments/edit/${updatedAppointment.id}/`, {
+    method: "PATCH",  // 🔄 Change PUT to PATCH
+    headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()  // Ensure this returns authentication headers properly
+      },
+      body: JSON.stringify(updatedAppointment)  // Use `body` instead of `data`
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log("Appointment updated successfully:", data);
+      alert("Appointment updated successfully!");
+      $('#editAppointmentModal').modal('hide'); // Close the modal
+      location.reload(); // Refresh the table
+  })
+  .catch(error => {
+      console.error("Error updating appointment:", error);
+      alert("Failed to update appointment: " + (error.detail || "Unknown error"));
+  });
+}
 
 
   </script>
