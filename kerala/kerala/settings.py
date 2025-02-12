@@ -30,7 +30,7 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost',  # Example: React frontend during development
     'http://127.0.0.1:8000',
-    'http://104.37.187.187:8000',
+    'https://104.37.187.187:8000',
 
 ]
 from corsheaders.defaults import default_headers
@@ -48,7 +48,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
-    "http://104.37.187.187",  # If deployed, add the actual domain
+    "https://104.37.187.187",  # If deployed, add the actual domain
 ]
 
 CSRF_COOKIE_NAME = "csrftoken"
