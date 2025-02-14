@@ -7,14 +7,13 @@ from django.utils.timezone import localtime
 @receiver(pre_save, sender=Appointment)
 def monitor_appointment_changes(sender, instance, **kwargs):
     """
-    Monitor edits, cancellations, and reschedules of appointments.
-    Logs changes before they are saved.
+    Monitor changes to appointments, logging both old and new data.
     """
-    if instance.pk:  # Ensure this is an update, not a new record
+    if instance.pk:  # Only monitor updates
         try:
             old_appointment = Appointment.objects.get(pk=instance.pk)
-            
-            # Store previous data before changes
+
+            # Capture previous data
             previous_data = {
                 "doctor": getattr(old_appointment.doctor, "id", None),
                 "patient": getattr(old_appointment.patient, "id", None),
@@ -22,22 +21,31 @@ def monitor_appointment_changes(sender, instance, **kwargs):
                 "status": old_appointment.status,
             }
 
+            # Capture new data
+            new_data = {
+                "doctor": getattr(instance.doctor, "id", None),
+                "patient": getattr(instance.patient, "id", None),
+                "appointment_date": localtime(instance.appointment_date).strftime("%Y-%m-%d %H:%M:%S"),
+                "status": instance.status,
+            }
+
             # Determine action type
             action = "EDITED"
             if old_appointment.status != instance.status:
                 if instance.status == "Cancelled":
-                    action = "CANCELLED"
+                    action = "CANCELED"
                 elif instance.status == "Scheduled":
                     action = "RESCHEDULED"
 
             # Ensure updated_by exists
             updated_by = getattr(instance, "updated_by", None)
 
-            # Log the monitored appointment
+            # Log monitored appointment
             MonitoredAppointment.objects.create(
                 appointment=old_appointment,
-                edited_by=updated_by,  # Ensure this is set in views
+                edited_by=updated_by,  
                 previous_data=previous_data,
+                new_data=new_data,
                 action=action,
             )
 
@@ -45,3 +53,35 @@ def monitor_appointment_changes(sender, instance, **kwargs):
             pass  # No monitoring needed for new records
         except Exception as e:
             print(f"Error monitoring appointment changes: {e}")  # Debugging
+
+
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+from django.utils.timezone import now
+from .models import UserLoginLog
+
+@receiver(user_logged_in)
+def log_user_login(sender, request, user, **kwargs):
+    """
+    Logs user login details.
+    """
+    ip = get_client_ip(request)
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+    UserLoginLog.objects.create(
+        user=user,
+        ip_address=ip,
+        user_agent=user_agent,
+        login_time=now()
+    )
+
+def get_client_ip(request):
+    """
+    Extracts client IP from request headers.
+    """
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
