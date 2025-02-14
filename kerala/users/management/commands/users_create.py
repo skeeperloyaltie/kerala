@@ -66,6 +66,8 @@ class Command(BaseCommand):
         for user_data in default_users:
             username = user_data["username"]
             email = user_data["email"]
+            firstname = user_data.get("first_name", "")
+            lastname = user_data.get("last_name", "")
             password = user_data["password"]
             user_type = user_data["user_type"]
             extra = user_data.get("extra", {})
@@ -79,6 +81,8 @@ class Command(BaseCommand):
             user = User.objects.create_user(
                 username=username,
                 email=email,
+                first_name=firstname,
+                last_name=lastname,
                 password=password,
                 user_type=user_type,
             )
