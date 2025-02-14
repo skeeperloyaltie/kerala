@@ -107,6 +107,7 @@
                 // Store CSRF token in a global variable and localStorage
                 window.csrftoken = response.csrftoken;
                 localStorage.setItem('csrftoken', response.csrftoken);
+                console.log('🔹 Stored CSRF Token:', response.csrftoken);
             },
             error: function (xhr) {
                 console.error('❌ Failed to Fetch CSRF Token:', xhr.responseJSON || xhr.statusText);
@@ -233,7 +234,7 @@ $('#usernameForm').submit(function (e) {
               success: function (cookieResponse) {
                 console.log('✅ Cookie Verification Success:', cookieResponse);
                 showNotification(cookieResponse.message, 'success');
-                //redirectToDashboard(response.user_type);  // Handle redirection after successful login
+                redirectToDashboard(response.user_type);  // Handle redirection after successful login
 
               },
               error: function (xhr) {
