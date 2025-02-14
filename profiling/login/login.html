@@ -183,24 +183,26 @@ $('#usernameForm').submit(function (e) {
           localStorage.setItem('token', response.token);
           localStorage.setItem('username', username);
           localStorage.setItem('user_type', response.user_type);
+          localStorage.setItem('csrftoken', csrftoken);
 
           sessionStorage.setItem('token', response.token);
           sessionStorage.setItem('username', username);
           sessionStorage.setItem('user_type', response.user_type);
+          sessionStorage.setItem('csrftoken', csrftoken);
 
           // Fetch stored values to verify they are saved correctly
           console.log('🔹 LocalStorage Data:', {
             token: localStorage.getItem('token'),
             username: localStorage.getItem('username'),
             user_type: localStorage.getItem('user_type'),
-            session_data: localStorage.getItem('session_data'),
+            csrftoken: localStorage.getItem('csrftoken'),
           });
 
           console.log('🔹 SessionStorage Data:', {
             token: sessionStorage.getItem('token'),
             username: sessionStorage.getItem('username'),
             user_type: sessionStorage.getItem('user_type'),
-            session_data: sessionStorage.getItem('session_data'),
+            csrftoken: sessionStorage.getItem('csrftoken'),
           });
 
           // Fetch the token from localStorage to send with the verification request
@@ -221,7 +223,7 @@ $('#usernameForm').submit(function (e) {
               success: function (cookieResponse) {
                 console.log('✅ Cookie Verification Success:', cookieResponse);
                 showNotification(cookieResponse.message, 'success');
-                redirectToDashboard(response.user_type);  // Handle redirection after successful login
+                //redirectToDashboard(response.user_type);  // Handle redirection after successful login
 
               },
               error: function (xhr) {
