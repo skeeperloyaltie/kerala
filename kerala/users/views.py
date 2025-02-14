@@ -311,3 +311,10 @@ class UserProfileView(RetrieveAPIView):
             return profile_data
 
         return Response(profile_data, status=status.HTTP_200_OK)
+
+
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+
+def get_csrf_token(request):
+    return JsonResponse({'csrftoken': get_token(request)})

@@ -96,24 +96,30 @@
     $(document).ready(function () {
       let otpTimer;
       const otpTimeout = 60; // Countdown timer duration in seconds
-  
-      function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-          const cookies = document.cookie.split(";");
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === name + "=") {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
+      
+      function fetchCSRFToken() {
+        $.ajax({
+            url: 'http://104.37.187.187:8000/users/get-csrf-token/', // Adjust URL if needed
+            type: 'GET',
+            success: function (response) {
+                console.log('🟢 CSRF Token Fetched:', response.csrfToken);
+    
+                // Store CSRF token in a global variable or localStorage/sessionStorage
+                window.csrftoken = response.csrfToken;
+                localStorage.setItem('csrftoken', response.csrfToken);
+            },
+            error: function (xhr) {
+                console.error('❌ Failed to Fetch CSRF Token:', xhr.responseJSON || xhr.statusText);
             }
-          }
-        }
-        return cookieValue;
-      }
-  
-      const csrftoken = getCookie('csrftoken');
-      console.log('CSRF Token:', csrftoken);
+        });
+    }
+    
+    // Call function when the page loads
+    $(document).ready(function () {
+        fetchCSRFToken();
+    });
+
+    
 
   
       function showNotification(message, type) {
