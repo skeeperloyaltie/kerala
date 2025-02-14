@@ -593,15 +593,6 @@ function convertValue(value, fromUnit, toUnit) {
 
 
   <script>
-   // Function to retrieve CSRF token from meta tag or cookie
-function getCSRFToken() {
-  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-  if (csrfTokenMeta) {
-      return csrfTokenMeta.getAttribute('content');
-  }
-  const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
-  return csrfCookie ? csrfCookie[1] : null;
-}
 
 // Function to retrieve authentication headers
 function getAuthHeaders() {
@@ -621,13 +612,29 @@ console.log(token, username, csrftoken);
   return {};
 }
 
+// Function to check session data on page load
+function checkSessionOnLoad() {
+  const token = localStorage.getItem('token');
+  const username = localStorage.getItem('username');
+  const userType = localStorage.getItem('user_type');
+
+  if (!token || !username || !userType) {
+      console.warn('🔴 Session data missing or invalid. Redirecting...');
+      window.location.href = 'http://104.37.187.187';
+      return;
+  }
+
+  console.log('🟢 Session data exists. Validating session...');
+  validateUserSession();
+}
+
 // Validate user session
 function validateUserSession() {
   const headers = getAuthHeaders();
-  console.log(getAuthHeaders());
 
   if (!headers['Authorization']) {
-      console.warn('No valid token. User is not authenticated.');
+      console.warn('🔴 No valid token. User is not authenticated.');
+      window.location.href = 'http://104.37.187.187'; // Redirect if token is missing
       return;
   }
 
@@ -636,8 +643,10 @@ function validateUserSession() {
       type: 'GET',
       headers: headers,
       success: function(response) {
-          console.log('Session validation success:', response);
+          console.log('🟢 Session validation success:', response);
+
           if (response.message !== 'Cookie is valid.') {
+              console.warn('🔴 Invalid session. Logging out...');
               alert('Invalid session. Logging out.');
               logoutUser();
               return;
@@ -648,11 +657,17 @@ function validateUserSession() {
           document.getElementById("timeOfDay").textContent = getGreetingTime();
       },
       error: function(xhr, status, error) {
-          console.error('Error validating session:', xhr.responseText);
+          console.error('❌ Error validating session:', xhr.responseText);
           logoutUser();
       }
   });
 }
+
+// Run session check on page load
+$(document).ready(function () {
+  checkSessionOnLoad();
+});
+
 
 // Function to get time of day greeting
 function getGreetingTime() {
