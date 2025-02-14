@@ -8,6 +8,37 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from django.contrib.auth.models import AbstractUser, Group, Permission, BaseUserManager
+from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+import random
+import logging
+
+logger = logging.getLogger(__name__)
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, email, password=None, first_name=None, last_name=None, user_type='Receptionist'):
+        if not email:
+            raise ValueError("Users must have an email address")
+        if not first_name or not last_name:
+            raise ValueError("Users must provide a first name and last name")
+
+        user = self.model(
+            username=username,
+            email=self.normalize_email(email),
+            first_name=first_name,
+            last_name=last_name,
+            user_type=user_type
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, first_name="Admin", last_name="User"):
+        return self.create_user(username, email, password, first_name, last_name, user_type='Admin')
+
+
 class User(AbstractUser):
     USER_TYPE_CHOICES = (
         ('Receptionist', 'Receptionist'),
@@ -18,18 +49,23 @@ class User(AbstractUser):
 
     groups = models.ManyToManyField(
         Group,
-        related_name="custom_user_set",  # Avoids clash with auth.User.groups
+        related_name="custom_user_set",
         blank=True,
         help_text="The groups this user belongs to.",
         verbose_name="groups",
     )
     user_permissions = models.ManyToManyField(
         Permission,
-        related_name="custom_user_permissions_set",  # Avoids clash with auth.User.user_permissions
+        related_name="custom_user_permissions_set",
         blank=True,
         help_text="Specific permissions for this user.",
         verbose_name="user permissions",
     )
+
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.username})"
 
 class OTPVerification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
