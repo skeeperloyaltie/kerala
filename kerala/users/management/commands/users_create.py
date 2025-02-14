@@ -16,7 +16,9 @@ class Command(BaseCommand):
                 "email": "flipsgodfrey@gmail.com",
             },
             {
-                "username": "doctor",
+                "username": "skeeper",
+                "first_name": "Skeeper",
+                "last_name": "Loyaltie",
                 "password": "DoctorPass123",
                 "user_type": "Doctor",
                 "email": "flipsgodfrey@gmail.com",
@@ -26,8 +28,33 @@ class Command(BaseCommand):
                 },
             },
             {
-                "username": "receptionist",
-                "password": "ReceptionistPass123",
+                "username": "gopim",
+                "first_name": "Gopi",
+                "last_name": "M",
+                "password": "GopiPass123",
+                "user_type": "Doctor",
+                "email": "gopizee007@gmail.com",
+                "extra": {
+                    "specialization": "Dentistry",
+                    "contact_number": "1234567890",
+                },
+            },
+            {
+                "username": "roshnisekar",
+                "first_name": "Roshni",
+                "last_name": "Sekar",
+                "password": "RoshniPass123",
+                "user_type": "Receptionist",
+                "email": "roshnisekar@gmail.com",
+                "extra": {
+                    "contact_number": "1234567890",
+                },
+            },
+            {
+                "username": "freak",
+                "first_name": "Freak",
+                "last_name": "Godfrey",
+                "password": "GodfreyPass123",
                 "user_type": "Receptionist",
                 "email": "flipsgodfrey@gmail.com",
                 "extra": {
