@@ -608,7 +608,7 @@ function getAuthHeaders() {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   const username = sessionStorage.getItem('username') || localStorage.getItem('username');
   const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
-console.log(token, username, csrf_token);
+console.log(token, username, csrftoken);
 
   if (token && username && csrftoken) {
       return {
