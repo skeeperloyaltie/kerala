@@ -8,7 +8,7 @@ class MonitoredAppointment(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name="monitor_logs")
     edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     previous_data = models.JSONField()  # Stores previous appointment details
-    new_data = models.JSONField()  # Stores new appointment details
+    new_data = models.CharField(max_length=255, null=True, blank=True)
     action = models.CharField(max_length=20, choices=[
         ("EDITED", "Edited"),
         ("CANCELED", "Canceled"),
