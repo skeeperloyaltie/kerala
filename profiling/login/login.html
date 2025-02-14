@@ -113,6 +113,8 @@
       }
   
       const csrftoken = getCookie('csrftoken');
+      console.log('CSRF Token:', csrftoken);
+
   
       function showNotification(message, type) {
         const notification = $('#notification');
