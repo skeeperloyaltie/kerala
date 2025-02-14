@@ -7,8 +7,8 @@ User = get_user_model()
 class MonitoredAppointment(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name="monitor_logs")
     edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    previous_data = models.JSONField()  # Stores previous appointment details
-    new_data = models.CharField(max_length=255, null=True, blank=True)
+    previous_data = models.JSONField()  # Stores all previous details
+    new_data = models.JSONField(null=True, blank=True)  # Stores all new details
     action = models.CharField(max_length=20, choices=[
         ("EDITED", "Edited"),
         ("CANCELED", "Canceled"),
@@ -18,6 +18,7 @@ class MonitoredAppointment(models.Model):
 
     def __str__(self):
         return f"{self.appointment} - {self.action} by {self.edited_by}"
+
 
 
 from django.db import models
