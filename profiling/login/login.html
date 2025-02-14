@@ -195,14 +195,14 @@ $('#usernameForm').submit(function (e) {
             token: localStorage.getItem('token'),
             username: localStorage.getItem('username'),
             user_type: localStorage.getItem('user_type'),
-            //session_data: JSON.parse(localStorage.getItem('session_data')),
+            session_data: localStorage.getItem('session_data'),
           });
 
           console.log('🔹 SessionStorage Data:', {
             token: sessionStorage.getItem('token'),
             username: sessionStorage.getItem('username'),
             user_type: sessionStorage.getItem('user_type'),
-            session_data: JSON.parse(sessionStorage.getItem('session_data')),
+            session_data: sessionStorage.getItem('session_data'),
           });
 
           // Fetch the token from localStorage to send with the verification request
