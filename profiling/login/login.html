@@ -163,12 +163,14 @@ $('#usernameForm').submit(function (e) {
         console.log('🔸 OTP Required: Showing OTP Modal');
         $('#otpModal').modal('show');
       } else {
-        // Ensure session_data exists before saving
-if (response.token && response.user_type) {
-  const session_data = {
-    username: username, // Store manually since it's not returned from backend
-    user_type: response.user_type,
-  };
+        
+        // Create session data manually (since it's not returned by backend)
+      const session_data = {
+        token: localStorage.getItem('token'),
+        username: username,
+        user_type: response.user_type,
+      };
+
         // Log every received field
         console.log('🟢 Received Data:', {
           token: response.token,
@@ -178,31 +180,30 @@ if (response.token && response.user_type) {
         // Ensure session data exists before saving
         if (response.token && response.user_type) {
           // Save token and user details in localStorage and sessionStorage
-         // Save token and user details in localStorage and sessionStorage
-  localStorage.setItem('token', response.token);
-  localStorage.setItem('username', username);
-  localStorage.setItem('user_type', response.user_type);
-  localStorage.setItem('session_data', JSON.stringify(session_data)); // Manually saving session data
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('username', username);
+          localStorage.setItem('user_type', response.user_type);
+          localStorage.setItem('session_data', JSON.stringify(response.session_data));
 
-  sessionStorage.setItem('token', response.token);
-  sessionStorage.setItem('username', username);
-  sessionStorage.setItem('user_type', response.user_type);
-  sessionStorage.setItem('session_data', JSON.stringify(session_data)); // Manually saving session data
+          sessionStorage.setItem('token', response.token);
+          sessionStorage.setItem('username', username);
+          sessionStorage.setItem('user_type', response.user_type);
+          sessionStorage.setItem('session_data', JSON.stringify(response.session_data));
 
-  // Fetch stored values to verify they are saved correctly
-  console.log('🔹 LocalStorage Data:', {
-    token: localStorage.getItem('token'),
-    username: localStorage.getItem('username'),
-    user_type: localStorage.getItem('user_type'),
-    session_data: JSON.parse(localStorage.getItem('session_data')),
-  });
+          // Fetch stored values to verify they are saved correctly
+          console.log('🔹 LocalStorage Data:', {
+            token: localStorage.getItem('token'),
+            username: localStorage.getItem('username'),
+            user_type: localStorage.getItem('user_type'),
+            session_data: JSON.parse(localStorage.getItem('session_data')),
+          });
 
-  console.log('🔹 SessionStorage Data:', {
-    token: sessionStorage.getItem('token'),
-    username: sessionStorage.getItem('username'),
-    user_type: sessionStorage.getItem('user_type'),
-    session_data: JSON.parse(sessionStorage.getItem('session_data')),
-  });
+          console.log('🔹 SessionStorage Data:', {
+            token: sessionStorage.getItem('token'),
+            username: sessionStorage.getItem('username'),
+            user_type: sessionStorage.getItem('user_type'),
+            session_data: JSON.parse(sessionStorage.getItem('session_data')),
+          });
 
           // Fetch the token from localStorage to send with the verification request
           const token = localStorage.getItem('token');
