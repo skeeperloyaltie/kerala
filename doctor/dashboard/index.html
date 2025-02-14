@@ -607,7 +607,7 @@ function getCSRFToken() {
 function getAuthHeaders() {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   const username = sessionStorage.getItem('username') || localStorage.getItem('username');
-  const csrf_token = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
+  const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
 console.log(token, username, csrf_token);
 
   if (token && username && csrftoken) {
