@@ -99,14 +99,14 @@
       
       function fetchCSRFToken() {
         $.ajax({
-            url: 'http://104.37.187.187:8000/users/get-csrf-token/', // Adjust URL if needed
+            url: 'http://104.37.187.187:8000/users/get-csrf-token/',
             type: 'GET',
             success: function (response) {
-                console.log('🟢 CSRF Token Fetched:', response.csrfToken);
+                console.log('🟢 CSRF Token Fetched:', response.csrftoken); // Corrected key name
     
-                // Store CSRF token in a global variable or localStorage/sessionStorage
-                window.csrftoken = response.csrfToken;
-                localStorage.setItem('csrftoken', response.csrfToken);
+                // Store CSRF token in a global variable and localStorage
+                window.csrftoken = response.csrftoken;
+                localStorage.setItem('csrftoken', response.csrftoken);
             },
             error: function (xhr) {
                 console.error('❌ Failed to Fetch CSRF Token:', xhr.responseJSON || xhr.statusText);
@@ -114,10 +114,11 @@
         });
     }
     
-    // Call function when the page loads
+    // Fetch the CSRF token when the page loads
     $(document).ready(function () {
         fetchCSRFToken();
     });
+    
 
     csrftoken = localStorage.getItem('csrftoken');
     console.log('🔹 Stored CSRF Token:', csrftoken);
