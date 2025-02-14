@@ -221,6 +221,8 @@ $('#usernameForm').submit(function (e) {
               success: function (cookieResponse) {
                 console.log('✅ Cookie Verification Success:', cookieResponse);
                 showNotification(cookieResponse.message, 'success');
+                redirectToDashboard(response.user_type);  // Handle redirection after successful login
+
               },
               error: function (xhr) {
                 console.error('❌ Cookie Verification Error:', xhr.responseJSON);
