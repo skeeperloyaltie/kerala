@@ -139,73 +139,106 @@
         }, 1000);
       }
    // Handle Username/Password Login
+// Handle Username/Password Login
 $('#usernameForm').submit(function (e) {
   e.preventDefault();
   const username = $('#usernameLogin').val();
   const password = $('#passwordLogin').val();
 
-  console.log('Posting Login Data:', { username });
+  console.log('🟢 Posting Login Data:', { username, password });
 
-  // First, send the login request to get the token
+  // First, send the login request to get the token and session data
   $.ajax({
     url: 'http://104.37.187.187:8000/users/login/',
     type: 'POST',
     contentType: 'application/json',
     headers: {
-      'X-CSRFToken': csrftoken,  // Add CSRF token for security
+      'X-CSRFToken': csrftoken, // Add CSRF token for security
     },
     data: JSON.stringify({ username, password }),
     success: function (response) {
-      console.log('Login Response:', response);
+      console.log('🟢 Full Login Response:', response);
 
       if (response.requires_otp) {
+        console.log('🔸 OTP Required: Showing OTP Modal');
         $('#otpModal').modal('show');
       } else {
-        // Save token and username in localStorage or sessionStorage
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('username', username);
+        // Log every received field
+        console.log('🟢 Received Data:', {
+          token: response.token,
+          user_type: response.user_type,
+          session_data: response.session_data,
+        });
 
-        // Optionally, store the token and username in sessionStorage for immediate session usage
-        sessionStorage.setItem('token', response.token);
-        sessionStorage.setItem('username', username);
+        // Ensure session data exists before saving
+        if (response.token && response.user_type) {
+          // Save token and user details in localStorage and sessionStorage
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('username', username);
+          localStorage.setItem('user_type', response.user_type);
+          localStorage.setItem('session_data', JSON.stringify(response.session_data));
 
-        // Fetch the token from localStorage to send with the request
-        const token = localStorage.getItem('token');
-        console.log('Token Retrieved from LocalStorage:', token);
+          sessionStorage.setItem('token', response.token);
+          sessionStorage.setItem('username', username);
+          sessionStorage.setItem('user_type', response.user_type);
+          sessionStorage.setItem('session_data', JSON.stringify(response.session_data));
 
-        // Check if token exists, then verify
-        if (token) {
-          $.ajax({
-            url: 'http://104.37.187.187:8000/cookie/verify/',
-            type: 'POST',
-            contentType: 'application/json',
-            headers: {
-              'X-CSRFToken': csrftoken,
-              'Authorization': 'Token ' + token  // Attach the token in the Authorization header
-            },
-            data: JSON.stringify({ username }),
-            success: function (cookieResponse) {
-              console.log('Cookie Verification Response:', cookieResponse);
-              showNotification(cookieResponse.message, 'success');
-              redirectToDashboard(response.user_type);  // Handle redirection after successful login
-            },
-            error: function (xhr) {
-              console.error('Cookie Verification Error:', xhr.responseJSON);
-              showNotification(xhr.responseJSON.error || 'Cookie verification failed.', 'danger');
-            }
+          // Fetch stored values to verify they are saved correctly
+          console.log('🔹 LocalStorage Data:', {
+            token: localStorage.getItem('token'),
+            username: localStorage.getItem('username'),
+            user_type: localStorage.getItem('user_type'),
+            session_data: JSON.parse(localStorage.getItem('session_data')),
           });
+
+          console.log('🔹 SessionStorage Data:', {
+            token: sessionStorage.getItem('token'),
+            username: sessionStorage.getItem('username'),
+            user_type: sessionStorage.getItem('user_type'),
+            session_data: JSON.parse(sessionStorage.getItem('session_data')),
+          });
+
+          // Fetch the token from localStorage to send with the verification request
+          const token = localStorage.getItem('token');
+
+          if (token) {
+            console.log('🟢 Sending Cookie Verification Request with Token:', token);
+
+            $.ajax({
+              url: 'http://104.37.187.187:8000/cookie/verify/',
+              type: 'POST',
+              contentType: 'application/json',
+              headers: {
+                'X-CSRFToken': csrftoken,
+                'Authorization': 'Token ' + token, // Attach token in Authorization header
+              },
+              data: JSON.stringify({ username }),
+              success: function (cookieResponse) {
+                console.log('✅ Cookie Verification Success:', cookieResponse);
+                showNotification(cookieResponse.message, 'success');
+              },
+              error: function (xhr) {
+                console.error('❌ Cookie Verification Error:', xhr.responseJSON);
+                showNotification(xhr.responseJSON.error || 'Cookie verification failed.', 'danger');
+              },
+            });
+          } else {
+            console.error('❌ Token not found after login.');
+            showNotification('Token generation failed. Please try again.', 'danger');
+          }
         } else {
-          console.error('Token not found after login.');
-          showNotification('Token generation failed. Please try again.', 'danger');
+          console.error('❌ Missing token or user_type in response.');
+          showNotification('Login successful, but session data is missing.', 'danger');
         }
       }
     },
     error: function (xhr) {
-      console.error('Login Error:', xhr.responseJSON);
+      console.error('❌ Login Error:', xhr.responseJSON);
       showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
-    }
+    },
   });
 });
+
 
 
 
