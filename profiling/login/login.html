@@ -154,7 +154,7 @@ $('#usernameForm').submit(function (e) {
   const password = $('#passwordLogin').val();
 
   console.log('🟢 Posting Login Data:', { username, password });
-
+  csrftoken = localStorage.getItem('csrftoken');
   // First, send the login request to get the token and session data
   $.ajax({
     url: 'http://104.37.187.187:8000/users/login/',
