@@ -183,12 +183,10 @@ $('#usernameForm').submit(function (e) {
           localStorage.setItem('token', response.token);
           localStorage.setItem('username', username);
           localStorage.setItem('user_type', response.user_type);
-          localStorage.setItem('session_data', JSON.stringify(response.session_data));
 
           sessionStorage.setItem('token', response.token);
           sessionStorage.setItem('username', username);
           sessionStorage.setItem('user_type', response.user_type);
-          sessionStorage.setItem('session_data', JSON.stringify(response.session_data));
 
           // Fetch stored values to verify they are saved correctly
           console.log('🔹 LocalStorage Data:', {
