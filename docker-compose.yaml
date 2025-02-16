@@ -44,6 +44,8 @@ services:
       - /etc/letsencrypt/privkey.pem:/etc/letsencrypt/privkey.pem:ro
     ports:
       - "80:80"
+      - "443:443"  # Ensure HTTPS traffic is allowed
+
     depends_on:
       - django
     environment:
