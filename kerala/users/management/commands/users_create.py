@@ -66,8 +66,8 @@ class Command(BaseCommand):
         for user_data in default_users:
             username = user_data["username"]
             email = user_data["email"]
-            firstname = user_data.get("first_name", "")
-            lastname = user_data.get("last_name", "")
+            firstname = user_data["first_name"] if "first_name" in user_data else ""
+            lastname = user_data["last_name"] if "last_name" in user_data else ""
             password = user_data["password"]
             user_type = user_data["user_type"]
             extra = user_data.get("extra", {})
