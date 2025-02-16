@@ -271,7 +271,8 @@
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Notes</th>
-                        <th>Status</th>
+                        <th>Scheduled Time</th>                        
+                        <th>Created By</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -285,13 +286,14 @@
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                   <table class="table">
-                    <thead>
+                    <<thead>
                       <tr>
                         <th>#</th>
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Notes</th>
-                        <th>Scheduled Time</th>
+                        <th>Scheduled Time</th>                        
+                        <th>Created By</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -311,7 +313,8 @@
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Notes</th>
-                        <th>Scheduled Time</th>
+                        <th>Scheduled Time</th>                        
+                        <th>Created By</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -331,7 +334,8 @@
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Notes</th>
-                        <th>Status</th>
+                        <th>Scheduled Time</th>                        
+                        <th>Created By</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -350,7 +354,8 @@
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Notes</th>
-                        <th>Status</th>
+                        <th>Scheduled Time</th>                        
+                        <th>Created By</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -369,7 +374,8 @@
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Notes</th>
-                        <th>Status</th>
+                        <th>Scheduled Time</th>                        
+                        <th>Created By</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -768,6 +774,10 @@ validateUserSession();
 
         let statusCell = document.createElement("td");
         statusCell.textContent = appointment.status || "N/A"; // Handle missing status
+        row.appendChild(statusCell);
+
+        let createdbyCell = document.createElement("td");
+        statusCell.textContent = appointment.created_by_username || "N/A"; // Handle missing status
         row.appendChild(statusCell);
 
         // Use getActionButton function
