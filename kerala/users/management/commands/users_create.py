@@ -66,39 +66,74 @@ class Command(BaseCommand):
         for user_data in default_users:
             username = user_data["username"]
             email = user_data["email"]
-            firstname = user_data["first_name"] if "first_name" in user_data else ""
-            lastname = user_data["last_name"] if "last_name" in user_data else ""
+            firstname = user_data.get("first_name", "")
+            lastname = user_data.get("last_name", "")
             password = user_data["password"]
             user_type = user_data["user_type"]
             extra = user_data.get("extra", {})
 
-            # Check if the user already exists
-            if User.objects.filter(username=username).exists():
-                self.stdout.write(self.style.WARNING(f"User {username} already exists. Skipping."))
-                continue
+            user, created = User.objects.get_or_create(username=username, defaults={
+                "email": email,
+                "first_name": firstname,
+                "last_name": lastname,
+                "user_type": user_type
+            })
 
-            # Create the user
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                first_name=firstname,
-                last_name=lastname,
-                password=password,
-                user_type=user_type,
-            )
-            self.stdout.write(self.style.SUCCESS(f"User {username} created."))
+            if not created:
+                # Update existing user details if they differ
+                updated_fields = []
+                if user.email != email:
+                    user.email = email
+                    updated_fields.append("email")
+                if user.first_name != firstname:
+                    user.first_name = firstname
+                    updated_fields.append("first_name")
+                if user.last_name != lastname:
+                    user.last_name = lastname
+                    updated_fields.append("last_name")
+                if user.user_type != user_type:
+                    user.user_type = user_type
+                    updated_fields.append("user_type")
 
-            # Add extra fields for specific user types
+                if updated_fields:
+                    user.save(update_fields=updated_fields)
+                    self.stdout.write(self.style.SUCCESS(f"User {username} updated: {', '.join(updated_fields)}"))
+                else:
+                    self.stdout.write(self.style.WARNING(f"User {username} already exists with correct details. Skipping."))
+
+            else:
+                user.set_password(password)
+                user.save()
+                self.stdout.write(self.style.SUCCESS(f"User {username} created."))
+
+            # Ensure role-specific profiles are created/updated
             if user_type == "Doctor":
-                Doctor.objects.create(user=user, **extra)
-                self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} created."))
+                doctor, doctor_created = Doctor.objects.get_or_create(user=user, defaults=extra)
+                if not doctor_created:
+                    for key, value in extra.items():
+                        if getattr(doctor, key) != value:
+                            setattr(doctor, key, value)
+                            doctor.save(update_fields=[key])
+                    self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} updated."))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} created."))
+
             elif user_type == "Receptionist":
-                Receptionist.objects.create(user=user, **extra)
-                self.stdout.write(self.style.SUCCESS(f"Receptionist profile for {username} created."))
+                receptionist, rec_created = Receptionist.objects.get_or_create(user=user, defaults=extra)
+                if not rec_created:
+                    for key, value in extra.items():
+                        if getattr(receptionist, key) != value:
+                            setattr(receptionist, key, value)
+                            receptionist.save(update_fields=[key])
+                    self.stdout.write(self.style.SUCCESS(f"Receptionist profile for {username} updated."))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"Receptionist profile for {username} created."))
+
             elif user_type == "Admin":
                 user.is_staff = True
                 user.is_superuser = True
-                user.save()
+                user.save(update_fields=["is_staff", "is_superuser"])
                 self.stdout.write(self.style.SUCCESS(f"Admin privileges assigned to {username}."))
 
-        self.stdout.write(self.style.SUCCESS("Default users created successfully."))
+        self.stdout.write(self.style.SUCCESS("Default users created/updated successfully."))
+
