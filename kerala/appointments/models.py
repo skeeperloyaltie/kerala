@@ -74,8 +74,9 @@ class Appointment(models.Model):
     )
 
     # Store first_name and contact_number explicitly for uniqueness constraints
-    first_name = models.CharField(max_length=255)
-    contact_number = models.CharField(max_length=15, null=True, blank=True, default="Unknown")
+    first_name = models.CharField(max_length=255, default="Unknown")  
+    contact_number = models.CharField(max_length=15, default="0702940509")
+
 
     class Meta:
         unique_together = ('first_name', 'contact_number', 'appointment_date')  
