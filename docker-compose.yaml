@@ -39,6 +39,9 @@ services:
       - ./assets:/usr/share/nginx/html/assets
       - ./index.html:/usr/share/nginx/html/index.html
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt/live/smarthospitalmaintain.com:/etc/letsencrypt/live/smarthospitalmaintain.com:ro
+      - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
+      - /etc/letsencrypt/privkey.pem:/etc/letsencrypt/privkey.pem:ro
     ports:
       - "80:80"
     depends_on:
