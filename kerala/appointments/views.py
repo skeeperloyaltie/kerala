@@ -11,7 +11,6 @@ from users.models import Doctor, Receptionist
 
 # Configure logger
 logger = logging.getLogger(__name__)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -33,49 +32,69 @@ class CreateAppointmentView(APIView):
             logger.error("Invalid format for patient details.")
             return Response({"error": "Patient details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Log patient data
-        logger.info(f"Patient data received: {patient_data}")
+        # Extract patient info
+        first_name = patient_data.get("first_name", "").strip()
+        contact_number = patient_data.get("contact_number", "").strip()
+        appointment_date = data.get("appointment_date")
 
-        # Check if a patient with the same name exists
-        existing_patient = Patient.objects.filter(
-            first_name=patient_data["first_name"], 
-            last_name=patient_data["last_name"]
-        ).first()
+        if not first_name or not contact_number:
+            logger.error("Patient's first name and contact number are required.")
+            return Response({"error": "Patient's first name and contact number are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if existing_patient:
-            last_appointment = Appointment.objects.filter(patient=existing_patient).order_by('-appointment_date').first()
-            last_status = last_appointment.status if last_appointment else "No previous appointments"
+        # Check for existing patient using first_name and contact_number
+        patient, created = Patient.objects.get_or_create(
+            first_name=first_name,
+            contact_number=contact_number,
+            defaults={
+                "last_name": patient_data.get("last_name", ""),
+                "email": patient_data.get("email"),
+                "date_of_birth": patient_data.get("date_of_birth"),
+            }
+        )
 
-            logger.info(f"Existing patient found: {existing_patient.id} ({existing_patient.first_name} {existing_patient.last_name}), last status: {last_status}")
+        if not created:
+            # Update existing patient details if they are missing
+            updated = False
+            if not patient.last_name and patient_data.get("last_name"):
+                patient.last_name = patient_data["last_name"]
+                updated = True
+            if not patient.email and patient_data.get("email"):
+                patient.email = patient_data["email"]
+                updated = True
+            if not patient.date_of_birth and patient_data.get("date_of_birth"):
+                patient.date_of_birth = patient_data["date_of_birth"]
+                updated = True
 
-            if last_status != "Completed":
-                logger.warning(f"Attempt to create a new appointment for patient {existing_patient.id} with an active appointment.")
-                return Response(
-                    {"error": "Patient already has an active appointment. Please complete or cancel the existing appointment before creating a new one."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            if updated:
+                patient.save()
+                logger.info(f"Updated existing patient details: {patient.id}")
 
-            patient = existing_patient  # Use the existing patient
-        else:
-            # Create a new patient
-            patient = Patient.objects.create(
-                first_name=patient_data["first_name"],
-                last_name=patient_data["last_name"],
-                contact_number=patient_data["contact_number"],
-                email=patient_data.get("email"),
-                date_of_birth=patient_data.get("date_of_birth"),
+        logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
+
+        # **Duplicate Appointment Check**
+        duplicate_appointment = Appointment.objects.filter(
+            first_name=first_name,
+            contact_number=contact_number,
+            appointment_date=appointment_date
+        ).exists()
+
+        if duplicate_appointment:
+            logger.warning(f"Duplicate appointment detected for {first_name} ({contact_number}) on {appointment_date}")
+            return Response(
+                {"error": "An appointment for this patient at the specified date and time already exists."},
+                status=status.HTTP_400_BAD_REQUEST
             )
-            logger.info(f"New patient created: {patient.id} ({patient.first_name} {patient.last_name})")
 
-        # Proceed to create an appointment
+        # Proceed to create the appointment
         appointment_data = {
             "patient": patient,
-            "appointment_date": data.get("appointment_date"),
+            "appointment_date": appointment_date,
             "notes": data.get("notes", ""),
             "status": "Scheduled",
             "is_emergency": data.get("is_emergency", False),
-            "created_by": user  # Set the user who created the appointment
-
+            "created_by": user,
+            "first_name": first_name,
+            "contact_number": contact_number
         }
 
         if user.user_type == "Receptionist":
@@ -113,6 +132,7 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
 
 
 from rest_framework.views import APIView
