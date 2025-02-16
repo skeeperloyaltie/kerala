@@ -40,7 +40,6 @@ class Patient(models.Model):
         return None
 
 
-
 class Appointment(models.Model):
     """
     Stores appointment details for patients, linked to doctors and receptionists.
@@ -56,9 +55,8 @@ class Appointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
-    # 14. When adding a patient appointment, we should have “byWhom” and “atWhatTime” it was added. Example : PatientID 101 , “Added By Doctor”, “DOCID1011”, “31-01-2024 22:15”. 
 
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)  # New field
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)  
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Waiting')
     appointment_date = models.DateTimeField(default=timezone.now)
@@ -74,11 +72,23 @@ class Appointment(models.Model):
         blank=True, 
         related_name="updated_appointments"
     )
+
+    # Store first_name and contact_number explicitly for uniqueness constraints
+    first_name = models.CharField(max_length=255)
+    contact_number = models.CharField(max_length=15)
+
     class Meta:
-        unique_together = ('patient', 'appointment_date')  # Enforces uniqueness based on patient and datetime
+        unique_together = ('first_name', 'contact_number', 'appointment_date')  
 
     def __str__(self):
         return f"Appointment for {self.patient} with {self.doctor} on {self.appointment_date}"
+
+    def save(self, *args, **kwargs):
+        """Ensure first_name and contact_number are saved based on patient details."""
+        self.first_name = self.patient.first_name
+        self.contact_number = self.patient.contact_number
+        super().save(*args, **kwargs)
+
 
 
 class AppointmentTests(models.Model):

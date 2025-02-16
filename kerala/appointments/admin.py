@@ -17,20 +17,29 @@ class PatientAdmin(admin.ModelAdmin):
 
     get_status.short_description = 'Status'
 
+from django.contrib import admin
+from .models import Appointment
+
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'patient', 'doctor', 'appointment_date', 'status', 'notes', 'created_at', 'updated_at', 'created_by', 'updated_by')
-    search_fields = ('patient__first_name', 'patient__last_name', 'doctor__user__username')
-    list_filter = ('status', 'appointment_date', 'doctor')
+    list_display = ('id', 'patient', 'doctor', 'receptionist', 'formatted_appointment_date', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at')
+    search_fields = ('patient__first_name', 'patient__last_name', 'doctor__user__username', 'receptionist__user__username')
+    list_filter = ('status', 'appointment_date', 'doctor', 'receptionist')
     ordering = ('-appointment_date',)
-    raw_id_fields = ('patient', 'doctor')
+    raw_id_fields = ('patient', 'doctor', 'receptionist', 'created_by', 'updated_by')
     readonly_fields = ('created_at', 'updated_at', 'created_by')
-    
 
     def get_queryset(self, request):
-        """Optimize query to prefetch related patient and doctor information."""
+        """Optimize query to prefetch related patient, doctor, receptionist, and user data."""
         queryset = super().get_queryset(request)
-        return queryset.select_related('patient', 'doctor')
+        return queryset.select_related('patient', 'doctor', 'receptionist', 'created_by', 'updated_by')
+
+    def formatted_appointment_date(self, obj):
+        """Format the appointment date for better readability in admin panel."""
+        return obj.appointment_date.strftime('%d-%m-%Y %H:%M')
+    formatted_appointment_date.admin_order_field = 'appointment_date'
+    formatted_appointment_date.short_description = 'Appointment Date & Time'
+
 
 @admin.register(AppointmentTests)
 class AppointmentTestsAdmin(admin.ModelAdmin):
