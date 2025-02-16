@@ -620,7 +620,7 @@ function checkSessionOnLoad() {
 
   if (!token || !username || !userType) {
       console.warn('🔴 Session data missing or invalid. Redirecting...');
-      window.location.href = 'http://104.37.187.187';
+      window.location.href = 'http://smarthospitalmaintain.com';
       return;
   }
 
@@ -634,12 +634,12 @@ function validateUserSession() {
 
   if (!headers['Authorization']) {
       console.warn('🔴 No valid token. User is not authenticated.');
-      window.location.href = 'http://104.37.187.187'; // Redirect if token is missing
+      window.location.href = 'http://smarthospitalmaintain.com'; // Redirect if token is missing
       return;
   }
 
   $.ajax({
-      url: 'http://104.37.187.187:8000/cookie/check/',
+      url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
       type: 'GET',
       headers: headers,
       success: function(response) {
@@ -692,7 +692,7 @@ function logoutUser() {
   }
 
   $.ajax({
-      url: 'http://104.37.187.187:8000/users/logout/',
+      url: 'http://smarthospitalmaintain.com:8000/users/logout/',
       type: 'POST',
       headers: headers,
       success: function(response) {
@@ -700,7 +700,7 @@ function logoutUser() {
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          window.location.href = 'http://104.37.187.187/';
+          window.location.href = 'http://smarthospitalmaintain.com/';
         },
       error: function(xhr, status, error) {
           console.error('Logout error:', xhr.responseText);
@@ -723,7 +723,7 @@ validateUserSession();
       const headers = getAuthHeaders(); // Assuming you already have a function to handle authentication headers
   
       $.ajax({
-          url: `http://104.37.187.187:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
+          url: `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
           type: 'GET',
           headers: headers,
           success: function(response) {
@@ -903,7 +903,7 @@ function addAppointment() {
     const headers = getAuthHeaders();
 
     $.ajax({
-        url: 'http://104.37.187.187:8000/appointments/create/',
+        url: 'http://smarthospitalmaintain.com:8000/appointments/create/',
         type: 'POST',
         headers: headers,
         data: JSON.stringify(appointmentData),
@@ -986,7 +986,7 @@ if (missingVitals.length > 0) {
 
   // Submit vitals data using POST request
   $.ajax({
-      url: `http://104.37.187.187:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
+      url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
       type: 'POST',
       headers: headers,
       data: JSON.stringify(vitalsData),
@@ -1072,7 +1072,7 @@ function updateAppointment() {
       is_emergency: document.getElementById("editIsEmergency").checked,
   };
 
-  fetch(`http://104.37.187.187:8000/appointments/edit/${updatedAppointment.id}/`, {
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
     method: "PATCH",  // 🔄 Change PUT to PATCH
     headers: {
           "Content-Type": "application/json",

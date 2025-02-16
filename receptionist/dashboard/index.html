@@ -919,7 +919,7 @@ function checkSessionOnLoad() {
 
   if (!token || !username || !userType) {
       console.warn('🔴 Session data missing or invalid. Redirecting...');
-      window.location.href = 'http://104.37.187.187';
+      window.location.href = 'http://smarthospitalmaintain.com';
       return;
   }
 
@@ -933,12 +933,12 @@ function validateUserSession() {
 
   if (!headers['Authorization']) {
       console.warn('🔴 No valid token. User is not authenticated.');
-      window.location.href = 'http://104.37.187.187'; // Redirect if token is missing
+      window.location.href = 'http://smarthospitalmaintain.com'; // Redirect if token is missing
       return;
   }
 
   $.ajax({
-      url: 'http://104.37.187.187:8000/cookie/check/',
+      url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
       type: 'GET',
       headers: headers,
       success: function(response) {
@@ -986,12 +986,12 @@ function logoutUser() {
 
   if (!headers['Authorization']) {
       console.error('No authentication token. Redirecting to login...');
-      window.location.href = 'http://localhost/';
+      window.location.href = 'http://smarthospitalmaintain.com/profiling/login.html';
       return;
   }
 
   $.ajax({
-      url: 'http://104.37.187.187:8000/users/logout/',
+      url: 'http://smarthospitalmaintain.com:8000/users/logout/',
       type: 'POST',
       headers: headers,
       success: function(response) {
@@ -999,7 +999,7 @@ function logoutUser() {
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          window.location.href = 'http://104.37.187.187/';
+          window.location.href = 'http://smarthospitalmaintain.com/';
       },
       error: function(xhr, status, error) {
           console.error('Logout error:', xhr.responseText);
@@ -1025,7 +1025,7 @@ function fetchAppointments(status) {
   const endDate = $("#endDateFilter").val(); // Get end date from the filter
 
   // Build the query parameters string
-  let url = `http://104.37.187.187:8000/appointments/list/?status=${status}`;
+  let url = `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`;
   if (doctor) url += `&doctor=${doctor}`;
   if (startDate) url += `&start_date=${startDate}`;
   if (endDate) url += `&end_date=${endDate}`;
@@ -1201,7 +1201,7 @@ let doctorMap = {}; // Global dictionary to store doctor details
 function loadDoctors() {
     const headers = getAuthHeaders(); // Ensure auth headers are set
     $.ajax({
-        url: "http://104.37.187.187:8000/appointments/doctors/list/",
+        url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
         type: "GET",
         headers: headers,
         success: function (response) {
@@ -1281,7 +1281,7 @@ function addAppointment() {
   }
 
   $.ajax({
-      url: "http://104.37.187.187:8000/appointments/create/",
+      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(appointmentData),
@@ -1338,7 +1338,7 @@ function saveVitals() {
   }
 
   $.ajax({
-      url: "http://104.37.187.187:8000/appointments/vitals/save/",
+      url: "http://smarthospitalmaintain.com:8000/appointments/vitals/save/",
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(vitalsData),
@@ -1421,7 +1421,7 @@ function updateAppointment() {
       is_emergency: document.getElementById("editIsEmergency").checked,
   };
 
-  fetch(`http://104.37.187.187:8000/appointments/edit/${updatedAppointment.id}/`, {
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
     method: "PATCH",  // 🔄 Change PUT to PATCH
     headers: {
           "Content-Type": "application/json",
