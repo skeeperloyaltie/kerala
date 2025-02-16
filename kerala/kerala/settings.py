@@ -50,6 +50,10 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1",
     "https://104.37.187.187",
     "http://104.37.187.187"  # Add both HTTP and HTTPS
+    "http://smarthospitalmaintain.com",
+    "http://www.smarthospitalmaintain.com",
+    "https://smarthospitalmaintain.com",
+    "https://www.smarthospitalmaintain.com",
 ]
 
 
