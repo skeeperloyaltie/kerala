@@ -31,8 +31,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost',  # Example: React frontend during development
     'http://127.0.0.1:8000',
     'https://104.37.187.187:8000',
-
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://smarthospitalmaintain:8000"
 ]
+
+
 from corsheaders.defaults import default_headers
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -54,6 +58,9 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.smarthospitalmaintain.com",
 ]
 
+SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Default
+
+# CSRF_TRUSTED_ORIGINS = ["http://smarthospitalmaintain:8000"]
 
 CSRF_COOKIE_NAME = "csrftoken"
 CSRF_COOKIE_SECURE = False  # Set True in production if using HTTPS
