@@ -450,3 +450,95 @@ class RescheduleAppointmentView(APIView):
         logger.info(f"Appointment {appointment_id} successfully rescheduled to {new_date} by {user.username}.")
         return Response({"message": "Appointment rescheduled successfully."}, status=status.HTTP_200_OK)
 
+## SEARCH ENDPOOINT
+from rest_framework import generics, permissions, pagination
+from rest_framework.response import Response
+from django.core.cache import cache
+from django.db.models import Q
+from users.models import Doctor, Receptionist
+from .models import Patient, Appointment
+from users.serializers import UserSerializer
+from .serializers import PatientSerializer, AppointmentSerializer
+
+class StandardResultsSetPagination(pagination.PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class SearchView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        query = self.request.query_params.get("q", "").strip().lower()
+        cache_key = f"search_{user.id}_{query}"
+
+        # Check cache first
+        cached_results = cache.get(cache_key)
+        if cached_results:
+            return cached_results
+
+        if not query:
+            return []
+
+        patients, doctors, receptionists, appointments = [], [], [], []
+
+        # Receptionists can search all users and appointments
+        if hasattr(user, "receptionist"):
+            patients = Patient.objects.filter(
+                Q(first_name__icontains=query) | Q(last_name__icontains=query) | 
+                Q(contact_number__icontains=query) | Q(email__icontains=query) |
+                Q(address__icontains=query)
+            )
+            doctors = Doctor.objects.filter(
+                Q(user__username__icontains=query) | Q(user__email__icontains=query) | 
+                Q(specialization__icontains=query)
+            )
+            receptionists = Receptionist.objects.filter(
+                Q(user__username__icontains=query) | Q(user__email__icontains=query)
+            )
+            appointments = Appointment.objects.filter(
+                Q(patient__first_name__icontains=query) | Q(patient__last_name__icontains=query) | 
+                Q(doctor__user__username__icontains=query) | Q(receptionist__user__username__icontains=query) |
+                Q(status__icontains=query)
+            )
+        
+        # Doctors can search only for their assigned patients and appointments
+        elif hasattr(user, "doctor"):
+            patients = Patient.objects.filter(
+                Q(appointments__doctor=user.doctor) &
+                (Q(first_name__icontains=query) | Q(last_name__icontains=query) | 
+                 Q(contact_number__icontains=query) | Q(email__icontains=query) |
+                 Q(address__icontains=query))
+            ).distinct()
+
+            appointments = Appointment.objects.filter(
+                Q(doctor=user.doctor) & (
+                    Q(patient__first_name__icontains=query) | 
+                    Q(patient__last_name__icontains=query) | 
+                    Q(status__icontains=query)
+                )
+            )
+
+        results = {
+            "patients": PatientSerializer(patients, many=True).data,
+            "appointments": AppointmentSerializer(appointments, many=True).data,
+            "doctors": UserSerializer(doctors, many=True).data,
+            "receptionists": UserSerializer(receptionists, many=True).data
+        }
+
+        # Cache results for 10 minutes
+        cache.set(cache_key, results, timeout=600)
+
+        return results
+
+    def list(self, request, *args, **kwargs):
+        results = self.get_queryset()
+        page = self.paginate_queryset(results)
+        if page is not None:
+            return self.get_paginated_response(page)
+
+        return Response(results)
+
+
