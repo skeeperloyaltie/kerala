@@ -27,14 +27,14 @@ import os
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-insecure-key')
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost',  # Example: React frontend during development
-#     'http://127.0.0.1:8000',
-#     'https://104.37.187.187:8000',
-#     "http://localhost:3000",
-#     "http://127.0.0.1:8000",
-#     "http://smarthospitalmaintain:8000"
-# ]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost',  # Example: React frontend during development
+    'http://127.0.0.1:8000',
+    'https://104.37.187.187:8000',
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://smarthospitalmaintain:8000"
+]
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
