@@ -20,3 +20,5 @@ EXPOSE 8000
 
 # Add migration and migrate commands
 # CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+
+CMD ["gunicorn", "hub.wsgi:application", "--bind", "0.0.0.0:8000"]

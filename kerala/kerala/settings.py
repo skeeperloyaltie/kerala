@@ -25,27 +25,32 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-insecure-key')
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = True
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins only when DEBUG is True
+# 
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost',  # Example: React frontend during development
     'http://127.0.0.1:8000',
     'https://104.37.187.187:8000',
-    "http://localhost:3000",
-    "http://127.0.0.1:8000",
-    "http://smarthospitalmaintain:8000"
-]
+    'https://smarthospitalmaintain.com',
+    'https://www.smarthospitalmaintain.com',
+    'http://smarthospitalmaintain.com',
+    'http://www.smarthospitalmaintain.com',
 
-CORS_ALLOW_ALL_ORIGINS = True
+]
 CORS_ALLOW_CREDENTIALS = True
 
+AUTH_USER_MODEL = 'users.User'
 
 from corsheaders.defaults import default_headers
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'Username',  # Add the 'Username' header here
+]
 
-# CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only when DEBUG is True
 
-ALLOWED_HOSTS = ['smarthospitalmaintain.com', 'www.smarthospitalmaintain.com', '104.37.187,187', '*']
+ALLOWED_HOSTS = ['127.0.0.1', 'smarthospitalmaintain.com', 'www.smarthospitalmaintain.com', "104.37.187.187"]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
@@ -58,15 +63,12 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.smarthospitalmaintain.com",
 ]
 
-SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Default
 
-# CSRF_TRUSTED_ORIGINS = ["http://smarthospitalmaintain:8000"]
-
-CSRF_COOKIE_NAME = "csrftoken"
-CSRF_COOKIE_SECURE = False  # Set True in production if using HTTPS
-CSRF_COOKIE_SAMESITE = "Lax"  # Prevents cross-site issues
-CSRF_USE_SESSIONS = False
-SESSION_COOKIE_SAMESITE = "Lax"
+# CSRF_COOKIE_NAME = "csrftoken"
+# CSRF_COOKIE_SECURE = False  # Set True in production if using HTTPS
+# CSRF_COOKIE_SAMESITE = "Lax"  # Prevents cross-site issues
+# CSRF_USE_SESSIONS = False
+# SESSION_COOKIE_SAMESITE = "Lax"
 
 # Application definition
 
@@ -90,7 +92,6 @@ INSTALLED_APPS = [
 
 
 
-AUTH_USER_MODEL = 'users.User'
 
 
 REST_FRAMEWORK = {
