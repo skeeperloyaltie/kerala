@@ -41,7 +41,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only when DEBUG is True
 
-ALLOWED_HOSTS = ['smarthospitalmaintain.com', 'www.smarthospitalmaintain.com', '104.37.187,187']
+ALLOWED_HOSTS = ['smarthospitalmaintain.com', 'www.smarthospitalmaintain.com', '104.37.187,187', '*']
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
