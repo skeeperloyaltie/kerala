@@ -777,8 +777,9 @@ validateUserSession();
         row.appendChild(statusCell);
 
         let createdbyCell = document.createElement("td");
-        statusCell.textContent = appointment.created_by_username || "N/A"; // Handle missing status
-        row.appendChild(statusCell);
+        createdbyCell.textContent = appointment.created_by_username || "N/A"; // Handle missing status
+        row.appendChild(createdbyCell);
+
 
         // Use getActionButton function
         let actionsCell = document.createElement("td");
