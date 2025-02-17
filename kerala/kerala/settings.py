@@ -30,13 +30,8 @@ CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins only when DEBUG is True
 # 
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost',  # Example: React frontend during development
     'http://127.0.0.1:8000',
-    'https://104.37.187.187:8000',
-    'https://smarthospitalmaintain.com',
-    'https://www.smarthospitalmaintain.com',
     'http://smarthospitalmaintain.com',
-    'http://www.smarthospitalmaintain.com',
 
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -48,6 +43,11 @@ from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'Username',  # Add the 'Username' header here
 ]
+
+SECURE_HTTP_HEADERS = {
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Embedder-Policy': 'require-corp',
+}
 
 
 ALLOWED_HOSTS = ['104.37.187.187','127.0.0.1', 'smarthospitalmaintain.com', 'www.smarthospitalmaintain.com']
@@ -112,6 +112,8 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Add this at the top
+    'users.middleware.AddSecurityHeadersMiddleware',  # Add your custom middleware here
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
