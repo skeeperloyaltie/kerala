@@ -8,9 +8,14 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import date, datetime
+import uuid
+from datetime import date, datetime
+from django.db import models
 
 class Patient(models.Model):
-    patient_id = models.CharField(max_length=10, unique=True, editable=False)
+    patient_id = models.CharField(
+        max_length=10, unique=True, editable=False, default=None, null=True
+    )
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     contact_number = models.CharField(max_length=15)
@@ -31,7 +36,7 @@ class Patient(models.Model):
                 self.date_of_birth = datetime.strptime(self.date_of_birth, "%Y-%m-%d").date()
             self.age = self.calculate_age()
         
-        if not self.patient_id:
+        if not self.patient_id:  
             self.patient_id = self.generate_patient_id()
         
         super().save(*args, **kwargs)
@@ -46,7 +51,7 @@ class Patient(models.Model):
         return None
 
     def generate_patient_id(self):
-        """Generate a unique patient ID based on first letter of first name, year of birth, and sequence number."""
+        """Generate a unique patient ID."""
         first_letter = self.first_name[0].upper() if self.first_name else "X"
         year_of_birth = str(self.date_of_birth.year)[-2:] if self.date_of_birth else "00"
         
@@ -62,6 +67,7 @@ class Patient(models.Model):
             new_number = 1
         
         return f"{first_letter}{year_of_birth}{new_number:04d}"
+
 
 
 
