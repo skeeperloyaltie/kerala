@@ -50,7 +50,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 ]
 
 
-ALLOWED_HOSTS = ['127.0.0.1', 'smarthospitalmaintain.com', 'www.smarthospitalmaintain.com']
+ALLOWED_HOSTS = ['104.37.187.187','127.0.0.1', 'smarthospitalmaintain.com', 'www.smarthospitalmaintain.com']
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
