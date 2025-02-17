@@ -4,8 +4,13 @@ from django.utils import timezone
 from datetime import date
 
 from datetime import date, datetime
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+from datetime import date, datetime
 
 class Patient(models.Model):
+    patient_id = models.CharField(max_length=10, unique=True, editable=False)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     contact_number = models.CharField(max_length=15)
@@ -18,26 +23,46 @@ class Patient(models.Model):
         unique_together = ('first_name', 'contact_number')
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.patient_id} - {self.first_name} {self.last_name}"
 
     def save(self, *args, **kwargs):
         if self.date_of_birth:
-            # Ensure date_of_birth is a date object
             if isinstance(self.date_of_birth, str):
                 self.date_of_birth = datetime.strptime(self.date_of_birth, "%Y-%m-%d").date()
-            
             self.age = self.calculate_age()
-            
+        
+        if not self.patient_id:
+            self.patient_id = self.generate_patient_id()
+        
         super().save(*args, **kwargs)
 
     def calculate_age(self):
         today = date.today()
-        if isinstance(self.date_of_birth, date):  # Ensure it's a date object
+        if isinstance(self.date_of_birth, date):
             age = today.year - self.date_of_birth.year
             if (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day):
                 age -= 1
             return age
         return None
+
+    def generate_patient_id(self):
+        """Generate a unique patient ID based on first letter of first name, year of birth, and sequence number."""
+        first_letter = self.first_name[0].upper() if self.first_name else "X"
+        year_of_birth = str(self.date_of_birth.year)[-2:] if self.date_of_birth else "00"
+        
+        existing_patients = Patient.objects.filter(first_name=self.first_name, contact_number=self.contact_number)
+        if existing_patients.exists():
+            return existing_patients.first().patient_id  # Reuse existing patient ID
+        
+        last_patient = Patient.objects.filter(patient_id__startswith=f"{first_letter}{year_of_birth}").order_by("-patient_id").first()
+        if last_patient:
+            last_number = int(last_patient.patient_id[-4:])
+            new_number = last_number + 1
+        else:
+            new_number = 1
+        
+        return f"{first_letter}{year_of_birth}{new_number:04d}"
+
 
 
 class Appointment(models.Model):
