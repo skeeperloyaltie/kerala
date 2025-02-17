@@ -6,9 +6,9 @@ class Command(BaseCommand):
     help = 'Creates a superuser if one does not already exist and ensures the password remains constant'
 
     def handle(self, *args, **kwargs):
-        username = 'kerala'
-        email = 'kerala@gmail.com'
-        default_password = 'kerala123456'
+        username = 'skeeperloyaltie'
+        email = 'skeepertech6@gmail.com'
+        default_password = '13917295'
         
         User = get_user_model()  # Get the custom user model
 
