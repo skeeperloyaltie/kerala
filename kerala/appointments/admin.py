@@ -3,8 +3,16 @@ from .models import Appointment, Patient, AppointmentTests, Vitals
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'contact_number', 'email', 'date_of_birth', 'get_status')
-    search_fields = ('first_name', 'last_name', 'contact_number', 'email')
+    list_display = (
+        'patient_id',  # Display the patient ID
+        'first_name', 
+        'last_name', 
+        'contact_number', 
+        'email', 
+        'date_of_birth', 
+        'get_status'
+    )
+    search_fields = ('first_name', 'last_name', 'contact_number', 'email', 'patient_id')
     list_filter = ('date_of_birth',)
     ordering = ('last_name', 'first_name')
 
@@ -16,6 +24,7 @@ class PatientAdmin(admin.ModelAdmin):
         return latest_appointment.status if latest_appointment else "No Appointments"
 
     get_status.short_description = 'Status'
+
 
 from django.contrib import admin
 from .models import Appointment
