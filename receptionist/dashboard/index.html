@@ -1282,6 +1282,7 @@ function addAppointment() {
   const doctorId = $("#doctor").val();
   const patientId = $("#patientID").val().trim();  // Get the patient ID from the form
 
+  // Check if the required fields are filled
   if (!doctorId) {
       alert("Please select a doctor for this appointment.");
       return;
@@ -1317,25 +1318,32 @@ function addAppointment() {
   // Fill the Age field
   $("#age").val(age);
 
+  // Get the other required fields
+  const firstName = $("#firstName").val().trim();
+  const lastName = $("#lastName").val().trim();
+  const contactNumber = $("#contactNumber").val().trim();
+  const notes = $("#notes").val().trim();
+  const isEmergency = $("#isEmergency").is(":checked");
+
+  // Check if the fields are filled
+  if (!firstName || !lastName || !contactNumber || !appointmentDate || !doctorId) {
+      alert("Please fill in all required fields.");
+      return;
+  }
+
   const appointmentData = {
       appointment: {
           patient_id: patientId,
-          first_name: $("#firstName").val().trim(),
-          last_name: $("#lastName").val().trim(),
-          contact_number: $("#contactNumber").val().trim(),
+          first_name: firstName,
+          last_name: lastName,
+          contact_number: contactNumber,
           date_of_birth: dateOfBirth,
       },
       appointment_date: appointmentDate,
       doctor: doctorId,
-      notes: $("#notes").val().trim(),
-      is_emergency: $("#isEmergency").is(":checked"),
+      notes: notes,
+      is_emergency: isEmergency,
   };
-
-  if (!appointmentData.appointment.first_name || !appointmentData.appointment.last_name || 
-      !appointmentData.appointment.contact_number || !appointmentData.appointment.appointment_date) {
-      alert("Please fill in all required fields.");
-      return;
-  }
 
   $.ajax({
       url: "http://smarthospitalmaintain.com:8000/appointments/create/",
@@ -1365,6 +1373,7 @@ function addAppointment() {
       }
   });
 }
+
 
 // Helper function to calculate age based on the date of birth
 function calculateAge(dob) {
