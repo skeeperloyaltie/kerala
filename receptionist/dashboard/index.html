@@ -1192,7 +1192,7 @@ function getActionButton(status, appointment, rowIndex) {
 
   // Pass both appointmentData and rowIndex
   buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
-  buttons += `<button class="btn btn-danger btn-sm">Cancel</button> `;
+  buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
 
   switch (status) {
       case 'Waiting':
@@ -1559,6 +1559,46 @@ function formatDateTime(dateTimeString) {
   return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
 }
 
+
+
+function cancelAppointment(appointmentId, rowIndex) {
+  if (!confirm("Are you sure you want to cancel this appointment?")) {
+      return; // Exit if user cancels the confirmation
+  }
+
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/cancel/${appointmentId}/`, {
+      method: "PATCH",
+      headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
+      },
+      body: JSON.stringify({ status: "Canceled" }) // Ensure status is set to "Canceled"
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log("Appointment canceled successfully:", data);
+      alert("Appointment has been canceled.");
+
+      // Update the status in the table without reloading the page
+      let appointmentRow = document.querySelector(`#appointmentsTable tbody tr:nth-child(${rowIndex + 1})`);
+      if (appointmentRow) {
+          let statusCell = appointmentRow.querySelector(".status-cell"); // Ensure your status cell has this class
+          if (statusCell) {
+              statusCell.textContent = "Canceled";
+              statusCell.classList.add("text-danger"); // Optional: Add red text color for clarity
+          }
+      }
+  })
+  .catch(error => {
+      console.error("Error canceling appointment:", error);
+      alert("Failed to cancel appointment: " + (error.detail || "Unknown error"));
+  });
+}
 
   </script>
   
