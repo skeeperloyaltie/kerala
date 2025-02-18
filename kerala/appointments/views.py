@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import Appointment, Patient, AppointmentTests
-from .serializers import AppointmentSerializer, PatientSerializer, AppointmentTestsSerializer
-from users.models import Doctor, Receptionist
+from .models import Appointment, Patient
+from .serializers import AppointmentSerializer, PatientSerializer
+from users.models import Doctor
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -19,98 +19,90 @@ class CreateAppointmentView(APIView):
     def post(self, request, *args, **kwargs):
         user = request.user
         data = request.data
-
         logger.info(f"Received appointment creation request from user {user.id} ({user.username}): {data}")
 
-        required_fields = ["patient", "appointment_date"]
+        # Validate required fields
+        required_fields = ["appointment", "appointment_date"]
         missing_fields = [field for field in required_fields if field not in data or not data[field]]
         if missing_fields:
             logger.warning(f"Missing fields in request: {missing_fields}")
             return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        patient_data = data.get("patient")
-        if not isinstance(patient_data, dict):
-            logger.error("Invalid format for patient details.")
-            return Response({"error": "Patient details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
+        appointment_info = data.get("appointment")
+        if not isinstance(appointment_info, dict):
+            logger.error("Invalid format for appointment details.")
+            return Response({"error": "Appointment details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Extract patient info
-        # extract the patitnet ID 
-        patient_id = patient_data.get("patient_id")
-        first_name = patient_data.get("first_name", "").strip()
-        contact_number = patient_data.get("contact_number", "").strip()
+        # Extract patient details
+        patient_id = appointment_info.get("patient_id")
+        first_name = appointment_info.get("first_name", "").strip()
+        last_name = appointment_info.get("last_name", "").strip()
+        contact_number = appointment_info.get("contact_number", "").strip()
+        date_of_birth = appointment_info.get("date_of_birth")
         appointment_date = data.get("appointment_date")
+        doctor_id = data.get("doctor")
+        notes = data.get("notes", "")
+        is_emergency = data.get("is_emergency", False)
 
-        if not first_name or not contact_number or not patient_id:
-            logger.error("Patient's first name and contact number are required.")
-            return Response({"error": "Patient's first name and contact number and ID are required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not (first_name and last_name and contact_number and date_of_birth):
+            logger.error("Patient details are incomplete.")
+            return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        patient_id = patient_data.get("patient_id")
-        if not patient_id:
-            logger.error("Patient ID is required.")
-            return Response({"error": "Patient ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Fetch patient using the provided patient_id
+        # Check if patient exists or create a new one
         try:
-            patient = Patient.objects.get(patient_id=patient_id)
-        except Patient.DoesNotExist:
-            logger.error(f"Patient with ID {patient_id} does not exist.")
-            return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
+            patient, created = Patient.objects.get_or_create(
+                patient_id=patient_id,
+                defaults={
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "contact_number": contact_number,
+                    "date_of_birth": date_of_birth
+                }
+            )
+            if not created:
+                # Update patient details if necessary
+                patient.first_name = first_name
+                patient.last_name = last_name
+                patient.contact_number = contact_number
+                patient.date_of_birth = date_of_birth
+                patient.save()
+        except Exception as e:
+            logger.error(f"Error while fetching or creating patient: {e}")
+            return Response({"error": "Error processing patient details."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
 
-        # **Duplicate Appointment Check**
-        duplicate_appointment = Appointment.objects.filter(
-            first_name=first_name,
-            contact_number=contact_number,
+        # **Check for duplicate appointment**
+        if Appointment.objects.filter(
+            patient=patient,
             appointment_date=appointment_date
-        ).exists()
-
-        if duplicate_appointment:
-            logger.warning(f"Duplicate appointment detected for {first_name} ({contact_number}) on {appointment_date}")
+        ).exists():
+            logger.warning(f"Duplicate appointment detected for {patient.first_name} ({patient.contact_number}) on {appointment_date}")
             return Response(
                 {"error": "An appointment for this patient at the specified date and time already exists."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Proceed to create the appointment
-        appointment_data = {
-            "patient": patient,
-            "appointment_date": appointment_date,
-            "notes": data.get("notes", ""),
-            "status": "Scheduled",
-            "is_emergency": data.get("is_emergency", False),
-            "created_by": user,
-            "first_name": first_name,
-            "contact_number": contact_number
-        }
-
-        if user.user_type == "Receptionist":
-            doctor_id = data.get("doctor")
-            if not doctor_id:
-                logger.error("Doctor assignment is missing for Receptionist.")
-                return Response({"error": "Doctor assignment is required for appointments."}, status=status.HTTP_400_BAD_REQUEST)
-
+        # Assign doctor if provided
+        doctor = None
+        if doctor_id:
             try:
                 doctor = Doctor.objects.get(id=doctor_id)
-                appointment_data["doctor"] = doctor
-                appointment_data["receptionist"] = user.receptionist
-                logger.info(f"Appointment assigned to doctor {doctor.id} ({doctor.user.first_name} {doctor.user.last_name})")
             except Doctor.DoesNotExist:
                 logger.error(f"Doctor with ID {doctor_id} not found.")
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        elif user.user_type == "Doctor":
-            # Fetch doctor from the related user profile
-            doctor = user.doctor
-            appointment_data["doctor"] = doctor
-            logger.info(f"Appointment assigned to doctor {doctor.id} ({doctor.user.first_name} {doctor.user.last_name})")
-            
-        else:
-            logger.error(f"Unauthorized user type {user.user_type} attempted to create an appointment.")
-            return Response({"error": "Only Receptionists and Doctors can create appointments."}, status=status.HTTP_403_FORBIDDEN)
+        # Create appointment
+        appointment = Appointment.objects.create(
+            patient=patient,
+            appointment_date=appointment_date,
+            doctor=doctor,
+            notes=notes,
+            status="Scheduled",
+            is_emergency=is_emergency,
+            created_by=user
+        )
 
-        # Save the appointment
-        appointment = Appointment.objects.create(**appointment_data)
         logger.info(f"Appointment created successfully: {appointment.id} for patient {patient.id}")
 
         return Response(
