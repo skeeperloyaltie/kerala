@@ -26,7 +26,8 @@ services:
       - "8000:8000"
     command: sh -c "python manage.py makemigrations users && python manage.py migrate users && python manage.py makemigrations appointments && python manage.py migrate appointments && python manage.py makemigrations && python manage.py migrate && python manage.py run_admin && python manage.py users_create && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000 "
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DEBUG=True  # Set Django debug mode for development
     restart: always  # Restart the container if it fails
