@@ -346,12 +346,7 @@ console.log(token, username, csrftoken);
           <div class="card-body">
             <h4 class="card-title">Current Patient Details & Appointments</h4>
             <div class="row mb-3">
-              <div class="col-md-4">
-                  <select id="doctorFilter" class="form-control" onchange="filterAppointments()">
-                      <option value="">Filter by Doctor</option>
-                      <!-- Options populated dynamically -->
-                  </select>
-              </div>
+              
               <div class="col-md-4">
                   <select id="statusFilter" class="form-control" onchange="filterAppointments()">
                       <option value="">Filter by Status</option>
@@ -366,38 +361,7 @@ console.log(token, username, csrftoken);
                   <input type="date" id="dateFilter" class="form-control" onchange="filterAppointments()">
               </div>
 
-              <!-- Add the filtered-tbody here an dalso be fore the results are correctly displated -->
-              <h4 class="card-title">Filtered Data</h4>
-
-              <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <tr>
-                        <th>#</th>
-                        <th><input type="text" class="filter" placeholder="Patient Name"></th>
-                        <th><input type="text" class="filter" placeholder="Age"></th>
-                        <th><input type="text" class="filter" placeholder="Illness"></th>
-                        <th><input type="text" class="filter" placeholder="Appointment Time"></th>
-                        <th><input type="text" class="filter" placeholder="Doctor Scheduled"></th>
-                        <th><input type="text" class="filter" placeholder="Status"></th>
-                        <th>Actions</th>
-                      </tr>
-                      <th>#</th>
-                      <th>Patient ID</th><th>Patient Name</th>
-                      <th>Age</th>
-                      <th>Illness</th>
-                      <th>Appointment Time</th>
-                      <th>Doctor Scheduled</th>
-                      <th>Created By</th>
-
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="filtered-tbody"></tbody>
-                </table>
-          </div>
+             
           
             <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
               <li class="nav-item">
