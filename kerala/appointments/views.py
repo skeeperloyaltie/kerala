@@ -369,7 +369,8 @@ class EditAppointmentView(APIView):
                 return Response({"error": "Invalid patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Update other appointment fields
-        appointment.current_illness = data.get("current_illness", appointment.current_illness)
+        appointment.patient.current_illness = data.get("current_illness", appointment.patient.current_illness)
+        appointment.patient.save()
         appointment.doctor_id = data.get("doctor_id", appointment.doctor_id)
         appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user  # Track the user making the change
