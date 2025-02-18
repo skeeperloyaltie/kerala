@@ -112,15 +112,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'kerala.wsgi.application'
 
 DATABASES = {
-    "default": {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        "NAME": os.environ.get('DATABASE_NAME', 'kerala'),  # Default to 'flips'
-        "USER": os.environ.get('DATABASE_USER', 'postgres'),  # Default to 'flipsintel'
-        "PASSWORD": os.environ.get('DATABASE_PASSWORD', '1391'),  # Default to '1391'
-        "HOST": os.environ.get('DATABASE_HOST', 'db'),  # Use 'db' to connect to the Docker container
-        "PORT": os.environ.get('DATABASE_PORT', '5432'),  # Default PostgreSQL port
-    },
+        'NAME': 'smarthospital',
+        'USER': 'postgres',
+        'PASSWORD': '1391',
+        'HOST': 'db',  # Must match the service name in docker-compose.yml
+        'PORT': '5432',
+    }
 }
+
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"

@@ -9,7 +9,7 @@ services:
       timeout: 5s
       retries: 5
     environment:
-      POSTGRES_DB: kerala
+      POSTGRES_DB: smarthospital 
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1391
     ports:
