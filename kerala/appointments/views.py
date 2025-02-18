@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Appointment, Patient, AppointmentTests
 from .serializers import AppointmentSerializer, PatientSerializer, AppointmentTestsSerializer
-from users.models import Doctor, Receptionist, User
+from users.models import Doctor, Receptionist
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -104,17 +104,19 @@ class CreateAppointmentView(APIView):
                 return Response({"error": "Doctor assignment is required for appointments."}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                doctor = User.objects.get(id=doctor_id, user_type="Doctor")
+                doctor = Doctor.objects.get(id=doctor_id)
                 appointment_data["doctor"] = doctor
                 appointment_data["receptionist"] = user.receptionist
                 logger.info(f"Doctor assigned: {doctor.id} ({doctor.first_name} {doctor.last_name})")
-            except User.DoesNotExist:
+            except Doctor.DoesNotExist:
                 logger.error(f"Doctor with ID {doctor_id} not found.")
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
         elif user.user_type == "Doctor":
-            appointment_data["doctor"] = user
-            logger.info(f"Appointment assigned to doctor {user.id} ({user.first_name} {user.last_name})")
+            # Fetch doctor from the related user profile
+            doctor = user.doctor
+            appointment_data["doctor"] = doctor
+            logger.info(f"Appointment assigned to doctor {doctor.id} ({doctor.first_name} {doctor.last_name})")
 
         else:
             logger.error(f"Unauthorized user type {user.user_type} attempted to create an appointment.")
