@@ -691,6 +691,13 @@ console.log(token, username, csrftoken);
       </form>
   </div>
 </div>
+<script>
+  // Set Date of Birth restrictions (cannot select future dates)
+document.getElementById("dateOfBirth").setAttribute("max", new Date().toISOString().split("T")[0]);
+
+// Set Appointment Date restrictions (cannot select past dates)
+document.getElementById("appointmentDate").setAttribute("min", new Date().toISOString().slice(0, 16));
+</script>
 
 
 <!-- Vitals Modal -->
@@ -1275,16 +1282,41 @@ function addAppointment() {
       return;
   }
 
+  const appointmentDate = $("#appointmentDate").val();
+  const dateOfBirth = $("#dateOfBirth").val();
+
+  // Validate Date of Birth (should not be in the future)
+  if (new Date(dateOfBirth) > new Date()) {
+      alert("Date of birth cannot be in the future.");
+      return;
+  }
+
+  // Validate Appointment Date (should not be in the past)
+  if (new Date(appointmentDate) < new Date()) {
+      alert("Appointment date cannot be in the past.");
+      return;
+  }
+
+  // Calculate age from Date of Birth
+  const age = calculateAge(dateOfBirth);
+  if (age < 0) {
+      alert("Invalid Date of Birth.");
+      return;
+  }
+
+  // Fill the Age field
+  $("#age").val(age);
+
   const appointmentData = {
-      appointment: {  // Use 'appointment' as the key for patient data
-          patient_id: patientId,  // Associate the appointment with the patient ID
+      appointment: {
+          patient_id: patientId,
           first_name: $("#firstName").val().trim(),
           last_name: $("#lastName").val().trim(),
           contact_number: $("#contactNumber").val().trim(),
-          date_of_birth: $("#dateOfBirth").val(),
+          date_of_birth: dateOfBirth,
       },
-      appointment_date: $("#appointmentDate").val(),
-      doctor: doctorId,  // Send only the doctor ID
+      appointment_date: appointmentDate,
+      doctor: doctorId,
       notes: $("#notes").val().trim(),
       is_emergency: $("#isEmergency").is(":checked"),
   };
@@ -1313,7 +1345,6 @@ function addAppointment() {
           hideAppointmentForm();
           fetchAppointments("Scheduled");
 
-          // Open vitals modal if emergency is checked
           if ($("#isEmergency").is(":checked")) {
               $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
           }
@@ -1324,6 +1355,28 @@ function addAppointment() {
       }
   });
 }
+
+// Helper function to calculate age based on the date of birth
+function calculateAge(dob) {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
+// Setup validation for date fields
+$(document).ready(function() {
+    // Set the maximum date for Date of Birth (can't select future dates)
+    $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
+
+    // Set the minimum date for Appointment Date (can't select past dates)
+    $("#appointmentDate").attr("min", new Date().toISOString().split("T")[0]);
+});
+
 
 
 function saveVitals() {
