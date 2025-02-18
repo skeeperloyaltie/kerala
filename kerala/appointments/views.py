@@ -352,28 +352,31 @@ class EditAppointmentView(APIView):
         # Process patient_id if provided
         if "patient_id" in data:
             try:
-                patient = Patient.objects.get(patient_id=data["patient_id"])
-                data["patient"] = patient.id  # Replace `patient_id` with actual Patient model ID
+                patient = get_object_or_404(Patient, patient_id=data["patient_id"])
+                appointment.patient = patient  # Assign Patient instance
                 logger.info(f"Matched patient ID {data['patient_id']} to DB ID {patient.id}")  # Log successful match
             except ObjectDoesNotExist:
                 logger.error(f"Patient with ID {data['patient_id']} not found.")
                 return Response({"error": "Invalid patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"Final data to be saved: {data}")  # Log processed data
-
-        # Update appointment fields
-        if 'status' in data:
-            appointment.status = data['status']
+        # Update other appointment fields
+        appointment.date_of_birth = data.get("date_of_birth", appointment.date_of_birth)
+        appointment.current_illness = data.get("current_illness", appointment.current_illness)
+        appointment.doctor_id = data.get("doctor_id", appointment.doctor_id)
+        appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user  # Track the user making the change
 
-        serializer = AppointmentSerializer(appointment, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            logger.info(f"Appointment {appointment_id} successfully updated by {user.username}.")
-            return Response({"message": "Appointment updated successfully.", "appointment": serializer.data}, status=status.HTTP_200_OK)
+        if "status" in data:
+            appointment.status = data["status"]
 
-        logger.error(f"Error updating appointment {appointment_id}: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            appointment.save()
+            logger.info(f"Appointment {appointment_id} successfully updated by {user.username}.")
+            return Response({"message": "Appointment updated successfully."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error updating appointment {appointment_id}: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
