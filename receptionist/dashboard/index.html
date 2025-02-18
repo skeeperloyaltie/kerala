@@ -348,10 +348,11 @@ console.log(token, username, csrftoken);
             <div class="row mb-3">
               
           
-              <div class="col-md-8 text-end">
-                  <button class="btn btn-danger btn-sm d-none" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
-                  <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
-              </div>
+              <div class="col-md-8 d-flex justify-content-end">
+                <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
+                <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
+            </div>
+            
           </div>
           
           <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
