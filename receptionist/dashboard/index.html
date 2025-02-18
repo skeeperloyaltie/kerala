@@ -692,11 +692,21 @@ console.log(token, username, csrftoken);
   </div>
 </div>
 <script>
-  // Set Date of Birth restrictions (cannot select future dates)
+// Set Date of Birth restrictions (cannot select future dates)
 document.getElementById("dateOfBirth").setAttribute("max", new Date().toISOString().split("T")[0]);
 
 // Set Appointment Date restrictions (cannot select past dates)
-document.getElementById("appointmentDate").setAttribute("min", new Date().toISOString().slice(0, 16));
+let now = new Date();
+let year = now.getFullYear();
+let month = String(now.getMonth() + 1).padStart(2, '0');
+let day = String(now.getDate()).padStart(2, '0');
+let hours = String(now.getHours()).padStart(2, '0');
+let minutes = String(now.getMinutes()).padStart(2, '0');
+
+// Format the datetime-local input value to match the expected format: YYYY-MM-DDTHH:MM
+let formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
+document.getElementById("appointmentDate").setAttribute("min", formattedNow);
+
 </script>
 
 
