@@ -346,16 +346,7 @@ console.log(token, username, csrftoken);
           <div class="card-body">
             <h4 class="card-title">Current Patient Details & Appointments</h4>
             <div class="row mb-3">
-              <div class="col-md-4">
-                  <select id="statusFilter" class="form-control" onchange="filterAppointments()">
-                      <option value="">Filter by Status</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Active">Active</option>
-                      <option value="Scheduled">Scheduled</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Cancelled">Cancelled</option>
-                  </select>
-              </div>
+              
           
               <div class="col-md-8 text-end">
                   <button class="btn btn-danger btn-sm d-none" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
@@ -395,17 +386,7 @@ console.log(token, username, csrftoken);
                       <table class="table">
                           <thead>
                               <tr>
-                                  <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Waiting-tbody')"></th>
-                                  <th>#</th>
-                                  <th>Patient ID</th>
-                                  <th>Patient Name</th>
-                                  <th>Age</th>
-                                  <th>Illness</th>
-                                  <th>Appointment Time</th>
-                                  <th>Doctor Scheduled</th>
-                                  <th>Created By</th>
-                                  <th>Status</th>
-                                  <th>Actions</th>
+                               
                               </tr>
                           </thead>
                           <tbody id="Waiting-tbody"></tbody>
@@ -420,17 +401,7 @@ console.log(token, username, csrftoken);
                       <table class="table">
                           <thead>
                               <tr>
-                                  <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Scheduled-tbody')"></th>
-                                  <th>#</th>
-                                  <th>Patient ID</th>
-                                  <th>Patient Name</th>
-                                  <th>Age</th>
-                                  <th>Illness</th>
-                                  <th>Appointment Time</th>
-                                  <th>Doctor Scheduled</th>
-                                  <th>Created By</th>
-                                  <th>Status</th>
-                                  <th>Actions</th>
+                                 
                               </tr>
                           </thead>
                           <tbody id="Scheduled-tbody"></tbody>
@@ -444,17 +415,7 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Pending-tbody')"></th>
-                          <th>#</th>
-                          <th>Patient ID</th>
-                          <th>Patient Name</th>
-                          <th>Age</th>
-                          <th>Illness</th>
-                          <th>Appointment Time</th>
-                          <th>Doctor Scheduled</th>
-                          <th>Created By</th>
-                          <th>Status</th>
-                          <th>Actions</th>
+                      
                       </tr>
                   </thead>
                     <tbody id="Pending-tbody"></tbody>
@@ -467,19 +428,10 @@ console.log(token, username, csrftoken);
                 <div class="table-responsive">
                   <table class="table">
                     <thead>
-                      <tr>
-                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Active-tbody')"></th>
-                          <th>#</th>
-                          <th>Patient ID</th>
-                          <th>Patient Name</th>
-                          <th>Age</th>
-                          <th>Illness</th>
-                          <th>Appointment Time</th>
-                          <th>Doctor Scheduled</th>
-                          <th>Created By</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                      </tr>
+                      <tr> 
+
+                        </tr>
+                  
                   </thead>
                     <tbody id="Active-tbody"></tbody>
                   </table>
@@ -492,17 +444,7 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Completed-tbody')"></th>
-                          <th>#</th>
-                          <th>Patient ID</th>
-                          <th>Patient Name</th>
-                          <th>Age</th>
-                          <th>Illness</th>
-                          <th>Appointment Time</th>
-                          <th>Doctor Scheduled</th>
-                          <th>Created By</th>
-                          <th>Status</th>
-                          <th>Actions</th>
+                       
                       </tr>
                   </thead>
                     <tbody id="Completed-tbody"></tbody>
@@ -516,17 +458,7 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Canceled-tbody')"></th>
-                          <th>#</th>
-                          <th>Patient ID</th>
-                          <th>Patient Name</th>
-                          <th>Age</th>
-                          <th>Illness</th>
-                          <th>Appointment Time</th>
-                          <th>Doctor Scheduled</th>
-                          <th>Created By</th>
-                          <th>Status</th>
-                          <th>Actions</th>
+                        
                       </tr>
                   </thead>
                     <tbody id="Canceled-tbody"></tbody>
@@ -540,17 +472,7 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Rescheduled-tbody')"></th>
-                          <th>#</th>
-                          <th>Patient ID</th>
-                          <th>Patient Name</th>
-                          <th>Age</th>
-                          <th>Illness</th>
-                          <th>Appointment Time</th>
-                          <th>Doctor Scheduled</th>
-                          <th>Created By</th>
-                          <th>Status</th>
-                          <th>Actions</th>
+                         
                       </tr>
                   </thead>
                     <tbody id="Rescheduled-tbody"></tbody>
