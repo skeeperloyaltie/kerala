@@ -1440,13 +1440,11 @@ function saveVitals() {
 
 
 let appointments = []; // Store fetched appointments here
-
 function openEditModal(appointmentData, rowIndex) {
   let appointment = JSON.parse(decodeURIComponent(appointmentData));
 
   console.log("Editing Row:", rowIndex, "Appointment Data:", appointment);
 
-  // Ensure all required fields are available
   let fields = [
       "editFirstName", "editLastName", "editContactNumber", "editDateOfBirth", 
       "editAge", "editCurrentIllness", "editAppointmentDate", "editDoctor", 
@@ -1459,7 +1457,7 @@ function openEditModal(appointmentData, rowIndex) {
       }
   }
 
-  // Fill in appointment details
+  // Populate values in the modal
   document.getElementById("editFirstName").value = appointment.patient?.first_name || "";
   document.getElementById("editLastName").value = appointment.patient?.last_name || "";
   document.getElementById("editContactNumber").value = appointment.patient?.contact_number || "";
@@ -1471,44 +1469,44 @@ function openEditModal(appointmentData, rowIndex) {
 
   // Set readonly IDs
   document.getElementById("editAppointmentID").value = appointment.id;
-  document.getElementById("editPatientID").value = appointment.patient?.id || "";
+  document.getElementById("editPatientID").value = appointment.patient?.patient_id || "";
 
-  // Load doctors dynamically and select the assigned doctor
+  // Restrict Editing (Make Readonly)
+  document.getElementById("editFirstName").readOnly = true;
+  document.getElementById("editLastName").readOnly = true;
+  document.getElementById("editContactNumber").readOnly = true;
+  document.getElementById("editAge").readOnly = true;
+
+  // Allow editing of specific fields
+  document.getElementById("editDateOfBirth").readOnly = false;
+  document.getElementById("editCurrentIllness").readOnly = false;
+  document.getElementById("editNotes").readOnly = false;
+
+  // Load doctors dynamically
   loadDoctors(appointment.doctor?.id);
 
   // Show modal
   $("#editAppointmentModal").modal("show");
 }
 
-// Format datetime to match datetime-local input
-function formatDateTime(dateTimeString) {
-  let date = new Date(dateTimeString);
-  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
-}
-
+// Update only allowed fields
 function updateAppointment() {
   let updatedAppointment = {
       id: document.getElementById("editAppointmentID").value,
       patient_id: document.getElementById("editPatientID").value,
-      first_name: document.getElementById("editFirstName").value,
-      last_name: document.getElementById("editLastName").value,
-      contact_number: document.getElementById("editContactNumber").value,
       date_of_birth: document.getElementById("editDateOfBirth").value,
-      age: document.getElementById("editAge").value,
       current_illness: document.getElementById("editCurrentIllness").value,
-      appointment_date: document.getElementById("editAppointmentDate").value,
       doctor_id: document.getElementById("editDoctor").value,
       notes: document.getElementById("editNotes").value,
-      is_emergency: document.getElementById("editIsEmergency").checked,
   };
 
   fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-    method: "PATCH",  // 🔄 Change PUT to PATCH
-    headers: {
+      method: "PATCH",
+      headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders()  // Ensure this returns authentication headers properly
+          ...getAuthHeaders()
       },
-      body: JSON.stringify(updatedAppointment)  // Use `body` instead of `data`
+      body: JSON.stringify(updatedAppointment)
   })
   .then(response => {
       if (!response.ok) {
@@ -1519,13 +1517,19 @@ function updateAppointment() {
   .then(data => {
       console.log("Appointment updated successfully:", data);
       alert("Appointment updated successfully!");
-      $('#editAppointmentModal').modal('hide'); // Close the modal
-      location.reload(); // Refresh the table
+      $('#editAppointmentModal').modal('hide');
+      location.reload();
   })
   .catch(error => {
       console.error("Error updating appointment:", error);
       alert("Failed to update appointment: " + (error.detail || "Unknown error"));
   });
+}
+
+// Format datetime for input field
+function formatDateTime(dateTimeString) {
+  let date = new Date(dateTimeString);
+  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
 }
 
 
