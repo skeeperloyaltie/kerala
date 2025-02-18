@@ -4,7 +4,7 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Kerala | Doctors </title>
+    <title>Kerala | Receptionist </title>
     <!-- plugins:css -->
     <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="assets/vendors/ti-icons/css/themify-icons.css">
@@ -14,13 +14,111 @@
     <!-- Plugin css for this page -->
     <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css">
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
+
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- End layout styles -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
+    <script>
+         // Function to retrieve CSRF token from meta tag or cookie
+function getCSRFToken() {
+  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+  if (csrfTokenMeta) {
+      return csrfTokenMeta.getAttribute('content');
+  }
+  const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
+  return csrfCookie ? csrfCookie[1] : null;
+}
+// Function to retrieve authentication headers
+function getAuthHeaders() {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const username = sessionStorage.getItem('username') || localStorage.getItem('username');
+  const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
+console.log(token, username, csrftoken);
+
+  if (token && username && csrftoken) {
+      return {
+          'Authorization': 'Token ' + token,
+          'X-CSRFToken': csrftoken,
+          'Username': username
+      };
+  }
+  console.warn('Missing authentication details.');
+  return {};
+}
+
+
+    </script>
+
+    <style>
+      .table {
+        table-layout: auto; /* Allow the table to adjust column widths dynamically */
+        width: 100%;
+        border-collapse: collapse; /* Ensure clean spacing */
+      }
+    
+      .table th, .table td {
+        white-space: nowrap; /* Prevent text from breaking into multiple lines */
+        overflow: hidden;
+        text-overflow: ellipsis; /* Show "..." for long content */
+        font-size: 14px;
+        padding: 8px;
+        text-align: left;
+      }
+    
+      .table-responsive {
+        width: 100%;
+        overflow-x: auto; /* Allow horizontal scrolling */
+      }
+    
+      /* Ensure buttons fit inside the table cells */
+      .table .btn {
+        font-size: 12px;
+        padding: 5px 8px;
+        margin: 2px;
+        white-space: nowrap;
+      }
+    
+      /* Ensure filters are compact */
+      .filter {
+        width: 100%;
+        font-size: 12px;
+        padding: 3px;
+      }
+    
+      /* Prevent overlapping of long text in the table */
+      .table td, .table th {
+        word-wrap: break-word;
+      }
+    
+      /* Responsive adjustments for smaller screens */
+      @media (max-width: 768px) {
+        .table th, .table td {
+          font-size: 12px;
+          padding: 6px;
+        }
+    
+        .table .btn {
+          font-size: 10px;
+          padding: 4px 6px;
+        }
+      }
+    
+      @media (max-width: 480px) {
+        .table th, .table td {
+          font-size: 10px;
+          padding: 4px;
+        }
+    
+        .table .btn {
+          font-size: 9px;
+          padding: 3px 5px;
+        }
+      }
+    </style>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
   </head>
   <body>
     <div class="container-scroller">
@@ -71,15 +169,16 @@
             <span class="availability-status online"></span>
           </div>
           <div class="nav-profile-text">
-            <p class="mb-1 text-black" id="doctor-name">Dr. Placeholder Name</p>
-          </div>
+            <p class="mb-1 text-black"><span id="logged_in_user_name"></span>
+            </p>          </div>
         </a>
         <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
           <a class="dropdown-item" href="#">
             <i class="mdi mdi-account-circle me-2 text-success"></i> My Profile </a>
           <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#">
-            <i class="mdi mdi-logout me-2 text-primary"></i> Logout </a>
+          <a class="nav-link" href="#" id="logoutButton">
+            <i class="mdi mdi-power"> Logout</i>
+          </a>
         </div>
       </li>
 
@@ -119,8 +218,8 @@
 
       <!-- Logout -->
       <li class="nav-item nav-logout d-none d-lg-block">
-        <a class="nav-link" href="#">
-          <i class="mdi mdi-power"></i>
+        <a class="nav-link" href="#" id="logoutButton">
+          <i class="mdi mdi-power"> Logout</i>
         </a>
       </li>
     </ul>
@@ -129,7 +228,6 @@
     </button>
   </div>
 </nav>
-
       <!-- partial -->
 <div class="container-fluid page-body-wrapper">
   <!-- partial:partials/_sidebar.html -->
@@ -142,8 +240,8 @@
             <span class="login-status online"></span>
           </div>
           <div class="nav-profile-text d-flex flex-column">
-            <span class="font-weight-bold mb-2">Dr. David Grey</span>
-            <span class="text-secondary text-small">Cardiologist</span>
+            <span class="font-weight-bold mb-2" id="logged_in_user_name"></span>
+            <span class="text-secondary text-small" id="logged_in_user_name"></span>
           </div>
           <i class="mdi mdi-stethoscope text-primary nav-profile-badge"></i>
         </a>
@@ -160,6 +258,7 @@
           <i class="mdi mdi-account-group menu-icon"></i>
         </a>
       </li>
+ 
       <li class="nav-item">
         <a class="nav-link" href="appointments.html">
           <span class="menu-title">Appointments</span>
@@ -207,6 +306,14 @@
           <i class="mdi mdi-settings menu-icon"></i>
         </a>
       </li>
+      <li class="nav-item sidebar-actions">
+        <span class="nav-link">
+          <div class="border-bottom">
+          </div>
+          <a class="nav-link" href="#" id="logoutButton">
+            <i class="mdi mdi-power"> Logout</i>
+          </a>
+        </span>
     </ul>
   </nav>
 
@@ -215,18 +322,18 @@
   <div class="content-wrapper">
     <div class="page-header">
       <h3 class="page-title">
-        <span class="page-title-icon bg-gradient-primary text-white me-2">
-          <i class="mdi mdi-calendar"></i>
-        </span> Appointments
+          <span class="page-title-icon bg-gradient-primary text-white me-2">
+              <i class="mdi mdi-home"></i>
+          </span> Dashboard
       </h3>
       <nav aria-label="breadcrumb">
-        <ul class="breadcrumb">
-          <li class="breadcrumb-item active" aria-current="page">
-            <span></span> Manage Appointments <i class="mdi mdi-alert-circle-outline icon-sm text-primary align-middle"></i>
-          </li>
-        </ul>
+          <ul class="breadcrumb">
+              <li class="breadcrumb-item active" aria-current="page">
+                  <span></span>Welcome, <span id="logged_in_user_name"></span> - Good <span id="timeOfDay">Morning</span>
+              </li>
+          </ul>
       </nav>
-    </div>
+  </div>
 
     <div class="container mt-5">
       <h2>Search Page</h2>
@@ -245,6 +352,114 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
+    // Function to check session data on page load
+function checkSessionOnLoad() {
+  const token = localStorage.getItem('token');
+  const username = localStorage.getItem('username');
+  const userType = localStorage.getItem('user_type');
+
+  if (!token || !username || !userType) {
+      console.warn('🔴 Session data missing or invalid. Redirecting...');
+      window.location.href = 'http://smarthospitalmaintain.com';
+      return;
+  }
+
+  console.log('🟢 Session data exists. Validating session...');
+  validateUserSession();
+}
+
+// Validate user session
+function validateUserSession() {
+  const headers = getAuthHeaders();
+
+  if (!headers['Authorization']) {
+      console.warn('🔴 No valid token. User is not authenticated.');
+      window.location.href = 'http://smarthospitalmaintain.com'; // Redirect if token is missing
+      return;
+  }
+
+  $.ajax({
+      url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
+      type: 'GET',
+      headers: headers,
+      success: function(response) {
+          console.log('🟢 Session validation success:', response);
+
+          if (response.message !== 'Cookie is valid.') {
+              console.warn('🔴 Invalid session. Logging out...');
+              alert('Invalid session. Logging out.');
+              logoutUser();
+              return;
+          }
+
+          // Update navigation bar with user details
+          document.getElementById("logged_in_user_name").textContent = response.name;
+          document.getElementById("timeOfDay").textContent = getGreetingTime();
+      },
+      error: function(xhr, status, error) {
+          console.error('❌ Error validating session:', xhr.responseText);
+          logoutUser();
+      }
+  });
+}
+
+// Run session check on page load
+$(document).ready(function () {
+  checkSessionOnLoad();
+});
+
+// Function to get time of day greeting
+function getGreetingTime() {
+  const hours = new Date().getHours();
+  if (hours < 12) {
+      return "Morning";
+  } else if (hours < 18) {
+      return "Afternoon";
+  } else {
+      return "Evening";
+  }
+}
+
+
+// Logout function
+function logoutUser() {
+  const headers = getAuthHeaders();
+
+  if (!headers['Authorization']) {
+      console.error('No authentication token. Redirecting to login...');
+      window.location.href = 'http://smarthospitalmaintain.com/profiling/login.html';
+      return;
+  }
+
+  $.ajax({
+      url: 'http://smarthospitalmaintain.com:8000/users/logout/',
+      type: 'POST',
+      headers: headers,
+      success: function(response) {
+          console.log('User logged out successfully:', response);
+          sessionStorage.clear();
+          localStorage.clear();
+          document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          window.location.href = 'http://smarthospitalmaintain.com/';
+      },
+      error: function(xhr, status, error) {
+          console.error('Logout error:', xhr.responseText);
+      }
+  });
+}
+
+// Attach logout event
+$(document).ready(function() {
+  $('#logoutButton').on('click', function(event) {
+      event.preventDefault();
+      logoutUser();
+  });
+});
+
+// Validate session on page load
+validateUserSession();
+
+
       $(document).ready(function() {
           $('#addFilter').click(function() {
               $('#searchFilters').append(`
