@@ -11,7 +11,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-insecure-key')
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['127.0.0.1', 'smarthospitalmaintain.com', 'www.smarthospitalmaintain.com']
+ALLOWED_HOSTS =  ['104.37.187.187','127.0.0.1', 'smarthospitalmaintain.com', 'www.smarthospitalmaintain.com']
 
 
 CORS_ALLOW_ALL_ORIGINS = True  
