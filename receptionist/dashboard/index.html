@@ -773,6 +773,22 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
               <textarea id="editNotes" class="form-control"></textarea>
             </div>
           </div>
+          
+          <div class="row mt-3">
+            <div class="col-md-12">
+                <label for="editAppointmentStatus">Status</label>
+                <select id="editAppointmentStatus" class="form-control">
+                    <option value="Waiting">Waiting</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Active">Active</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Canceled">Canceled</option>
+                    <option value="Rescheduled">Rescheduled</option>
+                </select>
+            </div>
+        </div>
+        
 
           <div class="col-md-12 mt-3">
             <label for="editIsEmergency">Is this an emergency?</label>
@@ -1455,7 +1471,7 @@ function openEditModal(appointmentData, rowIndex) {
   let fields = [
       "editFirstName", "editLastName", "editContactNumber", "editDateOfBirth", 
       "editAge", "editCurrentIllness", "editAppointmentDate", "editDoctor", 
-      "editNotes", "editAppointmentID", "editPatientID"
+      "editNotes", "editAppointmentID", "editPatientID", "editAppointmentStatus"
   ];
 
   for (let field of fields) {
@@ -1472,6 +1488,7 @@ function openEditModal(appointmentData, rowIndex) {
   document.getElementById("editAge").value = appointment.patient?.age || "";
   document.getElementById("editCurrentIllness").value = appointment.current_illness || "";
   document.getElementById("editAppointmentDate").value = formatDateTime(appointment.appointment_date);
+  document.getElementById("editAppointmentStatus").value = appointment.status || "";
   document.getElementById("editNotes").value = appointment.notes || "";
 
   // Set readonly IDs
@@ -1488,6 +1505,8 @@ function openEditModal(appointmentData, rowIndex) {
   document.getElementById("editDateOfBirth").readOnly = false;
   document.getElementById("editCurrentIllness").readOnly = false;
   document.getElementById("editNotes").readOnly = false;
+  document.getElementById("editAppointmentDate").readOnly = false;
+  document.getElementById("editAppointmentStatus").readOnly = false;
 
   // Load doctors dynamically
   loadDoctors(appointment.doctor?.id);
@@ -1504,6 +1523,7 @@ function updateAppointment() {
       date_of_birth: document.getElementById("editDateOfBirth").value,
       current_illness: document.getElementById("editCurrentIllness").value,
       doctor_id: document.getElementById("editDoctor").value,
+      status: document.getElementById("editAppointmentStatus").value,
       notes: document.getElementById("editNotes").value,
   };
 

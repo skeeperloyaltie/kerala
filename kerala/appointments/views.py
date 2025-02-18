@@ -323,6 +323,15 @@ from django.core.exceptions import ObjectDoesNotExist
 logger = logging.getLogger(__name__)
 
 
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.views import APIView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+
 @method_decorator(csrf_exempt, name='dispatch')
 class EditAppointmentView(APIView):
     """
@@ -360,14 +369,19 @@ class EditAppointmentView(APIView):
                 return Response({"error": "Invalid patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Update other appointment fields
-        appointment.date_of_birth = data.get("date_of_birth", appointment.date_of_birth)
         appointment.current_illness = data.get("current_illness", appointment.current_illness)
         appointment.doctor_id = data.get("doctor_id", appointment.doctor_id)
         appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user  # Track the user making the change
 
+        # Ensure only valid statuses are assigned
+        allowed_statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"]
         if "status" in data:
-            appointment.status = data["status"]
+            if data["status"] in allowed_statuses:
+                appointment.status = data["status"]
+            else:
+                logger.error(f"Invalid status '{data['status']}' provided.")
+                return Response({"error": "Invalid status value."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             appointment.save()
@@ -376,7 +390,6 @@ class EditAppointmentView(APIView):
         except Exception as e:
             logger.error(f"Error updating appointment {appointment_id}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 
