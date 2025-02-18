@@ -805,6 +805,33 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
   </div>
 </div>
 
+<!-- Reschedule Appointment Modal -->
+<div class="modal fade" id="rescheduleAppointmentModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Appointment</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body">
+              <form id="rescheduleForm">
+                  <input type="hidden" id="rescheduleAppointmentID">
+                  <div class="form-group">
+                      <label for="newAppointmentDate">New Date & Time</label>
+                      <input type="datetime-local" class="form-control" id="newAppointmentDate" required>
+                  </div>
+              </form>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" onclick="rescheduleAppointment()">Confirm Reschedule</button>
+          </div>
+      </div>
+  </div>
+</div>
+
 
 
 
@@ -1200,8 +1227,8 @@ function getActionButton(status, appointment, rowIndex) {
           break;
       case 'Scheduled':
       case 'Pending':
-          buttons += `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-          break;
+      buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+      break;
       case 'Canceled':
           buttons += `<button class="btn btn-info btn-sm">Update</button>`;
           break;
@@ -1599,6 +1626,69 @@ function cancelAppointment(appointmentId, rowIndex) {
       alert("Failed to cancel appointment: " + (error.detail || "Unknown error"));
   });
 }
+
+
+// reschedule appointments 
+function openRescheduleModal(appointmentId, currentDateTime) {
+  document.getElementById("rescheduleAppointmentID").value = appointmentId;
+  document.getElementById("newAppointmentDate").value = formatDateTime(currentDateTime);
+  
+  // Show modal
+  $("#rescheduleAppointmentModal").modal("show");
+}
+
+function rescheduleAppointment() {
+  let appointmentId = document.getElementById("rescheduleAppointmentID").value;
+  let newDateTime = document.getElementById("newAppointmentDate").value;
+
+  if (!newDateTime) {
+      alert("Please select a new date and time.");
+      return;
+  }
+
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/reschedule/${appointmentId}/`, {
+      method: "PATCH",
+      headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
+      },
+      body: JSON.stringify({ 
+          appointment_date: newDateTime,
+          status: "Rescheduled" // Automatically update status
+      })
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log("Appointment rescheduled successfully:", data);
+      alert("Appointment has been rescheduled.");
+      $("#rescheduleAppointmentModal").modal("hide");
+
+      // Update the UI dynamically (instead of full reload)
+      let appointmentRow = document.querySelector(`#appointmentsTable tbody tr td button[onclick*="openRescheduleModal(${appointmentId},"]`).closest("tr");
+      if (appointmentRow) {
+          let statusCell = appointmentRow.querySelector(".status-cell");
+          if (statusCell) {
+              statusCell.textContent = "Rescheduled";
+              statusCell.classList.add("text-warning");
+          }
+      }
+  })
+  .catch(error => {
+      console.error("Error rescheduling appointment:", error);
+      alert("Failed to reschedule appointment: " + (error.detail || "Unknown error"));
+  });
+}
+
+function formatDateTime(dateTimeString) {
+  let date = new Date(dateTimeString);
+  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+}
+
 
   </script>
   
