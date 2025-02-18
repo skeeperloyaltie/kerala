@@ -1058,6 +1058,25 @@ function populateAppointmentsTable(status, appointments) {
 
   const doctorCount = {}; // Track appointment count per doctor
 
+  // Add a "Select All" checkbox at the top (if not already present)
+  if (!document.getElementById(`${status}-select-all`)) {
+      let selectAllRow = document.createElement("tr");
+      selectAllRow.innerHTML = `
+          <th><input type="checkbox" id="${status}-select-all" onclick="toggleAll('${status}')"></th>
+          <th>#</th>
+          <th>Patient ID</th>
+          <th>Patient Name</th>
+          <th>Age</th>
+          <th>Notes</th>
+          <th>Appointment Time</th>
+          <th>Doctor</th>
+          <th>Created By</th>
+          <th>Status</th>
+          <th>Actions</th>
+      `;
+      tbody.appendChild(selectAllRow);
+  }
+
   appointments.forEach((appointment, index) => {
       let patient = appointment.patient || {};
       let doctor = appointment.doctor || {};
@@ -1072,19 +1091,16 @@ function populateAppointmentsTable(status, appointments) {
 
       let row = document.createElement("tr");
       row.innerHTML = `
-<td><input type="checkbox" onclick="toggleAllCheckboxes(this, '${tbodyId}')"></td>
-
-          <td>${index + 1}</td> <!-- This is the row number -->
+          <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
+          <td>${index + 1}</td>
           <td>${patient.patient_id || "N/A"}</td>
-
           <td>${patient.first_name} ${patient.last_name}</td>
           <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
           <td>${appointment.notes || "N/A"}</td>
           <td>${appointmentTime}</td>
           <td>Dr. ${doctorName} (${doctorSpecialization})</td>
-          <td>${appointment.created_by_username}</td> <!-- Display the creator -->
+          <td>${appointment.created_by_username}</td>
           <td>${appointment.status || "N/A"}</td>
-
           <td>${getActionButton(appointment.status, appointment, index)}</td>
       `;
 
@@ -1093,6 +1109,39 @@ function populateAppointmentsTable(status, appointments) {
 
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
+
+// Function to toggle all checkboxes when "Select All" is clicked
+function toggleAll(status) {
+  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+  let selectedIds = [];
+
+  checkboxes.forEach((checkbox) => {
+      checkbox.checked = selectAllCheckbox.checked;
+      if (checkbox.checked) {
+          selectedIds.push(checkbox.value);
+      }
+  });
+
+  console.log(`Selected IDs for ${status}:`, selectedIds);
+}
+
+// Function to update "Select All" checkbox if all individual checkboxes are manually selected
+function updateBulkSelection(status) {
+  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+
+  let allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+  selectAllCheckbox.checked = allChecked;
+
+  let selectedIds = Array.from(checkboxes)
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.value);
+
+  console.log(`Selected IDs for ${status}:`, selectedIds);
+}
+
+
 
 
 
