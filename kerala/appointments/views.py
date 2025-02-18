@@ -317,6 +317,8 @@ from .models import Appointment
 from .serializers import AppointmentSerializer
 from users.models import Doctor, Receptionist
 
+from django.core.exceptions import ObjectDoesNotExist
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -326,6 +328,7 @@ class EditAppointmentView(APIView):
     Allows doctors and receptionists to edit an appointment's details, including status.
     """
     permission_classes = [IsAuthenticated]
+
 
     def patch(self, request, appointment_id):
         user = request.user
@@ -344,6 +347,15 @@ class EditAppointmentView(APIView):
         if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
             logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
             return Response({"error": "You can only edit your own appointments."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch patient based on patient_id from request data
+        if "patient_id" in data:
+            try:
+                patient = Patient.objects.get(patient_id=data["patient_id"])
+                data["patient"] = patient.id  # Replace `patient_id` with actual Patient model ID
+            except ObjectDoesNotExist:
+                logger.error(f"Patient with ID {data['patient_id']} not found.")
+                return Response({"error": "Invalid patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Update appointment fields
         if 'status' in data:
