@@ -322,6 +322,7 @@ from django.core.exceptions import ObjectDoesNotExist
 # Set up logging
 logger = logging.getLogger(__name__)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class EditAppointmentView(APIView):
     """
@@ -329,12 +330,12 @@ class EditAppointmentView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-
     def patch(self, request, appointment_id):
         user = request.user
         data = request.data
 
         logger.info(f"User {user.username} ({user.user_type}) attempting to edit appointment {appointment_id}.")
+        logger.info(f"Received data: {data}")  # Log incoming data
 
         # Ensure user is a doctor or receptionist
         if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
@@ -348,14 +349,17 @@ class EditAppointmentView(APIView):
             logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
             return Response({"error": "You can only edit your own appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Fetch patient based on patient_id from request data
+        # Process patient_id if provided
         if "patient_id" in data:
             try:
                 patient = Patient.objects.get(patient_id=data["patient_id"])
                 data["patient"] = patient.id  # Replace `patient_id` with actual Patient model ID
+                logger.info(f"Matched patient ID {data['patient_id']} to DB ID {patient.id}")  # Log successful match
             except ObjectDoesNotExist:
                 logger.error(f"Patient with ID {data['patient_id']} not found.")
                 return Response({"error": "Invalid patient ID."}, status=status.HTTP_400_BAD_REQUEST)
+
+        logger.info(f"Final data to be saved: {data}")  # Log processed data
 
         # Update appointment fields
         if 'status' in data:
@@ -370,6 +374,7 @@ class EditAppointmentView(APIView):
 
         logger.error(f"Error updating appointment {appointment_id}: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
