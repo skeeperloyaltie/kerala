@@ -1072,7 +1072,7 @@ function populateAppointmentsTable(status, appointments) {
 
       let row = document.createElement("tr");
       row.innerHTML = `
-          <td><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Rescheduled-tbody')"></td>
+<td><input type="checkbox" onclick="toggleAllCheckboxes(this, '${tbodyId}')"></td>
 
           <td>${index + 1}</td> <!-- This is the row number -->
           <td>${patient.patient_id || "N/A"}</td>
