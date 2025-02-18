@@ -346,7 +346,6 @@ console.log(token, username, csrftoken);
           <div class="card-body">
             <h4 class="card-title">Current Patient Details & Appointments</h4>
             <div class="row mb-3">
-              
               <div class="col-md-4">
                   <select id="statusFilter" class="form-control" onchange="filterAppointments()">
                       <option value="">Filter by Status</option>
@@ -357,103 +356,86 @@ console.log(token, username, csrftoken);
                       <option value="Cancelled">Cancelled</option>
                   </select>
               </div>
-              <div class="col-md-4">
-                  <input type="date" id="dateFilter" class="form-control" onchange="filterAppointments()">
-              </div>
-
-             
           
-            <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-              <li class="nav-item">
-                <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab" aria-controls="waiting" aria-selected="true">Waiting in Clinic</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab" aria-controls="pending" aria-selected="false">Pending</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">Completed</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab" aria-controls="canceled" aria-selected="false">Canceled</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#recanceled" role="tab" aria-controls="recanceled" aria-selected="false">Canceled</a>
-              </li>
-            </ul>
-    
-            <div class="tab-content mt-3" id="appointmentTabContent">
-              <!-- Tab Template -->
-              <div class="tab-pane fade show active" id="waiting" role="tabpanel" aria-labelledby="waiting-tab">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th><input type="text" class="filter" placeholder="Patient Name"></th>
-                        <th><input type="text" class="filter" placeholder="Age"></th>
-                        <th><input type="text" class="filter" placeholder="Illness"></th>
-                        <th><input type="text" class="filter" placeholder="Appointment Time"></th>
-                        <th><input type="text" class="filter" placeholder="Doctor Scheduled"></th>
-                        <th><input type="text" class="filter" placeholder="Status"></th>
-                        <th>Actions</th>
-                      </tr>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient ID</th><th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Illness</th>
-                        <th>Appointment Time</th>
-                        <th>Doctor Scheduled</th>
-                        <th>Created By</th>
-
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Waiting-tbody"></tbody>
-                  </table>
-                </div>
+              <div class="col-md-8 text-end">
+                  <button class="btn btn-danger btn-sm d-none" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
+                  <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
               </div>
-    
-              <!-- Copy for Each Tab -->
-              <div class="tab-pane fade" id="scheduled" role="tabpanel" aria-labelledby="scheduled-tab">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th><input type="text" class="filter" placeholder="Patient Name"></th>
-                        <th><input type="text" class="filter" placeholder="Age"></th>
-                        <th><input type="text" class="filter" placeholder="Illness"></th>
-                        <th><input type="text" class="filter" placeholder="Appointment Time"></th>
-                        <th><input type="text" class="filter" placeholder="Doctor Scheduled"></th>
-                        <th><input type="text" class="filter" placeholder="Status"></th>
-                        <th>Actions</th>
-                      </tr>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient ID</th><th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Illness</th>
-                        <th>Appointment Time</th>
-                        <th>Doctor Scheduled</th>
-                        <th>Created By</th>
-
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Scheduled-tbody"></tbody>
-                  </table>
-                </div>
+          </div>
+          
+          <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+              <li class="nav-item">
+                  <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab">Waiting in Clinic</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">Scheduled</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab">Completed</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab">Canceled</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" id="rescheduled-tab" data-bs-toggle="tab" href="#rescheduled" role="tab">Rescheduled</a>
+              </li>
+          </ul>
+          
+          <div class="tab-content mt-3" id="appointmentTabContent">
+              <!-- Template for Tabs -->
+              <div class="tab-pane fade show active" id="waiting" role="tabpanel">
+                  <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                      <table class="table">
+                          <thead>
+                              <tr>
+                                  <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Waiting-tbody')"></th>
+                                  <th>#</th>
+                                  <th>Patient ID</th>
+                                  <th>Patient Name</th>
+                                  <th>Age</th>
+                                  <th>Illness</th>
+                                  <th>Appointment Time</th>
+                                  <th>Doctor Scheduled</th>
+                                  <th>Created By</th>
+                                  <th>Status</th>
+                                  <th>Actions</th>
+                              </tr>
+                          </thead>
+                          <tbody id="Waiting-tbody"></tbody>
+                      </table>
+                  </div>
+              </div>
+          
+              <!-- Copy for each tab -->
+              <div class="tab-pane fade" id="scheduled" role="tabpanel">
+                  <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                      <table class="table">
+                          <thead>
+                              <tr>
+                                  <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Scheduled-tbody')"></th>
+                                  <th>#</th>
+                                  <th>Patient ID</th>
+                                  <th>Patient Name</th>
+                                  <th>Age</th>
+                                  <th>Illness</th>
+                                  <th>Appointment Time</th>
+                                  <th>Doctor Scheduled</th>
+                                  <th>Created By</th>
+                                  <th>Status</th>
+                                  <th>Actions</th>
+                              </tr>
+                          </thead>
+                          <tbody id="Scheduled-tbody"></tbody>
+                      </table>
+                  </div>
               </div>
     
               <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
@@ -462,18 +444,19 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                        <th>#</th>
-                        <th>Patient ID</th><th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Illness</th>
-                        <th>Appointment Time</th>
-                        <th>Doctor Scheduled</th>
-                        <th>Created By</th>
-
-                        <th>Status</th>
-                        <th>Actions</th>
+                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Pending-tbody')"></th>
+                          <th>#</th>
+                          <th>Patient ID</th>
+                          <th>Patient Name</th>
+                          <th>Age</th>
+                          <th>Illness</th>
+                          <th>Appointment Time</th>
+                          <th>Doctor Scheduled</th>
+                          <th>Created By</th>
+                          <th>Status</th>
+                          <th>Actions</th>
                       </tr>
-                    </thead>
+                  </thead>
                     <tbody id="Pending-tbody"></tbody>
                   </table>
                 </div>
@@ -485,18 +468,19 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                        <th>#</th>
-                        <th>Patient ID</th><th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Illness</th>
-                        <th>Appointment Time</th>
-                        <th>Doctor Scheduled</th>
-                        <th>Created By</th>
-
-                        <th>Status</th>
-                        <th>Actions</th>
+                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Active-tbody')"></th>
+                          <th>#</th>
+                          <th>Patient ID</th>
+                          <th>Patient Name</th>
+                          <th>Age</th>
+                          <th>Illness</th>
+                          <th>Appointment Time</th>
+                          <th>Doctor Scheduled</th>
+                          <th>Created By</th>
+                          <th>Status</th>
+                          <th>Actions</th>
                       </tr>
-                    </thead>
+                  </thead>
                     <tbody id="Active-tbody"></tbody>
                   </table>
                 </div>
@@ -508,18 +492,19 @@ console.log(token, username, csrftoken);
                   <table class="table">
                     <thead>
                       <tr>
-                        <th>#</th>
-                        <th>Patient ID</th><th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Illness</th>
-                        <th>Appointment Time</th>
-                        <th>Doctor Scheduled</th>
-                        <th>Created By</th>
-
-                        <th>Status</th>
-                        <th>Actions</th>
+                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Completed-tbody')"></th>
+                          <th>#</th>
+                          <th>Patient ID</th>
+                          <th>Patient Name</th>
+                          <th>Age</th>
+                          <th>Illness</th>
+                          <th>Appointment Time</th>
+                          <th>Doctor Scheduled</th>
+                          <th>Created By</th>
+                          <th>Status</th>
+                          <th>Actions</th>
                       </tr>
-                    </thead>
+                  </thead>
                     <tbody id="Completed-tbody"></tbody>
                   </table>
                 </div>
@@ -529,21 +514,46 @@ console.log(token, username, csrftoken);
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive">
                   <table class="table">
-                    <thead>
+                    <<thead>
                       <tr>
-                        <th>#</th>
-                        <th>Patient ID</th><th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Illness</th>
-                        <th>Appointment Time</th>
-                        <th>Doctor Scheduled</th>
-                        <th>Created By</th>
-
-                        <th>Status</th>
-                        <th>Actions</th>
+                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Canceled-tbody')"></th>
+                          <th>#</th>
+                          <th>Patient ID</th>
+                          <th>Patient Name</th>
+                          <th>Age</th>
+                          <th>Illness</th>
+                          <th>Appointment Time</th>
+                          <th>Doctor Scheduled</th>
+                          <th>Created By</th>
+                          <th>Status</th>
+                          <th>Actions</th>
                       </tr>
-                    </thead>
+                  </thead>
                     <tbody id="Canceled-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="rescheduled-tab">
+                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                <div class="table-responsive">
+                  <table class="table">
+                    <<thead>
+                      <tr>
+                          <th><input type="checkbox" onclick="toggleAllCheckboxes(this, 'Rescheduled-tbody')"></th>
+                          <th>#</th>
+                          <th>Patient ID</th>
+                          <th>Patient Name</th>
+                          <th>Age</th>
+                          <th>Illness</th>
+                          <th>Appointment Time</th>
+                          <th>Doctor Scheduled</th>
+                          <th>Created By</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                    <tbody id="Rescheduled-tbody"></tbody>
                   </table>
                 </div>
               </div>
