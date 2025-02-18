@@ -1099,7 +1099,7 @@ function populateAppointmentsTable(status, appointments) {
       let row = document.createElement("tr");
       row.innerHTML = `
           <td>${index + 1}</td> <!-- This is the row number -->
-          <td>${appointment.patient_id || "N/A"}</td>
+          <td>${patient.patient_id || "N/A"}</td>
 
           <td>${patient.first_name} ${patient.last_name}</td>
           <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
