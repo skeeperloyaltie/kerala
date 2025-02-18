@@ -980,7 +980,19 @@ function populateAppointmentsTable(status, appointments) {
 
   const doctorCount = {}; // Track appointment count per doctor
 
-  // Add a "Select All" checkbox at the top (if not already present)
+  // Add "Select All" checkbox and bulk action buttons (if not already present)
+  if (!document.getElementById(`${status}-bulk-actions`)) {
+      let bulkActionsContainer = document.createElement("div");
+      bulkActionsContainer.id = `${status}-bulk-actions`;
+      bulkActionsContainer.style.display = "none"; // Initially hidden
+      bulkActionsContainer.innerHTML = `
+          <button onclick="bulkReschedule('${status}')">Reschedule Selected</button>
+          <button onclick="bulkCancel('${status}')">Cancel Selected</button>
+      `;
+      tbody.parentElement.insertBefore(bulkActionsContainer, tbody);
+  }
+
+  // Insert "Select All" Row
   if (!document.getElementById(`${status}-select-all`)) {
       let selectAllRow = document.createElement("tr");
       selectAllRow.innerHTML = `
@@ -999,6 +1011,7 @@ function populateAppointmentsTable(status, appointments) {
       tbody.appendChild(selectAllRow);
   }
 
+  // Populate rows
   appointments.forEach((appointment, index) => {
       let patient = appointment.patient || {};
       let doctor = appointment.doctor || {};
@@ -1032,6 +1045,7 @@ function populateAppointmentsTable(status, appointments) {
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
 
+
 // Function to toggle all checkboxes when "Select All" is clicked
 function toggleAll(status) {
   let selectAllCheckbox = document.getElementById(`${status}-select-all`);
@@ -1045,23 +1059,54 @@ function toggleAll(status) {
       }
   });
 
-  console.log(`Selected IDs for ${status}:`, selectedIds);
+  updateBulkActions(status, selectedIds); // Update action buttons
 }
 
-// Function to update "Select All" checkbox if all individual checkboxes are manually selected
+// Function to update selection when individual checkboxes are clicked
 function updateBulkSelection(status) {
   let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
   let selectAllCheckbox = document.getElementById(`${status}-select-all`);
-
-  let allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-  selectAllCheckbox.checked = allChecked;
 
   let selectedIds = Array.from(checkboxes)
       .filter(checkbox => checkbox.checked)
       .map(checkbox => checkbox.value);
 
+  selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
+
+  updateBulkActions(status, selectedIds); // Update action buttons
+}
+
+// Function to show/hide bulk action buttons
+function updateBulkActions(status, selectedIds) {
+  let bulkActionsContainer = document.getElementById(`${status}-bulk-actions`);
+
+  if (selectedIds.length >= 2) {
+      bulkActionsContainer.style.display = "block"; // Show buttons
+  } else {
+      bulkActionsContainer.style.display = "none"; // Hide buttons
+  }
+
   console.log(`Selected IDs for ${status}:`, selectedIds);
 }
+
+// Function to perform bulk rescheduling
+function bulkReschedule(status) {
+  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+      .map(checkbox => checkbox.value);
+
+  alert(`Rescheduling Appointments: ${selectedIds.join(", ")}`);
+  // Add your logic here to send request to the backend
+}
+
+// Function to perform bulk cancellation
+function bulkCancel(status) {
+  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+      .map(checkbox => checkbox.value);
+
+  alert(`Cancelling Appointments: ${selectedIds.join(", ")}`);
+  // Add your logic here to send request to the backend
+}
+
 
 
 
