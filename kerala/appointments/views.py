@@ -107,7 +107,7 @@ class CreateAppointmentView(APIView):
                 doctor = Doctor.objects.get(id=doctor_id)
                 appointment_data["doctor"] = doctor
                 appointment_data["receptionist"] = user.receptionist
-                logger.info(f"Doctor assigned: {doctor.id} ({doctor.first_name} {doctor.last_name})")
+                logger.info(f"Appointment assigned to doctor {doctor.id} ({doctor.user.first_name} {doctor.user.last_name})")
             except Doctor.DoesNotExist:
                 logger.error(f"Doctor with ID {doctor_id} not found.")
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -116,8 +116,8 @@ class CreateAppointmentView(APIView):
             # Fetch doctor from the related user profile
             doctor = user.doctor
             appointment_data["doctor"] = doctor
-            logger.info(f"Appointment assigned to doctor {doctor.id} ({doctor.first_name} {doctor.last_name})")
-
+            logger.info(f"Appointment assigned to doctor {doctor.id} ({doctor.user.first_name} {doctor.user.last_name})")
+            
         else:
             logger.error(f"Unauthorized user type {user.user_type} attempted to create an appointment.")
             return Response({"error": "Only Receptionists and Doctors can create appointments."}, status=status.HTTP_403_FORBIDDEN)
