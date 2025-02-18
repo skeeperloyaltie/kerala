@@ -31,12 +31,18 @@ class PatientSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField()
 
 from rest_framework import serializers
+from rest_framework import serializers
+from users.models import Doctor
 
 class DoctorSerializer(serializers.ModelSerializer):
+    # If you want to include the related User model's first_name and last_name
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+
     class Meta:
         model = Doctor
-        fields = ['id', 'first_name', 'last_name', 'specialization']
-
+        fields = ['id', 'user', 'specialization', 'contact_number', 'email', 'first_name', 'last_name']
+        # Add other necessary fields as needed
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
