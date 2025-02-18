@@ -1152,10 +1152,6 @@ function bulkCancel(status) {
 }
 
 
-
-
-
-
 /* Sorting Function */
 function sortAppointments(column) {
     let sortedAppointments = [...filteredAppointments];
@@ -1667,16 +1663,8 @@ function rescheduleAppointment() {
       console.log("Appointment rescheduled successfully:", data);
       alert("Appointment has been rescheduled.");
       $("#rescheduleAppointmentModal").modal("hide");
+      location.reload();
 
-      // Update the UI dynamically (instead of full reload)
-      let appointmentRow = document.querySelector(`#appointmentsTable tbody tr td button[onclick*="openRescheduleModal(${appointmentId},"]`).closest("tr");
-      if (appointmentRow) {
-          let statusCell = appointmentRow.querySelector(".status-cell");
-          if (statusCell) {
-              statusCell.textContent = "Rescheduled";
-              statusCell.classList.add("text-warning");
-          }
-      }
   })
   .catch(error => {
       console.error("Error rescheduling appointment:", error);

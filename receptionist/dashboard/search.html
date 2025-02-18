@@ -228,123 +228,52 @@
       </nav>
     </div>
 
-    <div class="row">
-      <!-- Appointment Booking Section -->
-      <div class="col-md-6 grid-margin stretch-card">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title">Create New Appointment</h4>
-            <form id="appointment-form" action="/appointments/create" method="POST">
-              <div class="form-group">
-                <label for="patientName">Patient Name</label>
-                <input type="text" class="form-control" id="patientName" name="patientName" placeholder="Enter Patient Name" required />
+    <div class="container mt-5">
+      <h2>Search Page</h2>
+      <form id="searchForm">
+          <div id="searchFilters">
+              <div class="mb-3 input-group">
+                  <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
+                  <button type="button" class="btn btn-danger removeFilter">Remove</button>
               </div>
-              <div class="form-group">
-                <label for="appointmentDate">Appointment Date</label>
-                <input type="date" class="form-control" id="appointmentDate" name="appointmentDate" required />
-              </div>
-              <div class="form-group">
-                <label for="appointmentTime">Appointment Time</label>
-                <input type="time" class="form-control" id="appointmentTime" name="appointmentTime" required />
-              </div>
-              <div class="form-group">
-                <label for="notes">Notes</label>
-                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Enter Notes"></textarea>
-              </div>
-              <button type="submit" class="btn btn-gradient-primary">Book Appointment</button>
-            </form>
           </div>
-        </div>
-      </div>
-
-      <!-- Appointment List Section -->
-      <div class="col-md-6 grid-margin stretch-card">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title">Upcoming Appointments</h4>
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Patient Name</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Appointment Data -->
-                  <tr>
-                    <td>1</td>
-                    <td>John Doe</td>
-                    <td>2025-01-22</td>
-                    <td>10:00 AM</td>
-                    <td>
-                      <button class="btn btn-light btn-sm">Edit</button>
-                      <button class="btn btn-danger btn-sm">Cancel</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>Jane Smith</td>
-                    <td>2025-01-23</td>
-                    <td>11:30 AM</td>
-                    <td>
-                      <button class="btn btn-light btn-sm">Edit</button>
-                      <button class="btn btn-danger btn-sm">Cancel</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <!-- Lab Test Section -->
-      <div class="col-md-12 grid-margin stretch-card">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title">Lab Tests for Your Patients</h4>
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Patient Name</th>
-                    <th>Test Name</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Lab Test Data -->
-                  <tr>
-                    <td>1</td>
-                    <td>Emily Clark</td>
-                    <td>Blood Test</td>
-                    <td>2025-01-20</td>
-                    <td>Completed</td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>Mike Brown</td>
-                    <td>X-Ray</td>
-                    <td>2025-01-21</td>
-                    <td>Pending</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          <button type="button" id="addFilter" class="btn btn-secondary">Add Filter</button>
+          <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+      <div class="mt-4" id="results"></div>
   </div>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+      $(document).ready(function() {
+          $('#addFilter').click(function() {
+              $('#searchFilters').append(`
+                  <div class="mb-3 input-group">
+                      <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
+                      <button type="button" class="btn btn-danger removeFilter">Remove</button>
+                  </div>
+              `);
+          });
+          
+          $(document).on('click', '.removeFilter', function() {
+              $(this).closest('.input-group').remove();
+          });
+          
+          $('#searchForm').submit(function(event) {
+              event.preventDefault();
+              let queries = $('input[name="query[]"]').map(function(){ return $(this).val(); }).get();
+              
+              $.ajax({
+                  url: '/search', // Update with your backend API endpoint
+                  method: 'POST',
+                  data: { queries: queries },
+                  success: function(response) {
+                      $('#results').html(response);
+                  }
+              });
+          });
+      });
+  </script>
 
 
             
