@@ -11,6 +11,7 @@ from users.models import Doctor, Receptionist
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -33,41 +34,27 @@ class CreateAppointmentView(APIView):
             return Response({"error": "Patient details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Extract patient info
+        # extract the patitnet ID 
+        patient_id = patient_data.get("patient_id")
         first_name = patient_data.get("first_name", "").strip()
         contact_number = patient_data.get("contact_number", "").strip()
         appointment_date = data.get("appointment_date")
 
-        if not first_name or not contact_number:
+        if not first_name or not contact_number or not patient_id:
             logger.error("Patient's first name and contact number are required.")
-            return Response({"error": "Patient's first name and contact number are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Patient's first name and contact number and ID are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check for existing patient using first_name and contact_number
-        patient, created = Patient.objects.get_or_create(
-            first_name=first_name,
-            contact_number=contact_number,
-            defaults={
-                "last_name": patient_data.get("last_name", ""),
-                "email": patient_data.get("email"),
-                "date_of_birth": patient_data.get("date_of_birth"),
-            }
-        )
+        patient_id = patient_data.get("patient_id")
+        if not patient_id:
+            logger.error("Patient ID is required.")
+            return Response({"error": "Patient ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not created:
-            # Update existing patient details if they are missing
-            updated = False
-            if not patient.last_name and patient_data.get("last_name"):
-                patient.last_name = patient_data["last_name"]
-                updated = True
-            if not patient.email and patient_data.get("email"):
-                patient.email = patient_data["email"]
-                updated = True
-            if not patient.date_of_birth and patient_data.get("date_of_birth"):
-                patient.date_of_birth = patient_data["date_of_birth"]
-                updated = True
-
-            if updated:
-                patient.save()
-                logger.info(f"Updated existing patient details: {patient.id}")
+        # Fetch patient using the provided patient_id
+        try:
+            patient = Patient.objects.get(patient_id=patient_id)
+        except Patient.DoesNotExist:
+            logger.error(f"Patient with ID {patient_id} does not exist.")
+            return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
 
         logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
 
@@ -134,7 +121,6 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 
 
