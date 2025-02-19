@@ -898,6 +898,7 @@ function checkSessionOnLoad() {
 }
 
 // Validate user session
+// Validate user session
 function validateUserSession() {
   const headers = getAuthHeaders();
 
@@ -917,20 +918,42 @@ function validateUserSession() {
           if (response.message !== 'Cookie is valid.') {
               console.warn('🔴 Invalid session. Logging out...');
               alert('Invalid session. Logging out.');
-              logoutUser();
-              return;
+              attemptLogout(); // Try to log out user
+          } else {
+              // Update navigation bar with user details
+              document.getElementById("logged_in_user_name").textContent = response.name;
+              document.getElementById("timeOfDay").textContent = getGreetingTime();
           }
-
-          // Update navigation bar with user details
-          document.getElementById("logged_in_user_name").textContent = response.name;
-          document.getElementById("timeOfDay").textContent = getGreetingTime();
       },
       error: function(xhr, status, error) {
           console.error('❌ Error validating session:', xhr.responseText);
-          logoutUser();
+          attemptLogout(); // Try to log out if session check fails
       }
   });
 }
+
+// Attempt to logout and handle failures
+function attemptLogout() {
+  logoutUser(); // Try the normal logout flow
+
+  // Wait a short delay to see if logout completes; if not, force logout
+  setTimeout(function() {
+      if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) {
+          console.warn('🔴 Logout failed! Forcing session cleanup.');
+          forceLogout();
+      }
+  }, 3000); // Adjust the timeout as needed
+}
+
+// Force logout by clearing session data and redirecting
+function forceLogout() {
+  sessionStorage.clear();
+  localStorage.clear();
+  document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  console.log('🔄 Redirecting to landing page after forced logout...');
+  window.location.href = 'http://smarthospitalmaintain.com/';
+}
+
 
 // Run session check on page load
 $(document).ready(function () {
