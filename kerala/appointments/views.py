@@ -128,8 +128,6 @@ import logging
 # Set up the logger
 logger = logging.getLogger(__name__)
 
-
-from .models import Doctor
 from .serializers import DoctorSerializer
 
 logger = logging.getLogger(__name__)
