@@ -128,40 +128,25 @@ import logging
 # Set up the logger
 logger = logging.getLogger(__name__)
 
-from .serializers import DoctorSerializer
-
-logger = logging.getLogger(__name__)
-
 class DoctorListView(APIView):
     """
     API view to fetch the list of available doctors.
-    - Doctors can only see their own details.
-    - Receptionists can see all doctors.
+    Only authenticated users can access this endpoint.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         """
-        Retrieve the list of doctors based on user type.
+        Retrieve the list of doctors.
         """
-        user = request.user
-        logger.info(f"User {user.id} ({user.user_type}) requested the list of doctors.")
+        logger.info(f"User {request.user.id} requested the list of doctors.")
 
-        if user.user_type == "doctor":  # If the user is a doctor, show only their details
-            doctors = Doctor.objects.filter(user=user)
-        elif user.user_type == "receptionist":  # If the user is a receptionist, show all doctors
-            doctors = Doctor.objects.all()
-        else:
-            return Response(
-                {"detail": "You are not authorized to view doctor details."}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-
+        doctors = Doctor.objects.all()
         serializer = DoctorSerializer(doctors, many=True)
-        logger.info(f"Fetched {len(doctors)} doctors for user {user.id}.")
+
+        logger.info(f"Fetched {len(doctors)} doctors.")
 
         return Response({"doctors": serializer.data}, status=status.HTTP_200_OK)
-
 
 
 from rest_framework.views import APIView
