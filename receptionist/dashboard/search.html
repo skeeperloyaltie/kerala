@@ -469,7 +469,6 @@ $(document).ready(function() {
 // Validate session on page load
 validateUserSession();
 
-
 $(document).ready(function () {
   // Add new search filter
   $('#addFilter').click(function () {
@@ -487,38 +486,38 @@ $(document).ready(function () {
   });
 
   $('#searchForm').submit(function (event) {
-    event.preventDefault();
+      event.preventDefault();
 
-    let filters = [];
-    $('#searchFilters .input-group').each(function () {
-        let field = $(this).find('.search-category').val();
-        let value = $(this).find('input[name="query[]"]').val().trim();
-        if (value) {
-            filters.push(`${field}=${encodeURIComponent(value)}`);
-        }
-    });
+      let filters = [];
+      $('#searchFilters .input-group').each(function () {
+          let field = $(this).find('.search-category').val();
+          let value = $(this).find('input[name="query[]"]').val().trim();
+          if (value) {
+              filters.push(`${field}=${encodeURIComponent(value)}`);
+          }
+      });
 
-    if (filters.length === 0) {
-        alert("Please enter at least one search term.");
-        return;
-    }
+      if (filters.length === 0) {
+          alert("Please enter at least one search term.");
+          return;
+      }
 
-    let queryString = filters.join("&");
+      let queryString = filters.join("&");
 
-    $.ajax({
-        url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
-        method: "GET",
-        headers: getAuthHeaders(),
-        success: function (response) {
-            displayResults(response);
-        },
-        error: function (xhr, status, error) {
-            console.error("Search error:", xhr.responseText);
-            alert("Failed to fetch search results. Please try again.");
-        }
-    });
-});
-
+      $.ajax({
+          url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
+          method: "GET",
+          headers: getAuthHeaders(),
+          success: function (response) {
+              console.log("Full API Response:", response); // Log the full response
+              displayResults(response);
+          },
+          error: function (xhr, status, error) {
+              console.error("Search error:", xhr.responseText);
+              alert("Failed to fetch search results. Please try again.");
+          }
+      });
+  });
 });
 
 // Function to display search results
@@ -526,14 +525,16 @@ function displayResults(data) {
   let resultsContainer = $("#results");
   resultsContainer.empty(); // Clear previous results
 
-  if (!data.patients.length && !data.appointments.length && !data.doctors.length && !data.receptionists.length) {
+  if (!data.patients?.length && !data.appointments?.length && !data.doctors?.length && !data.receptionists?.length) {
+      console.log("No results found:", data); // Log if no results
       resultsContainer.html("<p class='text-danger'>No results found.</p>");
       return;
   }
 
   let html = "<h5>Search Results</h5>";
 
-  if (data.patients.length) {
+  if (data.patients?.length) {
+      console.log("Patients found:", data.patients);
       html += "<h6>Patients</h6><ul>";
       data.patients.forEach(patient => {
           html += `<li>${patient.first_name} ${patient.last_name} - ${patient.email}</li>`;
@@ -541,7 +542,8 @@ function displayResults(data) {
       html += "</ul>";
   }
 
-  if (data.appointments.length) {
+  if (data.appointments?.length) {
+      console.log("Appointments found:", data.appointments);
       html += "<h6>Appointments</h6><ul>";
       data.appointments.forEach(appt => {
           html += `<li>Patient: ${appt.patient.first_name} ${appt.patient.last_name} | Doctor: ${appt.doctor.user.username} | Status: ${appt.status}</li>`;
@@ -549,7 +551,8 @@ function displayResults(data) {
       html += "</ul>";
   }
 
-  if (data.doctors.length) {
+  if (data.doctors?.length) {
+      console.log("Doctors found:", data.doctors);
       html += "<h6>Doctors</h6><ul>";
       data.doctors.forEach(doctor => {
           html += `<li>${doctor.username} (${doctor.email}) - Specialization: ${doctor.specialization}</li>`;
@@ -557,7 +560,8 @@ function displayResults(data) {
       html += "</ul>";
   }
 
-  if (data.receptionists.length) {
+  if (data.receptionists?.length) {
+      console.log("Receptionists found:", data.receptionists);
       html += "<h6>Receptionists</h6><ul>";
       data.receptionists.forEach(rec => {
           html += `<li>${rec.username} (${rec.email})</li>`;
@@ -567,8 +571,8 @@ function displayResults(data) {
 
   resultsContainer.html(html);
 }
-
   </script>
+</div>
 
 
             
