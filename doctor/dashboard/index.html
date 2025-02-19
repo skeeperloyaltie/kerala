@@ -820,7 +820,6 @@ function validateUserSession() {
           // Store the logged-in user's doctor ID globally
           window.loggedInDoctorId = response.user_id;  // Ensure API returns doctor_id
           // Populate doctor and editDoctor dropdowns
-          loadDoctors();
           populateDoctorDropdown(response.user_id, response.name);
       },
       error: function(xhr, status, error) {
@@ -1308,27 +1307,34 @@ if (missingVitals.length > 0) {
 }
 
 function loadDoctors() {
-  const headers = getAuthHeaders();
-  if (!window.loggedInDoctorId) {
-      console.warn('🔴 No doctor ID available. Ensure session is validated first.');
-      return;
-  }
-
+  const headers = getAuthHeaders(); // Ensure auth headers are set
   $.ajax({
-      url: `http://smarthospitalmaintain.com:8000/appointments/doctors/${window.loggedInDoctorId}/`,  // Fetch specific doctor
+      url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
       type: "GET",
       headers: headers,
-      success: function (doctor) {
+      success: function (response) {
           const doctorSelect = $("#doctor");
           doctorSelect.empty(); // Clear existing options
-          doctorSelect.append(
-              `<option value="${doctor.id}" selected>
-                  Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
-              </option>`
-          );
+          doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+          const editDoctorSelect = $("#editDoctor");
+          doctorSelect.append('<option value="" disabled selected>Select a doctor</option>');
+
+          response.doctors.forEach(doctor => {
+              doctorMap[doctor.id] = doctor; // Store doctor details in a dictionary
+              doctorSelect.append(
+                  `<option value="${doctor.id}">
+                      Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
+                  </option>`
+              );
+              editDoctorSelect.append(
+                  `<option value="${doctor.id}">
+                      Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
+                  </option>`
+              );
+          });
       },
       error: function (xhr, status, error) {
-          console.error("❌ Error fetching doctor:", error);
+          console.error("❌ Error fetching doctors:", error);
       }
   });
 }
