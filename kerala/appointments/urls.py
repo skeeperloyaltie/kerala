@@ -23,5 +23,7 @@ urlpatterns = [
     path('cancel/', CancelAppointmentView.as_view(), name='bulk-cancel-appointment'),  # New bulk cancel endpoint
 
     path('reschedule/<int:appointment_id>/', RescheduleAppointmentView.as_view(), name='reschedule-appointment'),
+    path('reschedule/', RescheduleAppointmentView.as_view(), name='bulk-reschedule-appointment'),
+
     path('search/', SearchView.as_view(), name='search-appointment'),
 ]
