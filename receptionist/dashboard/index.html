@@ -1035,7 +1035,7 @@ function populateAppointmentsTable(status, appointments) {
       bulkActionsContainer.id = `${status}-bulk-actions`;
       bulkActionsContainer.style.display = "none"; // Initially hidden
       bulkActionsContainer.innerHTML = `
-          <button onclick="bulkReschedule('${status}')">Reschedule Selected</button>
+          <button onclick="bulkReschedule('${status}')">Reschedule </button>
           <button onclick="bulkCancel('${status}')">Cancel Selected</button>
       `;
       tbody.parentElement.insertBefore(bulkActionsContainer, tbody);
@@ -1219,19 +1219,30 @@ function getActionButton(status, appointment, rowIndex) {
   let appointmentData = encodeURIComponent(JSON.stringify(appointment));
 
   // Pass both appointmentData and rowIndex
-  buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
-  buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
+  //buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+  //buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
 
   switch (status) {
       case 'Waiting':
+          // Pass both appointmentData and rowIndex
+          buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+          buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
           buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
           break;
       case 'Scheduled':
+          buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+          buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
+          buttons += `<button class="btn btn-success btn-sm">Reschedule</button>`;
+          break;
       case 'Pending':
-      buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
-      break;
+          buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+
+          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+          break;
       case 'Canceled':
-          buttons += `<button class="btn btn-info btn-sm">Update</button>`;
+          buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+          //buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
+          buttons += `<button class="btn btn-success btn-sm">Reschedule</button>`;
           break;
       case 'Completed':
           buttons += `<button class="btn btn-secondary btn-sm">Review</button>`;
