@@ -492,8 +492,13 @@ class SearchView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        query = self.request.query_params.get("q", "").strip().lower()
+        first_name = self.request.query_params.get("first_name", "").strip()
+        contact_number = self.request.query_params.get("contact_number", "").strip()
+        query = first_name or contact_number  # Use any available input
         cache_key = f"search_{user.id}_{query}"
+        
+        
+        logger.info(f"Received query params: {self.request.query_params}")
 
         # Log the search query
         logger.info(f"User {user.id} searching for: '{query}'")
@@ -504,9 +509,10 @@ class SearchView(generics.ListAPIView):
             logger.info(f"Cache hit for user {user.id}, query: '{query}'")
             return cached_results
 
-        if not query:
+        if not any([first_name, contact_number]):
             logger.info(f"Empty query received from user {user.id}.")
             return []
+
 
         patients, doctors, receptionists, appointments = [], [], [], []
 
