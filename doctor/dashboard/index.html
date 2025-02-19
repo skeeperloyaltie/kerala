@@ -1385,6 +1385,7 @@ function openEditModal(appointmentData, rowIndex) {
   document.getElementById("editAppointmentDate").value = formatDateTime(appointment.appointment_date);
   document.getElementById("editAppointmentStatus").value = appointment.status || "";
   document.getElementById("editNotes").value = appointment.notes || "";
+  document.getElementById("editDoctor").value = appointment.doctor?.doctor_id || "";
 
   // Set readonly IDs
   document.getElementById("editAppointmentID").value = appointment.id;
@@ -1404,7 +1405,7 @@ function openEditModal(appointmentData, rowIndex) {
   document.getElementById("editAppointmentStatus").readOnly = false;
 
   // Load doctors dynamically
-  loadDoctors(appointment.doctor?.id);
+  loadDoctors(appointment.doctor?.doctor_id);
 
   // Show modal
   $("#editAppointmentModal").modal("show");
