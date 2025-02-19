@@ -1334,8 +1334,9 @@ function loadDoctors() {
           doctorSelect.empty(); // Clear existing options
           doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
           const editDoctorSelect = $("#editDoctor");
-          doctorSelect.append('<option value="" disabled selected>Select a doctor</option>');
-
+          editDoctorSelect.empty(); // Clear existing options
+          editDoctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+          
           response.doctors.forEach(doctor => {
               doctorMap[doctor.id] = doctor; // Store doctor details in a dictionary
               doctorSelect.append(
