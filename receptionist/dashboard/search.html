@@ -460,34 +460,99 @@ $(document).ready(function() {
 validateUserSession();
 
 
-      $(document).ready(function() {
-          $('#addFilter').click(function() {
-              $('#searchFilters').append(`
-                  <div class="mb-3 input-group">
-                      <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
-                      <button type="button" class="btn btn-danger removeFilter">Remove</button>
-                  </div>
-              `);
-          });
-          
-          $(document).on('click', '.removeFilter', function() {
-              $(this).closest('.input-group').remove();
-          });
-          
-          $('#searchForm').submit(function(event) {
-              event.preventDefault();
-              let queries = $('input[name="query[]"]').map(function(){ return $(this).val(); }).get();
-              
-              $.ajax({
-                  url: '/search', // Update with your backend API endpoint
-                  method: 'POST',
-                  data: { queries: queries },
-                  success: function(response) {
-                      $('#results').html(response);
-                  }
-              });
-          });
+$(document).ready(function () {
+  // Add new search filter
+  $('#addFilter').click(function () {
+      $('#searchFilters').append(`
+          <div class="mb-3 input-group">
+              <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
+              <button type="button" class="btn btn-danger removeFilter">Remove</button>
+          </div>
+      `);
+  });
+
+  // Remove search filter
+  $(document).on('click', '.removeFilter', function () {
+      $(this).closest('.input-group').remove();
+  });
+
+  // Handle search form submission
+  $('#searchForm').submit(function (event) {
+      event.preventDefault();
+      
+      let queries = $('input[name="query[]"]').map(function () {
+          return $(this).val().trim();
+      }).get().filter(q => q !== ""); // Remove empty inputs
+
+      if (queries.length === 0) {
+          alert("Please enter at least one search term.");
+          return;
+      }
+
+      let queryString = queries.join(" "); // Combine queries into one search string
+
+      $.ajax({
+          url: `http://smarthospitalmaintain.com:8000/appointments/search?q=${encodeURIComponent(queryString)}`,  // Pass as query param
+          method: "GET", // Use GET to match the Django SearchView
+          headers: getAuthHeaders(),  // Include authentication headers
+          success: function (response) {
+              displayResults(response);
+          },
+          error: function (xhr, status, error) {
+              console.error("Search error:", xhr.responseText);
+              alert("Failed to fetch search results. Please try again.");
+          }
       });
+  });
+});
+
+// Function to display search results
+function displayResults(data) {
+  let resultsContainer = $("#results");
+  resultsContainer.empty(); // Clear previous results
+
+  if (!data.patients.length && !data.appointments.length && !data.doctors.length && !data.receptionists.length) {
+      resultsContainer.html("<p class='text-danger'>No results found.</p>");
+      return;
+  }
+
+  let html = "<h5>Search Results</h5>";
+
+  if (data.patients.length) {
+      html += "<h6>Patients</h6><ul>";
+      data.patients.forEach(patient => {
+          html += `<li>${patient.first_name} ${patient.last_name} - ${patient.email}</li>`;
+      });
+      html += "</ul>";
+  }
+
+  if (data.appointments.length) {
+      html += "<h6>Appointments</h6><ul>";
+      data.appointments.forEach(appt => {
+          html += `<li>Patient: ${appt.patient.first_name} ${appt.patient.last_name} | Doctor: ${appt.doctor.user.username} | Status: ${appt.status}</li>`;
+      });
+      html += "</ul>";
+  }
+
+  if (data.doctors.length) {
+      html += "<h6>Doctors</h6><ul>";
+      data.doctors.forEach(doctor => {
+          html += `<li>${doctor.username} (${doctor.email}) - Specialization: ${doctor.specialization}</li>`;
+      });
+      html += "</ul>";
+  }
+
+  if (data.receptionists.length) {
+      html += "<h6>Receptionists</h6><ul>";
+      data.receptionists.forEach(rec => {
+          html += `<li>${rec.username} (${rec.email})</li>`;
+      });
+      html += "</ul>";
+  }
+
+  resultsContainer.html(html);
+}
+
   </script>
 
 
