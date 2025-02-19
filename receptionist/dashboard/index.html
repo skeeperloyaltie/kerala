@@ -1734,7 +1734,7 @@ function rescheduleAppointment() {
 
   console.log("Sending request with:", {
       appointment_ids: appointmentIds,
-      new_appointment_date: formattedDate
+      appointment_date: formattedDate
   });
 
   fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
@@ -1745,7 +1745,7 @@ function rescheduleAppointment() {
       },
       body: JSON.stringify({ 
           appointment_ids: appointmentIds, 
-          new_appointment_date: formattedDate 
+          appointment_date: formattedDate 
       })
   })
   .then(response => {
