@@ -28,6 +28,29 @@ class Command(BaseCommand):
                 },
             },
             {
+                "username": "yrncollo",
+                "first_name": "collins",
+                "last_name": "collo",
+                "password": "Collins123",
+                "user_type": "Receptionist",
+                "email": "collins@gmail.com",
+                "extra": {
+                    "specialization": "Dentistry",
+                },
+            },
+            {
+                "username": "emmanuel",
+                "first_name": "Emmanuel",
+                "last_name": "Valary",
+                "password": "E_Valary123",
+                "user_type": "Doctor",
+                "email": "emanuel@gmail.com",
+                "extra": {
+                    "specialization": "Dentistry",
+                    "contact_number": "1234567890",
+                },
+            },
+            {
                 "username": "gopim",
                 "first_name": "Gopi",
                 "last_name": "M",
