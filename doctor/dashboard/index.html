@@ -386,12 +386,23 @@
     </div>
   </div>
 
-    <!-- Appointment Form -->
+    
+<!-- Appointment Form -->
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
   <div class="card-body">
       <h5 class="card-title">Create New Appointment</h5>
       <form id="appointmentForm">
+          
+          <!-- Patient ID Field -->
           <div class="row">
+              <div class="col-md-4">
+                  <label for="patientID">Patient ID</label>
+                  <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
+              </div>
+          </div>
+
+          <!-- Patient Information -->
+          <div class="row mt-3">
               <div class="col-md-4">
                   <label for="firstName">First Name</label>
                   <input type="text" id="firstName" class="form-control" required>
@@ -402,16 +413,7 @@
               </div>
               <div class="col-md-4">
                   <label for="contactNumber">Contact Number</label>
-                  <div class="input-group">
-                      <select id="countryCode" class="form-select">
-                          <option value="+1">+1 (USA)</option>
-                          <option value="+91" selected>+91 (India)</option>
-                          <option value="+44">+44 (UK)</option>
-                          <option value="+254">+254 (Kenya)</option>
-                          <option value="+61">+61 (Australia)</option>
-                      </select>
-                      <input type="text" id="contactNumber" class="form-control" maxlength="10" placeholder="10-digit number" required>
-                  </div>
+                  <input type="text" id="contactNumber" class="form-control" required>
               </div>
           </div>
 
@@ -435,18 +437,19 @@
                   <label for="appointmentDate">Appointment Date</label>
                   <input type="datetime-local" id="appointmentDate" class="form-control" required>
               </div>
-              <div class="col-md-4">
-                  <label for="doctor">Doctor</label>
-                  <select id="doctor" class="form-control" required>
+              <div class="row mt-3">
+                <div class="col-md-4">
+                    <label for="doctor">Doctor</label>
+                    <select id="doctor" class="form-control" required>
                       <option value="{{ logged_in_user_default_doctor.id }}" selected>
-                          {{ logged_in_user_default_doctor.name }}
-                      </option>
-                  </select>
-              </div>
-              <div class="col-md-4">
-                  <label for="notes">Notes</label>
-                  <input type="text" id="notes" class="form-control">
-              </div>
+                        {{ logged_in_user_default_doctor.name }}
+                    </option>                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="notes">Notes</label>
+                    <input type="text" id="notes" class="form-control">
+                </div>
+            </div>
           </div>
 
           <div class="col-md-12 mt-3">
@@ -461,6 +464,23 @@
       </form>
   </div>
 </div>
+<script>
+// Set Date of Birth restrictions (cannot select future dates)
+document.getElementById("dateOfBirth").setAttribute("max", new Date().toISOString().split("T")[0]);
+
+// Set Appointment Date restrictions (cannot select past dates)
+let now = new Date();
+let year = now.getFullYear();
+let month = String(now.getMonth() + 1).padStart(2, '0');
+let day = String(now.getDate()).padStart(2, '0');
+let hours = String(now.getHours()).padStart(2, '0');
+let minutes = String(now.getMinutes()).padStart(2, '0');
+
+// Format the datetime-local input value to match the expected format: YYYY-MM-DDTHH:MM
+let formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
+document.getElementById("appointmentDate").setAttribute("min", formattedNow);
+
+</script>
 <!-- Vitals Modal -->
 <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -1076,110 +1096,124 @@ function getActionButton(status, appointment, rowIndex) {
 });
 
 function addAppointment() {
-    const firstName = $("#firstName").val().trim();
-    const lastName = $("#lastName").val().trim();
-    const countryCode = $("#countryCode").val();
-    let contactNumber = $("#contactNumber").val().trim();
-    const dateOfBirth = $("#dateOfBirth").val();
-    const appointmentDate = $("#appointmentDate").val();
-    const doctor = $("#doctor").val();
-    const notes = $("#notes").val().trim();
-    const isEmergency = $("#isEmergency").is(":checked");
+  const doctorId = $("#doctor").val();
+  const patientId = $("#patientID").val().trim();  // Get the patient ID from the form
 
-    const today = new Date().toISOString().split("T")[0];
-    let missingFields = [];
+  // Check if the required fields are filled
+  if (!doctorId) {
+      alert("Please select a doctor for this appointment.");
+      return;
+  }
 
-    if (!firstName) missingFields.push("First Name");
-    if (!lastName) missingFields.push("Last Name");
-    if (!contactNumber) missingFields.push("Contact Number");
-    if (!dateOfBirth) missingFields.push("Date of Birth");
-    if (!appointmentDate) missingFields.push("Appointment Date");
-    if (!doctor) missingFields.push("Doctor");
+  if (!patientId) {
+      alert("Please enter a valid Patient ID.");
+      return;
+  }
 
-    if (missingFields.length > 0) {
-        alert("Please fill in the following required fields:\n" + missingFields.join(", "));
-        return;
-    }
+  const appointmentDate = $("#appointmentDate").val();
+  const dateOfBirth = $("#dateOfBirth").val();
 
-    const nameRegex = /^[A-Za-z\s]+$/;
-    if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-        alert("First and Last names should contain only letters.");
-        return;
-    }
+  // Validate Date of Birth (should not be in the future)
+  if (new Date(dateOfBirth) > new Date()) {
+      alert("Date of birth cannot be in the future.");
+      return;
+  }
 
-    // Ensure phone number is exactly 10 digits
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(contactNumber)) {
-        alert("Please enter a valid 10-digit phone number.");
-        return;
-    }
+  // Validate Appointment Date (should not be in the past)
+  if (new Date(appointmentDate) < new Date()) {
+      alert("Appointment date cannot be in the past.");
+      return;
+  }
 
-    // Attach country code to the number
-    contactNumber = countryCode + contactNumber;
+  // Calculate age from Date of Birth
+  const age = calculateAge(dateOfBirth);
+  if (age < 0) {
+      alert("Invalid Date of Birth.");
+      return;
+  }
 
-    if (dateOfBirth > today) {
-        alert("Date of Birth cannot be in the future.");
-        return;
-    }
+  // Fill the Age field
+  $("#age").val(age);
 
-    if (appointmentDate < today) {
-        alert("Appointment Date must be today or a future date.");
-        return;
-    }
+  // Get the other required fields
+  const firstName = $("#firstName").val().trim();
+  const lastName = $("#lastName").val().trim();
+  const contactNumber = $("#contactNumber").val().trim();
+  const notes = $("#notes").val().trim();
+  const isEmergency = $("#isEmergency").is(":checked");
 
-    const appointmentData = {
-        patient: {
-            first_name: firstName,
-            last_name: lastName,
-            contact_number: contactNumber,
-            date_of_birth: dateOfBirth,
-        },
-        appointment_date: appointmentDate,
-        doctor: doctor,
-        notes: notes,
-        is_emergency: isEmergency
-    };
+  // Check if the fields are filled
+  if (!firstName || !lastName || !contactNumber || !appointmentDate || !doctorId) {
+      alert("Please fill in all required fields.");
+      return;
+  }
 
-    const headers = getAuthHeaders();
+  const appointmentData = {
+      appointment: {
+          patient_id: patientId,
+          first_name: firstName,
+          last_name: lastName,
+          contact_number: contactNumber,
+          date_of_birth: dateOfBirth,
+      },
+      appointment_date: appointmentDate,
+      doctor: doctorId,
+      notes: notes,
+      is_emergency: isEmergency,
+  };
 
-    $.ajax({
-        url: 'http://smarthospitalmaintain.com:8000/appointments/create/',
-        type: 'POST',
-        headers: headers,
-        data: JSON.stringify(appointmentData),
-        contentType: 'application/json',
-        success: function (response) {
-            console.log('✅ Appointment created successfully:', response);
-            const appointmentId = response.appointment?.id;
-            
-            if (!appointmentId) {
-                alert("Appointment ID is missing. Please try again.");
-                return;
-            }
+  $.ajax({
+      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(appointmentData),
+      contentType: "application/json",
+      success: function (response) {
+          console.log("✅ Appointment created:", response);
+          const appointmentId = response.appointment?.id;
 
-            $("#vitalsModal").modal("show");
-            $("#vitalsModal").data("appointmentId", appointmentId);
+          if (!appointmentId) {
+              alert("Error: Appointment ID missing.");
+              return;
+          }
 
-            if (isEmergency) {
-                // submitVitals(appointmentId);
-            }
+          hideAppointmentForm();
+          fetchAppointments("Scheduled");
 
-            hideAppointmentForm();
-            $("#appointmentTabs a[href='#Scheduled']").tab("show");
-            fetchAppointments("Scheduled");
-        },
-        error: function (xhr) {
-            console.error('❌ Error creating appointment:', xhr.responseText);
-            let errorMessage = "A user with the same Name and Phone Number exists.";
-            if (xhr.responseJSON?.detail) {
-                errorMessage += xhr.responseJSON.detail;
-            } else if (xhr.status === 400) {
-                errorMessage += "A user with the same Name and Phone Number exists.";
-            }
-            alert(errorMessage);
-        }
-    });
+          if ($("#isEmergency").is(":checked")) {
+              $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          }
+      },
+      error: function (xhr, status, error) {
+          console.error("❌ Error creating appointment:", error);
+          alert("Failed to create appointment. Please try again.");
+      }
+  });
 }
+
+
+// Helper function to calculate age based on the date of birth
+function calculateAge(dob) {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
+// Setup validation for date fields
+$(document).ready(function() {
+    // Set the maximum date for Date of Birth (can't select future dates)
+    $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
+
+    // Set the minimum date for Appointment Date (can't select past dates)
+    $("#appointmentDate").attr("min", new Date().toISOString().split("T")[0]);
+});
+
+
 
 
 function saveVitals() {
