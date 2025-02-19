@@ -818,10 +818,10 @@ function validateUserSession() {
           document.getElementById("timeOfDay").textContent = getGreetingTime();
 
           // Store the logged-in user's doctor ID globally
-          window.loggedInDoctorId = response.doctor_id;  // Ensure API returns doctor_id
+          window.loggedInDoctorId = response.user_id;  // Ensure API returns doctor_id
           // Populate doctor and editDoctor dropdowns
           loadDoctors();
-          populateDoctorDropdown(response.doctor_id, response.name);
+          populateDoctorDropdown(response.user_id, response.name);
       },
       error: function(xhr, status, error) {
           console.error('❌ Error validating session:', xhr.responseText);

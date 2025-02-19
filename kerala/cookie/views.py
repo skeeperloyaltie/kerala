@@ -1,6 +1,4 @@
 from datetime import timedelta, datetime
-from django.utils import timezone
-
 from django.utils.timezone import make_aware
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -10,13 +8,11 @@ from users.models import User
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from .models import Cookie
-import logging  # Adding logging to debug
 
 class CookieVerification(APIView):
     permission_classes = [AllowAny]
     authentication_classes = [TokenAuthentication]
    
-
     def post(self, request, *args, **kwargs):
         # Getting the token from the Authorization header
         token = request.headers.get('Authorization')  # Expecting 'Authorization: Token <token>'
@@ -36,21 +32,7 @@ class CookieVerification(APIView):
 
             # Check if user has a valid auth_token
             if user.auth_token and user.auth_token.key == token:
-                # If valid token, generate the response and set the cookie
-                
-                response = JsonResponse({'message': 'Cookie verification successful!'}, status=200)
-                
-                # Set the token as a cookie for subsequent requests
-                response.set_cookie(
-                    'token', 
-                    token, 
-                    httponly=True,  # Prevent client-side JavaScript access
-                    secure=True if request.is_secure() else False,  # Adjust based on environment
-                    max_age=60*60*24*30,  # Set expiration date (30 days in seconds)
-                    path='/'  # Make the cookie available site-wide
-                )
-
-                # Calculate expiration datetime directly based on max_age
+                # Calculate expiration datetime based on max_age
                 expiration_time = datetime.utcnow() + timedelta(seconds=60*60*24*30)  # 30 days
                 expiration_time = make_aware(expiration_time)  # Convert to timezone-aware datetime
 
@@ -62,7 +44,23 @@ class CookieVerification(APIView):
                     expires_at=expiration_time,
                     is_valid=True,                    
                 )
-                
+
+                # Generate JSON response with user ID
+                response = JsonResponse({
+                    'message': 'Cookie verification successful!',
+                    'user_id': user.id  # Include user ID in response
+                }, status=200)
+
+                # Set the token as a cookie for subsequent requests
+                response.set_cookie(
+                    'token', 
+                    token, 
+                    httponly=True,  # Prevent client-side JavaScript access
+                    secure=request.is_secure(),  # Adjust based on environment
+                    max_age=60*60*24*30,  # Set expiration date (30 days in seconds)
+                    path='/'  # Make the cookie available site-wide
+                )
+
                 return response
 
             else:
@@ -75,6 +73,7 @@ class CookieVerification(APIView):
             return Response({'error': str(e)}, status=401)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
 
 
 from rest_framework.views import APIView
