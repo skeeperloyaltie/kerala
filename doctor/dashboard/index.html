@@ -232,162 +232,159 @@
   </div>
   
    
-    <div class="row">
-      <!-- Tabbed Table Section -->
-      <div class="col-md-12 stretch-card">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title">Current Patient Details & Appointments</h4>
-            <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-              <li class="nav-item">
-                <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab" aria-controls="waiting" aria-selected="true">Waiting in Clinic</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab" aria-controls="scheduled" aria-selected="false">Scheduled</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab" aria-controls="pending" aria-selected="false">Pending</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab" aria-controls="active" aria-selected="false">Active</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">Completed</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab" aria-controls="canceled" aria-selected="false">Canceled</a>
-              </li>
-            </ul>
-    
-            <div class="tab-content mt-3" id="appointmentTabContent">
-              <!-- Waiting Tab -->
-              <div class="tab-pane fade show active" id="waiting" role="tabpanel" aria-labelledby="waiting-tab">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Notes</th>
-                        <th>Scheduled Time</th>                        
-                        <th>Created By</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Waiting-tbody"></tbody>
-                  </table>
-                </div>
-              </div>
-    
-              <!-- Scheduled Tab -->
-              <div class="tab-pane fade" id="scheduled" role="tabpanel" aria-labelledby="scheduled-tab">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <<thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Notes</th>
-                        <th>Scheduled Time</th>                        
-                        <th>Created By</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Scheduled-tbody"></tbody>
-                  </table>
-                </div>
-              </div>
+  <div class="row">
+    <!-- Tabbed Table Section -->
+    <div class="col-md-12 stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Current Patient Details & Appointments</h4>
+          <div class="row mb-3">
+            
+        
+            <div class="col-md-8 d-flex justify-content-end">
+              <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
+              <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
+          </div>
+          
+        </div>
+        <div style="float:right" class="">
+          <button class="btn btn-primary btn-sm mb-3" onclick=""><a href="search.html">Search Patient</a></button>
 
-              <!-- Scheduled Tab -->
-              <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+        </div>
+        <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab">Waiting in Clinic</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">Scheduled</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab">Completed</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab">Canceled</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="rescheduled-tab" data-bs-toggle="tab" href="#rescheduled" role="tab">Rescheduled</a>
+            </li>
+
+        </ul>
+        
+        
+        <div class="tab-content mt-3" id="appointmentTabContent">
+            <!-- Template for Tabs -->
+            <div class="tab-pane fade show active" id="waiting" role="tabpanel">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Notes</th>
-                        <th>Scheduled Time</th>                        
-                        <th>Created By</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Pending-tbody"></tbody>
-                  </table>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                             
+                            </tr>
+                        </thead>
+                        <tbody id="Waiting-tbody"></tbody>
+                    </table>
                 </div>
-              </div>
-    
-              <!-- Repeat similar structure for other tabs (Active, Completed, Canceled) -->
-              <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
+            </div>
+        
+            <!-- Copy for each tab -->
+            <div class="tab-pane fade" id="scheduled" role="tabpanel">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Notes</th>
-                        <th>Scheduled Time</th>                        
-                        <th>Created By</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Active-tbody"></tbody>
-                  </table>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                               
+                            </tr>
+                        </thead>
+                        <tbody id="Scheduled-tbody"></tbody>
+                    </table>
                 </div>
-              </div>
-    
-              <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Notes</th>
-                        <th>Scheduled Time</th>                        
-                        <th>Created By</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Completed-tbody"></tbody>
-                  </table>
-                </div>
-              </div>
-    
-              <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="canceled-tab">
-                <button class="btn btn-primary btn-sm mb-3">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Patient Name</th>
-                        <th>Age</th>
-                        <th>Notes</th>
-                        <th>Scheduled Time</th>                        
-                        <th>Created By</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="Cancelled-tbody"></tbody>
-                  </table>
-                </div>
+            </div>
+  
+            <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+              <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table">
+                  <thead>
+                    <tr>
+                    
+                    </tr>
+                </thead>
+                  <tbody id="Pending-tbody"></tbody>
+                </table>
               </div>
             </div>
+  
+            <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
+              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr> 
+
+                      </tr>
+                
+                </thead>
+                  <tbody id="Active-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+  
+            <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                     
+                    </tr>
+                </thead>
+                  <tbody id="Completed-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+  
+            <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="canceled-tab">
+              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      
+                    </tr>
+                </thead>
+                  <tbody id="Canceled-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="rescheduled" role="tabpanel" aria-labelledby="rescheduled-tab">
+              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                       
+                    </tr>
+                </thead>
+                  <tbody id="Rescheduled-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            
           </div>
+  
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Appointment Form -->
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
@@ -742,53 +739,149 @@ validateUserSession();
           }
       });
   }
-  function populateAppointmentsTable(status, appointments) {
-    let tbodyId = `${status}-tbody`;
-    let tbody = document.getElementById(tbodyId);
-
-    if (!tbody) {
-        console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
-        return;
-    }
-
-    tbody.innerHTML = ""; // Clear existing rows
-
-    appointments.forEach((appointment, index) => {
-        let row = document.createElement("tr");
-
-        let numberCell = document.createElement("td");
-        numberCell.textContent = index + 1;
-        row.appendChild(numberCell);
-
-        let patientCell = document.createElement("td");
-        patientCell.textContent = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
-        row.appendChild(patientCell);
-
-        let ageCell = document.createElement("td");
-        ageCell.textContent = appointment.patient.age || "N/A"; // Handle missing age
-        row.appendChild(ageCell);
-
-        let reasonCell = document.createElement("td");
-        reasonCell.textContent = appointment.notes || "N/A"; // Handle missing reason
-        row.appendChild(reasonCell);
-
-        let statusCell = document.createElement("td");
-        statusCell.textContent = appointment.status || "N/A"; // Handle missing status
-        row.appendChild(statusCell);
-
-        let createdbyCell = document.createElement("td");
-        createdbyCell.textContent = appointment.created_by_username || "N/A"; // Handle missing status
-        row.appendChild(createdbyCell);
 
 
-        // Use getActionButton function
-        let actionsCell = document.createElement("td");
-        actionsCell.innerHTML = getActionButton(status, appointment, index);
-        row.appendChild(actionsCell);
+function populateAppointmentsTable(status, appointments) {
+  let tbodyId = `${status}-tbody`;
+  let tbody = document.getElementById(tbodyId);
+  if (!tbody) {
+      console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
+      return;
+  }
+  tbody.innerHTML = ""; // Clear existing rows
 
-        tbody.appendChild(row);
-    });
+  filteredAppointments = appointments; // Store original data for filtering/sorting
+
+  const doctorCount = {}; // Track appointment count per doctor
+
+  // Add "Select All" checkbox and bulk action buttons (if not already present)
+  if (!document.getElementById(`${status}-bulk-actions`)) {
+      let bulkActionsContainer = document.createElement("div");
+      bulkActionsContainer.id = `${status}-bulk-actions`;
+      bulkActionsContainer.style.display = "none"; // Initially hidden
+      bulkActionsContainer.innerHTML = `
+          <button onclick="bulkReschedule('${status}')">Reschedule Selected</button>
+          <button onclick="bulkCancel('${status}')">Cancel Selected</button>
+      `;
+      tbody.parentElement.insertBefore(bulkActionsContainer, tbody);
+  }
+
+  // Insert "Select All" Row
+  if (!document.getElementById(`${status}-select-all`)) {
+      let selectAllRow = document.createElement("tr");
+      selectAllRow.innerHTML = `
+          <th><input type="checkbox" id="${status}-select-all" onclick="toggleAll('${status}')"></th>
+          <th>#</th>
+          <th>Patient ID</th>
+          <th>Patient Name</th>
+          <th>Age</th>
+          <th>Notes</th>
+          <th>Appointment Time</th>
+          <th>Doctor</th>
+          <th>Created By</th>
+          <th>Status</th>
+          <th>Actions</th>
+      `;
+      tbody.appendChild(selectAllRow);
+  }
+
+  // Populate rows
+  appointments.forEach((appointment, index) => {
+      let patient = appointment.patient || {};
+      let doctor = appointment.doctor || {};
+      let doctorName = doctor.first_name && doctor.last_name ? `${doctor.first_name} ${doctor.last_name}` : "Unknown Doctor";
+      let doctorSpecialization = doctor.specialization || "N/A";
+
+      // Track patients per doctor
+      doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
+
+      // Convert appointment date into readable format
+      let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
+
+      let row = document.createElement("tr");
+      row.innerHTML = `
+          <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
+          <td>${index + 1}</td>
+          <td>${patient.patient_id || "N/A"}</td>
+          <td>${patient.first_name} ${patient.last_name}</td>
+          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+          <td>${appointment.notes || "N/A"}</td>
+          <td>${appointmentTime}</td>
+          <td>Dr. ${doctorName} (${doctorSpecialization})</td>
+          <td>${appointment.created_by_username}</td>
+          <td>${appointment.status || "N/A"}</td>
+          <td>${getActionButton(appointment.status, appointment, index)}</td>
+      `;
+
+      tbody.appendChild(row);
+  });
+
+  console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
+
+
+// Function to toggle all checkboxes when "Select All" is clicked
+function toggleAll(status) {
+  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+  let selectedIds = [];
+
+  checkboxes.forEach((checkbox) => {
+      checkbox.checked = selectAllCheckbox.checked;
+      if (checkbox.checked) {
+          selectedIds.push(checkbox.value);
+      }
+  });
+
+  updateBulkActions(status, selectedIds); // Update action buttons
+}
+
+// Function to update selection when individual checkboxes are clicked
+function updateBulkSelection(status) {
+  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+
+  let selectedIds = Array.from(checkboxes)
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.value);
+
+  selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
+
+  updateBulkActions(status, selectedIds); // Update action buttons
+}
+
+// Function to show/hide bulk action buttons
+function updateBulkActions(status, selectedIds) {
+  let bulkActionsContainer = document.getElementById(`${status}-bulk-actions`);
+
+  if (selectedIds.length >= 2) {
+      bulkActionsContainer.style.display = "block"; // Show buttons
+  } else {
+      bulkActionsContainer.style.display = "none"; // Hide buttons
+  }
+
+  console.log(`Selected IDs for ${status}:`, selectedIds);
+}
+
+// Function to perform bulk rescheduling
+function bulkReschedule(status) {
+  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+      .map(checkbox => checkbox.value);
+
+  alert(`Rescheduling Appointments: ${selectedIds.join(", ")}`);
+  // Add your logic here to send request to the backend
+}
+
+// Function to perform bulk cancellation
+function bulkCancel(status) {
+  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+      .map(checkbox => checkbox.value);
+
+  alert(`Cancelling Appointments: ${selectedIds.join(", ")}`);
+  // Add your logic here to send request to the backend
+}
+
+  
 
 
 function getActionButton(status, appointment, rowIndex) {
@@ -799,7 +892,7 @@ function getActionButton(status, appointment, rowIndex) {
 
   // Pass both appointmentData and rowIndex
   buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
-  buttons += `<button class="btn btn-danger btn-sm">Cancel</button> `;
+  buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
 
   switch (status) {
       case 'Waiting':
@@ -807,8 +900,8 @@ function getActionButton(status, appointment, rowIndex) {
           break;
       case 'Scheduled':
       case 'Pending':
-          buttons += `<button class="btn btn-warning btn-sm">Reschedule</button>`;
-          break;
+      buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+      break;
       case 'Canceled':
           buttons += `<button class="btn btn-info btn-sm">Update</button>`;
           break;
@@ -1021,17 +1114,15 @@ if (missingVitals.length > 0) {
 
 
 let appointments = []; // Store fetched appointments here
-
 function openEditModal(appointmentData, rowIndex) {
   let appointment = JSON.parse(decodeURIComponent(appointmentData));
 
   console.log("Editing Row:", rowIndex, "Appointment Data:", appointment);
 
-  // Ensure all required fields are available
   let fields = [
       "editFirstName", "editLastName", "editContactNumber", "editDateOfBirth", 
       "editAge", "editCurrentIllness", "editAppointmentDate", "editDoctor", 
-      "editNotes", "editAppointmentID", "editPatientID"
+      "editNotes", "editAppointmentID", "editPatientID", "editAppointmentStatus"
   ];
 
   for (let field of fields) {
@@ -1040,7 +1131,7 @@ function openEditModal(appointmentData, rowIndex) {
       }
   }
 
-  // Fill in appointment details
+  // Populate values in the modal
   document.getElementById("editFirstName").value = appointment.patient?.first_name || "";
   document.getElementById("editLastName").value = appointment.patient?.last_name || "";
   document.getElementById("editContactNumber").value = appointment.patient?.contact_number || "";
@@ -1048,48 +1139,52 @@ function openEditModal(appointmentData, rowIndex) {
   document.getElementById("editAge").value = appointment.patient?.age || "";
   document.getElementById("editCurrentIllness").value = appointment.current_illness || "";
   document.getElementById("editAppointmentDate").value = formatDateTime(appointment.appointment_date);
+  document.getElementById("editAppointmentStatus").value = appointment.status || "";
   document.getElementById("editNotes").value = appointment.notes || "";
 
   // Set readonly IDs
   document.getElementById("editAppointmentID").value = appointment.id;
-  document.getElementById("editPatientID").value = appointment.patient?.id || "";
+  document.getElementById("editPatientID").value = appointment.patient?.patient_id || "";
 
-  // Load doctors dynamically and select the assigned doctor
+  // Restrict Editing (Make Readonly)
+  document.getElementById("editFirstName").readOnly = true;
+  document.getElementById("editLastName").readOnly = true;
+  document.getElementById("editContactNumber").readOnly = true;
+  document.getElementById("editAge").readOnly = true;
+
+  // Allow editing of specific fields
+  document.getElementById("editDateOfBirth").readOnly = false;
+  document.getElementById("editCurrentIllness").readOnly = false;
+  document.getElementById("editNotes").readOnly = false;
+  document.getElementById("editAppointmentDate").readOnly = false;
+  document.getElementById("editAppointmentStatus").readOnly = false;
+
+  // Load doctors dynamically
   loadDoctors(appointment.doctor?.id);
 
   // Show modal
   $("#editAppointmentModal").modal("show");
 }
 
-// Format datetime to match datetime-local input
-function formatDateTime(dateTimeString) {
-  let date = new Date(dateTimeString);
-  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
-}
-
+// Update only allowed fields
 function updateAppointment() {
   let updatedAppointment = {
       id: document.getElementById("editAppointmentID").value,
       patient_id: document.getElementById("editPatientID").value,
-      first_name: document.getElementById("editFirstName").value,
-      last_name: document.getElementById("editLastName").value,
-      contact_number: document.getElementById("editContactNumber").value,
       date_of_birth: document.getElementById("editDateOfBirth").value,
-      age: document.getElementById("editAge").value,
       current_illness: document.getElementById("editCurrentIllness").value,
-      appointment_date: document.getElementById("editAppointmentDate").value,
       doctor_id: document.getElementById("editDoctor").value,
+      status: document.getElementById("editAppointmentStatus").value,
       notes: document.getElementById("editNotes").value,
-      is_emergency: document.getElementById("editIsEmergency").checked,
   };
 
   fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-    method: "PATCH",  // 🔄 Change PUT to PATCH
-    headers: {
+      method: "PATCH",
+      headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders()  // Ensure this returns authentication headers properly
+          ...getAuthHeaders()
       },
-      body: JSON.stringify(updatedAppointment)  // Use `body` instead of `data`
+      body: JSON.stringify(updatedAppointment)
   })
   .then(response => {
       if (!response.ok) {
@@ -1100,13 +1195,114 @@ function updateAppointment() {
   .then(data => {
       console.log("Appointment updated successfully:", data);
       alert("Appointment updated successfully!");
-      $('#editAppointmentModal').modal('hide'); // Close the modal
-      location.reload(); // Refresh the table
+      $('#editAppointmentModal').modal('hide');
+      location.reload();
   })
   .catch(error => {
       console.error("Error updating appointment:", error);
       alert("Failed to update appointment: " + (error.detail || "Unknown error"));
   });
+}
+
+// Format datetime for input field
+function formatDateTime(dateTimeString) {
+  let date = new Date(dateTimeString);
+  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+}
+
+
+
+function cancelAppointment(appointmentId, rowIndex) {
+  if (!confirm("Are you sure you want to cancel this appointment?")) {
+      return; // Exit if user cancels the confirmation
+  }
+
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/cancel/${appointmentId}/`, {
+      method: "PATCH",
+      headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
+      },
+      body: JSON.stringify({ status: "Canceled" }) // Ensure status is set to "Canceled"
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log("Appointment canceled successfully:", data);
+      alert("Appointment has been canceled.");
+
+      // Update the status in the table without reloading the page
+      let appointmentRow = document.querySelector(`#appointmentsTable tbody tr:nth-child(${rowIndex + 1})`);
+      if (appointmentRow) {
+          let statusCell = appointmentRow.querySelector(".status-cell"); // Ensure your status cell has this class
+          if (statusCell) {
+              statusCell.textContent = "Canceled";
+              statusCell.classList.add("text-danger"); // Optional: Add red text color for clarity
+          }
+      }
+  })
+  .catch(error => {
+      console.error("Error canceling appointment:", error);
+      alert("Failed to cancel appointment: " + (error.detail || "Unknown error"));
+  });
+}
+
+
+// reschedule appointments 
+function openRescheduleModal(appointmentId, currentDateTime) {
+  document.getElementById("rescheduleAppointmentID").value = appointmentId;
+  document.getElementById("newAppointmentDate").value = formatDateTime(currentDateTime);
+  
+  // Show modal
+  $("#rescheduleAppointmentModal").modal("show");
+}
+
+function rescheduleAppointment() {
+  let appointmentId = document.getElementById("rescheduleAppointmentID").value;
+  let newDateTime = document.getElementById("newAppointmentDate").value;
+
+  if (!newDateTime) {
+      alert("Please select a new date and time.");
+      return;
+  }
+
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/reschedule/${appointmentId}/`, {
+      method: "PATCH",
+      headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
+      },
+      body: JSON.stringify({ 
+          appointment_date: newDateTime,
+          status: "Rescheduled" // Automatically update status
+      })
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log("Appointment rescheduled successfully:", data);
+      alert("Appointment has been rescheduled.");
+      $("#rescheduleAppointmentModal").modal("hide");
+      location.reload();
+
+  })
+  .catch(error => {
+      console.error("Error rescheduling appointment:", error);
+      alert("Failed to reschedule appointment: " + (error.detail || "Unknown error"));
+  });
+}
+
+function formatDateTime(dateTimeString) {
+  let date = new Date(dateTimeString);
+  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
 }
 
 
