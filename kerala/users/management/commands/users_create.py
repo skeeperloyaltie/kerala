@@ -35,7 +35,7 @@ class Command(BaseCommand):
                 "user_type": "Receptionist",
                 "email": "collins@gmail.com",
                 "extra": {
-                    "specialization": "Dentistry",
+                    "contact_number": "1234567890",
                 },
             },
             {
