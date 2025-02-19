@@ -184,25 +184,41 @@ class AppointmentListView(APIView):
         status_filter = request.query_params.get('status', 'Scheduled')
         user = request.user
 
-        # Doctors can only view their own appointments and patients assigned to them
-        if user.user_type == "Doctor":
-            appointments = Appointment.objects.filter(doctor=user.doctor, status=status_filter)
+        logger.info(f"User {user.username} ({user.user_type}) is requesting appointments with status '{status_filter}'")
 
-        # Receptionists can view all appointments
-        elif user.user_type == "Receptionist":
-            appointments = Appointment.objects.filter(status=status_filter)  # No doctor or patient filter for receptionists
+        try:
+            # Doctors can only view their own appointments and patients assigned to them
+            if user.user_type == "Doctor":
+                appointments = Appointment.objects.filter(doctor=user.doctor, status=status_filter)
+                logger.info(f"Doctor {user.username} fetched {appointments.count()} appointments")
 
-        # For other user types, return an error
-        else:
-            return Response({"error": "Only Doctors and Receptionists can view appointments."}, status=status.HTTP_403_FORBIDDEN)
+            # Receptionists can view all appointments
+            elif user.user_type == "Receptionist":
+                appointments = Appointment.objects.filter(status=status_filter)
+                logger.info(f"Receptionist {user.username} fetched {appointments.count()} appointments")
 
-        # Serialize the appointments with full details
-        serializer = AppointmentSerializer(appointments, many=True)
+            # For other user types, return an error
+            else:
+                logger.warning(f"Unauthorized access attempt by {user.username} ({user.user_type})")
+                return Response(
+                    {"error": "Only Doctors and Receptionists can view appointments."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-        # Log the serialized data
-        logger.info(f"Fetched appointments: {serializer.data}")  # Logs the serialized appointment data
+            # Serialize the appointments with full details
+            serializer = AppointmentSerializer(appointments, many=True)
 
-        return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+            # Log detailed serialized data
+            logger.info(f"Appointments returned for {user.username}: {serializer.data}")
+
+            return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error fetching appointments for {user.username}: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while retrieving appointments."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 
