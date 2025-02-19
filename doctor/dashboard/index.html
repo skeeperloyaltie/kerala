@@ -1110,7 +1110,7 @@ function getActionButton(status, appointment, rowIndex) {
 
 // Call the fetchAppointments function for each status when the page loads
   $(document).ready(function () {
-      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled"];
+      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", 'Rescheduled'];
       statuses.forEach((status) => {
           fetchAppointments(status);
       });
