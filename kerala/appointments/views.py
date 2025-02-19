@@ -481,13 +481,7 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
-import logging
-from django.core.cache import cache
-from django.db.models import Q
-from rest_framework import generics, permissions
-from .models import Patient, Doctor, Receptionist, Appointment
-from .serializers import PatientSerializer, UserSerializer, AppointmentSerializer
-from .pagination import StandardResultsSetPagination
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
