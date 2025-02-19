@@ -439,12 +439,12 @@
               </div>
               <div class="row mt-3">
                 <div class="col-md-4">
-                    <label for="doctor">Doctor</label>
-                    <select id="doctor" class="form-control" required>
-                      <option value="{{ logged_in_user_default_doctor.id }}" selected>
-                        {{ logged_in_user_default_doctor.name }}
-                    </option>                    </select>
-                </div>
+                  <label for="doctor">Doctor</label>
+                  <select id="doctor" class="form-control" required>
+                      <option value="" disabled selected>Loading...</option>
+                  </select>
+              </div>
+              
                 <div class="col-md-4">
                     <label for="notes">Notes</label>
                     <input type="text" id="notes" class="form-control">
@@ -617,9 +617,10 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
             <div class="col-md-6">
               <label for="editDoctor">Doctor</label>
               <select id="editDoctor" class="form-control" required>
-                <option value="" disabled selected>Select a doctor</option>
+                  <option value="" disabled selected>Loading...</option>
               </select>
-            </div>
+          </div>
+          
           </div>
 
           <div class="row mt-3">
@@ -788,6 +789,7 @@ function checkSessionOnLoad() {
 }
 
 // Validate user session
+// Validate user session and store the logged-in doctor's ID
 function validateUserSession() {
   const headers = getAuthHeaders();
 
@@ -814,6 +816,12 @@ function validateUserSession() {
           // Update navigation bar with user details
           document.getElementById("logged_in_user_name").textContent = response.name;
           document.getElementById("timeOfDay").textContent = getGreetingTime();
+
+          // Store the logged-in user's doctor ID globally
+          window.loggedInDoctorId = response.doctor_id;  // Ensure API returns doctor_id
+          // Populate doctor and editDoctor dropdowns
+          loadDoctors();
+          populateDoctorDropdown(response.doctor_id, response.name);
       },
       error: function(xhr, status, error) {
           console.error('❌ Error validating session:', xhr.responseText);
@@ -821,6 +829,25 @@ function validateUserSession() {
       }
   });
 }
+
+// Function to populate doctor and editDoctor dropdowns
+function populateDoctorDropdown(doctorId, doctorName) {
+    const doctorDropdown = document.getElementById("doctor");
+    const editDoctorDropdown = document.getElementById("editDoctor");
+
+    if (doctorDropdown) {
+        doctorDropdown.innerHTML = `<option value="${doctorId}" selected>${doctorName}</option>`;
+    }
+
+    if (editDoctorDropdown) {
+        editDoctorDropdown.innerHTML = `<option value="${doctorId}" selected>${doctorName}</option>`;
+    }
+}
+
+// Call the function to validate session and populate doctor fields
+validateUserSession();
+
+
 
 // Run session check on page load
 $(document).ready(function () {
@@ -1281,43 +1308,31 @@ if (missingVitals.length > 0) {
 }
 
 function loadDoctors() {
-  const headers = getAuthHeaders(); // Ensure auth headers are set
+  const headers = getAuthHeaders();
+  if (!window.loggedInDoctorId) {
+      console.warn('🔴 No doctor ID available. Ensure session is validated first.');
+      return;
+  }
 
   $.ajax({
-      url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+      url: `http://smarthospitalmaintain.com:8000/appointments/doctors/${window.loggedInDoctorId}/`,  // Fetch specific doctor
       type: "GET",
       headers: headers,
-      success: function (response) {
+      success: function (doctor) {
           const doctorSelect = $("#doctor");
-          const editDoctorSelect = $("#editDoctor");
-
-          doctorSelect.empty();
-          editDoctorSelect.empty();
-
-          doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
-          editDoctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
-
-          if (response.doctors.length === 1) { 
-              // If the user is a doctor, they should only see their own details
-              const doctor = response.doctors[0]; 
-
-              doctorMap[doctor.id] = doctor; // Store doctor details in a dictionary
-
-              const option = `<option value="${doctor.id}">
-                                  Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
-                              </option>`;
-
-              doctorSelect.append(option);
-              editDoctorSelect.append(option);
-          } else {
-              console.warn("🔍 No doctors found or user is not a doctor.");
-          }
+          doctorSelect.empty(); // Clear existing options
+          doctorSelect.append(
+              `<option value="${doctor.id}" selected>
+                  Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
+              </option>`
+          );
       },
       error: function (xhr, status, error) {
-          console.error("❌ Error fetching doctor details:", error);
+          console.error("❌ Error fetching doctor:", error);
       }
   });
 }
+
 
 
 
