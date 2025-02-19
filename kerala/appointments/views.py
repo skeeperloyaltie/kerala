@@ -122,7 +122,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from users.models import Doctor
 from .serializers import DoctorSerializer  # Ensure you have a serializer for doctors
-
 import logging
 
 # Set up the logger
@@ -139,14 +138,22 @@ class DoctorListView(APIView):
         """
         Retrieve the list of doctors.
         """
-        logger.info(f"User {request.user.id} requested the list of doctors.")
+        try:
+            logger.info(f"User {request.user.id} ({request.user.username}) requested the list of doctors.")
 
-        doctors = Doctor.objects.all()
-        serializer = DoctorSerializer(doctors, many=True)
+            doctors = Doctor.objects.all()
+            if not doctors.exists():
+                logger.warning("No doctors found in the database.")
 
-        logger.info(f"Fetched {len(doctors)} doctors.")
+            serializer = DoctorSerializer(doctors, many=True)
 
-        return Response({"doctors": serializer.data}, status=status.HTTP_200_OK)
+            logger.info(f"Fetched {doctors.count()} doctors successfully.")
+            return Response({"doctors": serializer.data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error fetching doctors: {str(e)}", exc_info=True)
+            return Response({"error": "An error occurred while retrieving doctors."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 from rest_framework.views import APIView
