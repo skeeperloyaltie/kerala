@@ -335,20 +335,20 @@ console.log(token, username, csrftoken);
       </nav>
   </div>
 
-    <div class="container mt-5">
-      <h2>Search Page</h2>
-      <form id="searchForm">
-          <div id="searchFilters">
-              <div class="mb-3 input-group">
-                  <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
-                  <button type="button" class="btn btn-danger removeFilter">Remove</button>
-              </div>
-          </div>
-          <button type="button" id="addFilter" class="btn btn-secondary">Add Filter</button>
-          <button type="submit" class="btn btn-primary">Search</button>
-      </form>
-      <div class="mt-4" id="results"></div>
-  </div>
+  <div id="searchFilters">
+    <div class="mb-3 input-group">
+        <select class="form-select search-category">
+            <option value="first_name">First Name</option>
+            <option value="last_name">Last Name</option>
+            <option value="email">Email</option>
+            <option value="contact_number">Contact Number</option>
+            <option value="date_of_birth">Date of Birth</option>
+        </select>
+        <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
+        <button type="button" class="btn btn-danger removeFilter">Remove</button>
+    </div>
+</div>
+
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
@@ -476,34 +476,39 @@ $(document).ready(function () {
       $(this).closest('.input-group').remove();
   });
 
-  // Handle search form submission
   $('#searchForm').submit(function (event) {
-      event.preventDefault();
-      
-      let queries = $('input[name="query[]"]').map(function () {
-          return $(this).val().trim();
-      }).get().filter(q => q !== ""); // Remove empty inputs
+    event.preventDefault();
 
-      if (queries.length === 0) {
-          alert("Please enter at least one search term.");
-          return;
-      }
+    let filters = [];
+    $('#searchFilters .input-group').each(function () {
+        let field = $(this).find('.search-category').val();
+        let value = $(this).find('input[name="query[]"]').val().trim();
+        if (value) {
+            filters.push(`${field}=${encodeURIComponent(value)}`);
+        }
+    });
 
-      let queryString = queries.join(" "); // Combine queries into one search string
+    if (filters.length === 0) {
+        alert("Please enter at least one search term.");
+        return;
+    }
 
-      $.ajax({
-          url: `http://smarthospitalmaintain.com:8000/appointments/search?q=${encodeURIComponent(queryString)}`,  // Pass as query param
-          method: "GET", // Use GET to match the Django SearchView
-          headers: getAuthHeaders(),  // Include authentication headers
-          success: function (response) {
-              displayResults(response);
-          },
-          error: function (xhr, status, error) {
-              console.error("Search error:", xhr.responseText);
-              alert("Failed to fetch search results. Please try again.");
-          }
-      });
-  });
+    let queryString = filters.join("&");
+
+    $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
+        method: "GET",
+        headers: getAuthHeaders(),
+        success: function (response) {
+            displayResults(response);
+        },
+        error: function (xhr, status, error) {
+            console.error("Search error:", xhr.responseText);
+            alert("Failed to fetch search results. Please try again.");
+        }
+    });
+});
+
 });
 
 // Function to display search results
