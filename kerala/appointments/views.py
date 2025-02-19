@@ -481,6 +481,17 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
+import logging
+from django.core.cache import cache
+from django.db.models import Q
+from rest_framework import generics, permissions
+from .models import Patient, Doctor, Receptionist, Appointment
+from .serializers import PatientSerializer, UserSerializer, AppointmentSerializer
+from .pagination import StandardResultsSetPagination
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
 class SearchView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
@@ -490,12 +501,17 @@ class SearchView(generics.ListAPIView):
         query = self.request.query_params.get("q", "").strip().lower()
         cache_key = f"search_{user.id}_{query}"
 
+        # Log the search query
+        logger.info(f"User {user.id} searching for: '{query}'")
+
         # Check cache first
         cached_results = cache.get(cache_key)
         if cached_results:
+            logger.info(f"Cache hit for user {user.id}, query: '{query}'")
             return cached_results
 
         if not query:
+            logger.info(f"Empty query received from user {user.id}.")
             return []
 
         patients, doctors, receptionists, appointments = [], [], [], []
@@ -524,6 +540,8 @@ class SearchView(generics.ListAPIView):
                 | Q(status__icontains=query)
             )
 
+            logger.info(f"Receptionist search results - Patients: {patients.count()}, Doctors: {doctors.count()}, Receptionists: {receptionists.count()}, Appointments: {appointments.count()}")
+
         # Doctors can search only for their assigned patients and appointments
         elif hasattr(user, "doctor"):
             patients = Patient.objects.filter(
@@ -544,8 +562,13 @@ class SearchView(generics.ListAPIView):
                 )
             ).distinct()
 
+            logger.info(f"Doctor search results - Patients: {patients.count()}, Appointments: {appointments.count()}")
+
         # Compile results
         results = list(patients) + list(doctors) + list(receptionists) + list(appointments)
+
+        # Log the final result count
+        logger.info(f"Total search results fetched for user {user.id}: {len(results)}")
 
         # Cache results for 10 minutes
         cache.set(cache_key, results, timeout=600)
@@ -559,12 +582,21 @@ class SearchView(generics.ListAPIView):
         serialized_results = []
         for obj in page:
             if isinstance(obj, Patient):
-                serialized_results.append(PatientSerializer(obj).data)
+                serialized_data = PatientSerializer(obj).data
+                serialized_results.append(serialized_data)
+                logger.debug(f"Serialized Patient: {serialized_data}")
             elif isinstance(obj, Doctor):
-                serialized_results.append(UserSerializer(obj.user).data)
+                serialized_data = UserSerializer(obj.user).data
+                serialized_results.append(serialized_data)
+                logger.debug(f"Serialized Doctor: {serialized_data}")
             elif isinstance(obj, Receptionist):
-                serialized_results.append(UserSerializer(obj.user).data)
+                serialized_data = UserSerializer(obj.user).data
+                serialized_results.append(serialized_data)
+                logger.debug(f"Serialized Receptionist: {serialized_data}")
             elif isinstance(obj, Appointment):
-                serialized_results.append(AppointmentSerializer(obj).data)
+                serialized_data = AppointmentSerializer(obj).data
+                serialized_results.append(serialized_data)
+                logger.debug(f"Serialized Appointment: {serialized_data}")
 
+        logger.info(f"Returning {len(serialized_results)} search results to user {request.user.id}")
         return self.get_paginated_response(serialized_results)
