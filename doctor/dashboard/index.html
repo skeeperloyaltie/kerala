@@ -1328,6 +1328,7 @@ function loadDoctors() {
       type: "GET",
       headers: headers,
       success: function (response) {
+        console.log("Doctors fetched successfully:", response);
           const doctorSelect = $("#doctor");
           doctorSelect.empty(); // Clear existing options
           doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
