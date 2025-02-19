@@ -42,7 +42,7 @@ class Command(BaseCommand):
                 "username": "emmanuel",
                 "first_name": "Emmanuel",
                 "last_name": "Valary",
-                "password": "E_Valary123",
+                "password": "Valary123",
                 "user_type": "Doctor",
                 "email": "emanuel@gmail.com",
                 "extra": {
