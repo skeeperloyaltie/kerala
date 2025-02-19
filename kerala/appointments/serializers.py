@@ -45,6 +45,8 @@ class DoctorSerializer(serializers.ModelSerializer):
         # Add other necessary fields as needed
 
 
+
+
 class AppointmentSerializer(serializers.ModelSerializer):
     """
     Serializer for Appointment model, ensuring validation and including necessary relationships.
@@ -54,7 +56,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         queryset=Patient.objects.all(), write_only=True, source="patient"
     )  # Allow writing using patient ID
 
-    doctor = DoctorSerializer(read_only=True)  # Use DoctorSerializer to return full doctor details
+    doctor = DoctorSerializer(read_only=True)  # Ensure doctor is serialized correctly
     doctor_id = serializers.PrimaryKeyRelatedField(
         queryset=Doctor.objects.all(), write_only=True, source="doctor"
     )  # Allow writing using doctor ID
@@ -62,8 +64,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
     receptionist = serializers.PrimaryKeyRelatedField(
         queryset=Receptionist.objects.all(), required=False
     )  # Direct relation to Receptionist model
-    receptionist_name = serializers.CharField(source="receptionist.get_full_name", read_only=True)  # Add receptionist's name for easier access
+    receptionist_name = serializers.CharField(source="receptionist.user.get_full_name", read_only=True)  # Ensure proper receptionist name retrieval
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)  # Get username of creator
+
+    doctor_name = serializers.CharField(source="doctor.user.get_full_name", read_only=True)  # Ensure doctor name is included
 
     class Meta:
         model = Appointment
@@ -73,6 +77,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient_id",
             "doctor",
             "doctor_id",
+            "doctor_name",  # Added doctor name for easier debugging
             "receptionist",
             "receptionist_name",
             "appointment_date",
@@ -80,10 +85,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "notes",
             "created_by_username",
         ]
-        read_only_fields = ["id", "status", "created_by", "created_by_username"]  # Make sure created_by fields are read-only
+        read_only_fields = ["id", "status", "created_by", "created_by_username"]
 
-        
-        
 
         
         
