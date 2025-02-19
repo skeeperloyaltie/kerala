@@ -350,7 +350,7 @@ console.log(token, username, csrftoken);
           
               <div class="col-md-8 d-flex justify-content-end">
                 <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
-                <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
+                <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointment()">Reschedule</button>
             </div>
             
           </div>
@@ -1131,7 +1131,7 @@ function toggleAll(status) {
       }
   });
 
-  updateBulkActions(status, selectedIds); // Update action buttons
+  updateBulkActions(status, selectedIds);
 }
 
 // Function to update selection when individual checkboxes are clicked
@@ -1145,20 +1145,13 @@ function updateBulkSelection(status) {
 
   selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
 
-  updateBulkActions(status, selectedIds); // Update action buttons
+  updateBulkActions(status, selectedIds);
 }
 
 // Function to show/hide bulk action buttons
 function updateBulkActions(status, selectedIds) {
   let bulkActionsContainer = document.getElementById(`${status}-bulk-actions`);
-
-  if (selectedIds.length >= 2) {
-      bulkActionsContainer.style.display = "block"; // Show buttons
-  } else {
-      bulkActionsContainer.style.display = "none"; // Hide buttons
-  }
-
-  console.log(`Selected IDs for ${status}:`, selectedIds);
+  bulkActionsContainer.style.display = selectedIds.length >= 1 ? "block" : "none";
 }
 
 // Function to perform bulk rescheduling
@@ -1170,14 +1163,6 @@ function bulkReschedule(status) {
   // Add your logic here to send request to the backend
 }
 
-// Function to perform bulk cancellation
-function bulkCancel(status) {
-  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-      .map(checkbox => checkbox.value);
-
-  alert(`Cancelling Appointments: ${selectedIds.join(", ")}`);
-  // Add your logic here to send request to the backend
-}
 
 
 /* Sorting Function */
@@ -1622,19 +1607,39 @@ function formatDateTime(dateTimeString) {
 }
 
 
+// Function to cancel a single or multiple appointments
+// Function to cancel a single or multiple appointments
+function cancelAppointment(appointmentId = null, rowIndex = null, status = null) {
+  let appointmentIds = [];
 
-function cancelAppointment(appointmentId, rowIndex) {
-  if (!confirm("Are you sure you want to cancel this appointment?")) {
-      return; // Exit if user cancels the confirmation
+  if (appointmentId) {
+      // Single appointment cancellation
+      if (!confirm("Are you sure you want to cancel this appointment?")) {
+          return;
+      }
+      appointmentIds.push(appointmentId);
+  } else {
+      // Bulk cancellation
+      appointmentIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+          .map(checkbox => checkbox.value);
+
+      if (appointmentIds.length === 0) {
+          alert("No appointments selected for cancellation.");
+          return;
+      }
+
+      if (!confirm(`Are you sure you want to cancel the selected appointments?`)) {
+          return;
+      }
   }
 
-  fetch(`http://smarthospitalmaintain.com:8000/appointments/cancel/${appointmentId}/`, {
+  fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
       method: "PATCH",
       headers: {
           "Content-Type": "application/json",
           ...getAuthHeaders()
       },
-      body: JSON.stringify({ status: "Canceled" }) // Ensure status is set to "Canceled"
+      body: JSON.stringify({ appointment_ids: appointmentIds, status: "Canceled" })
   })
   .then(response => {
       if (!response.ok) {
@@ -1643,53 +1648,85 @@ function cancelAppointment(appointmentId, rowIndex) {
       return response.json();
   })
   .then(data => {
-      console.log("Appointment canceled successfully:", data);
-      alert("Appointment has been canceled.");
+      console.log("Appointments canceled successfully:", data);
+      alert(`Successfully canceled ${appointmentIds.length} appointment(s).`);
 
-      // Update the status in the table without reloading the page
-      let appointmentRow = document.querySelector(`#appointmentsTable tbody tr:nth-child(${rowIndex + 1})`);
-      if (appointmentRow) {
-          let statusCell = appointmentRow.querySelector(".status-cell"); // Ensure your status cell has this class
-          if (statusCell) {
-              statusCell.textContent = "Canceled";
-              statusCell.classList.add("text-danger"); // Optional: Add red text color for clarity
+      // Update the UI for each affected appointment
+      appointmentIds.forEach(id => {
+          let appointmentRow = document.querySelector(`#appointment-${id}`);
+          if (appointmentRow) {
+              let statusCell = appointmentRow.querySelector(".status-cell");
+              if (statusCell) {
+                  statusCell.textContent = "Canceled";
+                  statusCell.classList.add("text-danger"); // Highlight status change
+              }
+
+              // Disable the cancel button for this row
+              let cancelBtn = appointmentRow.querySelector(".cancel-btn");
+              if (cancelBtn) {
+                  cancelBtn.disabled = true;
+                  cancelBtn.classList.add("disabled");
+              }
           }
-      }
+      });
   })
   .catch(error => {
-      console.error("Error canceling appointment:", error);
-      alert("Failed to cancel appointment: " + (error.detail || "Unknown error"));
+      console.error("Error canceling appointments:", error);
+      alert("Failed to cancel appointment(s): " + (error.detail || "Unknown error"));
   });
 }
 
+// Bulk cancellation function (calls cancelAppointment in bulk mode)
+function bulkCancel(status) {
+  cancelAppointment(null, null, status); // Calls cancelAppointment without an ID to trigger bulk cancellation
+}
 
-// reschedule appointments 
-function openRescheduleModal(appointmentId, currentDateTime) {
-  document.getElementById("rescheduleAppointmentID").value = appointmentId;
-  document.getElementById("newAppointmentDate").value = formatDateTime(currentDateTime);
-  
-  // Show modal
+
+
+// Function to open the reschedule modal for single or bulk reschedule
+function openRescheduleModal(appointmentId = null, status = null) {
+  let selectedAppointments = [];
+
+  if (appointmentId) {
+      // Single reschedule
+      selectedAppointments.push(appointmentId);
+  } else {
+      // Bulk reschedule
+      selectedAppointments = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+          .map(checkbox => checkbox.value);
+
+      if (selectedAppointments.length === 0) {
+          alert("No appointments selected for rescheduling.");
+          return;
+      }
+  }
+
+  // Store selected appointment IDs for rescheduling
+  document.getElementById("rescheduleAppointmentID").value = selectedAppointments.join(",");
+
+  // Show the modal
   $("#rescheduleAppointmentModal").modal("show");
 }
 
+// Function to reschedule one or multiple appointments
 function rescheduleAppointment() {
-  let appointmentId = document.getElementById("rescheduleAppointmentID").value;
-  let newDateTime = document.getElementById("newAppointmentDate").value;
+  let appointmentIds = document.getElementById("rescheduleAppointmentID").value.split(",");
+  let newDate = document.getElementById("newAppointmentDate").value;
 
-  if (!newDateTime) {
-      alert("Please select a new date and time.");
+  if (!newDate) {
+      alert("Please select a new appointment date and time.");
       return;
   }
 
-  fetch(`http://smarthospitalmaintain.com:8000/appointments/reschedule/${appointmentId}/`, {
+  fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
       method: "PATCH",
       headers: {
           "Content-Type": "application/json",
           ...getAuthHeaders()
       },
       body: JSON.stringify({ 
-          appointment_date: newDateTime,
-          status: "Rescheduled" // Automatically update status
+          appointment_ids: appointmentIds, 
+          new_appointment_date: newDate 
       })
   })
   .then(response => {
@@ -1699,17 +1736,30 @@ function rescheduleAppointment() {
       return response.json();
   })
   .then(data => {
-      console.log("Appointment rescheduled successfully:", data);
-      alert("Appointment has been rescheduled.");
-      $("#rescheduleAppointmentModal").modal("hide");
-      location.reload();
+      console.log("Appointments rescheduled successfully:", data);
+      alert(`Successfully rescheduled ${appointmentIds.length} appointment(s) to ${newDate}`);
 
+      // Update the UI for each affected appointment
+      appointmentIds.forEach(id => {
+          let appointmentRow = document.querySelector(`#appointment-${id}`);
+          if (appointmentRow) {
+              let appointmentCell = appointmentRow.querySelector(".appointment-time-cell");
+              if (appointmentCell) {
+                  appointmentCell.textContent = new Date(newDate).toLocaleString();
+                  appointmentCell.classList.add("text-warning"); // Highlight change
+              }
+          }
+      });
+
+      // Close modal
+      $("#rescheduleAppointmentModal").modal("hide");
   })
   .catch(error => {
-      console.error("Error rescheduling appointment:", error);
-      alert("Failed to reschedule appointment: " + (error.detail || "Unknown error"));
+      console.error("Error rescheduling appointments:", error);
+      alert("Failed to reschedule appointment(s): " + (error.detail || "Unknown error"));
   });
 }
+
 
 function formatDateTime(dateTimeString) {
   let date = new Date(dateTimeString);

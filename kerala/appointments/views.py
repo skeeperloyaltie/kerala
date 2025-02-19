@@ -417,77 +417,132 @@ class EditAppointmentView(APIView):
 
 
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+import logging
+
+from .models import Appointment  # Import the Appointment model
+
+logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CancelAppointmentView(APIView):
     """
-    Allows doctors and receptionists to cancel an appointment with status update from the front end.
+    Allows doctors and receptionists to cancel a single or multiple appointments.
     """
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, appointment_id):
+    def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
+        appointment_ids = data.get("appointment_ids")  # List of appointment IDs for bulk cancellation
 
-        appointment = get_object_or_404(Appointment, id=appointment_id)
-
-        logger.info(f"User {user.username} attempting to cancel appointment {appointment_id}.")
+        logger.info(f"User {user.username} attempting to cancel appointment(s).")
 
         if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
-            logger.warning(f"Unauthorized attempt to cancel appointment {appointment_id} by {user.username}.")
+            logger.warning(f"Unauthorized cancellation attempt by {user.username}.")
             return Response({"error": "Only doctors and receptionists can cancel appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
-            logger.warning(f"Doctor {user.username} tried to cancel an appointment they don't own.")
-            return Response({"error": "You can only cancel your own appointments."}, status=status.HTTP_403_FORBIDDEN)
+        if appointment_id:
+            # Single appointment cancellation
+            appointments = [get_object_or_404(Appointment, id=appointment_id)]
+        elif appointment_ids:
+            # Bulk cancellation
+            appointments = Appointment.objects.filter(id__in=appointment_ids)
+            if not appointments.exists():
+                return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"error": "Appointment ID or list of IDs required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Update status and track user making the change
-        appointment.status = data.get("status", "Canceled")
-        appointment.updated_by = user
-        appointment.save()
+        updated_count = 0
+        for appointment in appointments:
+            if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+                logger.warning(f"Doctor {user.username} tried to cancel an appointment they don't own.")
+                continue  # Skip unauthorized cancellations
 
-        logger.info(f"Appointment {appointment_id} canceled successfully by {user.username}.")
-        return Response({"message": "Appointment canceled successfully."}, status=status.HTTP_200_OK)
+            # Update status and track user making the change
+            appointment.status = data.get("status", "Canceled")
+            appointment.updated_by = user
+            appointment.save()
+            updated_count += 1
+
+        if updated_count == 0:
+            return Response({"error": "No appointments were canceled. Check permissions or appointment IDs."}, status=status.HTTP_403_FORBIDDEN)
+
+        logger.info(f"User {user.username} successfully canceled {updated_count} appointment(s).")
+        return Response({"message": f"Successfully canceled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
 
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+import logging
+
+from .models import Appointment  # Ensure you import your Appointment model
+
+logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RescheduleAppointmentView(APIView):
     """
-    Allows doctors and receptionists to reschedule an appointment, with status update from the front end.
+    Allows doctors and receptionists to reschedule a single or multiple appointments.
     """
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, appointment_id):
+    def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
         new_date = data.get("appointment_date")
+        appointment_ids = data.get("appointment_ids")  # List of appointment IDs (for bulk reschedule)
 
-        logger.info(f"User {user.username} attempting to reschedule appointment {appointment_id} to {new_date}.")
+        logger.info(f"User {user.username} attempting to reschedule appointments.")
 
         if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
-            logger.warning(f"Unauthorized attempt to reschedule appointment {appointment_id} by {user.username}.")
+            logger.warning(f"Unauthorized attempt by {user.username}.")
             return Response({"error": "Only doctors and receptionists can reschedule appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        appointment = get_object_or_404(Appointment, id=appointment_id)
-
-        if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
-            logger.warning(f"Doctor {user.username} tried to reschedule an appointment they don't own.")
-            return Response({"error": "You can only reschedule your own appointments."}, status=status.HTTP_403_FORBIDDEN)
-
         if not new_date:
-            logger.error(f"Reschedule request for appointment {appointment_id} is missing new date.")
+            logger.error("Reschedule request is missing the new date.")
             return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Update appointment date and status
-        appointment.appointment_date = new_date
-        appointment.status = data.get("status", "Rescheduled")
-        appointment.updated_by = user  # Track user making the change
-        appointment.save()
+        if appointment_id:
+            # Single appointment reschedule
+            appointments = [get_object_or_404(Appointment, id=appointment_id)]
+        elif appointment_ids:
+            # Bulk reschedule
+            appointments = Appointment.objects.filter(id__in=appointment_ids)
+            if not appointments.exists():
+                return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"error": "Appointment ID or list of IDs required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"Appointment {appointment_id} successfully rescheduled to {new_date} by {user.username}.")
-        return Response({"message": "Appointment rescheduled successfully."}, status=status.HTTP_200_OK)
-    
+        updated_count = 0
+        for appointment in appointments:
+            if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+                logger.warning(f"Doctor {user.username} tried to reschedule an appointment they don't own.")
+                continue  # Skip unauthorized reschedules
+
+            appointment.appointment_date = new_date
+            appointment.status = data.get("status", "Rescheduled")
+            appointment.updated_by = user  # Track who made the change
+            appointment.save()
+            updated_count += 1
+
+        if updated_count == 0:
+            return Response({"error": "No appointments were updated. Check permissions or appointment IDs."}, status=status.HTTP_403_FORBIDDEN)
+
+        logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
+        return Response({"message": f"Successfully rescheduled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
+
     
     
 from rest_framework import generics, permissions, pagination
