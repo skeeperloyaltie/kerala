@@ -1153,15 +1153,19 @@ function updateBulkActions(status, selectedIds) {
   let bulkActionsContainer = document.getElementById(`${status}-bulk-actions`);
   bulkActionsContainer.style.display = selectedIds.length >= 1 ? "block" : "none";
 }
-
-// Function to perform bulk rescheduling
 function bulkReschedule(status) {
   let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
       .map(checkbox => checkbox.value);
 
-  alert(`Rescheduling Appointments: ${selectedIds.join(", ")}`);
-  // Add your logic here to send request to the backend
+  if (selectedIds.length === 0) {
+      alert("No appointments selected for rescheduling.");
+      return;
+  }
+
+  // Open reschedule modal with selected IDs
+  openRescheduleModal(null, status);
 }
+
 
 
 
@@ -1688,10 +1692,9 @@ function openRescheduleModal(appointmentId = null, status = null) {
   let selectedAppointments = [];
 
   if (appointmentId) {
-      // Single reschedule
       selectedAppointments.push(appointmentId);
   } else {
-      // Bulk reschedule
+      // Get all checked checkboxes
       selectedAppointments = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
           .map(checkbox => checkbox.value);
 
@@ -1701,12 +1704,16 @@ function openRescheduleModal(appointmentId = null, status = null) {
       }
   }
 
-  // Store selected appointment IDs for rescheduling
+  // Store appointment IDs for later processing
   document.getElementById("rescheduleAppointmentID").value = selectedAppointments.join(",");
+
+  // Reset the date field before opening
+  document.getElementById("newAppointmentDate").value = "";
 
   // Show the modal
   $("#rescheduleAppointmentModal").modal("show");
 }
+
 
 // Function to reschedule one or multiple appointments
 function rescheduleAppointment() {
@@ -1715,6 +1722,14 @@ function rescheduleAppointment() {
 
   if (!newDate) {
       alert("Please select a new appointment date and time.");
+      return;
+  }
+
+  // Validate new date (prevent selecting past dates)
+  let selectedDate = new Date(newDate);
+  let now = new Date();
+  if (selectedDate < now) {
+      alert("Cannot select a past date for rescheduling.");
       return;
   }
 
@@ -1737,9 +1752,9 @@ function rescheduleAppointment() {
   })
   .then(data => {
       console.log("Appointments rescheduled successfully:", data);
-      alert(`Successfully rescheduled ${appointmentIds.length} appointment(s) to ${newDate}`);
+      alert(`Successfully rescheduled ${appointmentIds.length} appointment(s) to ${new Date(newDate).toLocaleString()}`);
 
-      // Update the UI for each affected appointment
+      // Update UI for each affected appointment
       appointmentIds.forEach(id => {
           let appointmentRow = document.querySelector(`#appointment-${id}`);
           if (appointmentRow) {
