@@ -1717,20 +1717,20 @@ function openRescheduleModal(appointmentId = null, status = null) {
 // Function to reschedule one or multiple appointments
 function rescheduleAppointment() {
   let appointmentIds = document.getElementById("rescheduleAppointmentID").value.split(",");
-  let newDate = document.getElementById("newAppointmentDate").value;
+  let newDate = document.getElementById("newAppointmentDate").value.trim();
 
   if (!newDate) {
       alert("Please select a new appointment date and time.");
       return;
   }
 
-  // Validate new date (prevent selecting past dates)
-  let selectedDate = new Date(newDate);
-  let now = new Date();
-  if (selectedDate < now) {
-      alert("Cannot select a past date for rescheduling.");
-      return;
-  }
+  // Convert date to proper format if needed
+  let formattedDate = new Date(newDate).toISOString();
+
+  console.log("Sending request with:", {
+      appointment_ids: appointmentIds,
+      new_appointment_date: formattedDate
+  });
 
   fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
       method: "PATCH",
@@ -1740,7 +1740,7 @@ function rescheduleAppointment() {
       },
       body: JSON.stringify({ 
           appointment_ids: appointmentIds, 
-          new_appointment_date: newDate 
+          new_appointment_date: formattedDate 
       })
   })
   .then(response => {
@@ -1751,16 +1751,16 @@ function rescheduleAppointment() {
   })
   .then(data => {
       console.log("Appointments rescheduled successfully:", data);
-      alert(`Successfully rescheduled ${appointmentIds.length} appointment(s) to ${new Date(newDate).toLocaleString()}`);
+      alert(`Successfully rescheduled ${appointmentIds.length} appointment(s) to ${newDate}`);
 
-      // Update UI for each affected appointment
+      // Update UI for each rescheduled appointment
       appointmentIds.forEach(id => {
           let appointmentRow = document.querySelector(`#appointment-${id}`);
           if (appointmentRow) {
               let appointmentCell = appointmentRow.querySelector(".appointment-time-cell");
               if (appointmentCell) {
                   appointmentCell.textContent = new Date(newDate).toLocaleString();
-                  appointmentCell.classList.add("text-warning"); // Highlight change
+                  appointmentCell.classList.add("text-warning");
               }
           }
       });
@@ -1773,6 +1773,7 @@ function rescheduleAppointment() {
       alert("Failed to reschedule appointment(s): " + (error.detail || "Unknown error"));
   });
 }
+
 
 
 function formatDateTime(dateTimeString) {
