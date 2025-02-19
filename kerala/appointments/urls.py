@@ -3,6 +3,7 @@ from .views import (
     CreateAppointmentView,
     AppointmentListView,
     DoctorListView,
+    SearchView,
     VitalsAPIView,
     EditAppointmentView,
     CancelAppointmentView,
@@ -20,4 +21,5 @@ urlpatterns = [
     path('edit/<int:appointment_id>/', EditAppointmentView.as_view(), name='edit-appointment'),
     path('cancel/<int:appointment_id>/', CancelAppointmentView.as_view(), name='cancel-appointment'),
     path('reschedule/<int:appointment_id>/', RescheduleAppointmentView.as_view(), name='reschedule-appointment'),
+    path('search/', SearchView.as_view(), name='search-appointment'),
 ]
