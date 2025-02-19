@@ -1248,36 +1248,43 @@ if (missingVitals.length > 0) {
 
 function loadDoctors() {
   const headers = getAuthHeaders(); // Ensure auth headers are set
+
   $.ajax({
       url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
       type: "GET",
       headers: headers,
       success: function (response) {
           const doctorSelect = $("#doctor");
-          doctorSelect.empty(); // Clear existing options
-          doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
           const editDoctorSelect = $("#editDoctor");
-          doctorSelect.append('<option value="" disabled selected>Select a doctor</option>');
 
-          response.doctors.forEach(doctor => {
+          doctorSelect.empty();
+          editDoctorSelect.empty();
+
+          doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+          editDoctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
+
+          if (response.doctors.length === 1) { 
+              // If the user is a doctor, they should only see their own details
+              const doctor = response.doctors[0]; 
+
               doctorMap[doctor.id] = doctor; // Store doctor details in a dictionary
-              doctorSelect.append(
-                  `<option value="${doctor.id}">
-                      Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
-                  </option>`
-              );
-              editDoctorSelect.append(
-                  `<option value="${doctor.id}">
-                      Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
-                  </option>`
-              );
-          });
+
+              const option = `<option value="${doctor.id}">
+                                  Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
+                              </option>`;
+
+              doctorSelect.append(option);
+              editDoctorSelect.append(option);
+          } else {
+              console.warn("🔍 No doctors found or user is not a doctor.");
+          }
       },
       error: function (xhr, status, error) {
-          console.error("❌ Error fetching doctors:", error);
+          console.error("❌ Error fetching doctor details:", error);
       }
   });
 }
+
 
 
 let appointments = []; // Store fetched appointments here
