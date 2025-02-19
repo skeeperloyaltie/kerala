@@ -1320,6 +1320,7 @@ if (missingVitals.length > 0) {
       }
   });
 }
+let doctorMap = {}; // Global dictionary to store doctor details
 
 function loadDoctors() {
   const headers = getAuthHeaders(); // Ensure auth headers are set
