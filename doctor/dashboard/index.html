@@ -518,6 +518,8 @@ let formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
 document.getElementById("appointmentDate").setAttribute("min", formattedNow);
 
 </script>
+
+
 <!-- Vitals Modal -->
 <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -531,61 +533,94 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
                   <div class="mb-3">
                       <label for="modalBloodPressure">Blood Pressure</label>
                       <div class="input-group">
-                          <input type="text" id="modalBloodPressure" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button" onclick="toggleUnit('modalBloodPressure', this, 'mmHg', 'kPa')">mmHg</button>
+                          <input type="text" id="modalBloodPressure" class="form-control" placeholder="120/80">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalBloodPressure">
+                                  <option value="mmHg">mmHg</option>
+                                  <option value="kPa">kPa</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalHeartRate">Heart Rate</label>
                       <div class="input-group">
-                          <input type="text" id="modalHeartRate" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button">bpm</button>
+                          <input type="text" id="modalHeartRate" class="form-control" placeholder="60-100">
+                          <div class="input-group-append">
+                              <div class="input-group-text">bpm</div>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalTemperature">Temperature</label>
                       <div class="input-group">
-                          <input type="text" id="modalTemperature" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button" onclick="toggleUnit('modalTemperature', this, '°C', '°F')">°C</button>
+                          <input type="text" id="modalTemperature" class="form-control" placeholder="37.0">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalTemperature">
+                                  <option value="°C">°C</option>
+                                  <option value="°F">°F</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalRespiratoryRate">Respiratory Rate</label>
                       <div class="input-group">
-                          <input type="text" id="modalRespiratoryRate" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button">breaths/min</button>
+                          <input type="text" id="modalRespiratoryRate" class="form-control" placeholder="12-20">
+                          <div class="input-group-append">
+                              <div class="input-group-text">breaths/min</div>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalOxygenSaturation">Oxygen Saturation</label>
                       <div class="input-group">
-                          <input type="text" id="modalOxygenSaturation" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button">%</button>
+                          <input type="text" id="modalOxygenSaturation" class="form-control" placeholder="95-100">
+                          <div class="input-group-append">
+                              <div class="input-group-text">%</div>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalWeight">Weight</label>
                       <div class="input-group">
-                          <input type="text" id="modalWeight" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button" onclick="toggleUnit('modalWeight', this, 'kg', 'lbs')">kg</button>
+                          <input type="text" id="modalWeight" class="form-control" placeholder="70">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalWeight">
+                                  <option value="kg">kg</option>
+                                  <option value="lbs">lbs</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalHeight">Height</label>
                       <div class="input-group">
-                          <input type="text" id="modalHeight" class="form-control">
-                          <button class="btn btn-outline-secondary" type="button" onclick="toggleUnit('modalHeight', this, 'cm', 'in')">cm</button>
+                          <input type="text" id="modalHeight" class="form-control" placeholder="170">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalHeight">
+                                  <option value="cm">cm</option>
+                                  <option value="in">in</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
               </form>
           </div>
           <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-              <button type="button" class="btn btn-primary" onclick="saveVitals()">Submit All</button>
+              <button type="button" class="btn btn-primary" onclick="saveVitals()">Save Vitals</button>
           </div>
       </div>
   </div>
 </div>
+
 
 
 <!-- Edit Appointment Modal -->
@@ -726,43 +761,59 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
 </div>
 
 <script>
-  function toggleUnit(inputId, button, unit1, unit2) {
-    let inputField = document.getElementById(inputId);
-    let currentValue = parseFloat(inputField.value); // Get the numeric value
-    let currentUnit = button.innerText.trim(); // Get the current unit
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".unit-select").forEach((select) => {
+      select.addEventListener("change", function () {
+          convertMeasurement(this);
+      });
+  });
+});
 
-    if (isNaN(currentValue)) return; // If no value is entered, do nothing
+function convertMeasurement(select) {
+  let inputId = select.dataset.input;
+  let inputField = document.getElementById(inputId);
+  let currentValue = parseFloat(inputField.value);
+  let fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
+  let toUnit = select.value;
 
-    // Define conversion logic
-    let newValue;
-    if (currentUnit === unit1) {
-        newValue = convertValue(currentValue, unit1, unit2);
-        button.innerText = unit2; // Switch to the new unit
-    } else {
-        newValue = convertValue(currentValue, unit2, unit1);
-        button.innerText = unit1; // Switch back
-    }
+  if (isNaN(currentValue)) return;
 
-    inputField.value = newValue.toFixed(2); // Set new converted value
+  let newValue = convertValue(currentValue, fromUnit, toUnit);
+  inputField.value = newValue.toFixed(2);
+
+  select.setAttribute("data-prev-unit", toUnit);
 }
 
 function convertValue(value, fromUnit, toUnit) {
-    const conversions = {
-        "cm": { "in": value / 2.54 },
-        "in": { "cm": value * 2.54 },
-        "kg": { "lbs": value * 2.20462 },
-        "lbs": { "kg": value / 2.20462 },
-        "°C": { "°F": (value * 9/5) + 32 },
-        "°F": { "°C": (value - 32) * 5/9 },
-        "mmHg": { "kPa": value * 0.133322 },
-        "kPa": { "mmHg": value / 0.133322 }
-    };
+  const conversions = {
+      "cm": { "in": value / 2.54 },
+      "in": { "cm": value * 2.54 },
+      "kg": { "lbs": value * 2.20462 },
+      "lbs": { "kg": value / 2.20462 },
+      "°C": { "°F": (value * 9/5) + 32 },
+      "°F": { "°C": (value - 32) * 5/9 },
+      "mmHg": { "kPa": value * 0.133322 },
+      "kPa": { "mmHg": value / 0.133322 }
+  };
 
-    return conversions[fromUnit]?.[toUnit] || value; // Convert value or return original if no conversion
+  return conversions[fromUnit]?.[toUnit] || value;
+}
+
+function validateVitals() {
+  let valid = true;
+  document.querySelectorAll("#vitalsForm input").forEach(input => {
+      let value = input.value.trim();
+      if (value && isNaN(value)) {
+          valid = false;
+          input.classList.add("is-invalid");
+      } else {
+          input.classList.remove("is-invalid");
+      }
+  });
+  return valid;
 }
 
 </script>
-
 
   <script>
     function showAppointmentForm() {
