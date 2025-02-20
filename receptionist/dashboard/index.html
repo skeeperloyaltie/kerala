@@ -1415,6 +1415,9 @@ function addAppointment() {
   const notes = $("#notes").val().trim();
   const isEmergency = $("#isEmergency").is(":checked");
 
+  // log if emergency is checked 
+  console.log("Is Emergency:", isEmergency);
+
   // Check if the fields are filled
   if (!firstName || !lastName || !contactNumber || !appointmentDate || !doctorId) {
       alert("Please fill in all required fields.");
@@ -1434,6 +1437,7 @@ function addAppointment() {
       notes: notes,
       is_emergency: isEmergency,
   };
+  console.log("Creating Appointment:", appointmentData);
 
   $.ajax({
       url: "http://smarthospitalmaintain.com:8000/appointments/create/",
