@@ -1496,43 +1496,65 @@ $(document).ready(function() {
 
 
 function saveVitals() {
+  // Ensure that the appointment ID is being set properly after appointment creation
   const appointmentId = $("#vitalsModal").data("appointmentId");
 
+  // If appointmentId is not set, it means it was not properly initialized
   if (!appointmentId) {
-      alert("Error: Appointment ID missing.");
+      alert("Appointment ID is missing. Please try again.");
       return;
   }
 
-  const vitalsData = {
-      appointment: appointmentId,
-      blood_pressure: $("#modalBloodPressure").val().trim(),
-      heart_rate: $("#modalHeartRate").val().trim(),
-      temperature: $("#modalTemperature").val().trim(),
-      respiratory_rate: $("#modalRespiratoryRate").val().trim(),
-      oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
-      weight: $("#modalWeight").val().trim(),
-      height: $("#modalHeight").val().trim(),
-  };
+  // Collect vitals data from the modal fields
+const vitalsData = {
+  appointment: appointmentId, // Include appointment ID in data
+  blood_pressure: $("#modalBloodPressure").val().trim(),
+  heart_rate: $("#modalHeartRate").val().trim(),
+  temperature: $("#modalTemperature").val().trim(),
+  respiratory_rate: $("#modalRespiratoryRate").val().trim(),
+  oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
+  weight: $("#modalWeight").val().trim(),
+  height: $("#modalHeight").val().trim(),
+};
 
-  if (!vitalsData.blood_pressure || !vitalsData.heart_rate || !vitalsData.temperature || 
-      !vitalsData.respiratory_rate || !vitalsData.oxygen_saturation || !vitalsData.weight || !vitalsData.height) {
-      alert("Please fill in all vitals.");
-      return;
-  }
+// Validate required vitals fields and track missing fields
+let missingVitals = [];
 
+if (!vitalsData.blood_pressure) missingVitals.push("Blood Pressure");
+if (!vitalsData.heart_rate) missingVitals.push("Heart Rate");
+if (!vitalsData.temperature) missingVitals.push("Temperature");
+if (!vitalsData.respiratory_rate) missingVitals.push("Respiratory Rate");
+if (!vitalsData.oxygen_saturation) missingVitals.push("Oxygen Saturation");
+if (!vitalsData.weight) missingVitals.push("Weight");
+if (!vitalsData.height) missingVitals.push("Height");
+
+// If any vitals are missing, show an alert
+if (missingVitals.length > 0) {
+  alert("Please fill in the following required vitals:\n" + missingVitals.join(", "));
+  return;
+}
+
+
+  const headers = getAuthHeaders();
+
+  // Submit vitals data using POST request
   $.ajax({
-      url: "http://smarthospitalmaintain.com:8000/appointments/vitals/save/",
-      type: "POST",
-      headers: getAuthHeaders(),
+      url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
+      type: 'POST',
+      headers: headers,
       data: JSON.stringify(vitalsData),
-      contentType: "application/json",
-      success: function (response) {
-          console.log("✅ Vitals saved successfully:", response);
+      contentType: 'application/json',
+      success: function(response) {
+          console.log('✅ Vitals saved successfully:', response);
+          // Close the modal after saving vitals
           $("#vitalsModal").modal("hide");
+          alert("Vitals saved successfully.");
       },
-      error: function (xhr, status, error) {
-          console.error("❌ Error saving vitals:", error);
-          alert("Failed to save vitals. Please try again.");
+      error: function(xhr, status, error) {
+          console.error('❌ Error saving vitals:', error);
+          // Check if the error response provides feedback on validation
+          const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals. Please check the details and try again.";
+          alert(errorMessage);
       }
   });
 }
