@@ -42,7 +42,6 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['id', 'user', 'specialization', 'contact_number', 'email', 'first_name', 'last_name']
-        # Add other necessary fields as needed
 
 
 
@@ -84,8 +83,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "status",
             "notes",
             "created_by_username",
+            "is_emergency",
         ]
-        read_only_fields = ["id", "status", "created_by", "created_by_username"]
+        read_only_fields = ["id", "status", "created_by", "created_by_username", "updated_by"]
 
 
         
