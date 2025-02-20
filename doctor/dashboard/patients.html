@@ -240,41 +240,131 @@
   <div class="row">
     <!-- Patients List Section -->
     <div class="col-md-6 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">Patients List</h4>
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Patient Name</th>
-                  <th>Age</th>
-                  <th>Gender</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="patientsList">
-                <!-- Patients will be dynamically inserted here -->
-              </tbody>
-            </table>
-          </div>
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Patients List</h4>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Patient Name</th>
+                                <th>Age</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientsList">
+                            <!-- Patients will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  
+
     <!-- Patient Details Section -->
     <div class="col-md-6 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">Patient Details</h4>
-          <div id="patientDetails">
-            <p>Select a patient to view details.</p>
-          </div>
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Patient Details</h4>
+                <div id="patientDetails">
+                    <p>Select a patient to view details.</p>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const patientsData = [
+        {
+            "patient_id": "P23eee",
+            "first_name": "GODFREY",
+            "last_name": "GUDAH",
+            "contact_number": "0702940509",
+            "email": null,
+            "date_of_birth": "2025-02-04",
+            "current_illness": "",
+            "age": 0,
+            "appointments": [
+                {
+                    "id": 2,
+                    "status": "Canceled",
+                    "appointment_date": "2025-02-21T16:02:00Z",
+                    "notes": "sadasdas",
+                    "is_emergency": false,
+                    "doctor": null,
+                    "vitals": null
+                }
+            ]
+        },
+        {
+            "patient_id": "DAP2331",
+            "first_name": "Jackson",
+            "last_name": "Karimi",
+            "contact_number": "7029309494",
+            "email": null,
+            "date_of_birth": "2025-02-12",
+            "current_illness": null,
+            "age": 0,
+            "appointments": []
+        }
+    ];
+
+    const patientsList = document.getElementById("patientsList");
+    const patientDetails = document.getElementById("patientDetails");
+
+    // Function to display patient details
+    function displayPatientDetails(patient) {
+        let appointmentInfo = "No appointments available.";
+        if (patient.appointments.length > 0) {
+            appointmentInfo = patient.appointments
+                .map(appt => `
+                    <li>
+                        <b>Date:</b> ${new Date(appt.appointment_date).toLocaleString()}<br>
+                        <b>Status:</b> ${appt.status}<br>
+                        <b>Notes:</b> ${appt.notes || "N/A"}<br>
+                        <b>Doctor:</b> ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name} (${appt.doctor.specialization})` : "Not Assigned"}
+                    </li>
+                `)
+                .join("");
+        }
+
+        patientDetails.innerHTML = `
+            <p><b>Name:</b> ${patient.first_name} ${patient.last_name}</p>
+            <p><b>Contact:</b> ${patient.contact_number}</p>
+            <p><b>Age:</b> ${patient.age || "Unknown"}</p>
+            <p><b>Illness:</b> ${patient.current_illness || "None"}</p>
+            <p><b>Appointments:</b></p>
+            <ul>${appointmentInfo}</ul>
+        `;
+    }
+
+    // Populate patient list
+    patientsData.forEach((patient, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${patient.first_name} ${patient.last_name}</td>
+            <td>${patient.age || "Unknown"}</td>
+            <td>
+                <button class="btn btn-primary btn-sm view-btn" data-id="${index}">View</button>
+            </td>
+        `;
+        patientsList.appendChild(row);
+    });
+
+    // Add event listener to view buttons
+    document.querySelectorAll(".view-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            const patientIndex = this.getAttribute("data-id");
+            displayPatientDetails(patientsData[patientIndex]);
+        });
+    });
+});
+</script>
+
   
  
   
