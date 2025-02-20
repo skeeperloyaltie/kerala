@@ -1297,7 +1297,6 @@ $(document).ready(function() {
 
 
 
-
 function saveVitals() {
   // Ensure that the appointment ID is being set properly after appointment creation
   const appointmentId = $("#vitalsModal").data("appointmentId");
@@ -1309,34 +1308,23 @@ function saveVitals() {
   }
 
   // Collect vitals data from the modal fields
-const vitalsData = {
-  appointment: appointmentId, // Include appointment ID in data
-  blood_pressure: $("#modalBloodPressure").val().trim(),
-  heart_rate: $("#modalHeartRate").val().trim(),
-  temperature: $("#modalTemperature").val().trim(),
-  respiratory_rate: $("#modalRespiratoryRate").val().trim(),
-  oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
-  weight: $("#modalWeight").val().trim(),
-  height: $("#modalHeight").val().trim(),
-};
+  let vitalsData = {
+      appointment: appointmentId, // Include appointment ID in data
+      blood_pressure: $("#modalBloodPressure").val().trim() || null,
+      heart_rate: $("#modalHeartRate").val().trim() || null,
+      temperature: $("#modalTemperature").val().trim() || null,
+      respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
+      oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
+      weight: $("#modalWeight").val().trim() || null,
+      height: $("#modalHeight").val().trim() || null,
+  };
 
-// Validate required vitals fields and track missing fields
-let missingVitals = [];
-
-if (!vitalsData.blood_pressure) missingVitals.push("Blood Pressure");
-if (!vitalsData.heart_rate) missingVitals.push("Heart Rate");
-if (!vitalsData.temperature) missingVitals.push("Temperature");
-if (!vitalsData.respiratory_rate) missingVitals.push("Respiratory Rate");
-if (!vitalsData.oxygen_saturation) missingVitals.push("Oxygen Saturation");
-if (!vitalsData.weight) missingVitals.push("Weight");
-if (!vitalsData.height) missingVitals.push("Height");
-
-// If any vitals are missing, show an alert
-if (missingVitals.length > 0) {
-  alert("Please fill in the following required vitals:\n" + missingVitals.join(", "));
-  return;
-}
-
+  // Remove fields that are completely null to avoid sending unnecessary data
+  Object.keys(vitalsData).forEach(key => {
+      if (vitalsData[key] === null) {
+          delete vitalsData[key];
+      }
+  });
 
   const headers = getAuthHeaders();
 

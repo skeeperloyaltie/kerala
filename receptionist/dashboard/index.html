@@ -647,69 +647,82 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
                   <div class="mb-3">
                       <label for="modalBloodPressure">Blood Pressure</label>
                       <div class="input-group">
-
-                      <input type="text" id="modalBloodPressure" class="form-control">
-                      <div class="input-group-append">
-                        <div class="input-group-text">mmHg</div> <!-- Blood Pressure unit -->
-                      </div>
+                          <input type="text" id="modalBloodPressure" class="form-control" placeholder="120/80">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalBloodPressure">
+                                  <option value="mmHg">mmHg</option>
+                                  <option value="kPa">kPa</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalHeartRate">Heart Rate</label>
                       <div class="input-group">
-
-                      <input type="text" id="modalHeartRate" class="form-control">
-                      <div class="input-group-append">
-                        <div class="input-group-text">bpm</div> <!-- Heart rate in beats per minute -->
-                      </div>
+                          <input type="text" id="modalHeartRate" class="form-control" placeholder="60-100">
+                          <div class="input-group-append">
+                              <div class="input-group-text">bpm</div>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalTemperature">Temperature</label>
                       <div class="input-group">
-
-                      <input type="text" id="modalTemperature" class="form-control">
-                      <div class="input-group-append">
-                        <div class="input-group-text">°C</div> <!-- Temperature unit in Celsius -->
-                      </div>
+                          <input type="text" id="modalTemperature" class="form-control" placeholder="37.0">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalTemperature">
+                                  <option value="°C">°C</option>
+                                  <option value="°F">°F</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalRespiratoryRate">Respiratory Rate</label>
                       <div class="input-group">
-
-                      <input type="text" id="modalRespiratoryRate" class="form-control">
-                      <div class="input-group-append">
-                        <div class="input-group-text">breaths/min</div> <!-- Respiratory rate per minute -->
-                      </div>
+                          <input type="text" id="modalRespiratoryRate" class="form-control" placeholder="12-20">
+                          <div class="input-group-append">
+                              <div class="input-group-text">breaths/min</div>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalOxygenSaturation">Oxygen Saturation</label>
                       <div class="input-group">
-
-                      <input type="text" id="modalOxygenSaturation" class="form-control">
-                      <div class="input-group-append">
-                        <div class="input-group-text">%</div> <!-- Oxygen saturation in percentage -->
-                      </div>
+                          <input type="text" id="modalOxygenSaturation" class="form-control" placeholder="95-100">
+                          <div class="input-group-append">
+                              <div class="input-group-text">%</div>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalWeight">Weight</label>
                       <div class="input-group">
-                        <input type="text" id="modalWeight" class="form-control" placeholder="Enter weight">
-                        <div class="input-group-append">
-                          <div class="input-group-text">kg</div> <!-- Weight unit in kilograms -->
-                        </div>
+                          <input type="text" id="modalWeight" class="form-control" placeholder="70">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalWeight">
+                                  <option value="kg">kg</option>
+                                  <option value="lbs">lbs</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
+
                   <div class="mb-3">
                       <label for="modalHeight">Height</label>
                       <div class="input-group">
-                        <input type="text" id="modalHeight" class="form-control" placeholder="Enter height">
-                        <div class="input-group-append">
-                          <div class="input-group-text">cm</div> <!-- Height unit in centimeters -->
-                        </div>
+                          <input type="text" id="modalHeight" class="form-control" placeholder="170">
+                          <div class="input-group-append">
+                              <select class="form-select unit-select" data-input="modalHeight">
+                                  <option value="cm">cm</option>
+                                  <option value="in">in</option>
+                              </select>
+                          </div>
                       </div>
                   </div>
               </form>
@@ -721,6 +734,7 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
       </div>
   </div>
 </div>
+
 
 
 <!-- Edit Appointment Modal -->
@@ -901,6 +915,59 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
   </div>
 
 
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".unit-select").forEach((select) => {
+          select.addEventListener("change", function () {
+              convertMeasurement(this);
+          });
+      });
+  });
+  
+  function convertMeasurement(select) {
+      let inputId = select.dataset.input;
+      let inputField = document.getElementById(inputId);
+      let currentValue = parseFloat(inputField.value);
+      let fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
+      let toUnit = select.value;
+  
+      if (isNaN(currentValue)) return;
+  
+      let newValue = convertValue(currentValue, fromUnit, toUnit);
+      inputField.value = newValue.toFixed(2);
+  
+      select.setAttribute("data-prev-unit", toUnit);
+  }
+  
+  function convertValue(value, fromUnit, toUnit) {
+      const conversions = {
+          "cm": { "in": value / 2.54 },
+          "in": { "cm": value * 2.54 },
+          "kg": { "lbs": value * 2.20462 },
+          "lbs": { "kg": value / 2.20462 },
+          "°C": { "°F": (value * 9/5) + 32 },
+          "°F": { "°C": (value - 32) * 5/9 },
+          "mmHg": { "kPa": value * 0.133322 },
+          "kPa": { "mmHg": value / 0.133322 }
+      };
+  
+      return conversions[fromUnit]?.[toUnit] || value;
+  }
+  
+  function validateVitals() {
+      let valid = true;
+      document.querySelectorAll("#vitalsForm input").forEach(input => {
+          let value = input.value.trim();
+          if (value && isNaN(value)) {
+              valid = false;
+              input.classList.add("is-invalid");
+          } else {
+              input.classList.remove("is-invalid");
+          }
+      });
+      return valid;
+  }
+  </script>
 
   <script>
 // Function to check session data on page load
@@ -1494,7 +1561,6 @@ $(document).ready(function() {
 });
 
 
-
 function saveVitals() {
   // Ensure that the appointment ID is being set properly after appointment creation
   const appointmentId = $("#vitalsModal").data("appointmentId");
@@ -1506,34 +1572,23 @@ function saveVitals() {
   }
 
   // Collect vitals data from the modal fields
-const vitalsData = {
-  appointment: appointmentId, // Include appointment ID in data
-  blood_pressure: $("#modalBloodPressure").val().trim(),
-  heart_rate: $("#modalHeartRate").val().trim(),
-  temperature: $("#modalTemperature").val().trim(),
-  respiratory_rate: $("#modalRespiratoryRate").val().trim(),
-  oxygen_saturation: $("#modalOxygenSaturation").val().trim(),
-  weight: $("#modalWeight").val().trim(),
-  height: $("#modalHeight").val().trim(),
-};
+  let vitalsData = {
+      appointment: appointmentId, // Include appointment ID in data
+      blood_pressure: $("#modalBloodPressure").val().trim() || null,
+      heart_rate: $("#modalHeartRate").val().trim() || null,
+      temperature: $("#modalTemperature").val().trim() || null,
+      respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
+      oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
+      weight: $("#modalWeight").val().trim() || null,
+      height: $("#modalHeight").val().trim() || null,
+  };
 
-// Validate required vitals fields and track missing fields
-let missingVitals = [];
-
-if (!vitalsData.blood_pressure) missingVitals.push("Blood Pressure");
-if (!vitalsData.heart_rate) missingVitals.push("Heart Rate");
-if (!vitalsData.temperature) missingVitals.push("Temperature");
-if (!vitalsData.respiratory_rate) missingVitals.push("Respiratory Rate");
-if (!vitalsData.oxygen_saturation) missingVitals.push("Oxygen Saturation");
-if (!vitalsData.weight) missingVitals.push("Weight");
-if (!vitalsData.height) missingVitals.push("Height");
-
-// If any vitals are missing, show an alert
-if (missingVitals.length > 0) {
-  alert("Please fill in the following required vitals:\n" + missingVitals.join(", "));
-  return;
-}
-
+  // Remove fields that are completely null to avoid sending unnecessary data
+  Object.keys(vitalsData).forEach(key => {
+      if (vitalsData[key] === null) {
+          delete vitalsData[key];
+      }
+  });
 
   const headers = getAuthHeaders();
 
@@ -1558,6 +1613,7 @@ if (missingVitals.length > 0) {
       }
   });
 }
+
 
 
 
