@@ -19,11 +19,6 @@
     <!-- End layout styles -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
     <!-- jQuery (Required for Bootstrap modals) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
          // Function to retrieve CSRF token from meta tag or cookie
 function getCSRFToken() {
@@ -149,7 +144,8 @@ console.log(token, username, csrftoken);
         }
      
     </style>
-    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
@@ -206,14 +202,7 @@ console.log(token, username, csrftoken);
             <p class="mb-1 text-black"><span id="logged_in_user_name"></span>
             </p>          </div>
         </a>
-        <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
-          <a class="dropdown-item" href="#">
-            <i class="mdi mdi-account-circle me-2 text-success"></i> My Profile </a>
-          <div class="dropdown-divider"></div>
-          <button class="btn btn-sm btn-danger" id="logoutButton">
-            <i class="mdi mdi-power"> Logout</i>
-          </button>
-        </div>
+      
       </li>
 
       <!-- Messages Dropdown -->
@@ -340,15 +329,7 @@ console.log(token, username, csrftoken);
           <i class="mdi mdi-settings menu-icon"></i>
         </a>
       </li>
-      <li class="nav-item sidebar-actions">
-        <span class="nav-link">
-          <div class="border-bottom">
-          </div>
-          <a class="nav-link" href="#" id="logoutButton">
-            <i class="mdi mdi-power"> Logout</i>
-          </a>
-        </span>
-      </li>
+     
     </ul>
   </nav>
 
@@ -1039,12 +1020,12 @@ function logoutUser() {
 }
 
 // Attach logout event
-$(document).ready(function() {
-  $('#logoutButton').on('click', function(event) {
-      event.preventDefault();
-      logoutUser();
-  });
+$(document).on("click", "#logoutButton", function(event) {
+  event.preventDefault();
+  console.log("Logout button clicked!"); 
+  logoutUser();
 });
+
 
 // Validate session on page load
 validateUserSession();
