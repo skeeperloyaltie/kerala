@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Kerala | Doctors </title>
+    <!-- plugins:css -->
+    <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="assets/vendors/ti-icons/css/themify-icons.css">
+    <link rel="stylesheet" href="assets/vendors/css/vendor.bundle.base.css">
+    <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css">
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="assets/images/favicon.png" />
+    <!-- jQuery (Required for Bootstrap modals) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+  </head>
+  <body>
+    <div class="container-scroller">
+      <div class="row p-0 m-0 proBanner" id="proBanner">
+        <div class="col-md-12 p-0 m-0">
+          <div class="card-body card-body-padding d-flex align-items-center justify-content-between">
+            <div class="ps-lg-3">
+              <div class="d-flex align-items-center justify-content-between">
+                <p class="mb-0 font-weight-medium me-3 buy-now-text">Free 24/7 customer support, updates</p>
+                <a href="" target="_blank" class="btn me-2 buy-now-btn border-0">Book Appointment</a>
+              </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between">
+              <a href=""><i class="mdi mdi-home me-3 text-white"></i></a>
+              <button id="bannerClose" class="btn border-0 p-0">
+                <i class="mdi mdi-close text-white mr-0"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+     <!-- partial:partials/_navbar.html -->
+<nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+  <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+    <a class="navbar-brand brand-logo" href="index.html"><img src="assets/images/logo.png" alt="logo" height="190px"></a>
+    <!-- <a class="navbar-brand brand-logo-mini" href="index.html"><img src="assets/images/logo-mini.png" alt="logo"></a> -->
+  </div>
+  <div class="navbar-menu-wrapper d-flex align-items-stretch">
+    <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+      <span class="mdi mdi-menu"></span>
+    </button>
+    <div class="search-field d-none d-md-block">
+      <form class="d-flex align-items-center h-100" action="#">
+        <div class="input-group">
+          <div class="input-group-prepend bg-transparent">
+            <i class="input-group-text border-0 mdi mdi-magnify"></i>
+          </div>
+          <input type="text" class="form-control bg-transparent border-0" placeholder="Search patients, appointments">
+        </div>
+      </form>
+    </div>
+    <ul class="navbar-nav navbar-nav-right">
+      <!-- Profile Dropdown -->
+      <li class="nav-item nav-profile dropdown">
+        <a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+          <div class="nav-profile-img">
+            <img src="assets/images/placeholder-doctor.jpg" alt="profile" id="doctor-profile-picture">
+            <span class="availability-status online"></span>
+          </div>
+          <div class="nav-profile-text">
+            <p class="mb-1 text-black"><span id="logged_in_user_name"></span>
+            </p>
+          </div>
+        </a>
+        <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
+          <a class="dropdown-item" href="#">
+            <i class="mdi mdi-account-circle me-2 text-success"></i> My Profile </a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#">
+            <i class="mdi mdi-logout me-2 text-primary"></i> Logout </a>
+        </div>
+      </li>
+
+      <!-- Messages Dropdown -->
+      <li class="nav-item dropdown">
+        <a class="nav-link count-indicator dropdown-toggle" id="messageDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="mdi mdi-email-outline"></i>
+          <span class="count-symbol bg-warning" id="message-count">3</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="messageDropdown">
+          <h6 class="p-3 mb-0">Messages</h6>
+          <div id="message-list">
+            <!-- JavaScript will dynamically populate this -->
+            <p class="text-gray mb-0 text-center">No new messages</p>
+          </div>
+          <div class="dropdown-divider"></div>
+          <h6 class="p-3 mb-0 text-center">See all messages</h6>
+        </div>
+      </li>
+
+      <!-- Notifications Dropdown -->
+      <li class="nav-item dropdown">
+        <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="mdi mdi-bell-outline"></i>
+          <span class="count-symbol bg-danger" id="notification-count">5</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
+          <h6 class="p-3 mb-0">Notifications</h6>
+          <div id="notification-list">
+            <!-- JavaScript will dynamically populate this -->
+            <p class="text-gray mb-0 text-center">No new notifications</p>
+          </div>
+          <div class="dropdown-divider"></div>
+          <h6 class="p-3 mb-0 text-center">See all notifications</h6>
+        </div>
+      </li>
+
+      <!-- Logout -->
+      <li class="nav-item nav-logout d-none d-lg-block">
+        <a class="nav-link" href="#" id="logoutButton">
+          <i class="mdi mdi-power"> Logout</i>
+        </a>
+      </li>
+    </ul>
+    <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+      <span class="mdi mdi-menu"></span>
+    </button>
+  </div>
+</nav>
+      <!-- partial -->
+<div class="container-fluid page-body-wrapper">
+  <!-- partial:partials/_sidebar.html -->
+  <nav class="sidebar sidebar-offcanvas" id="sidebar">
+    <ul class="nav">
+      <li class="nav-item nav-profile">
+        <a href="#" class="nav-link">
+          <div class="nav-profile-image">
+            <img src="assets/images/faces/face1.jpg" alt="profile" />
+            <span class="login-status online"></span>
+          </div>
+          <div class="nav-profile-text d-flex flex-column">
+            <span class="font-weight-bold mb-2">Dr. David Grey</span>
+            <span class="text-secondary text-small">Cardiologist</span>
+          </div>
+          <i class="mdi mdi-stethoscope text-primary nav-profile-badge"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="index.html">
+          <span class="menu-title">Dashboard</span>
+          <i class="mdi mdi-home menu-icon"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="patients.html">
+          <span class="menu-title">Patients</span>
+          <i class="mdi mdi-account-group menu-icon"></i>
+        </a>
+      </li>
+ 
+      <li class="nav-item">
+        <a class="nav-link" href="appointments.html">
+          <span class="menu-title">Appointments</span>
+          <i class="mdi mdi-calendar-check menu-icon"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="collapse" href="#medical-records" aria-expanded="false" aria-controls="medical-records">
+          <span class="menu-title">Medical Records</span>
+          <i class="menu-arrow"></i>
+          <i class="mdi mdi-folder-multiple menu-icon"></i>
+        </a>
+        <div class="collapse" id="medical-records">
+          <ul class="nav flex-column sub-menu">
+            <li class="nav-item">
+              <a class="nav-link" href="records/view-records.html">View Records</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="records/upload-records.html">Upload Records</a>
+            </li>
+          </ul>
+        </div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="prescriptions.html">
+          <span class="menu-title">Prescriptions</span>
+          <i class="mdi mdi-pill menu-icon"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="reports.html">
+          <span class="menu-title">Reports</span>
+          <i class="mdi mdi-chart-bar menu-icon"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="lab-tests.html">
+          <span class="menu-title">Lab Tests</span>
+          <i class="mdi mdi-flask-outline menu-icon"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="settings.html">
+          <span class="menu-title">Settings</span>
+          <i class="mdi mdi-settings menu-icon"></i>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+<!-- partial -->
+<div class="main-panel">
+  <div class="content-wrapper">
+    <div class="page-header">
+      <h3 class="page-title">
+          <span class="page-title-icon bg-gradient-primary text-white me-2">
+              <i class="mdi mdi-home"></i>
+          </span> Dashboard
+      </h3>
+      <nav aria-label="breadcrumb">
+          <ul class="breadcrumb">
+              <li class="breadcrumb-item active" aria-current="page">
+                  <span></span>Welcome, <span id="logged_in_user_name"></span> - Good <span id="timeOfDay">Morning</span>
+              </li>
+          </ul>
+      </nav>
+  </div>
+
+  <div class="row">
+    <!-- Patients List Section -->
+    <div class="col-md-6 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Patients List</h4>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Patient Name</th>
+                  <th>Age</th>
+                  <th>Gender</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="patientsList">
+                <!-- Patients will be dynamically inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Patient Details Section -->
+    <div class="col-md-6 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Patient Details</h4>
+          <div id="patientDetails">
+            <p>Select a patient to view details.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+ 
+  
+
+
+
+
+<script>
+  function toggleUnit(inputId, button, unit1, unit2) {
+    let inputField = document.getElementById(inputId);
+    let currentValue = parseFloat(inputField.value); // Get the numeric value
+    let currentUnit = button.innerText.trim(); // Get the current unit
+
+    if (isNaN(currentValue)) return; // If no value is entered, do nothing
+
+    // Define conversion logic
+    let newValue;
+    if (currentUnit === unit1) {
+        newValue = convertValue(currentValue, unit1, unit2);
+        button.innerText = unit2; // Switch to the new unit
+    } else {
+        newValue = convertValue(currentValue, unit2, unit1);
+        button.innerText = unit1; // Switch back
+    }
+
+    inputField.value = newValue.toFixed(2); // Set new converted value
+}
+
+function convertValue(value, fromUnit, toUnit) {
+    const conversions = {
+        "cm": { "in": value / 2.54 },
+        "in": { "cm": value * 2.54 },
+        "kg": { "lbs": value * 2.20462 },
+        "lbs": { "kg": value / 2.20462 },
+        "°C": { "°F": (value * 9/5) + 32 },
+        "°F": { "°C": (value - 32) * 5/9 },
+        "mmHg": { "kPa": value * 0.133322 },
+        "kPa": { "mmHg": value / 0.133322 }
+    };
+
+    return conversions[fromUnit]?.[toUnit] || value; // Convert value or return original if no conversion
+}
+
+</script>
+
+
+  <script>
+    function showAppointmentForm() {
+      $("#appointmentFormContainer").show();  // Show the form
+      $("#appointmentTabs .nav-link").removeClass("active");  // Remove active state from all tabs
+      $("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
+  }
+  
+  function hideAppointmentForm() {
+      $("#appointmentFormContainer").hide();  // Hide the form
+      $("#appointmentForm")[0].reset();  // Clear all form fields
+  }
+  
+    // Calculate age based on date of birth
+    document.getElementById('dateOfBirth').addEventListener('change', function () {
+      const dob = new Date(this.value);
+      const age = new Date().getFullYear() - dob.getFullYear();
+      document.getElementById('age').value = age;
+    });
+  </script>
+  
+    
+  </div>
+
+
+
+  <script>
+
+// Function to retrieve authentication headers
+function getAuthHeaders() {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const username = sessionStorage.getItem('username') || localStorage.getItem('username');
+  const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
+console.log(token, username, csrftoken);
+
+  if (token && username && csrftoken) {
+      return {
+          'Authorization': 'Token ' + token,
+          'X-CSRFToken': csrftoken,
+          'Username': username
+      };
+  }
+  console.warn('Missing authentication details.');
+  return {};
+}
+
+// Function to check session data on page load
+function checkSessionOnLoad() {
+  const token = localStorage.getItem('token');
+  const username = localStorage.getItem('username');
+  const userType = localStorage.getItem('user_type');
+
+  if (!token || !username || !userType) {
+      console.warn('🔴 Session data missing or invalid. Redirecting...');
+      window.location.href = 'http://smarthospitalmaintain.com';
+      return;
+  }
+
+  console.log('🟢 Session data exists. Validating session...');
+  validateUserSession();
+}
+
+// Validate user session
+function validateUserSession() {
+  const headers = getAuthHeaders();
+
+  if (!headers['Authorization']) {
+      console.warn('🔴 No valid token. User is not authenticated.');
+      window.location.href = 'http://smarthospitalmaintain.com'; // Redirect if token is missing
+      return;
+  }
+
+  $.ajax({
+      url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
+      type: 'GET',
+      headers: headers,
+      success: function(response) {
+          console.log('🟢 Session validation success:', response);
+
+          if (response.message !== 'Cookie is valid.') {
+              console.warn('🔴 Invalid session. Logging out...');
+              alert('Invalid session. Logging out.');
+              attemptLogout(); // Try to log out user
+          } else {
+              // Update navigation bar with user details
+              document.getElementById("logged_in_user_name").textContent = response.name;
+              document.getElementById("timeOfDay").textContent = getGreetingTime();
+          }
+      },
+      error: function(xhr, status, error) {
+          console.error('❌ Error validating session:', xhr.responseText);
+          attemptLogout(); // Try to log out if session check fails
+      }
+  });
+}
+
+// Attempt to logout and handle failures
+function attemptLogout() {
+  logoutUser(); // Try the normal logout flow
+
+  // Wait a short delay to see if logout completes; if not, force logout
+  setTimeout(function() {
+      if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) {
+          console.warn('🔴 Logout failed! Forcing session cleanup.');
+          forceLogout();
+      }
+  }, 3000); // Adjust the timeout as needed
+}
+
+// Force logout by clearing session data and redirecting
+function forceLogout() {
+  sessionStorage.clear();
+  localStorage.clear();
+  document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  console.log('🔄 Redirecting to landing page after forced logout...');
+  window.location.href = 'http://smarthospitalmaintain.com/';
+}
+
+// Function to populate doctor and editDoctor dropdowns
+function populateDoctorDropdown(doctorId, doctorName) {
+    const doctorDropdown = document.getElementById("doctor");
+    const editDoctorDropdown = document.getElementById("editDoctor");
+
+    if (doctorDropdown) {
+        doctorDropdown.innerHTML = `<option value="${doctorId}" selected>${doctorName}</option>`;
+    }
+
+    if (editDoctorDropdown) {
+        editDoctorDropdown.innerHTML = `<option value="${doctorId}" selected>${doctorName}</option>`;
+    }
+}
+
+// Call the function to validate session and populate doctor fields
+validateUserSession();
+
+
+
+// Run session check on page load
+$(document).ready(function () {
+  checkSessionOnLoad();
+});
+
+
+// Function to get time of day greeting
+function getGreetingTime() {
+  const hours = new Date().getHours();
+  if (hours < 12) {
+      return "Morning";
+  } else if (hours < 18) {
+      return "Afternoon";
+  } else {
+      return "Evening";
+  }
+}
+
+// Logout function
+function logoutUser() {
+  const headers = getAuthHeaders();
+
+  if (!headers['Authorization']) {
+      console.error('No authentication token. Redirecting to login...');
+      window.location.href = 'http://localhost/';
+      return;
+  }
+
+  $.ajax({
+      url: 'http://smarthospitalmaintain.com:8000/users/logout/',
+      type: 'POST',
+      headers: headers,
+      success: function(response) {
+          console.log('User logged out successfully:', response);
+          sessionStorage.clear();
+          localStorage.clear();
+          document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          window.location.href = 'http://smarthospitalmaintain.com/';
+        },
+      error: function(xhr, status, error) {
+          console.error('Logout error:', xhr.responseText);
+      }
+  });
+}
+
+// Attach logout event
+$(document).ready(function() {
+  $('#logoutButton').on('click', function(event) {
+      event.preventDefault();
+      logoutUser();
+  });
+});
+
+// Validate session on page load
+validateUserSession();
+
+    function fetchAppointments(status) {
+      const headers = getAuthHeaders(); // Assuming you already have a function to handle authentication headers
+  
+      $.ajax({
+          url: `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
+          type: 'GET',
+          headers: headers,
+          success: function(response) {
+              console.log(`Appointments for ${status}:`, response);
+              populateAppointmentsTable(status, response.appointments); // Populate the respective table
+          },
+          error: function(xhr, status, error) {
+              console.alert(`Error fetching ${status} appointments:`, error);
+              console.error(`Error fetching ${status} appointments:`, error);
+          }
+      });
+  }
+</script>
+            
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Fetch patients from API
+    fetch("/api/patients")
+      .then(response => response.json())
+      .then(data => {
+        let patientsTable = document.getElementById("patientsList");
+        patientsTable.innerHTML = "";
+
+        data.forEach((patient, index) => {
+          let row = `<tr>
+              <td>${index + 1}</td>
+              <td>${patient.name}</td>
+              <td>${patient.age}</td>
+              <td>${patient.gender}</td>
+              <td>
+                <button class="btn btn-success btn-sm" onclick="viewPatient(${patient.id})">View</button>
+              </td>
+            </tr>`;
+          patientsTable.innerHTML += row;
+        });
+      });
+
+    // Function to fetch and display patient details
+    window.viewPatient = function (patientId) {
+      fetch(`/api/patients/${patientId}`)
+        .then(response => response.json())
+        .then(patient => {
+          document.getElementById("patientDetails").innerHTML = `
+            <h5>${patient.name}</h5>
+            <p><strong>Age:</strong> ${patient.age}</p>
+            <p><strong>Gender:</strong> ${patient.gender}</p>
+            <p><strong>Phone:</strong> ${patient.phone}</p>
+            <p><strong>Address:</strong> ${patient.address}</p>
+            <h6>Appointments</h6>
+            <ul>${patient.appointments.map(app => `<li>${app.date} - ${app.reason}</li>`).join("")}</ul>
+            <h6>Vitals</h6>
+            <p><strong>Blood Pressure:</strong> ${patient.vitals.blood_pressure}</p>
+            <p><strong>Heart Rate:</strong> ${patient.vitals.heart_rate}</p>
+          `;
+        });
+    };
+  });
+</script>
+            
+          <!-- content-wrapper ends -->
+          <!-- partial:partials/_footer.html -->
+          <footer class="footer">
+            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="https://www.kerala.com/" target="_blank">Kerala. All rights reserved.</span>
+              <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Doctors Dashboard <i class="mdi mdi-heart text-danger"></i></span>
+            </div>
+          </footer>
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="assets/vendors/chart.js/chart.umd.js"></script>
+    <script src="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="assets/js/off-canvas.js"></script>
+    <script src="assets/js/misc.js"></script>
+    <script src="assets/js/settings.js"></script>
+    <script src="assets/js/todolist.js"></script>
+    <script src="assets/js/jquery.cookie.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <script src="assets/js/dashboard.js"></script>
+    <!-- End custom js for this page -->
+  </body>
+</html>
