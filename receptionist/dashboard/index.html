@@ -1361,11 +1361,12 @@ $(document).ready(function () {
           $("#age").val(age);
       }
   });
+});
 
-  // Prevent vitals modal unless it's an emergency
-  $("#isEmergency").on("change", function () {
-      if (!$(this).is(":checked")) {
-          $("#vitalsModal").modal("hide");
+$(document).ready(function () {
+  $("#isEmergency").change(function () {
+      if ($(this).is(":checked")) {
+          $("#vitalsModal").modal("show");
       }
   });
 });
@@ -1455,9 +1456,10 @@ function addAppointment() {
           hideAppointmentForm();
           fetchAppointments("Scheduled");
 
-          if ($("#isEmergency").is(":checked")) {
-              $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-          }
+          if (isEmergency) {
+            $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+        }
+        
       },
       error: function (xhr, status, error) {
           console.error("❌ Error creating appointment:", error);
