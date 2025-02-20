@@ -43,6 +43,9 @@ class CreateAppointmentView(APIView):
         doctor_id = data.get("doctor")
         notes = data.get("notes", "")
         is_emergency = data.get("is_emergency", False)
+        
+        # log all data received fro mthe front end 
+        logger.info(f"Data received from the front end: {data}")
 
         if not (first_name and last_name and contact_number and date_of_birth):
             logger.error("Patient details are incomplete.")
