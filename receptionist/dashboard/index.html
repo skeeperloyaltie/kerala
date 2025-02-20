@@ -1434,61 +1434,78 @@ $(document).ready(function () {
   });
 });
 
-
 function addAppointment() {
   const doctorId = $("#doctor").val();
-  const patientId = $("#patientID").val().trim();  // Get the patient ID from the form
-
-  // Check if the required fields are filled
-  if (!doctorId) {
-      alert("Please select a doctor for this appointment.");
-      return;
-  }
-
-  if (!patientId) {
-      alert("Please enter a valid Patient ID.");
-      return;
-  }
-
+  const patientId = $("#patientID").val().trim();
   const appointmentDate = $("#appointmentDate").val();
   const dateOfBirth = $("#dateOfBirth").val();
-
-  // Validate Date of Birth (should not be in the future)
-  if (new Date(dateOfBirth) > new Date()) {
-      alert("Date of birth cannot be in the future.");
-      return;
-  }
-
-  // Validate Appointment Date (should not be in the past)
-  if (new Date(appointmentDate) < new Date()) {
-      alert("Appointment date cannot be in the past.");
-      return;
-  }
-
-  // Calculate age from Date of Birth
-  const age = calculateAge(dateOfBirth);
-  if (age < 0) {
-      alert("Invalid Date of Birth.");
-      return;
-  }
-
-  // Fill the Age field
-  $("#age").val(age);
-
-  // Get the other required fields
   const firstName = $("#firstName").val().trim();
   const lastName = $("#lastName").val().trim();
   const contactNumber = $("#contactNumber").val().trim();
   const notes = $("#notes").val().trim();
   const isEmergency = $("#isEmergency").is(":checked");
 
-  // log if emergency is checked 
-  console.log("Is Emergency:", isEmergency);
+  // Reset field styles before validation
+  $(".form-control").removeClass("is-invalid");
 
-  // Check if the fields are filled
-  if (!firstName || !lastName || !contactNumber || !appointmentDate || !doctorId) {
-      alert("Please fill in all required fields.");
+  let missingFields = [];
+
+  // Validate required fields
+  if (!doctorId) missingFields.push("Doctor");
+  if (!patientId) missingFields.push("Patient ID");
+  if (!firstName) missingFields.push("First Name");
+  if (!lastName) missingFields.push("Last Name");
+  if (!contactNumber) missingFields.push("Contact Number");
+  if (!appointmentDate) missingFields.push("Appointment Date");
+
+  // Highlight missing fields
+  if (!doctorId) $("#doctor").addClass("is-invalid");
+  if (!patientId) $("#patientID").addClass("is-invalid");
+  if (!firstName) $("#firstName").addClass("is-invalid");
+  if (!lastName) $("#lastName").addClass("is-invalid");
+  if (!contactNumber) $("#contactNumber").addClass("is-invalid");
+  if (!appointmentDate) $("#appointmentDate").addClass("is-invalid");
+
+  if (missingFields.length > 0) {
+      alert("Please fill in the following required fields:\n" + missingFields.join(", "));
       return;
+  }
+
+  // Validate Contact Number (Only 10 digits allowed)
+  const contactRegex = /^\d{10}$/;
+  if (!contactRegex.test(contactNumber)) {
+      $("#contactNumber").addClass("is-invalid");
+      alert("Contact Number must be exactly 10 digits.");
+      return;
+  }
+
+  // Validate Date of Birth (should not be in the future)
+  if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
+      $("#dateOfBirth").addClass("is-invalid");
+      alert("Date of birth cannot be in the future.");
+      return;
+  }
+
+  // Validate Appointment Date (should not be in the past)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (new Date(appointmentDate) < today) {
+      $("#appointmentDate").addClass("is-invalid");
+      alert("Appointment date cannot be in the past.");
+      return;
+  }
+
+  // Calculate age from Date of Birth
+  const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
+  if (age !== null && age < 0) {
+      $("#dateOfBirth").addClass("is-invalid");
+      alert("Invalid Date of Birth.");
+      return;
+  }
+
+  // Fill the Age field if Date of Birth is provided
+  if (age !== null) {
+      $("#age").val(age);
   }
 
   const appointmentData = {
@@ -1497,14 +1514,13 @@ function addAppointment() {
           first_name: firstName,
           last_name: lastName,
           contact_number: contactNumber,
-          date_of_birth: dateOfBirth,
+          date_of_birth: dateOfBirth,  // Allow null if empty
       },
       appointment_date: appointmentDate,
       doctor: doctorId,
-      notes: notes,
+      notes: notes,  // Allow null if empty
       is_emergency: isEmergency,
   };
-  console.log("Creating Appointment:", appointmentData);
 
   $.ajax({
       url: "http://smarthospitalmaintain.com:8000/appointments/create/",
@@ -1514,7 +1530,6 @@ function addAppointment() {
       contentType: "application/json",
       success: function (response) {
           console.log("✅ Appointment created:", response);
-          alert("Appointment created successfully.");
           const appointmentId = response.appointment?.id;
 
           if (!appointmentId) {
@@ -1525,11 +1540,8 @@ function addAppointment() {
           hideAppointmentForm();
           fetchAppointments("Scheduled");
 
-         // Corrected: Check if 'is_emergency' exists inside the 'appointment' object
-         if (response.appointment?.is_emergency) {
+          // Show vitals modal and pass appointment ID
           $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-      }
-        
       },
       error: function (xhr, status, error) {
           console.error("❌ Error creating appointment:", error);
@@ -1538,18 +1550,18 @@ function addAppointment() {
   });
 }
 
-
-// Helper function to calculate age based on the date of birth
+// Function to calculate age from Date of Birth
 function calculateAge(dob) {
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-    }
-    return age;
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+  }
+  return age;
 }
+
 
 // Setup validation for date fields
 $(document).ready(function() {
