@@ -120,6 +120,34 @@ console.log(token, username, csrftoken);
           padding: 3px 5px;
         }
       }
+
+        /* 🔹 Notification Styling */
+        .custom-notification {
+          display: none;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: #fff;
+          padding: 15px 30px;
+          border-radius: 5px;
+          font-size: 16px;
+          text-align: center;
+          z-index: 9999;
+          min-width: 250px;
+          max-width: 400px;
+          box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Add fade-in animation */
+        @keyframes fadeInOut {
+          0% { opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+     
     </style>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -341,7 +369,10 @@ console.log(token, username, csrftoken);
       </nav>
   </div>
   
-    
+        <!-- Notification Container -->
+<div id="customNotification" class="custom-notification">
+  <p id="notificationMessage"></p>
+</div>
    
     
    
@@ -549,7 +580,7 @@ console.log(token, username, csrftoken);
               </div>
               <div class="col-md-4">
                   <label for="contactNumber">Contact Number</label>
-                  <input type="text" id="contactNumber" class="form-control" required>
+                  <input type="tel" id="contactNumber" class="form-control" required>
               </div>
           </div>
 
@@ -746,7 +777,7 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
           <div class="row mt-3">
             <div class="col-md-6">
               <label for="editContactNumber">Contact Number</label>
-              <input type="text" id="editContactNumber" class="form-control" required>
+              <input type="tel" id="editContactNumber" class="form-control" required>
             </div>
             <div class="col-md-6">
               <label for="editDateOfBirth">Date of Birth</label>
@@ -1432,6 +1463,7 @@ function addAppointment() {
       contentType: "application/json",
       success: function (response) {
           console.log("✅ Appointment created:", response);
+          alert("Appointment created successfully.");
           const appointmentId = response.appointment?.id;
 
           if (!appointmentId) {
@@ -1796,10 +1828,55 @@ function formatDateTime(dateTimeString) {
   </script>
   
   
-
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const phoneInputs = ["#contactNumber", "#editContactNumber"];
+    
+        phoneInputs.forEach(selector => {
+            const input = document.querySelector(selector);
+            if (input) {
+                // Initialize the intl-tel-input library for each input
+                const iti = window.intlTelInput(input, {
+                    initialCountry: "ke",  // Default to Kenya (Change as needed)
+                    preferredCountries: ["us", "gb", "ke", "ng"], // Preferred country list
+                    separateDialCode: true, // Shows country code separately
+                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+                });
+    
+                // Get formatted phone number on blur event
+                input.addEventListener("blur", function () {
+                    console.log(`Full Phone Number (${selector}):`, iti.getNumber()); // Logs full number with country code
+                });
+            }
+        });
+    });
+    </script>
+    
 
 
             
+
+
+
+
+<script>
+function showNotification(message, duration = 3000) {
+  const notification = document.getElementById("customNotification");
+  const messageContainer = document.getElementById("notificationMessage");
+
+  messageContainer.textContent = message;
+  notification.style.display = "block";
+  notification.style.animation = `fadeInOut ${duration / 1000}s ease-in-out`;
+
+  setTimeout(() => {
+      notification.style.display = "none";
+  }, duration);
+}
+
+// Example usage:
+// showNotification("Data saved successfully!", 3000);
+</script>
+
             
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
