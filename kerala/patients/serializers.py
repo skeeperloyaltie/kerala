@@ -2,12 +2,20 @@ from rest_framework import serializers
 from appointments.models import Patient, Appointment, Vitals
 from users.models import Doctor  # Import Doctor model
 
+from rest_framework import serializers
+from users.models import Doctor  # Import Doctor model
 
 class DoctorSerializer(serializers.ModelSerializer):
     """Serializer for Doctor details"""
+
+    first_name = serializers.CharField(source="user.first_name")  # Fetch from related User model
+    last_name = serializers.CharField(source="user.last_name")    # Fetch from related User model
+    email = serializers.EmailField(source="user.email")          # Fetch email from User model
+
     class Meta:
         model = Doctor
         fields = ["id", "first_name", "last_name", "specialization", "contact_number", "email"]
+
 
 
 class VitalsSerializer(serializers.ModelSerializer):
