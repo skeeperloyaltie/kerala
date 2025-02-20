@@ -1458,10 +1458,10 @@ function addAppointment() {
           hideAppointmentForm();
           fetchAppointments("Scheduled");
 
-         // Check if the appointment data from the response confirms it's an emergency
-            if (response.is_emergency) {
-                $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-            }
+         // Corrected: Check if 'is_emergency' exists inside the 'appointment' object
+         if (response.appointment?.is_emergency) {
+          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+      }
         
       },
       error: function (xhr, status, error) {
