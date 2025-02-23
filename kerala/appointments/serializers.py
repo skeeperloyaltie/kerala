@@ -84,6 +84,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "notes",
             "created_by_username",
             "is_emergency",
+            "updated_by",
+            "updated_at",
         ]
         read_only_fields = ["id", "status", "created_by", "created_by_username", "updated_by"]
 
