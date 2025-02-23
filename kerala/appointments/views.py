@@ -58,15 +58,24 @@ class CreateAppointmentView(APIView):
             logger.error("Patient details are incomplete.")
             return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate and convert appointment_date
+                # Validate and convert appointment_date
         try:
+            logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
+
             # Parse the date string and ensure it's in the correct format
             appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")  # Adjust format to match input
+            
+            logger.info(f"Parsed appointment date (naive): {appointment_date}")
+
             # Apply timezone
             appointment_date = make_aware(appointment_date, timezone=KOLKATA_TZ)
+
+            logger.info(f"Timezone-aware appointment date: {appointment_date}")
+
         except ValueError as e:
             logger.error(f"Invalid appointment date format: {e}")
             return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DDTHH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
+
 
         # Ensure appointment date is in the future
         now_kolkata = datetime.now(KOLKATA_TZ)
