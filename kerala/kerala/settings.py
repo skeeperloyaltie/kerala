@@ -164,10 +164,14 @@ DATABASES = {
         'NAME': 'smarthospital',
         'USER': 'postgres',
         'PASSWORD': '1391',
-        'HOST': 'db',  # Must match the service name in docker-compose.yml
+        'HOST': 'db',
         'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c timezone=Asia/Kolkata'
+        },
     }
 }
+
 
 # AUTHENTICATION_BACKENDS = [
 #     'django.contrib.auth.backends.ModelBackend',  # Default backend
@@ -222,7 +226,7 @@ TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

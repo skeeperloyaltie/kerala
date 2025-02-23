@@ -1060,6 +1060,8 @@ function populateAppointmentsTable(status, appointments) {
           <th>Patient ID</th>
           <th>Patient Name</th>
           <th>Age</th>
+          <th>Contact Number</th>
+          <th>Current Illness</th>
           <th>Notes</th>
           <th>Appointment Time</th>
           <th>Doctor</th>
@@ -1090,6 +1092,8 @@ function populateAppointmentsTable(status, appointments) {
           <td>${patient.patient_id || "N/A"}</td>
           <td>${patient.first_name} ${patient.last_name}</td>
           <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+          <td>${patient.contact_number || "N/A"}</td>
+          <td>${patient.current_illness || "N/A"}</td>
           <td>${appointment.notes || "N/A"}</td>
           <td>${appointmentTime}</td>
           <td>Dr. ${doctorName} (${doctorSpecialization})</td>
