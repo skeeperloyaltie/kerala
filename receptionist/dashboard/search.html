@@ -532,7 +532,6 @@ $(document).ready(function () {
   });
 });
 
-// Function to display search results
 function displayResults(data) {
   let resultsContainer = $("#results");
   resultsContainer.empty(); // Clear previous results
@@ -549,7 +548,8 @@ function displayResults(data) {
       console.log("Patients found:", data.patients);
       html += "<h6>Patients</h6><ul>";
       data.patients.forEach(patient => {
-          html += `<li>${patient.first_name} ${patient.last_name} - ${patient.email}</li>`;
+          let email = patient.email ? patient.email : "N/A";
+          html += `<li>${patient.first_name} ${patient.last_name} - ${email}</li>`;
       });
       html += "</ul>";
   }
@@ -558,7 +558,11 @@ function displayResults(data) {
       console.log("Appointments found:", data.appointments);
       html += "<h6>Appointments</h6><ul>";
       data.appointments.forEach(appt => {
-          html += `<li>Patient: ${appt.patient.first_name} ${appt.patient.last_name} | Doctor: ${appt.doctor.user.username} | Status: ${appt.status}</li>`;
+          let doctorName = appt.doctor ? appt.doctor.username : "No Doctor Assigned";
+          let patientName = appt.patient ? `${appt.patient.first_name} ${appt.patient.last_name}` : "Unknown Patient";
+          let status = appt.status ? appt.status : "Pending"; // Assuming status may be missing
+
+          html += `<li>Patient: ${patientName} | Doctor: ${doctorName} | Status: ${status}</li>`;
       });
       html += "</ul>";
   }
@@ -567,7 +571,8 @@ function displayResults(data) {
       console.log("Doctors found:", data.doctors);
       html += "<h6>Doctors</h6><ul>";
       data.doctors.forEach(doctor => {
-          html += `<li>${doctor.username} (${doctor.email}) - Specialization: ${doctor.specialization}</li>`;
+          let email = doctor.email ? doctor.email : "N/A";
+          html += `<li>${doctor.username} (${email})</li>`;
       });
       html += "</ul>";
   }
@@ -576,13 +581,15 @@ function displayResults(data) {
       console.log("Receptionists found:", data.receptionists);
       html += "<h6>Receptionists</h6><ul>";
       data.receptionists.forEach(rec => {
-          html += `<li>${rec.username} (${rec.email})</li>`;
+          let email = rec.email ? rec.email : "N/A";
+          html += `<li>${rec.username} (${email})</li>`;
       });
       html += "</ul>";
   }
 
   resultsContainer.html(html);
 }
+
   </script>
 </div>
 
