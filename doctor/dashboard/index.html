@@ -1759,7 +1759,6 @@ function formatDateTime(dateTimeString) {
   
   
 
-  
   <script>
     document.addEventListener("DOMContentLoaded", function () {
         const phoneInputs = ["#contactNumber", "#editContactNumber"];
@@ -1769,8 +1768,8 @@ function formatDateTime(dateTimeString) {
             if (input) {
                 // Initialize the intl-tel-input library for each input
                 const iti = window.intlTelInput(input, {
-                    initialCountry: "ke",  // Default to Kenya (Change as needed)
-                    preferredCountries: ["us", "gb", "ke", "ng"], // Preferred country list
+                    initialCountry: "in",  // Default to India
+                    preferredCountries: ["in", "us", "gb", "ke", "ng"], // Preferred country list
                     separateDialCode: true, // Shows country code separately
                     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
                 });
@@ -1782,7 +1781,8 @@ function formatDateTime(dateTimeString) {
             }
         });
     });
-    </script>
+  </script>
+  
     
 
     <script>

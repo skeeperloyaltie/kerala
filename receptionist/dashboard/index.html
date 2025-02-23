@@ -1903,34 +1903,7 @@ function formatDateTime(dateTimeString) {
 
   </script>
   
-  
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const phoneInputs = ["#contactNumber", "#editContactNumber"];
-    
-        phoneInputs.forEach(selector => {
-            const input = document.querySelector(selector);
-            if (input) {
-                // Initialize the intl-tel-input library for each input
-                const iti = window.intlTelInput(input, {
-                    initialCountry: "ke",  // Default to Kenya (Change as needed)
-                    preferredCountries: ["us", "gb", "ke", "ng"], // Preferred country list
-                    separateDialCode: true, // Shows country code separately
-                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
-                });
-    
-                // Get formatted phone number on blur event
-                input.addEventListener("blur", function () {
-                    console.log(`Full Phone Number (${selector}):`, iti.getNumber()); // Logs full number with country code
-                });
-            }
-        });
-    });
-    </script>
-    
-
-
-            
+         
 
 
 
@@ -1951,6 +1924,31 @@ function showNotification(message, duration = 3000) {
 
 // Example usage:
 // showNotification("Data saved successfully!", 3000);
+</script>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      const phoneInputs = ["#contactNumber", "#editContactNumber"];
+  
+      phoneInputs.forEach(selector => {
+          const input = document.querySelector(selector);
+          if (input) {
+              // Initialize the intl-tel-input library for each input
+              const iti = window.intlTelInput(input, {
+                  initialCountry: "in",  // Default to India
+                  preferredCountries: ["in", "us", "gb", "ke", "ng"], // Preferred country list
+                  separateDialCode: true, // Shows country code separately
+                  utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+              });
+  
+              // Get formatted phone number on blur event
+              input.addEventListener("blur", function () {
+                  console.log(`Full Phone Number (${selector}):`, iti.getNumber()); // Logs full number with country code
+              });
+          }
+      });
+  });
 </script>
 
             

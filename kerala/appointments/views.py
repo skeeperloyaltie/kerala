@@ -657,23 +657,24 @@ class SearchView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         search_results = self.get_queryset()
 
-        # Paginate each category separately
-        paginated_results = {
-            "patients": self.paginate_queryset(search_results["patients"]),
-            "doctors": self.paginate_queryset(search_results["doctors"]),
-            "receptionists": self.paginate_queryset(search_results["receptionists"]),
-            "appointments": self.paginate_queryset(search_results["appointments"])
-        }
+        # Ensure search_results is a dictionary
+        if isinstance(search_results, dict):
+            paginated_results = {
+                "patients": self.paginate_queryset(search_results.get("patients", [])),
+                "doctors": self.paginate_queryset(search_results.get("doctors", [])),
+                "receptionists": self.paginate_queryset(search_results.get("receptionists", [])),
+                "appointments": self.paginate_queryset(search_results.get("appointments", []))
+            }
+        else:
+            paginated_results = {"patients": self.paginate_queryset(search_results)}
 
-        # Serialize results
         response_data = {
-            "patients": PatientSerializer(paginated_results["patients"], many=True).data if paginated_results["patients"] else [],
-            "doctors": UserSerializer([d.user for d in paginated_results["doctors"]], many=True).data if paginated_results["doctors"] else [],
-            "receptionists": UserSerializer([r.user for r in paginated_results["receptionists"]], many=True).data if paginated_results["receptionists"] else [],
-            "appointments": AppointmentSerializer(paginated_results["appointments"], many=True).data if paginated_results["appointments"] else [],
+            "patients": PatientSerializer(paginated_results.get("patients", []), many=True).data if paginated_results.get("patients") else [],
+            "doctors": UserSerializer([d.user for d in paginated_results.get("doctors", [])], many=True).data if paginated_results.get("doctors") else [],
+            "receptionists": UserSerializer([r.user for r in paginated_results.get("receptionists", [])], many=True).data if paginated_results.get("receptionists") else [],
+            "appointments": AppointmentSerializer(paginated_results.get("appointments", []), many=True).data if paginated_results.get("appointments") else [],
         }
-
-        logger.info(f"Returning results to user {request.user.id}")
 
         return Response(response_data)
+
 
