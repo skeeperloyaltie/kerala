@@ -5,12 +5,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from django.utils import timezone
+import pytz
+from datetime import datetime
 from .models import Appointment, Patient
 from .serializers import AppointmentSerializer, PatientSerializer
 from users.models import Doctor
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+# Set the timezone to Asia/Kolkata
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
@@ -39,17 +45,31 @@ class CreateAppointmentView(APIView):
         last_name = appointment_info.get("last_name", "").strip()
         contact_number = appointment_info.get("contact_number", "").strip()
         date_of_birth = appointment_info.get("date_of_birth")
-        appointment_date = data.get("appointment_date")
+        raw_appointment_date = data.get("appointment_date")
         doctor_id = data.get("doctor")
         notes = data.get("notes", "")
         is_emergency = data.get("is_emergency", False)
-        
-        # log all data received fro mthe front end 
-        logger.info(f"Data received from the front end: {data}")
+
+        logger.info(f"Data received from the frontend: {data}")
 
         if not (first_name and last_name and contact_number and date_of_birth):
             logger.error("Patient details are incomplete.")
             return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate and convert appointment time
+        try:
+            # Convert the received appointment date to a timezone-aware datetime object
+            naive_datetime = datetime.strptime(raw_appointment_date, "%Y-%m-%d %H:%M:%S")  # Adjust format if needed
+            appointment_datetime = KOLKATA_TZ.localize(naive_datetime)  # Ensure it's in Asia/Kolkata timezone
+        except ValueError as e:
+            logger.error(f"Invalid appointment date format: {e}")
+            return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DD HH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure appointment date is in the future
+        current_time_kolkata = timezone.now().astimezone(KOLKATA_TZ)
+        if appointment_datetime <= current_time_kolkata:
+            logger.warning("Attempted to book an appointment in the past.")
+            return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if patient exists or create a new one
         try:
@@ -75,12 +95,12 @@ class CreateAppointmentView(APIView):
 
         logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
 
-        # **Check for duplicate appointment**
+        # Check for duplicate appointment based on patient and exact date-time
         if Appointment.objects.filter(
             patient=patient,
-            appointment_date=appointment_date
+            appointment_date=appointment_datetime
         ).exists():
-            logger.warning(f"Duplicate appointment detected for {patient.first_name} ({patient.contact_number}) on {appointment_date}")
+            logger.warning(f"Duplicate appointment detected for {patient.first_name} ({patient.contact_number}) on {appointment_datetime}")
             return Response(
                 {"error": "An appointment for this patient at the specified date and time already exists."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -98,7 +118,7 @@ class CreateAppointmentView(APIView):
         # Create appointment
         appointment = Appointment.objects.create(
             patient=patient,
-            appointment_date=appointment_date,
+            appointment_date=appointment_datetime,
             doctor=doctor,
             notes=notes,
             status="Scheduled",
