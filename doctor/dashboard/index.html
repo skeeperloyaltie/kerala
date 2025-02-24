@@ -819,7 +819,7 @@ function validateVitals() {
     function showAppointmentForm() {
       $("#appointmentFormContainer").show();  // Show the form
       $("#appointmentTabs .nav-link").removeClass("active");  // Remove active state from all tabs
-      $("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
+      //$("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
   }
   
   function hideAppointmentForm() {
@@ -1345,7 +1345,7 @@ function addAppointment() {
 
       },
       error: function (xhr, status, error) {
-          console.error("❌ Error creating appointment:", error);
+          console.error("❌ Error creating appointment:", error, xhr.responseText);
           alert("Failed to create appointment. Please try again.");
       }
   });
