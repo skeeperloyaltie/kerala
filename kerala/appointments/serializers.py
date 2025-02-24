@@ -82,6 +82,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date",
             "status",
             "notes",
+            "current_illness",
             "created_by_username",
             "is_emergency",
             "updated_by",

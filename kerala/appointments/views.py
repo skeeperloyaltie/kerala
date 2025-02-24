@@ -83,7 +83,7 @@ class CreateAppointmentView(APIView):
             logger.warning(f"Attempt to schedule an appointment in the past: {appointment_date}")
             return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if patient exists or create a new one
+        # Check if the patient exists or create a new one
         try:
             patient, created = Patient.objects.get_or_create(
                 patient_id=patient_id,
@@ -94,16 +94,21 @@ class CreateAppointmentView(APIView):
                     "date_of_birth": date_of_birth
                 }
             )
-            if not created:
-                # Update patient details if necessary
-                patient.first_name = first_name
-                patient.last_name = last_name
+            
+            if created:
+                # If the patient is newly created, update the last name to include the "(NewName)" tag
+                patient.last_name = f"{last_name}(NewName)"
+                patient.save()
+            else:
+                # If the patient already exists, update only contact_number and date_of_birth
                 patient.contact_number = contact_number
                 patient.date_of_birth = date_of_birth
                 patient.save()
+
         except Exception as e:
             logger.error(f"Error while fetching or creating patient: {e}")
             return Response({"error": "Error processing patient details."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
         logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
 
