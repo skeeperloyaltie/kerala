@@ -1369,6 +1369,34 @@ function addAppointment() {
   });
 }
 
+// fetch patient details addEventListener
+$(document).ready(function () {
+  $("#patientID").on("blur", function () {
+    let patientId = $(this).val().trim();
+    
+    if (patientId) {
+      $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function (response) {
+          console.log("Patient details fetched:", response);
+          if (response.patient) {
+            $("#firstName").val(response.patient.first_name);
+            $("#lastName").val(response.patient.last_name);
+            $("#contactNumber").val(response.patient.contact_number);
+            $("#dateOfBirth").val(response.patient.date_of_birth);
+          }
+        },
+        error: function (xhr) {
+          console.log("Patient not found, user can enter details manually.");
+        }
+      });
+    }
+  });
+});
+
+
 // Function to calculate age from Date of Birth
 function calculateAge(dob) {
   const birthDate = new Date(dob);

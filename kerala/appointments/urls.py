@@ -3,6 +3,7 @@ from .views import (
     CreateAppointmentView,
     AppointmentListView,
     DoctorListView,
+    GetPatientDetailsView,
     SearchView,
     VitalsAPIView,
     EditAppointmentView,
@@ -16,6 +17,9 @@ urlpatterns = [
     path('vitals/<int:appointment_id>/', VitalsAPIView.as_view(), name='vitals-detail'),  # For GET and PATCH
     path('vitals/', VitalsAPIView.as_view(), name='vitals-create'),  # For POST (creating vitals)
     path('doctors/list/', DoctorListView.as_view(), name='doctor-list'),
+    
+    path("get-patient-details/<str:patient_id>/", GetPatientDetailsView.as_view(), name="get-patient-details"),
+
     
     # New endpoints
     path('edit/<int:appointment_id>/', EditAppointmentView.as_view(), name='edit-appointment'),

@@ -106,7 +106,7 @@ class CreateAppointmentView(APIView):
             
             if created:
                 # If the patient is newly created, update the last name to include the "(NewName)" tag
-                patient.last_name = f"{last_name}(NewName)"
+                patient.last_name = f"{last_name}"
                 patient.save()
             else:
                 # If the patient already exists, update only contact_number and date_of_birth
@@ -735,3 +735,19 @@ class SearchView(generics.ListAPIView):
         return Response(response_data)
 
 
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Patient
+from .serializers import PatientSerializer
+
+class GetPatientDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, patient_id):
+        try:
+            patient = Patient.objects.get(patient_id=patient_id)
+            return Response({"patient": PatientSerializer(patient).data}, status=200)
+        except Patient.DoesNotExist:
+            return Response({"error": "Patient not found"}, status=404)
