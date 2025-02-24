@@ -13,7 +13,7 @@ class PatientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ['patient_id','first_name', 'last_name', 'contact_number', 'email', 'date_of_birth', 'age']  # Add 'age' here
+        fields = ['patient_id','first_name', 'last_name', 'contact_number', 'current_illness', 'email', 'date_of_birth', 'age']  # Add 'age' here
 
     def get_age(self, obj):
         # Check if date_of_birth is not None
@@ -82,7 +82,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date",
             "status",
             "notes",
-            "current_illness",
             "created_by_username",
             "is_emergency",
             "updated_by",
