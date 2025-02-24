@@ -883,22 +883,9 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
 
   <script>
     function showAppointmentForm() {
-      var modal = $("#appointmentFormContainer");
-  
-      // Ensure the modal exists before proceeding
-      if (modal.length) {
-          modal.modal("show");  // Open the modal
-  
-          setTimeout(function () {
-              if (modal.is(":visible")) {  // Check if the modal is visible before scrolling
-                  $("html, body").animate({
-                      scrollTop: modal.offset().top
-                  }, 800);
-              }
-          }, 300);  // Delay to allow the modal to fully appear
-      } else {
-          console.error("Error: #appointmentModal not found.");
-      }
+      $("#appointmentFormContainer").show();  // Show the form
+      $("#appointmentTabs .nav-link").removeClass("active");  // Remove active state from all tabs
+      //$("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
   }
   
   function hideAppointmentForm() {
