@@ -426,6 +426,24 @@
     </div>
   </div>
 
+  <script>
+    $(document).ready(function () {
+      // Get the last active tab from localStorage
+      var activeTab = localStorage.getItem("activeTab");
+  
+      if (activeTab) {
+          // Show the stored tab
+          $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
+      }
+  
+      // Store the active tab when clicked
+      $("#appointmentTabs a").on("shown.bs.tab", function (e) {
+          var currentTab = $(e.target).attr("href"); // Get current tab ID
+          localStorage.setItem("activeTab", currentTab); // Save to localStorage
+      });
+  });
+  
+  </script>
     
 <!-- Appointment Form -->
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
