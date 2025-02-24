@@ -1106,6 +1106,8 @@ function populateAppointmentsTable(status, appointments) {
   });
 
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
+  location.reload();
+
 }
 
 
@@ -1340,6 +1342,8 @@ function addAppointment() {
 
           // Show vitals modal and pass appointment ID
           $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          location.reload();
+
       },
       error: function (xhr, status, error) {
           console.error("❌ Error creating appointment:", error);
@@ -1415,6 +1419,8 @@ function saveVitals() {
           // Close the modal after saving vitals
           $("#vitalsModal").modal("hide");
           alert("Vitals saved successfully.");
+          location.reload();
+
       },
       error: function(xhr, status, error) {
           console.error('❌ Error saving vitals:', error);
@@ -1653,6 +1659,8 @@ function cancelAppointment(appointmentId = null, rowIndex = null, status = null)
               }
           }
       });
+      location.reload();
+
   })
   .catch(error => {
       console.error("Error canceling appointments:", error);
@@ -1744,10 +1752,12 @@ function rescheduleAppointment() {
 
       // Close modal
       $("#rescheduleAppointmentModal").modal("hide");
+      location.reload();
+
   })
   .catch(error => {
       console.error("Error rescheduling appointments:", error);
-      alert("Failed to reschedule appointment(s): " + (error.detail || "Unknown error"));
+      alert("Failed to reschedule appointment(s): " + (error.detail || "A patient has an existing Time SLot as the one assigned"));
   });
 }
 
