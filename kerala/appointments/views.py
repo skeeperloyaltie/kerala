@@ -62,18 +62,23 @@ class CreateAppointmentView(APIView):
             return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Validate and convert appointment_date
+        # Validate and convert appointment_date
         try:
             logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
 
-            # Parse datetime without timezone
-            appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")
+            # Check if the incoming date contains timezone information
+            if "Z" in appointment_date_str or "+" in appointment_date_str or "-" in appointment_date_str:
+                # If the date has timezone info, parse it directly as an aware datetime
+                appointment_date = datetime.fromisoformat(appointment_date_str)
+                logger.info(f"Parsed timezone-aware appointment date: {appointment_date}")
+            else:
+                # If no timezone info, assume it's local to Asia/Kolkata
+                appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")
+                appointment_date = KOLKATA_TZ.localize(appointment_date)  # Assign Kolkata timezone
 
-            # Ensure the parsed date is naive before applying the timezone
-            if appointment_date.tzinfo is None or appointment_date.tzinfo.utcoffset(appointment_date) is None:
-                # Convert naive datetime to timezone-aware
-                appointment_date = KOLKATA_TZ.localize(appointment_date)
-
-            logger.info(f"Timezone-aware appointment date (Kolkata): {appointment_date}")
+            # Convert to Kolkata timezone (only if it's from another timezone)
+            appointment_date = appointment_date.astimezone(KOLKATA_TZ)
+            logger.info(f"Final stored appointment date (Asia/Kolkata): {appointment_date}")
 
         except ValueError as e:
             logger.error(f"Invalid appointment date format: {e}")
@@ -535,11 +540,10 @@ import logging
 from .models import Appointment  # Ensure you import your Appointment model
 
 logger = logging.getLogger(__name__)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class RescheduleAppointmentView(APIView):
     """
-    Allows doctors and receptionists to reschedule a single or multiple appointments.
+    Allows doctors and receptionists to reschedule single or multiple appointments.
     """
     permission_classes = [IsAuthenticated]
 
@@ -547,7 +551,8 @@ class RescheduleAppointmentView(APIView):
         user = request.user
         data = request.data
         new_date = data.get("appointment_date")
-        appointment_ids = data.get("appointment_ids")  # List of appointment IDs (for bulk reschedule)
+        appointment_ids = data.get("appointment_ids")  # List of appointment IDs for bulk reschedule
+        patient_id = data.get("patient_id")  # If rescheduling all appointments of a patient
 
         logger.info(f"User {user.username} attempting to reschedule appointments.")
 
@@ -559,21 +564,30 @@ class RescheduleAppointmentView(APIView):
             logger.error("Reschedule request is missing the new date.")
             return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Fetch appointments to reschedule
+        appointments = []
+
         if appointment_id:
             # Single appointment reschedule
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
         elif appointment_ids:
-            # Bulk reschedule
-            appointments = Appointment.objects.filter(id__in=appointment_ids)
-            if not appointments.exists():
-                return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
+            # Bulk reschedule using list of appointment IDs
+            appointments = list(Appointment.objects.filter(id__in=appointment_ids))
+        elif patient_id:
+            # Reschedule all appointments of a given patient
+            appointments = list(Appointment.objects.filter(patient__id=patient_id))
         else:
-            return Response({"error": "Appointment ID or list of IDs required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Provide an appointment ID, list of IDs, or patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if not appointments:
+            return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Process appointment updates
         updated_count = 0
         for appointment in appointments:
+            # Doctors should only modify their own patients' appointments
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
-                logger.warning(f"Doctor {user.username} tried to reschedule an appointment they don't own.")
+                logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
                 continue  # Skip unauthorized reschedules
 
             appointment.appointment_date = new_date
@@ -583,10 +597,11 @@ class RescheduleAppointmentView(APIView):
             updated_count += 1
 
         if updated_count == 0:
-            return Response({"error": "No appointments were updated. Check permissions or appointment IDs."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
         return Response({"message": f"Successfully rescheduled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
+
 
     
 import logging
