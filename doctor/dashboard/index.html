@@ -817,11 +817,17 @@ function validateVitals() {
 
   <script>
     function showAppointmentForm() {
-
-      $("#appointmentFormContainer").show();  // Show the form
-      $("#appointmentTabs .nav-link").removeClass("active");  // Remove active state from all tabs
-      //$("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
+      $("#appointmentModal").modal("show");  // Open the modal
+  
+      setTimeout(function () {
+          $('html, body').animate({
+              scrollTop: $("#appointmentModal").offset().top
+          }, 800);
+      }, 300);  // Delay to ensure modal is displayed before scrolling
   }
+  
+      //$("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
+ 
   
   function hideAppointmentForm() {
       $("#appointmentFormContainer").hide();  // Hide the form
