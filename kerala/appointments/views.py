@@ -53,6 +53,9 @@ class CreateAppointmentView(APIView):
         is_emergency = data.get("is_emergency", False)
         
         logger.info(f"Data received from the frontend: {data}")
+        
+        # appointment date received from the frotn end 
+        logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
 
         if not (first_name and last_name and contact_number and date_of_birth):
             logger.error("Patient details are incomplete.")
@@ -62,19 +65,20 @@ class CreateAppointmentView(APIView):
         try:
             logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
 
-            # Parse the date string and ensure it's in the correct format
-            appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")  # Adjust format to match input
-            
-            logger.info(f"Parsed appointment date (naive): {appointment_date}")
+            # Parse datetime without timezone
+            appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")
 
-            # Apply timezone
-            appointment_date = make_aware(appointment_date, timezone=KOLKATA_TZ)
+            # Ensure the parsed date is naive before applying the timezone
+            if appointment_date.tzinfo is None or appointment_date.tzinfo.utcoffset(appointment_date) is None:
+                # Convert naive datetime to timezone-aware
+                appointment_date = KOLKATA_TZ.localize(appointment_date)
 
-            logger.info(f"Timezone-aware appointment date: {appointment_date}")
+            logger.info(f"Timezone-aware appointment date (Kolkata): {appointment_date}")
 
         except ValueError as e:
             logger.error(f"Invalid appointment date format: {e}")
             return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DDTHH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
         # Ensure appointment date is in the future
