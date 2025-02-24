@@ -1342,12 +1342,11 @@ function addAppointment() {
 
           // Show vitals modal and pass appointment ID
           $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-          location.reload();
 
       },
       error: function (xhr, status, error) {
           console.error("❌ Error creating appointment:", error, xhr.responseText);
-          alert("Failed to create appointment. Please try again.");
+          alert("An appointment for this patient at the specified date and time already exists.");
       }
   });
 }
