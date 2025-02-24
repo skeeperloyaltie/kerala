@@ -817,6 +817,8 @@ function validateVitals() {
 
   <script>
     function showAppointmentForm() {
+      location.reload();
+
       $("#appointmentFormContainer").show();  // Show the form
       $("#appointmentTabs .nav-link").removeClass("active");  // Remove active state from all tabs
       //$("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
