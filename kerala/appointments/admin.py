@@ -26,9 +26,6 @@ class PatientAdmin(admin.ModelAdmin):
     get_status.short_description = 'Status'
 
 
-from django.contrib import admin
-from .models import Appointment
-
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = ('id', 'patient', 'doctor', 'receptionist', 'formatted_appointment_date', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at')
@@ -37,6 +34,9 @@ class AppointmentAdmin(admin.ModelAdmin):
     ordering = ('-appointment_date',)
     raw_id_fields = ('patient', 'doctor', 'receptionist', 'created_by', 'updated_by')
     readonly_fields = ('created_at', 'updated_at', 'created_by')
+    
+    # Make the status field editable in the admin form
+    fields = ('patient', 'doctor', 'receptionist', 'appointment_date', 'status', 'notes', 'created_by', 'updated_by')
 
     def get_queryset(self, request):
         """Optimize query to prefetch related patient, doctor, receptionist, and user data."""
@@ -48,6 +48,13 @@ class AppointmentAdmin(admin.ModelAdmin):
         return obj.appointment_date.strftime('%d-%m-%Y %H:%M')
     formatted_appointment_date.admin_order_field = 'appointment_date'
     formatted_appointment_date.short_description = 'Appointment Date & Time'
+
+    # Ensure 'status' field is editable directly in the admin form
+    status = admin.models.CharField(max_length=20, choices=Appointment.STATUS_CHOICES)
+
+    def save_model(self, request, obj, form, change):
+        """Custom save method to handle any additional processing before saving."""
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(AppointmentTests)
@@ -72,4 +79,3 @@ class VitalsAdmin(admin.ModelAdmin):
         """Optimize query to prefetch related appointment and patient."""
         queryset = super().get_queryset(request)
         return queryset.select_related('appointment__patient')
-

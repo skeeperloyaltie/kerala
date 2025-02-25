@@ -1198,6 +1198,8 @@ function getActionButton(status, appointment, rowIndex) {
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
           buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
           buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+          buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+
           break;
       
       case 'Pending':
