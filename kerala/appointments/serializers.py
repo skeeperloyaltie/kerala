@@ -65,6 +65,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     )  # Direct relation to Receptionist model
     receptionist_name = serializers.CharField(source="receptionist.user.get_full_name", read_only=True)  # Ensure proper receptionist name retrieval
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)  # Get username of creator
+    updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)  # Get username of the user who updated
 
     doctor_name = serializers.CharField(source="doctor.user.get_full_name", read_only=True)  # Ensure doctor name is included
 
@@ -83,11 +84,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "status",
             "notes",
             "created_by_username",
+            "updated_by_username",  # Added updated_by_username to return the username of the user who updated the appointment
             "is_emergency",
-            "updated_by",
+            "updated_by",  # Keeps the `updated_by` field for the backend process
             "updated_at",
         ]
-        read_only_fields = ["id", "status", "created_by", "created_by_username", "updated_by"]
+        read_only_fields = ["id", "status", "created_by", "created_by_username", "updated_by", "updated_by_username"]
+
 
 
         
