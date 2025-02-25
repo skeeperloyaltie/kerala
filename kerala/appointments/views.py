@@ -601,8 +601,6 @@ class RescheduleAppointmentView(APIView):
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
         return Response({"message": f"Successfully rescheduled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
 
-
-    
 import logging
 from rest_framework import generics, permissions, pagination
 from rest_framework.response import Response
@@ -631,13 +629,14 @@ class SearchView(generics.ListAPIView):
         query_filters = {}
 
         # Collect available search parameters
+        patient_id = query_params.get("patient_id", "").strip()
         first_name = query_params.get("first_name", "").strip()
         last_name = query_params.get("last_name", "").strip()
         contact_number = query_params.get("contact_number", "").strip()
         email = query_params.get("email", "").strip()
         status = query_params.get("status", "").strip()
         
-        query_key = f"{first_name}_{last_name}_{contact_number}_{email}_{status}"
+        query_key = f"{patient_id}_{first_name}_{last_name}_{contact_number}_{email}_{status}"
         cache_key = f"search_{user.id}_{query_key}"
 
         logger.info(f"Received query params: {query_params}")
@@ -649,7 +648,7 @@ class SearchView(generics.ListAPIView):
             logger.info(f"Cache hit for user {user.id}, query: {query_key}")
             return cached_results
 
-        if not any([first_name, last_name, contact_number, email, status]):
+        if not any([patient_id, first_name, last_name, contact_number, email, status]):
             logger.info(f"Empty query received from user {user.id}.")
             return []
 
@@ -657,12 +656,16 @@ class SearchView(generics.ListAPIView):
         patients, doctors, receptionists, appointments = [], [], [], []
 
         if hasattr(user, "receptionist"):  # Receptionists can search all
-            patients = Patient.objects.filter(
-                Q(first_name__icontains=first_name) |
-                Q(last_name__icontains=last_name) |
-                Q(contact_number__icontains=contact_number) |
-                Q(email__icontains=email)
-            )
+            # Prioritize exact patient_id match if provided
+            if patient_id:
+                patients = Patient.objects.filter(patient_id=patient_id)  # Exact match for patient_id
+            else:
+                patients = Patient.objects.filter(
+                    Q(first_name__icontains=first_name) |
+                    Q(last_name__icontains=last_name) |
+                    Q(contact_number__icontains=contact_number) |
+                    Q(email__icontains=email)
+                )
             doctors = Doctor.objects.filter(
                 Q(user__username__icontains=first_name) |
                 Q(user__email__icontains=email)
@@ -672,6 +675,7 @@ class SearchView(generics.ListAPIView):
                 Q(user__email__icontains=email)
             )
             appointments = Appointment.objects.filter(
+                Q(patient__patient_id=patient_id) |  # Exact match for patient_id
                 Q(patient__first_name__icontains=first_name) |
                 Q(patient__last_name__icontains=last_name) |
                 Q(doctor__user__username__icontains=first_name) |
@@ -680,23 +684,30 @@ class SearchView(generics.ListAPIView):
 
         elif hasattr(user, "doctor"):  # Doctors search only their patients and receptionists
             # Patients: Only those associated with the doctor's appointments
-            patients = Patient.objects.filter(
-                Q(appointments__doctor=user.doctor) & (
-                    Q(first_name__icontains=first_name) |
-                    Q(last_name__icontains=last_name) |
-                    Q(contact_number__icontains=contact_number) |
-                    Q(email__icontains=email)
-                )
-            ).distinct()
+            if patient_id:
+                patients = Patient.objects.filter(
+                    patient_id=patient_id,
+                    appointments__doctor=user.doctor
+                ).distinct()  # Exact match for patient_id, restricted to doctor's patients
+            else:
+                patients = Patient.objects.filter(
+                    Q(appointments__doctor=user.doctor) & (
+                        Q(first_name__icontains=first_name) |
+                        Q(last_name__icontains=last_name) |
+                        Q(contact_number__icontains=contact_number) |
+                        Q(email__icontains=email)
+                    )
+                ).distinct()
             # Appointments: Only those assigned to the doctor
             appointments = Appointment.objects.filter(
                 Q(doctor=user.doctor) & (
+                    Q(patient__patient_id=patient_id) |  # Exact match for patient_id
                     Q(patient__first_name__icontains=first_name) |
                     Q(patient__last_name__icontains=last_name) |
                     Q(status__icontains=status)
                 )
             ).distinct()
-            # Receptionists: Allow searching for receptionists (as per requirement)
+            # Receptionists: Allow searching for receptionists
             receptionists = Receptionist.objects.filter(
                 Q(user__username__icontains=first_name) |
                 Q(user__email__icontains=email)
@@ -704,9 +715,9 @@ class SearchView(generics.ListAPIView):
             # Doctors: Do not include any doctors in the results for doctors
             doctors = []
 
-        # Compile results
+        # Compile results with detailed patient data
         results = {
-            "patients": list(patients),
+            "patients": list(patients),  # Return full Patient objects for detailed display
             "doctors": list(doctors),  # Empty for doctors, all for receptionists
             "receptionists": list(receptionists),  # Allow for both roles
             "appointments": list(appointments)
@@ -740,7 +751,6 @@ class SearchView(generics.ListAPIView):
         }
 
         return Response(response_data)
-
 
 
 from rest_framework.views import APIView
