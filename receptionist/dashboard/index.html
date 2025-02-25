@@ -1171,7 +1171,7 @@ function populateAppointmentsTable(status, appointments) {
       bulkActionsContainer.id = `${status}-bulk-actions`;
       bulkActionsContainer.style.display = "none"; // Initially hidden
       bulkActionsContainer.innerHTML = `
-          <button onclick="bulkReschedule('${status}')">Reschedule  Appointments Selected</button>
+          <button onclick="bulkReschedule('${status}')">Reschedule Appointments Selected</button>
           <button onclick="bulkCancel('${status}')">Cancel Appointments Selected</button>
       `;
       tbody.parentElement.insertBefore(bulkActionsContainer, tbody);
@@ -1196,8 +1196,46 @@ function populateAppointmentsTable(status, appointments) {
       tbody.appendChild(selectAllRow);
   }
 
-  // Populate rows
-  appointments.forEach((appointment, index) => {
+  // Filter appointments by status (if we are populating for 'Scheduled', show both Waiting and Scheduled)
+  if (status === 'Scheduled') {
+    // Combine "Waiting" and "Scheduled" appointments
+    const waitingAppointments = filteredAppointments.filter(app => app.status === 'Waiting');
+    const scheduledAppointments = filteredAppointments.filter(app => app.status === 'Scheduled');
+    const combinedAppointments = [...waitingAppointments, ...scheduledAppointments];
+    
+    // Populate rows for combined appointments
+    combinedAppointments.forEach((appointment, index) => {
+      let patient = appointment.patient || {};
+      let doctor = appointment.doctor || {};
+      let doctorName = doctor.first_name && doctor.last_name ? `${doctor.first_name} ${doctor.last_name}` : "Unknown Doctor";
+      let doctorSpecialization = doctor.specialization || "N/A";
+
+      // Track patients per doctor
+      doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
+
+      // Convert appointment date into readable format
+      let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
+
+      let row = document.createElement("tr");
+      row.innerHTML = `
+          <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
+          <td>${index + 1}</td>
+          <td>${patient.patient_id || "N/A"}</td>
+          <td>${patient.first_name} ${patient.last_name}</td>
+          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+          <td>${appointment.notes || "N/A"}</td>
+          <td>${appointmentTime}</td>
+          <td>Dr. ${doctorName} (${doctorSpecialization})</td>
+          <td>${appointment.created_by_username}</td>
+          <td>${appointment.status || "N/A"}</td>
+          <td>${getActionButton(appointment.status, appointment, index)}</td>
+      `;
+      
+      tbody.appendChild(row);
+    });
+  } else {
+    // Populate rows for other statuses (Pending, Active, Completed, etc.)
+    appointments.forEach((appointment, index) => {
       let patient = appointment.patient || {};
       let doctor = appointment.doctor || {};
       let doctorName = doctor.first_name && doctor.last_name ? `${doctor.first_name} ${doctor.last_name}` : "Unknown Doctor";
@@ -1225,10 +1263,12 @@ function populateAppointmentsTable(status, appointments) {
       `;
 
       tbody.appendChild(row);
-  });
+    });
+  }
 
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
+
 
 
 // Function to toggle all checkboxes when "Select All" is clicked
