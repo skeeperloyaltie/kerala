@@ -629,14 +629,24 @@ class SearchView(generics.ListAPIView):
         query_filters = {}
 
         # Collect available search parameters
-        patient_id = query_params.get("patient_id", "").strip()
+        patient_ids = query_params.getlist("patient_id", []).strip()  # Handle multiple patient_ids (e.g., comma-separated or list)
         first_name = query_params.get("first_name", "").strip()
         last_name = query_params.get("last_name", "").strip()
         contact_number = query_params.get("contact_number", "").strip()
         email = query_params.get("email", "").strip()
         status = query_params.get("status", "").strip()
-        
-        query_key = f"{patient_id}_{first_name}_{last_name}_{contact_number}_{email}_{status}"
+        date_of_birth = query_params.get("date_of_birth", "").strip()  # New: Search by date of birth
+        appointment_date = query_params.get("appointment_date", "").strip()  # New: Search by appointment date range
+
+        # Handle multiple patient_ids (e.g., "PAT1234,PAT5678" or ["PAT1234", "PAT5678"])
+        if patient_ids and isinstance(patient_ids, list):
+            patient_ids = [pid.strip() for pid in patient_ids if pid.strip()]
+        elif patient_ids:
+            patient_ids = [pid.strip() for pid in patient_ids.split(",") if pid.strip()]
+        else:
+            patient_ids = []
+
+        query_key = f"{','.join(patient_ids)}_{first_name}_{last_name}_{contact_number}_{email}_{status}_{date_of_birth}_{appointment_date}"
         cache_key = f"search_{user.id}_{query_key}"
 
         logger.info(f"Received query params: {query_params}")
@@ -648,78 +658,121 @@ class SearchView(generics.ListAPIView):
             logger.info(f"Cache hit for user {user.id}, query: {query_key}")
             return cached_results
 
-        if not any([patient_id, first_name, last_name, contact_number, email, status]):
+        if not any([patient_ids, first_name, last_name, contact_number, email, status, date_of_birth, appointment_date]):
             logger.info(f"Empty query received from user {user.id}.")
             return []
 
         # Prepare query sets
-        patients, doctors, receptionists, appointments = [], [], [], []
+        patients, appointments = [], []
 
         if hasattr(user, "receptionist"):  # Receptionists can search all
-            # Prioritize exact patient_id match if provided
-            if patient_id:
-                patients = Patient.objects.filter(patient_id=patient_id)  # Exact match for patient_id
+            # Search by patient_ids (exact matches)
+            if patient_ids:
+                patients = Patient.objects.filter(patient_id__in=patient_ids)
+            # Search by first_name (exact match)
+            elif first_name:
+                patients = Patient.objects.filter(first_name__iexact=first_name)  # Exact match for first_name
+            # Search by date_of_birth (exact match)
+            elif date_of_birth:
+                try:
+                    from datetime import datetime
+                    dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+                    patients = Patient.objects.filter(date_of_birth=dob)
+                except ValueError:
+                    logger.error(f"Invalid date_of_birth format: {date_of_birth}")
+                    return []
+            # Search by appointment_date (exact or range)
+            elif appointment_date:
+                try:
+                    from datetime import datetime
+                    apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+                    appointments = Appointment.objects.filter(appointment_date__date=apt_date)
+                except ValueError:
+                    logger.error(f"Invalid appointment_date format: {appointment_date}")
+                    return []
             else:
                 patients = Patient.objects.filter(
-                    Q(first_name__icontains=first_name) |
                     Q(last_name__icontains=last_name) |
                     Q(contact_number__icontains=contact_number) |
                     Q(email__icontains=email)
                 )
-            doctors = Doctor.objects.filter(
-                Q(user__username__icontains=first_name) |
-                Q(user__email__icontains=email)
-            )
-            receptionists = Receptionist.objects.filter(
-                Q(user__username__icontains=first_name) |
-                Q(user__email__icontains=email)
-            )
-            appointments = Appointment.objects.filter(
-                Q(patient__patient_id=patient_id) |  # Exact match for patient_id
-                Q(patient__first_name__icontains=first_name) |
-                Q(patient__last_name__icontains=last_name) |
-                Q(doctor__user__username__icontains=first_name) |
-                Q(status__icontains=status)
-            )
 
-        elif hasattr(user, "doctor"):  # Doctors search only their patients and receptionists
-            # Patients: Only those associated with the doctor's appointments
-            if patient_id:
+            # Filter appointments based on patients or direct appointment_date/status search
+            if not appointments and (patients or patient_ids or first_name or date_of_birth):
+                patient_ids_from_patients = patients.values_list('patient_id', flat=True) if patients else patient_ids
+                appointments = Appointment.objects.filter(
+                    Q(patient__patient_id__in=patient_ids_from_patients) |
+                    Q(status__icontains=status)
+                )
+            elif not appointments and appointment_date:
+                appointments = Appointment.objects.filter(
+                    Q(appointment_date__date=apt_date) |
+                    Q(status__icontains=status)
+                )
+
+        elif hasattr(user, "doctor"):  # Doctors search only their patients and related appointments
+            # Search by patient_ids (exact matches, restricted to doctor's patients)
+            if patient_ids:
                 patients = Patient.objects.filter(
-                    patient_id=patient_id,
+                    patient_id__in=patient_ids,
                     appointments__doctor=user.doctor
-                ).distinct()  # Exact match for patient_id, restricted to doctor's patients
+                ).distinct()
+            # Search by first_name (exact match, restricted to doctor's patients)
+            elif first_name:
+                patients = Patient.objects.filter(
+                    Q(appointments__doctor=user.doctor) & Q(first_name__iexact=first_name)
+                ).distinct()
+            # Search by date_of_birth (exact match, restricted to doctor's patients)
+            elif date_of_birth:
+                try:
+                    from datetime import datetime
+                    dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+                    patients = Patient.objects.filter(
+                        Q(appointments__doctor=user.doctor) & Q(date_of_birth=dob)
+                    ).distinct()
+                except ValueError:
+                    logger.error(f"Invalid date_of_birth format: {date_of_birth}")
+                    return []
+            # Search by appointment_date (exact or range, restricted to doctor's appointments)
+            elif appointment_date:
+                try:
+                    from datetime import datetime
+                    apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+                    appointments = Appointment.objects.filter(
+                        Q(doctor=user.doctor) & Q(appointment_date__date=apt_date)
+                    )
+                except ValueError:
+                    logger.error(f"Invalid appointment_date format: {appointment_date}")
+                    return []
             else:
                 patients = Patient.objects.filter(
                     Q(appointments__doctor=user.doctor) & (
-                        Q(first_name__icontains=first_name) |
                         Q(last_name__icontains=last_name) |
                         Q(contact_number__icontains=contact_number) |
                         Q(email__icontains=email)
                     )
                 ).distinct()
-            # Appointments: Only those assigned to the doctor
-            appointments = Appointment.objects.filter(
-                Q(doctor=user.doctor) & (
-                    Q(patient__patient_id=patient_id) |  # Exact match for patient_id
-                    Q(patient__first_name__icontains=first_name) |
-                    Q(patient__last_name__icontains=last_name) |
-                    Q(status__icontains=status)
-                )
-            ).distinct()
-            # Receptionists: Allow searching for receptionists
-            receptionists = Receptionist.objects.filter(
-                Q(user__username__icontains=first_name) |
-                Q(user__email__icontains=email)
-            )
-            # Doctors: Do not include any doctors in the results for doctors
-            doctors = []
 
-        # Compile results with detailed patient data
+            # Filter appointments based on patients or direct appointment_date/status search
+            if not appointments and (patients or patient_ids or first_name or date_of_birth):
+                patient_ids_from_patients = patients.values_list('patient_id', flat=True) if patients else patient_ids
+                appointments = Appointment.objects.filter(
+                    Q(doctor=user.doctor) & (
+                        Q(patient__patient_id__in=patient_ids_from_patients) |
+                        Q(status__icontains=status)
+                    )
+                ).distinct()
+            elif not appointments and appointment_date:
+                appointments = Appointment.objects.filter(
+                    Q(doctor=user.doctor) & (
+                        Q(appointment_date__date=apt_date) |
+                        Q(status__icontains=status)
+                    )
+                )
+
+        # Compile results with only patients and their appointments (remove doctors/receptionists unless needed)
         results = {
-            "patients": list(patients),  # Return full Patient objects for detailed display
-            "doctors": list(doctors),  # Empty for doctors, all for receptionists
-            "receptionists": list(receptionists),  # Allow for both roles
+            "patients": list(patients),
             "appointments": list(appointments)
         }
 
@@ -736,8 +789,6 @@ class SearchView(generics.ListAPIView):
         if isinstance(search_results, dict):
             paginated_results = {
                 "patients": self.paginate_queryset(search_results.get("patients", [])),
-                "doctors": self.paginate_queryset(search_results.get("doctors", [])),
-                "receptionists": self.paginate_queryset(search_results.get("receptionists", [])),
                 "appointments": self.paginate_queryset(search_results.get("appointments", []))
             }
         else:
@@ -745,13 +796,10 @@ class SearchView(generics.ListAPIView):
 
         response_data = {
             "patients": PatientSerializer(paginated_results.get("patients", []), many=True).data if paginated_results.get("patients") else [],
-            "doctors": UserSerializer([d.user for d in paginated_results.get("doctors", [])], many=True).data if paginated_results.get("doctors") else [],
-            "receptionists": UserSerializer([r.user for r in paginated_results.get("receptionists", [])], many=True).data if paginated_results.get("receptionists") else [],
             "appointments": AppointmentSerializer(paginated_results.get("appointments", []), many=True).data if paginated_results.get("appointments") else [],
         }
 
         return Response(response_data)
-
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
