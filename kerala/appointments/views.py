@@ -600,7 +600,6 @@ class RescheduleAppointmentView(APIView):
 
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
         return Response({"message": f"Successfully rescheduled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
-
 import logging
 from rest_framework import generics, permissions, pagination
 from rest_framework.response import Response
@@ -610,6 +609,7 @@ from users.models import Doctor, Receptionist
 from .models import Patient, Appointment
 from users.serializers import UserSerializer
 from .serializers import PatientSerializer, AppointmentSerializer
+from datetime import datetime
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -629,22 +629,16 @@ class SearchView(generics.ListAPIView):
         query_filters = {}
 
         # Collect available search parameters
-        patient_ids = query_params.getlist("patient_id", []).strip()  # Handle multiple patient_ids (e.g., comma-separated or list)
+        patient_ids = query_params.getlist("patient_id", [])  # Get list of patient_ids
+        # Process patient_ids: strip each value if it's a string, filter out empty values
+        patient_ids = [pid.strip() for pid in patient_ids if pid.strip()] if patient_ids else []
         first_name = query_params.get("first_name", "").strip()
         last_name = query_params.get("last_name", "").strip()
         contact_number = query_params.get("contact_number", "").strip()
         email = query_params.get("email", "").strip()
         status = query_params.get("status", "").strip()
-        date_of_birth = query_params.get("date_of_birth", "").strip()  # New: Search by date of birth
-        appointment_date = query_params.get("appointment_date", "").strip()  # New: Search by appointment date range
-
-        # Handle multiple patient_ids (e.g., "PAT1234,PAT5678" or ["PAT1234", "PAT5678"])
-        if patient_ids and isinstance(patient_ids, list):
-            patient_ids = [pid.strip() for pid in patient_ids if pid.strip()]
-        elif patient_ids:
-            patient_ids = [pid.strip() for pid in patient_ids.split(",") if pid.strip()]
-        else:
-            patient_ids = []
+        date_of_birth = query_params.get("date_of_birth", "").strip()  # Search by date of birth
+        appointment_date = query_params.get("appointment_date", "").strip()  # Search by appointment date
 
         query_key = f"{','.join(patient_ids)}_{first_name}_{last_name}_{contact_number}_{email}_{status}_{date_of_birth}_{appointment_date}"
         cache_key = f"search_{user.id}_{query_key}"
@@ -675,7 +669,6 @@ class SearchView(generics.ListAPIView):
             # Search by date_of_birth (exact match)
             elif date_of_birth:
                 try:
-                    from datetime import datetime
                     dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
                     patients = Patient.objects.filter(date_of_birth=dob)
                 except ValueError:
@@ -684,7 +677,6 @@ class SearchView(generics.ListAPIView):
             # Search by appointment_date (exact or range)
             elif appointment_date:
                 try:
-                    from datetime import datetime
                     apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
                     appointments = Appointment.objects.filter(appointment_date__date=apt_date)
                 except ValueError:
@@ -725,7 +717,6 @@ class SearchView(generics.ListAPIView):
             # Search by date_of_birth (exact match, restricted to doctor's patients)
             elif date_of_birth:
                 try:
-                    from datetime import datetime
                     dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
                     patients = Patient.objects.filter(
                         Q(appointments__doctor=user.doctor) & Q(date_of_birth=dob)
@@ -736,7 +727,6 @@ class SearchView(generics.ListAPIView):
             # Search by appointment_date (exact or range, restricted to doctor's appointments)
             elif appointment_date:
                 try:
-                    from datetime import datetime
                     apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
                     appointments = Appointment.objects.filter(
                         Q(doctor=user.doctor) & Q(appointment_date__date=apt_date)
@@ -770,7 +760,7 @@ class SearchView(generics.ListAPIView):
                     )
                 )
 
-        # Compile results with only patients and their appointments (remove doctors/receptionists unless needed)
+        # Compile results with only patients and their appointments
         results = {
             "patients": list(patients),
             "appointments": list(appointments)
