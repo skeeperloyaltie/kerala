@@ -292,9 +292,9 @@
 
         </div>
         <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-            <!-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab">Waiting in Clinic</a>
-            </li> -->
+            </li>
             <li class="nav-item">
                 <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">Scheduled</a>
             </li>
@@ -319,7 +319,7 @@
         
         <div class="tab-content mt-3" id="appointmentTabContent">
             <!-- Template for Tabs -->
-            <!-- <div class="tab-pane fade show active" id="waiting" role="tabpanel">
+            <div class="tab-pane fade show active" id="waiting" role="tabpanel">
                 <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="table">
@@ -331,7 +331,7 @@
                         <tbody id="Waiting-tbody"></tbody>
                     </table>
                 </div>
-            </div> -->
+            </div>
         
             <!-- Copy for each tab -->
             <div class="tab-pane fade" id="scheduled" role="tabpanel">
@@ -724,7 +724,7 @@ document.getElementById("appointmentDate").setAttribute("min", formattedNow);
             <div class="col-md-12">
                 <label for="editAppointmentStatus">Status</label>
                 <select id="editAppointmentStatus" class="form-control">
-                    <!-- <option value="Waiting">Waiting</option> -->
+                    <option value="Waiting">Waiting</option>
                     <option value="Scheduled">Scheduled</option>
                     <option value="Pending">Pending</option>
                     <option value="Active">Active</option>
@@ -1220,11 +1220,11 @@ function getActionButton(status, appointment, rowIndex) {
   let appointmentData = encodeURIComponent(JSON.stringify(appointment));
 
   switch (status) {
-      //case 'Waiting':
-         // buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
-          //buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
-          //buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
-          //break;
+      case 'Waiting':
+          buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
+          buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
+          buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
+          break;
       
       case 'Scheduled':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
