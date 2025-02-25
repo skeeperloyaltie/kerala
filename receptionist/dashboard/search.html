@@ -339,19 +339,7 @@ console.log(token, username, csrftoken);
     <h2>Search Page</h2>
     <form id="searchForm">
       <div id="searchFilters">
-        <div class="mb-3 input-group">
-            <select class="form-select search-category">
-              <option value="patient_id">Patient ID</option>
-
-                <option value="first_name">First Name</option>
-                <option value="last_name">Last Name</option>
-                <option value="email">Email</option>
-                <option value="contact_number">Contact Number</option>
-                <option value="date_of_birth">Date of Birth</option>
-            </select>
-            <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
-            <button type="button" class="btn btn-danger removeFilter">Remove</button>
-        </div>
+       
     </div>
         <button type="button" id="addFilter" class="btn btn-secondary">Add Filter</button>
         <button type="submit" class="btn btn-primary">Search</button>
@@ -470,25 +458,23 @@ $(document).ready(function() {
 
 // Validate session on page load
 validateUserSession();
-
 $(document).ready(function () {
   // Add new search filter
   $('#addFilter').click(function () {
       $('#searchFilters').append(`
         <div class="mb-3 input-group">
             <select class="form-select search-category">
-                              <option value="patient_id">Patient ID</option>
-
+                <option value="patient_id">Patient ID(s)</option>
                 <option value="first_name">First Name</option>
                 <option value="last_name">Last Name</option>
                 <option value="email">Email</option>
                 <option value="contact_number">Contact Number</option>
                 <option value="date_of_birth">Date of Birth</option>
+                <option value="appointment_date">Appointment Date</option>
             </select>
-            <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
+            <input type="text" class="form-control" name="query[]" placeholder="Enter search term (e.g., PAT1234 or PAT1234,PAT5678 for multiple IDs, YYYY-MM-DD for dates)">
             <button type="button" class="btn btn-danger removeFilter">Remove</button>
         </div>
- 
       `);
   });
 
@@ -505,6 +491,10 @@ $(document).ready(function () {
           let field = $(this).find('.search-category').val();
           let value = $(this).find('input[name="query[]"]').val().trim();
           if (value) {
+              // Handle multiple patient_ids (e.g., "PAT1234,PAT5678")
+              if (field === "patient_id" && value.includes(",")) {
+                  value = value.split(",").map(id => id.trim()).join(",");
+              }
               filters.push(`${field}=${encodeURIComponent(value)}`);
           }
       });
@@ -532,11 +522,12 @@ $(document).ready(function () {
   });
 });
 
+// Function to display search results with detailed patient and appointment info
 function displayResults(data) {
   let resultsContainer = $("#results");
   resultsContainer.empty(); // Clear previous results
 
-  if (!data.patients?.length && !data.appointments?.length && !data.doctors?.length && !data.receptionists?.length) {
+  if (!data.patients?.length && !data.appointments?.length) {
       console.log("No results found:", data); // Log if no results
       resultsContainer.html("<p class='text-danger'>No results found.</p>");
       return;
@@ -544,52 +535,51 @@ function displayResults(data) {
 
   let html = "<h5>Search Results</h5>";
 
+  // Display patients with detailed information, grouped by patient_id if multiple matches
   if (data.patients?.length) {
       console.log("Patients found:", data.patients);
-      html += "<h6>Patients</h6><ul>";
+      html += "<h6>Patients</h6>";
+      const patientsById = {};
       data.patients.forEach(patient => {
-          let email = patient.email ? patient.email : "N/A";
-          html += `<li>${patient.first_name} ${patient.last_name} - ${email}</li>`;
+          if (!patientsById[patient.patient_id]) {
+              patientsById[patient.patient_id] = [];
+          }
+          patientsById[patient.patient_id].push(patient);
       });
-      html += "</ul>";
+
+      for (let patientId in patientsById) {
+          html += `<div class="patient-result"><h6>Patient ID: ${patientId}</h6><ul>`;
+          patientsById[patientId].forEach(patient => {
+              html += `<li>
+                  Name: ${patient.first_name} ${patient.last_name} |
+                  Contact: ${patient.contact_number} |
+                  Email: ${patient.email || 'N/A'} |
+                  DOB: ${patient.date_of_birth || 'N/A'} |
+                  Age: ${patient.age || 'N/A'} |
+                  Illness: ${patient.current_illness || 'N/A'}
+              </li>`;
+          });
+          html += "</ul></div>";
+      }
   }
 
+  // Display appointments with detailed patient info
   if (data.appointments?.length) {
       console.log("Appointments found:", data.appointments);
       html += "<h6>Appointments</h6><ul>";
       data.appointments.forEach(appt => {
-          let doctorName = appt.doctor ? appt.doctor.username : "No Doctor Assigned";
-          let patientName = appt.patient ? `${appt.patient.first_name} ${appt.patient.last_name}` : "Unknown Patient";
-          let status = appt.status ? appt.status : "Pending"; // Assuming status may be missing
-
-          html += `<li>Patient: ${patientName} | Doctor: ${doctorName} | Status: ${status}</li>`;
-      });
-      html += "</ul>";
-  }
-
-  if (data.doctors?.length) {
-      console.log("Doctors found:", data.doctors);
-      html += "<h6>Doctors</h6><ul>";
-      data.doctors.forEach(doctor => {
-          let email = doctor.email ? doctor.email : "N/A";
-          html += `<li>${doctor.username} (${email})</li>`;
-      });
-      html += "</ul>";
-  }
-
-  if (data.receptionists?.length) {
-      console.log("Receptionists found:", data.receptionists);
-      html += "<h6>Receptionists</h6><ul>";
-      data.receptionists.forEach(rec => {
-          let email = rec.email ? rec.email : "N/A";
-          html += `<li>${rec.username} (${email})</li>`;
+          html += `<li>
+              Patient: ${appt.patient.first_name} ${appt.patient.last_name} (ID: ${appt.patient.patient_id}) |
+              Doctor: ${appt.doctor ? appt.doctor.user.username : 'N/A'} |
+              Status: ${appt.status} |
+              Date: ${new Date(appt.appointment_date).toLocaleString()}
+          </li>`;
       });
       html += "</ul>";
   }
 
   resultsContainer.html(html);
 }
-
   </script>
 </div>
 
