@@ -339,19 +339,7 @@ console.log(token, username, csrftoken);
     <h2>Search Page</h2>
     <form id="searchForm">
       <div id="searchFilters">
-        <div class="mb-3 input-group">
-            <select class="form-select search-category">
-              <option value="patient_id">Patient ID</option>
-
-                <option value="first_name">First Name</option>
-                <option value="last_name">Last Name</option>
-                <option value="email">Email</option>
-                <option value="contact_number">Contact Number</option>
-                <option value="date_of_birth">Date of Birth</option>
-            </select>
-            <input type="text" class="form-control" name="query[]" placeholder="Enter search term">
-            <button type="button" class="btn btn-danger removeFilter">Remove</button>
-        </div>
+       
     </div>
         <button type="button" id="addFilter" class="btn btn-secondary">Add Filter</button>
         <button type="submit" class="btn btn-primary">Search</button>
@@ -477,7 +465,7 @@ $(document).ready(function () {
       $('#searchFilters').append(`
         <div class="mb-3 input-group">
             <select class="form-select search-category">
-                              <option value="patient_id">Patient ID</option>
+                  <option value="patient_id">Patient ID</option>
 
                 <option value="first_name">First Name</option>
                 <option value="last_name">Last Name</option>
