@@ -1085,6 +1085,8 @@ validateUserSession();
             <th>Appointment Time</th>
             <th>Doctor</th>
             <th>Created By</th>
+            <th>Updated By</th> <!-- Added column for updated by -->
+
             <th>Status</th>
             <th>Actions</th>
         `;
@@ -1126,6 +1128,8 @@ validateUserSession();
             <td>${appointmentTime}</td>
             <td>Dr. ${doctorName} (${doctorSpecialization})</td>
             <td>${appointment.created_by_username}</td>
+            <td>${appointment.updated_by ? `${appointment.updated_by.username} updated the appointment` : "N/A"}</td> <!-- Display updated by -->
+
             <td>${appointment.status || "N/A"}</td>
             <td>${getActionButton(appointment.status, appointment, index)}</td>
         `;
