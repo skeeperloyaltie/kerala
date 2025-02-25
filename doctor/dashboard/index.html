@@ -58,7 +58,6 @@
 .modal {
   display: none; /* Hidden by default */
   position: fixed; 
-  z-index: 1; /* Sit on top */
   left: 0;
   top: 0;
   width: 100%;
@@ -1195,7 +1194,7 @@ validateUserSession();
     if (headerRow) {
       headerRow.style.position = "sticky";
       headerRow.style.top = "0";
-      headerRow.style.zIndex = "0";
+      //headerRow.style.zIndex = "0";
       headerRow.style.backgroundColor = "#fff"; // Add background to avoid overlap with content
     }
   
