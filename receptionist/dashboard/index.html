@@ -542,6 +542,7 @@ console.log(token, username, csrftoken);
    
     </script>
     
+
     
 
 <!-- Appointment Form -->
@@ -1171,7 +1172,7 @@ function populateAppointmentsTable(status, appointments) {
       bulkActionsContainer.id = `${status}-bulk-actions`;
       bulkActionsContainer.style.display = "none"; // Initially hidden
       bulkActionsContainer.innerHTML = `
-          <button onclick="bulkReschedule('${status}')">Reschedule  Appointments Selected</button>
+          <button onclick="bulkReschedule('${status}')">Reschedule Appointments Selected</button>
           <button onclick="bulkCancel('${status}')">Cancel Appointments Selected</button>
       `;
       tbody.parentElement.insertBefore(bulkActionsContainer, tbody);
@@ -1196,6 +1197,15 @@ function populateAppointmentsTable(status, appointments) {
           <th>Actions</th>
       `;
       tbody.appendChild(selectAllRow);
+  }
+
+  // Make the header sticky
+  let headerRow = document.querySelector(`#${tbodyId} tr:first-child`);
+  if (headerRow) {
+    headerRow.style.position = "sticky";
+    headerRow.style.top = "0";
+    headerRow.style.zIndex = "10";
+    headerRow.style.backgroundColor = "#fff"; // Add background to avoid overlap with content
   }
 
   // Populate rows
@@ -1232,7 +1242,6 @@ function populateAppointmentsTable(status, appointments) {
   });
 
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
-
 }
 
 

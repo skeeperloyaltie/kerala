@@ -41,27 +41,25 @@ class CreateAppointmentView(APIView):
             logger.error("Invalid format for appointment details.")
             return Response({"error": "Appointment details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Extract patient details
+        # Extract patient details from the appointment data
         patient_id = appointment_info.get("patient_id")
         first_name = appointment_info.get("first_name", "").strip()
         last_name = appointment_info.get("last_name", "").strip()
         contact_number = appointment_info.get("contact_number", "").strip()
         date_of_birth = appointment_info.get("date_of_birth")
+        current_illness = appointment_info.get("current_illness", "").strip()  # Extract current illness
         appointment_date_str = data.get("appointment_date")
         doctor_id = data.get("doctor")
         notes = data.get("notes", "")
         is_emergency = data.get("is_emergency", False)
         
         logger.info(f"Data received from the frontend: {data}")
-        
-        # appointment date received from the frotn end 
-        logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
 
+        # Ensure patient details are complete
         if not (first_name and last_name and contact_number and date_of_birth):
             logger.error("Patient details are incomplete.")
             return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Validate and convert appointment_date
         # Validate and convert appointment_date
         try:
             logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
@@ -84,8 +82,6 @@ class CreateAppointmentView(APIView):
             logger.error(f"Invalid appointment date format: {e}")
             return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DDTHH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
 
-
-
         # Ensure appointment date is in the future
         now_kolkata = datetime.now(KOLKATA_TZ)
         if appointment_date < now_kolkata:
@@ -100,24 +96,26 @@ class CreateAppointmentView(APIView):
                     "first_name": first_name,
                     "last_name": last_name,
                     "contact_number": contact_number,
-                    "date_of_birth": date_of_birth
+                    "date_of_birth": date_of_birth,
+                    "current_illness": current_illness,  # Save the current illness if new patient
                 }
             )
             
             if created:
-                # If the patient is newly created, update the last name to include the "(NewName)" tag
+                # If the patient is newly created, update the last name
                 patient.last_name = f"{last_name}"
                 patient.save()
             else:
-                # If the patient already exists, update only contact_number and date_of_birth
+                # If the patient already exists, update contact_number, date_of_birth, and current_illness
                 patient.contact_number = contact_number
                 patient.date_of_birth = date_of_birth
+                if current_illness:
+                    patient.current_illness = current_illness  # Update current illness
                 patient.save()
 
         except Exception as e:
             logger.error(f"Error while fetching or creating patient: {e}")
             return Response({"error": "Error processing patient details."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
         logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
 
@@ -162,6 +160,7 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
 
 
 
