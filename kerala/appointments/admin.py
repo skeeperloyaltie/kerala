@@ -50,7 +50,7 @@ class AppointmentAdmin(admin.ModelAdmin):
     formatted_appointment_date.short_description = 'Appointment Date & Time'
 
     # Ensure 'status' field is editable directly in the admin form
-    status = admin.models.CharField(max_length=20, choices=Appointment.STATUS_CHOICES)
+    # status = admin.models.CharField(max_length=20, choices=Appointment.STATUS_CHOICES)
 
     def save_model(self, request, obj, form, change):
         """Custom save method to handle any additional processing before saving."""
