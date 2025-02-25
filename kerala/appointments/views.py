@@ -641,7 +641,7 @@ class SearchView(generics.ListAPIView):
         cache_key = f"search_{user.id}_{query_key}"
 
         logger.info(f"Received query params: {query_params}")
-        logger.info(f"User {user.id} searching with parameters: {query_key}")
+        logger.info(f"User {user.id} ({user.user_type}) searching with parameters: {query_key}")
 
         # Check cached results
         cached_results = cache.get(cache_key)
@@ -675,11 +675,11 @@ class SearchView(generics.ListAPIView):
                 Q(patient__first_name__icontains=first_name) |
                 Q(patient__last_name__icontains=last_name) |
                 Q(doctor__user__username__icontains=first_name) |
-                Q(receptionist__user__username__icontains=first_name) |
                 Q(status__icontains=status)
             )
 
-        elif hasattr(user, "doctor"):  # Doctors search only their patients
+        elif hasattr(user, "doctor"):  # Doctors search only their patients and receptionists
+            # Patients: Only those associated with the doctor's appointments
             patients = Patient.objects.filter(
                 Q(appointments__doctor=user.doctor) & (
                     Q(first_name__icontains=first_name) |
@@ -688,6 +688,7 @@ class SearchView(generics.ListAPIView):
                     Q(email__icontains=email)
                 )
             ).distinct()
+            # Appointments: Only those assigned to the doctor
             appointments = Appointment.objects.filter(
                 Q(doctor=user.doctor) & (
                     Q(patient__first_name__icontains=first_name) |
@@ -695,12 +696,19 @@ class SearchView(generics.ListAPIView):
                     Q(status__icontains=status)
                 )
             ).distinct()
+            # Receptionists: Allow searching for receptionists (as per requirement)
+            receptionists = Receptionist.objects.filter(
+                Q(user__username__icontains=first_name) |
+                Q(user__email__icontains=email)
+            )
+            # Doctors: Do not include any doctors in the results for doctors
+            doctors = []
 
         # Compile results
         results = {
             "patients": list(patients),
-            "doctors": list(doctors),
-            "receptionists": list(receptionists),
+            "doctors": list(doctors),  # Empty for doctors, all for receptionists
+            "receptionists": list(receptionists),  # Allow for both roles
             "appointments": list(appointments)
         }
 
