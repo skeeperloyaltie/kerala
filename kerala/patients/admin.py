@@ -1,6 +1,6 @@
 # patients/admin.py
 from django.contrib import admin
-from .models import Patient, Appointment, Vitals
+from appointments.models import Patient, Appointment, Vitals
 from users.models import Doctor  # Import the Doctor model from users app
 
 # Register the Patient model
