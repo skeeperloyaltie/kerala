@@ -34,7 +34,7 @@ from .models import Appointment
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'patient', 'doctor', 'receptionist', 'formatted_appointment_date', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at')
+    list_display = ('id', 'patient', 'doctor', 'receptionist', 'formatted_appointment_date', 'created_by', 'updated_by', 'created_at', 'updated_at')
     search_fields = ('patient__first_name', 'patient__last_name', 'doctor__user__username', 'receptionist__user__username')
     list_filter = ('status', 'appointment_date', 'doctor', 'receptionist')
     ordering = ('-appointment_date',)
