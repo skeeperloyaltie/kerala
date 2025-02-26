@@ -22,6 +22,51 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <!-- Custom CSS for cards, tabs, and modal -->
+    <style>
+        .patient-card {
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .patient-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .nav-tabs .nav-link {
+            border: 1px solid #dee2e6;
+            border-top-left-radius: 0.25rem;
+            border-top-right-radius: 0.25rem;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff #007bff #dee2e6;
+        }
+        #patientCards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        #patientModal .modal-dialog {
+            max-width: 800px;
+        }
+        #patientModal .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .appointment-list {
+            list-style: none;
+            padding: 0;
+        }
+        .appointment-list li {
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container-scroller">
@@ -219,40 +264,25 @@
                         </nav>
                     </div>
 
-                    <div class="row">
-                        <!-- Patients List Section -->
-                        <div class="col-md-6 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h4 class="card-title">Patients List</h4>
-                                    <div class="table-responsive">
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Patient Name</th>
-                                                    <th>Age</th>
-                                                    <th>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="patientsList">
-                                                <!-- Patients will be dynamically inserted here -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="row" id="patientCards">
+                        <!-- Patient cards will be dynamically inserted here -->
+                    </div>
 
-                        <!-- Patient Details Section -->
-                        <div class="col-md-6 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h4 class="card-title">Patient Details</h4>
-                                    <div id="patientDetails">
-                                        <p>Select a patient to view details.</p>
-                                    </div>
-                                </div>
+                </div>
+
+                <!-- Modal for Patient Details -->
+                <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="patientModalLabel">Patient Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="modalPatientDetails">
+                                <!-- Patient details will be inserted here -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -443,7 +473,7 @@
                 headers: headers,
                 success: function(response) {
                     console.log('Patients fetched:', response);
-                    populatePatientsTable(response);
+                    displayPatientCards(response);
                 },
                 error: function(xhr, status, error) {
                     console.error('Error fetching patients:', error);
@@ -456,35 +486,90 @@
             });
         }
 
-        // Function to populate patients table
-        function populatePatientsTable(patients) {
-            const patientsList = document.getElementById("patientsList");
-            patientsList.innerHTML = "";
+        // Function to display patient cards with tabs
+        function displayPatientCards(patients) {
+            const patientCards = document.getElementById("patientCards");
+            patientCards.innerHTML = "";
 
             patients.forEach((patient, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${patient.first_name} ${patient.last_name}</td>
-                    <td>${patient.age || "Unknown"}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm view-btn" data-patient-id="${patient.patient_id}">View</button>
-                    </td>
+                const card = document.createElement("div");
+                card.className = "col-md-4 patient-card";
+                card.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${patient.first_name} ${patient.last_name}</h5>
+                            <p class="card-text"><strong>Patient ID:</strong> ${patient.patient_id}</p>
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="personal-${patient.patient_id}-tab" data-bs-toggle="tab" href="#personal-${patient.patient_id}" role="tab" aria-controls="personal-${patient.patient_id}" aria-selected="true">Personal Info</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="appointments-${patient.patient_id}-tab" data-bs-toggle="tab" href="#appointments-${patient.patient_id}" role="tab" aria-controls="appointments-${patient.patient_id}" aria-selected="false">Appointments</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="vitals-${patient.patient_id}-tab" data-bs-toggle="tab" href="#vitals-${patient.patient_id}" role="tab" aria-controls="vitals-${patient.patient_id}" aria-selected="false">Vitals</a>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="personal-${patient.patient_id}" role="tabpanel" aria-labelledby="personal-${patient.patient_id}-tab">
+                                    <p><strong>Contact:</strong> ${patient.contact_number}</p>
+                                    <p><strong>Age:</strong> ${patient.age || "Unknown"}</p>
+                                    <p><strong>Illness:</strong> ${patient.current_illness || "None"}</p>
+                                    <p><strong>Email:</strong> ${patient.email || "N/A"}</p>
+                                    <p><strong>Date of Birth:</strong> ${patient.date_of_birth || "N/A"}</p>
+                                </div>
+                                <div class="tab-pane fade" id="appointments-${patient.patient_id}" role="tabpanel" aria-labelledby="appointments-${patient.patient_id}-tab">
+                                    <p>No appointments available.</p>
+                                </div>
+                                <div class="tab-pane fade" id="vitals-${patient.patient_id}" role="tabpanel" aria-labelledby="vitals-${patient.patient_id}-tab">
+                                    <p>No vitals recorded.</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary mt-3 view-details-btn" data-patient-id="${patient.patient_id}">View Details</button>
+                        </div>
+                    </div>
                 `;
-                patientsList.appendChild(row);
+                patientCards.appendChild(card);
+
+                // Populate appointments tab
+                if (patient.appointments && patient.appointments.length > 0) {
+                    const appointmentsTab = document.getElementById(`appointments-${patient.patient_id}`);
+                    appointmentsTab.innerHTML = '<ul class="appointment-list">' + patient.appointments
+                        .map(appt => `
+                            <li>
+                                <strong>Date:</strong> ${new Date(appt.appointment_date).toLocaleString()}<br>
+                                <strong>Status:</strong> ${appt.status}<br>
+                                <strong>Notes:</strong> ${appt.notes || "N/A"}<br>
+                                <strong>Doctor:</strong> ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name} (${appt.doctor.specialization})` : "Not Assigned"}
+                            </li>
+                        `).join("") + '</ul>';
+                }
+
+                // Populate vitals tab (using the first appointment with vitals, if any)
+                if (patient.appointments && patient.appointments.some(appt => appt.vitals)) {
+                    const vitalsTab = document.getElementById(`vitals-${patient.patient_id}`);
+                    const vitals = patient.appointments.reduce((acc, appt) => appt.vitals || acc, {});
+                    vitalsTab.innerHTML = `
+                        <p><strong>Temperature:</strong> ${vitals.temperature || 'N/A'}°C</p>
+                        <p><strong>Blood Pressure:</strong> ${vitals.blood_pressure || 'N/A'}</p>
+                        <p><strong>Heart Rate:</strong> ${vitals.heart_rate || 'N/A'} bpm</p>
+                        <p><strong>Weight:</strong> ${vitals.weight || 'N/A'} kg</p>
+                        <p><strong>Height:</strong> ${vitals.height || 'N/A'} cm</p>
+                    `;
+                }
             });
 
-            // Add event listener to view buttons
-            document.querySelectorAll(".view-btn").forEach(button => {
-                button.addEventListener("click", function () {
+            // Add event listener to view details buttons
+            document.querySelectorAll(".view-details-btn").forEach(button => {
+                button.addEventListener("click", function() {
                     const patientId = this.getAttribute("data-patient-id");
-                    viewPatientDetails(patientId);
+                    showPatientModal(patientId);
                 });
             });
         }
 
-        // Function to fetch and display patient details
-        function viewPatientDetails(patientId) {
+        // Function to show patient details in modal
+        function showPatientModal(patientId) {
             const headers = getAuthHeaders();
             $.ajax({
                 url: `http://smarthospitalmaintain.com:8000/patients/list/?patient_id=${encodeURIComponent(patientId)}`,
@@ -492,10 +577,44 @@
                 headers: headers,
                 success: function(response) {
                     if (response.length > 0) {
-                        const patient = response[0]; // Assuming the API returns a list with one patient
-                        displayPatientDetails(patient);
+                        const patient = response[0];
+                        let appointmentInfo = "No appointments available.";
+                        if (patient.appointments && patient.appointments.length > 0) {
+                            appointmentInfo = '<ul class="appointment-list">' + patient.appointments
+                                .map(appt => `
+                                    <li>
+                                        <strong>Date:</strong> ${new Date(appt.appointment_date).toLocaleString()}<br>
+                                        <strong>Status:</strong> ${appt.status}<br>
+                                        <strong>Notes:</strong> ${appt.notes || "N/A"}<br>
+                                        <strong>Doctor:</strong> ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name} (${appt.doctor.specialization})` : "Not Assigned"}<br>
+                                        <strong>Vitals:</strong> ${appt.vitals ? `
+                                            Temperature: ${appt.vitals.temperature || 'N/A'}°C, 
+                                            Blood Pressure: ${appt.vitals.blood_pressure || 'N/A'}, 
+                                            Heart Rate: ${appt.vitals.heart_rate || 'N/A'} bpm, 
+                                            Weight: ${appt.vitals.weight || 'N/A'} kg, 
+                                            Height: ${appt.vitals.height || 'N/A'} cm` : 'N/A'}
+                                    </li>
+                                `).join("") + '</ul>';
+                        }
+
+                        document.getElementById("modalPatientDetails").innerHTML = `
+                            <h5>${patient.first_name} ${patient.last_name}</h5>
+                            <p><strong>Patient ID:</strong> ${patient.patient_id}</p>
+                            <p><strong>Contact:</strong> ${patient.contact_number}</p>
+                            <p><strong>Age:</strong> ${patient.age || "Unknown"}</p>
+                            <p><strong>Illness:</strong> ${patient.current_illness || "None"}</p>
+                            <p><strong>Email:</strong> ${patient.email || "N/A"}</p>
+                            <p><strong>Date of Birth:</strong> ${patient.date_of_birth || "N/A"}</p>
+                            <h6>Appointments</h6>
+                            ${appointmentInfo}
+                        `;
+                        $('#patientModal').modal('show');
                     } else {
-                        document.getElementById("patientDetails").innerHTML = "<p class='text-danger'>Patient not found.</p>";
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Patient not found.'
+                        });
                     }
                 },
                 error: function(xhr, status, error) {
@@ -507,37 +626,6 @@
                     });
                 }
             });
-        }
-
-        // Function to display patient details
-        function displayPatientDetails(patient) {
-            let appointmentInfo = "No appointments available.";
-            if (patient.appointments && patient.appointments.length > 0) {
-                appointmentInfo = patient.appointments
-                    .map(appt => `
-                        <li>
-                            <b>Date:</b> ${new Date(appt.appointment_date).toLocaleString()}<br>
-                            <b>Status:</b> ${appt.status}<br>
-                            <b>Notes:</b> ${appt.notes || "N/A"}<br>
-                            <b>Doctor:</b> ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name} (${appt.doctor.specialization})` : "Not Assigned"}<br>
-                            <b>Vitals:</b> ${appt.vitals ? `
-                                Temperature: ${appt.vitals.temperature || 'N/A'}°C, 
-                                Blood Pressure: ${appt.vitals.blood_pressure || 'N/A'}, 
-                                Heart Rate: ${appt.vitals.heart_rate || 'N/A'} bpm` : 'N/A'}
-                        </li>
-                    `)
-                    .join("");
-            }
-
-            document.getElementById("patientDetails").innerHTML = `
-                <p><b>Name:</b> ${patient.first_name} ${patient.last_name}</p>
-                <p><b>Patient ID:</b> ${patient.patient_id}</p>
-                <p><b>Contact:</b> ${patient.contact_number}</p>
-                <p><b>Age:</b> ${patient.age || "Unknown"}</p>
-                <p><b>Illness:</b> ${patient.current_illness || "None"}</p>
-                <p><b>Appointments:</b></p>
-                <ul>${appointmentInfo}</ul>
-            `;
         }
 
         // Run session check and fetch patients on page load
