@@ -1290,13 +1290,14 @@ function populateAppointmentsTable(status, appointments) {
           <th>Patient ID</th>
           <th>Patient Name</th>
           <th>Age</th>
-          <th>Contact Number</th>
-          <th>Current Illness</th>
-          <th>Notes</th>
+          <th>Mobile Number</th>
+          <th>Illness</th>
           <th>Appointment Time</th>
           <th>Doctor</th>
-          <th>Created By</th>
           <th>Status</th>
+          <th>Created By</th>
+          <th>Updated By</th>
+          <th>Notes</th>
           <th>Actions</th>
       `;
       tbody.appendChild(selectAllRow);
@@ -1307,7 +1308,6 @@ function populateAppointmentsTable(status, appointments) {
   if (headerRow) {
     headerRow.style.position = "sticky";
     headerRow.style.top = "0";
-    //headerRow.style.zIndex = "0";
     headerRow.style.backgroundColor = "#fff"; // Add background to avoid overlap with content
   }
 
@@ -1333,11 +1333,12 @@ function populateAppointmentsTable(status, appointments) {
           <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
           <td>${patient.contact_number || "N/A"}</td>
           <td>${patient.current_illness || "N/A"}</td>
-          <td>${appointment.notes || "N/A"}</td>
           <td>${appointmentTime}</td>
           <td>Dr. ${doctorName} (${doctorSpecialization})</td>
-          <td>${appointment.created_by_username}</td>
           <td>${appointment.status || "N/A"}</td>
+          <td>${appointment.created_by_username}</td>
+          <td>${appointment.updated_by_username}</td>
+          <td>${appointment.notes || "N/A"}</td>
           <td>${getActionButton(appointment.status, appointment, index)}</td>
       `;
 
@@ -1346,6 +1347,7 @@ function populateAppointmentsTable(status, appointments) {
 
   console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
 }
+
 
 
 
@@ -1888,7 +1890,7 @@ function updateAppointment() {
   })
   .catch(error => {
       console.error("Error updating appointment:", error);
-      showModal("Failed to update appointment: " + (error.detail || "Unknown error"));
+      showModal("Failed to update appointment: " + (error.detail || "Server Fetch Error"));
   });
 }
 
@@ -1964,7 +1966,7 @@ function cancelAppointment(appointmentId = null, rowIndex = null, status = null)
   })
   .catch(error => {
       console.error("Error canceling appointments:", error);
-      showModal("Failed to cancel appointment(s): " + (error.detail || "Unknown error"));
+      showModal("Failed to cancel appointment(s): " + (error.detail || "Server Fetch Error"));
   });
 }
 
@@ -2059,7 +2061,7 @@ function rescheduleAppointment() {
   })
   .catch(error => {
       console.error("Error rescheduling appointments:", error);
-      showModal("Failed to reschedule appointment(s): " + (error.detail || "Unknown error"));
+      showModal("Failed to reschedule appointment(s): " + (error.detail || "Server Fetch Error"));
   });
 }
 
