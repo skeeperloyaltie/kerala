@@ -9,8 +9,11 @@ class PatientAdmin(admin.ModelAdmin):
         'last_name', 
         'contact_number', 
         'email', 
+        'age',
+        'current_illness',
         'date_of_birth', 
         'get_status'
+        
     )
     search_fields = ('first_name', 'last_name', 'contact_number', 'email', 'patient_id')
     list_filter = ('date_of_birth',)
