@@ -1,1175 +1,777 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Kerala | Doctors </title>
-    <!-- plugins:css -->
-    <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
-    <link rel="stylesheet" href="assets/vendors/ti-icons/css/themify-icons.css">
-    <link rel="stylesheet" href="assets/vendors/css/vendor.bundle.base.css">
-    <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css">
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Kerala | Doctors</title>
 
-    <link rel="stylesheet" href="assets/css/style.css">
-    <!-- End layout styles -->
-    <link rel="shortcut icon" href="assets/images/favicon.png" />
-    <!-- jQuery (Required for Bootstrap modals) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="assets/vendors/ti-icons/css/themify-icons.css">
+  <link rel="stylesheet" href="assets/vendors/css/vendor.bundle.base.css">
+  <link rel="stylesheet" href="assets/vendors/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="shortcut icon" href="assets/images/favicon.png">
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+  <!-- JavaScript -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
 
-<style>
-  /* 🔹 Notification Styling */
-  .custom-notification {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    padding: 15px 30px;
-    border-radius: 5px;
-    font-size: 16px;
-    text-align: center;
-    z-index: 9999;
-    min-width: 250px;
-    max-width: 400px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* Add fade-in animation */
-  @keyframes fadeInOut {
-    0% { opacity: 0; }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
-    100% { opacity: 0; }
-  }
+  <style>
+    /* Table Styles */
+    .table-responsive {
+      max-height: 400px;
+      overflow-y: auto;
+      position: relative;
+    }
+    .table {
+      table-layout: auto;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 14px;
+      padding: 8px;
+      text-align: left;
+    }
+    .table thead th {
+      position: sticky;
+      top: 0;
+      background-color: #fff;
+      z-index: 1;
+    }
+    .table .btn {
+      font-size: 12px;
+      padding: 5px 8px;
+      margin: 2px;
+    }
 
-  /* Modal background */
-.modal {
-  display: none; /* Hidden by default */
-  position: fixed; 
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgba(0, 0, 0, 0.4); /* Black with opacity */
-}
+    /* Search Filter */
+    .search-filter {
+      margin-bottom: 15px;
+    }
+    .search-filter input, .search-filter select {
+      font-size: 14px;
+      padding: 6px;
+    }
 
-/* Modal Content */
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%; /* Could be more or less, depending on screen size */
-  max-width: 500px;
-  text-align: center;
-}
+    /* Modal Styles */
+    .modal-content {
+      border-radius: 5px;
+    }
+    .success-message { color: green; }
+    .error-message { color: red; }
 
-/* The Close Button */
-.close-btn {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close-btn:hover,
-.close-btn:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* Success and Error message styles */
-.success-message {
-  color: green;
-}
-
-.error-message {
-  color: red;
-}
-
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .table th, .table td { font-size: 12px; padding: 6px; }
+      .table .btn { font-size: 10px; padding: 4px 6px; }
+      .search-filter input, .search-filter select { font-size: 12px; }
+    }
+    @media (max-width: 480px) {
+      .table th, .table td { font-size: 10px; padding: 4px; }
+      .table .btn { font-size: 9px; padding: 3px 5px; }
+    }
   </style>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-  </head>
-  <body>
-    <div class="container-scroller">
-      <div class="row p-0 m-0 proBanner" id="proBanner">
-        <div class="col-md-12 p-0 m-0">
-          <div class="card-body card-body-padding d-flex align-items-center justify-content-between">
-            <div class="ps-lg-3">
-              <div class="d-flex align-items-center justify-content-between">
-                <p class="mb-0 font-weight-medium me-3 buy-now-text">Free 24/7 customer support, updates</p>
-                <a href="" target="_blank" class="btn me-2 buy-now-btn border-0">Book Appointment</a>
-              </div>
-            </div>
-            <div class="d-flex align-items-center justify-content-between">
-              <a href=""><i class="mdi mdi-home me-3 text-white"></i></a>
-              <button id="bannerClose" class="btn border-0 p-0">
-                <i class="mdi mdi-close text-white mr-0"></i>
-              </button>
-            </div>
+</head>
+<body>
+  <div class="container-scroller">
+    <!-- Top Banner -->
+    <div class="row p-0 m-0 proBanner" id="proBanner">
+      <div class="col-md-12 p-0 m-0">
+        <div class="card-body card-body-padding d-flex align-items-center justify-content-between">
+          <div class="ps-lg-3">
+            <p class="mb-0 font-weight-medium me-3 buy-now-text">Free 24/7 customer support, updates</p>
+            <a href="" target="_blank" class="btn me-2 buy-now-btn border-0">Book Appointment</a>
+          </div>
+          <div class="d-flex align-items-center">
+            <a href=""><i class="mdi mdi-home me-3 text-white"></i></a>
+            <button id="bannerClose" class="btn border-0 p-0"><i class="mdi mdi-close text-white"></i></button>
           </div>
         </div>
       </div>
-     <!-- partial:partials/_navbar.html -->
-<nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
-  <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
-    <a class="navbar-brand brand-logo" href="index.html"><img src="assets/images/logo.png" alt="logo" height="190px"></a>
-    <!-- <a class="navbar-brand brand-logo-mini" href="index.html"><img src="assets/images/logo-mini.png" alt="logo"></a> -->
-  </div>
-  <div class="navbar-menu-wrapper d-flex align-items-stretch">
-    <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
-      <span class="mdi mdi-menu"></span>
-    </button>
-    <div class="search-field d-none d-md-block">
-      <form class="d-flex align-items-center h-100" action="#">
-        <div class="input-group">
-          <div class="input-group-prepend bg-transparent">
-            <i class="input-group-text border-0 mdi mdi-magnify"></i>
-          </div>
-          <input type="text" class="form-control bg-transparent border-0" placeholder="Search patients, appointments">
-        </div>
-      </form>
     </div>
-    <ul class="navbar-nav navbar-nav-right">
-      <!-- Profile Dropdown -->
-      <li class="nav-item nav-profile dropdown">
-        <a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-          <div class="nav-profile-img">
-            <img src="assets/images/placeholder-doctor.jpg" alt="profile" id="doctor-profile-picture">
-            <span class="availability-status online"></span>
-          </div>
-          <div class="nav-profile-text">
-            <p class="mb-1 text-black"><span id="logged_in_user_name"></span>
-            </p>
-          </div>
-        </a>
-        <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
-          <a class="dropdown-item" href="#">
-            <i class="mdi mdi-account-circle me-2 text-success"></i> My Profile </a>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#">
-            <i class="mdi mdi-logout me-2 text-primary"></i> Logout </a>
+
+    <!-- Navbar -->
+    <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+        <a class="navbar-brand brand-logo" href="index.html"><img src="assets/images/logo.png" alt="logo" height="190px"></a>
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-stretch">
+        <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-bs-toggle="minimize">
+          <span class="mdi mdi-menu"></span>
+        </button>
+        <div class="search-field d-none d-md-block">
+          <form class="d-flex align-items-center h-100">
+            <div class="input-group">
+              <div class="input-group-prepend bg-transparent">
+                <i class="input-group-text border-0 mdi mdi-magnify"></i>
+              </div>
+              <input type="text" class="form-control bg-transparent border-0" placeholder="Search patients, appointments">
+            </div>
+          </form>
         </div>
-      </li>
-
-      <!-- Messages Dropdown -->
-      <li class="nav-item dropdown">
-        <a class="nav-link count-indicator dropdown-toggle" id="messageDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="mdi mdi-email-outline"></i>
-          <span class="count-symbol bg-warning" id="message-count">3</span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="messageDropdown">
-          <h6 class="p-3 mb-0">Messages</h6>
-          <div id="message-list">
-            <!-- JavaScript will dynamically populate this -->
-            <p class="text-gray mb-0 text-center">No new messages</p>
-          </div>
-          <div class="dropdown-divider"></div>
-          <h6 class="p-3 mb-0 text-center">See all messages</h6>
-        </div>
-      </li>
-
-      <!-- Notifications Dropdown -->
-      <li class="nav-item dropdown">
-        <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="mdi mdi-bell-outline"></i>
-          <span class="count-symbol bg-danger" id="notification-count">5</span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
-          <h6 class="p-3 mb-0">Notifications</h6>
-          <div id="notification-list">
-            <!-- JavaScript will dynamically populate this -->
-            <p class="text-gray mb-0 text-center">No new notifications</p>
-          </div>
-          <div class="dropdown-divider"></div>
-          <h6 class="p-3 mb-0 text-center">See all notifications</h6>
-        </div>
-      </li>
-
-      <!-- Logout -->
-      <li class="nav-item nav-logout d-none d-lg-block">
-        <a class="nav-link" href="#" id="logoutButton">
-          <i class="mdi mdi-power"> Logout</i>
-        </a>
-      </li>
-    </ul>
-    <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
-      <span class="mdi mdi-menu"></span>
-    </button>
-  </div>
-</nav>
-      <!-- partial -->
-<div class="container-fluid page-body-wrapper">
-  <!-- partial:partials/_sidebar.html -->
-  <nav class="sidebar sidebar-offcanvas" id="sidebar">
-    <ul class="nav">
-      <li class="nav-item nav-profile">
-        <a href="#" class="nav-link">
-          <div class="nav-profile-image">
-            <img src="assets/images/faces/face1.jpg" alt="profile" />
-            <span class="login-status online"></span>
-          </div>
-          <div class="nav-profile-text d-flex flex-column">
-            <span class="font-weight-bold mb-2">Dr. David Grey</span>
-            <span class="text-secondary text-small">Cardiologist</span>
-          </div>
-          <i class="mdi mdi-stethoscope text-primary nav-profile-badge"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="index.html">
-          <span class="menu-title">Dashboard</span>
-          <i class="mdi mdi-home menu-icon"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="patients.html">
-          <span class="menu-title">Patients</span>
-          <i class="mdi mdi-account-group menu-icon"></i>
-        </a>
-      </li>
- 
-      <li class="nav-item">
-        <a class="nav-link" href="appointments.html">
-          <span class="menu-title">Appointments</span>
-          <i class="mdi mdi-calendar-check menu-icon"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="collapse" href="#medical-records" aria-expanded="false" aria-controls="medical-records">
-          <span class="menu-title">Medical Records</span>
-          <i class="menu-arrow"></i>
-          <i class="mdi mdi-folder-multiple menu-icon"></i>
-        </a>
-        <div class="collapse" id="medical-records">
-          <ul class="nav flex-column sub-menu">
-            <li class="nav-item">
-              <a class="nav-link" href="records/view-records.html">View Records</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="records/upload-records.html">Upload Records</a>
-            </li>
-          </ul>
-        </div>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="prescriptions.html">
-          <span class="menu-title">Prescriptions</span>
-          <i class="mdi mdi-pill menu-icon"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="reports.html">
-          <span class="menu-title">Reports</span>
-          <i class="mdi mdi-chart-bar menu-icon"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="lab-tests.html">
-          <span class="menu-title">Lab Tests</span>
-          <i class="mdi mdi-flask-outline menu-icon"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="settings.html">
-          <span class="menu-title">Settings</span>
-          <i class="mdi mdi-settings menu-icon"></i>
-        </a>
-      </li>
-    </ul>
-  </nav>
-
-<!-- partial -->
-<div class="main-panel">
-  <div class="content-wrapper">
-    <div class="page-header">
-      <h3 class="page-title">
-          <span class="page-title-icon bg-gradient-primary text-white me-2">
-              <i class="mdi mdi-home"></i>
-          </span> Dashboard
-      </h3>
-      <nav aria-label="breadcrumb">
-          <ul class="breadcrumb">
-              <li class="breadcrumb-item active" aria-current="page">
-                  <span></span>Welcome, <span id="logged_in_user_name"></span> - Good <span id="timeOfDay">Morning</span>
-              </li>
-          </ul>
-      </nav>
-  </div>
-
-      <!-- Notification Container -->
-<div id="customNotification" class="custom-notification">
-  <p id="notificationMessage"></p>
-</div>
-  
-
-<!-- Modal HTML -->
-<div id="messageModal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <p id="modalMessage">This is a message!</p>
-  </div>
-</div>
-
-   
-  <div class="row">
-    <!-- Tabbed Table Section -->
-    <div class="col-md-12 stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">Current Patient Details & Appointments</h4>
-          <div class="row mb-3">
-            
-        
-            <div class="col-md-8 d-flex justify-content-end">
-              <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
-              <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
-          </div>
-          
-        </div>
-        <div style="float:right" class="">
-          <button class="btn btn-primary btn-sm mb-3" onclick=""><a href="search.html">Search Patient</a></button>
-
-        </div>
-        <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab">Waiting in Clinic</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">Scheduled</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab">Completed</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab">Canceled</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="rescheduled-tab" data-bs-toggle="tab" href="#rescheduled" role="tab">Rescheduled</a>
-            </li>
-
+        <ul class="navbar-nav navbar-nav-right">
+          <li class="nav-item nav-profile dropdown">
+            <a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="nav-profile-img">
+                <img src="assets/images/placeholder-doctor.jpg" alt="profile" id="doctor-profile-picture">
+                <span class="availability-status online"></span>
+              </div>
+              <div class="nav-profile-text">
+                <p class="mb-1 text-black"><span id="logged_in_user_name"></span></p>
+              </div>
+            </a>
+            <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
+              <a class="dropdown-item" href="#"><i class="mdi mdi-account-circle me-2 text-success"></i> My Profile</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="#" id="logoutDropdown"><i class="mdi mdi-logout me-2 text-primary"></i> Logout</a>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link count-indicator dropdown-toggle" id="messageDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="mdi mdi-email-outline"></i>
+              <span class="count-symbol bg-warning" id="message-count">3</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="messageDropdown">
+              <h6 class="p-3 mb-0">Messages</h6>
+              <div id="message-list"><p class="text-gray mb-0 text-center">No new messages</p></div>
+              <div class="dropdown-divider"></div>
+              <h6 class="p-3 mb-0 text-center">See all messages</h6>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="mdi mdi-bell-outline"></i>
+              <span class="count-symbol bg-danger" id="notification-count">5</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
+              <h6 class="p-3 mb-0">Notifications</h6>
+              <div id="notification-list"><p class="text-gray mb-0 text-center">No new notifications</p></div>
+              <div class="dropdown-divider"></div>
+              <h6 class="p-3 mb-0 text-center">See all notifications</h6>
+            </div>
+          </li>
+          <li class="nav-item nav-logout d-none d-lg-block">
+            <a class="nav-link" href="#" id="logoutButton"><i class="mdi mdi-power"> Logout</i></a>
+          </li>
         </ul>
-        
-        
-        <div class="tab-content mt-3" id="appointmentTabContent">
-            <!-- Template for Tabs -->
-            <div class="tab-pane fade show active" id="waiting" role="tabpanel">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                             
-                            </tr>
-                        </thead>
-                        <tbody id="Waiting-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        
-            <!-- Copy for each tab -->
-            <div class="tab-pane fade" id="scheduled" role="tabpanel">
-                <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                               
-                            </tr>
-                        </thead>
-                        <tbody id="Scheduled-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-  
-            <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
-              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-              <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                <table class="table">
-                  <thead>
-                    <tr>
-                    
-                    </tr>
-                </thead>
-                  <tbody id="Pending-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-  
-            <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
-              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr> 
-
-                      </tr>
-                
-                </thead>
-                  <tbody id="Active-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-  
-            <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
-              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                     
-                    </tr>
-                </thead>
-                  <tbody id="Completed-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-  
-            <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="canceled-tab">
-              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      
-                    </tr>
-                </thead>
-                  <tbody id="Canceled-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="tab-pane fade" id="rescheduled" role="tabpanel" aria-labelledby="rescheduled-tab">
-              <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                       
-                    </tr>
-                </thead>
-                  <tbody id="Rescheduled-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-            
-          </div>
-  
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    $(document).ready(function () {
-      // Get the last active tab from localStorage
-      var activeTab = localStorage.getItem("activeTab");
-  
-      if (activeTab) {
-          // Show the stored tab
-          $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
-      }
-  
-      // Store the active tab when clicked
-      $("#appointmentTabs a").on("shown.bs.tab", function (e) {
-          var currentTab = $(e.target).attr("href"); // Get current tab ID
-          localStorage.setItem("activeTab", currentTab); // Save to localStorage
-      });
-  });
-  
-  </script>
-    
-<!-- Appointment Form -->
-<div id="appointmentFormContainer" class="card mt-3" style="display: none;">
-  <div class="card-body">
-      <h5 class="card-title">Create New Appointment</h5>
-      <form id="appointmentForm">
-          
-          <!-- Patient ID Field -->
-          <div class="row">
-              <div class="col-md-4">
-                  <label for="patientID">Patient ID</label>
-                  <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
-              </div>
-          </div>
-
-          <!-- Patient Information -->
-          <div class="row mt-3">
-              <div class="col-md-4">
-                  <label for="firstName">First Name</label>
-                  <input type="text" id="firstName" class="form-control" required>
-              </div>
-              <div class="col-md-4">
-                  <label for="lastName">Last Name</label>
-                  <input type="text" id="lastName" class="form-control" required>
-              </div>
-              <div class="col-md-4">
-                <label for="contactNumber">Contact Number</label>
-                <input type="tel" id="contactNumber" class="form-control" required>
-            </div>
-          </div>
-
-          <div class="row mt-3">
-              <div class="col-md-4">
-                  <label for="dateOfBirth">Date of Birth</label>
-                  <input type="date" id="dateOfBirth" class="form-control" required>
-              </div>
-              <div class="col-md-4">
-                  <label for="age">Age</label>
-                  <input type="number" id="age" class="form-control" readonly>
-              </div>
-              <div class="col-md-4">
-                  <label for="currentIllness">Current Illness</label>
-                  <input type="text" id="currentIllness" class="form-control">
-              </div>
-          </div>
-
-          <div class="row mt-3">
-              <div class="col-md-4">
-                  <label for="appointmentDate">Appointment Date</label>
-                  <input type="datetime-local" id="appointmentDate" class="form-control" required>
-              </div>
-              <div class="row mt-3">
-                <div class="col-md-4">
-                  <label for="doctor">Doctor</label>
-                  <select id="doctor" class="form-control" required>
-                      <option value="" disabled selected>Loading...</option>
-                  </select>
-              </div>
-              
-                <div class="col-md-4">
-                    <label for="notes">Notes</label>
-                    <input type="text" id="notes" class="form-control">
-                </div>
-            </div>
-          </div>
-
-        
-
-          <div class="mt-3">
-              <button type="button" class="btn btn-success" onclick="addAppointment()">Next</button>
-              <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
-          </div>
-      </form>
-  </div>
-</div>
-<script>
-// Set Date of Birth restrictions (cannot select future dates)
-document.getElementById("dateOfBirth").setAttribute("max", new Date().toISOString().split("T")[0]);
-
-// Set Appointment Date restrictions (cannot select past dates)
-let now = new Date();
-let year = now.getFullYear();
-let month = String(now.getMonth() + 1).padStart(2, '0');
-let day = String(now.getDate()).padStart(2, '0');
-let hours = String(now.getHours()).padStart(2, '0');
-let minutes = String(now.getMinutes()).padStart(2, '0');
-
-// Format the datetime-local input value to match the expected format: YYYY-MM-DDTHH:MM
-let formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
-document.getElementById("appointmentDate").setAttribute("min", formattedNow);
-
-</script>
-
-<script>
-  // Get modal element
-const modal = document.getElementById("messageModal");
-// Get the <span> element to close the modal
-const closeBtn = document.getElementsByClassName("close-btn")[0];
-// Get the message container
-const modalMessage = document.getElementById("modalMessage");
-
-// Function to open the modal with a message
-function showModal(message, type) {
-// Set the message
-modalMessage.textContent = message;
-
-// Set the message type (success or error)
-if (type === 'success') {
-modalMessage.classList.add("success-message");
-modalMessage.classList.remove("error-message");
-} else if (type === 'error') {
-modalMessage.classList.add("error-message");
-modalMessage.classList.remove("success-message");
-}
-
-// Display the modal
-modal.style.display = "block";
-}
-
-// Close the modal when the user clicks the <span> (x)
-closeBtn.onclick = function () {
-modal.style.display = "none";
-}
-
-// Close the modal when the user clicks anywhere outside the modal
-window.onclick = function (event) {
-if (event.target == modal) {
-modal.style.display = "none";
-}
-}
-
-</script>
-
-<!-- Vitals Modal -->
-<div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="vitalsModalLabel">Enter Patient Vitals</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-              <form id="vitalsForm">
-                  <div class="mb-3">
-                      <label for="modalBloodPressure">Blood Pressure</label>
-                      <div class="input-group">
-                          <input type="text" id="modalBloodPressure" class="form-control" placeholder="120/80">
-                          <div class="input-group-append">
-                              <select class="form-select unit-select" data-input="modalBloodPressure">
-                                  <option value="mmHg">mmHg</option>
-                                  <option value="kPa">kPa</option>
-                              </select>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="mb-3">
-                      <label for="modalHeartRate">Heart Rate</label>
-                      <div class="input-group">
-                          <input type="text" id="modalHeartRate" class="form-control" placeholder="60-100">
-                          <div class="input-group-append">
-                              <div class="input-group-text">bpm</div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="mb-3">
-                      <label for="modalTemperature">Temperature</label>
-                      <div class="input-group">
-                          <input type="text" id="modalTemperature" class="form-control" placeholder="37.0">
-                          <div class="input-group-append">
-                              <select class="form-select unit-select" data-input="modalTemperature">
-                                  <option value="°C">°C</option>
-                                  <option value="°F">°F</option>
-                              </select>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="mb-3">
-                      <label for="modalRespiratoryRate">Respiratory Rate</label>
-                      <div class="input-group">
-                          <input type="text" id="modalRespiratoryRate" class="form-control" placeholder="12-20">
-                          <div class="input-group-append">
-                              <div class="input-group-text">breaths/min</div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="mb-3">
-                      <label for="modalOxygenSaturation">Oxygen Saturation</label>
-                      <div class="input-group">
-                          <input type="text" id="modalOxygenSaturation" class="form-control" placeholder="95-100">
-                          <div class="input-group-append">
-                              <div class="input-group-text">%</div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="mb-3">
-                      <label for="modalWeight">Weight</label>
-                      <div class="input-group">
-                          <input type="text" id="modalWeight" class="form-control" placeholder="70">
-                          <div class="input-group-append">
-                              <select class="form-select unit-select" data-input="modalWeight">
-                                  <option value="kg">kg</option>
-                                  <option value="lbs">lbs</option>
-                              </select>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="mb-3">
-                      <label for="modalHeight">Height</label>
-                      <div class="input-group">
-                          <input type="text" id="modalHeight" class="form-control" placeholder="170">
-                          <div class="input-group-append">
-                              <select class="form-select unit-select" data-input="modalHeight">
-                                  <option value="cm">cm</option>
-                                  <option value="in">in</option>
-                              </select>
-                          </div>
-                      </div>
-                  </div>
-              </form>
-          </div>
-          <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-              <button type="button" class="btn btn-primary" onclick="saveVitals()">Save Vitals</button>
-          </div>
-      </div>
-  </div>
-</div>
-
-
-
-<!-- Edit Appointment Modal -->
-<div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-bs-toggle="offcanvas">
+          <span class="mdi mdi-menu"></span>
         </button>
       </div>
-      <div class="modal-body">
-        <form id="editAppointmentForm">
-          <!-- Read-only Fields -->
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid page-body-wrapper">
+      <!-- Sidebar -->
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <ul class="nav">
+          <li class="nav-item nav-profile">
+            <a href="#" class="nav-link">
+              <div class="nav-profile-image">
+                <img src="assets/images/faces/face1.jpg" alt="profile">
+                <span class="login-status online"></span>
+              </div>
+              <div class="nav-profile-text d-flex flex-column">
+                <span class="font-weight-bold mb-2">Dr. David Grey</span>
+                <span class="text-secondary text-small">Cardiologist</span>
+              </div>
+              <i class="mdi mdi-stethoscope text-primary nav-profile-badge"></i>
+            </a>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="index.html"><span class="menu-title">Dashboard</span><i class="mdi mdi-home menu-icon"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="patients.html"><span class="menu-title">Patients</span><i class="mdi mdi-account-group menu-icon"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="appointments.html"><span class="menu-title">Appointments</span><i class="mdi mdi-calendar-check menu-icon"></i></a></li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="collapse" href="#medical-records" aria-expanded="false" aria-controls="medical-records">
+              <span class="menu-title">Medical Records</span><i class="menu-arrow"></i><i class="mdi mdi-folder-multiple menu-icon"></i>
+            </a>
+            <div class="collapse" id="medical-records">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"><a class="nav-link" href="records/view-records.html">View Records</a></li>
+                <li class="nav-item"><a class="nav-link" href="records/upload-records.html">Upload Records</a></li>
+              </ul>
+            </div>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="prescriptions.html"><span class="menu-title">Prescriptions</span><i class="mdi mdi-pill menu-icon"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="reports.html"><span class="menu-title">Reports</span><i class="mdi mdi-chart-bar menu-icon"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="lab-tests.html"><span class="menu-title">Lab Tests</span><i class="mdi mdi-flask-outline menu-icon"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="settings.html"><span class="menu-title">Settings</span><i class="mdi mdi-settings menu-icon"></i></a></li>
+        </ul>
+      </nav>
+
+      <!-- Main Panel -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          <div class="page-header">
+            <h3 class="page-title">
+              <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-home"></i></span> Dashboard
+            </h3>
+            <nav aria-label="breadcrumb">
+              <ul class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">
+                  Welcome, <span id="logged_in_user_name_breadcrumb"></span> - Good <span id="timeOfDay">Morning</span>
+                </li>
+              </ul>
+            </nav>
+          </div>
+
+          <!-- Notification Modal -->
+          <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p id="notificationMessage"></p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabbed Table Section -->
           <div class="row">
-            <div class="col-md-6">
-              <label for="editAppointmentID">Appointment ID</label>
-              <input type="text" id="editAppointmentID" class="form-control" readonly>
-            </div>
-            <div class="col-md-6">
-              <label for="editPatientID">Patient ID</label>
-              <input type="text" id="editPatientID" class="form-control" readonly>
+            <div class="col-md-12 stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">Current Patient Details & Appointments</h4>
+                  <div class="d-flex justify-content-between mb-3">
+                    <div>
+                      <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
+                      <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="rescheduleAppointments()">Reschedule</button>
+                    </div>
+                    <button class="btn btn-primary btn-sm"><a href="search.html" class="text-white text-decoration-none">Search Patient</a></button>
+                  </div>
+
+                  <!-- Search Filter -->
+                  <div class="search-filter row g-2">
+                    <div class="col-md-3">
+                      <input type="text" class="form-control" id="searchPatientId" placeholder="Patient ID">
+                    </div>
+                    <div class="col-md-3">
+                      <input type="text" class="form-control" id="searchName" placeholder="Patient Name">
+                    </div>
+                    <div class="col-md-2">
+                      <input type="number" class="form-control" id="searchAge" placeholder="Age">
+                    </div>
+                    <div class="col-md-2">
+                      <input type="date" class="form-control" id="searchDob" placeholder="Date of Birth">
+                    </div>
+                    <div class="col-md-2">
+                      <input type="date" class="form-control" id="searchDate" placeholder="Appointment Date">
+                    </div>
+                  </div>
+
+                  <!-- Tabs -->
+                  <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab">Waiting in Clinic</a></li>
+                    <li class="nav-item"><a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">Scheduled</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending</a></li>
+                    <li class="nav-item"><a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active</a></li>
+                    <li class="nav-item"><a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab">Completed</a></li>
+                    <li class="nav-item"><a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab">Canceled</a></li>
+                    <li class="nav-item"><a class="nav-link" id="rescheduled-tab" data-bs-toggle="tab" href="#rescheduled" role="tab">Rescheduled</a></li>
+                  </ul>
+
+                  <!-- Tab Content -->
+                  <div class="tab-content mt-3" id="appointmentTabContent">
+                    <div class="tab-pane fade show active" id="waiting" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Waiting-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="scheduled" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Scheduled-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="pending" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Pending-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="active" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Active-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="completed" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Completed-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="canceled" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Canceled-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="rescheduled" role="tabpanel">
+                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr></tr></thead>
+                          <tbody id="Rescheduled-tbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Editable Fields -->
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <label for="editFirstName">First Name</label>
-              <input type="text" id="editFirstName" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label for="editLastName">Last Name</label>
-              <input type="text" id="editLastName" class="form-control" required>
+          <!-- Appointment Form -->
+          <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
+            <div class="card-body">
+              <h5 class="card-title">Create New Appointment</h5>
+              <form id="appointmentForm">
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="patientID">Patient ID</label>
+                    <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" class="form-control" required>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" class="form-control" required>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="contactNumber">Contact Number</label>
+                    <input type="tel" id="contactNumber" class="form-control" required>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="date" id="dateOfBirth" class="form-control" required>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="currentIllness">Current Illness</label>
+                    <input type="text" id="currentIllness" class="form-control">
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="appointmentDate">Appointment Date</label>
+                    <input type="datetime-local" id="appointmentDate" class="form-control" required>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="doctor">Doctor</label>
+                    <select id="doctor" class="form-control" required>
+                      <option value="" disabled selected>Loading...</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="notes">Notes</label>
+                    <input type="text" id="notes" class="form-control">
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button type="button" class="btn btn-success" onclick="addAppointment()">Next</button>
+                  <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
+                </div>
+              </form>
             </div>
           </div>
 
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <label for="editContactNumber">Contact Number</label>
-              <input type="tel" id="editContactNumber" class="form-control" required>
-          </div>
-            <div class="col-md-6">
-              <label for="editDateOfBirth">Date of Birth</label>
-              <input type="date" id="editDateOfBirth" class="form-control" required>
+          <!-- Vitals Modal -->
+          <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="vitalsModalLabel">Enter Patient Vitals</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="vitalsForm">
+                    <div class="mb-3">
+                      <label for="modalBloodPressure">Blood Pressure</label>
+                      <div class="input-group">
+                        <input type="text" id="modalBloodPressure" class="form-control" placeholder="120/80">
+                        <select class="form-select unit-select" data-input="modalBloodPressure">
+                          <option value="mmHg">mmHg</option>
+                          <option value="kPa">kPa</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalHeartRate">Heart Rate</label>
+                      <div class="input-group">
+                        <input type="text" id="modalHeartRate" class="form-control" placeholder="60-100">
+                        <span class="input-group-text">bpm</span>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalTemperature">Temperature</label>
+                      <div class="input-group">
+                        <input type="text" id="modalTemperature" class="form-control" placeholder="37.0">
+                        <select class="form-select unit-select" data-input="modalTemperature">
+                          <option value="°C">°C</option>
+                          <option value="°F">°F</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalRespiratoryRate">Respiratory Rate</label>
+                      <div class="input-group">
+                        <input type="text" id="modalRespiratoryRate" class="form-control" placeholder="12-20">
+                        <span class="input-group-text">breaths/min</span>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalOxygenSaturation">Oxygen Saturation</label>
+                      <div class="input-group">
+                        <input type="text" id="modalOxygenSaturation" class="form-control" placeholder="95-100">
+                        <span class="input-group-text">%</span>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalWeight">Weight</label>
+                      <div class="input-group">
+                        <input type="text" id="modalWeight" class="form-control" placeholder="70">
+                        <select class="form-select unit-select" data-input="modalWeight">
+                          <option value="kg">kg</option>
+                          <option value="lbs">lbs</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalHeight">Height</label>
+                      <div class="input-group">
+                        <input type="text" id="modalHeight" class="form-control" placeholder="170">
+                        <select class="form-select unit-select" data-input="modalHeight">
+                          <option value="cm">cm</option>
+                          <option value="in">in</option>
+                        </select>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" onclick="saveVitals()">Save Vitals</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <label for="editAge">Age</label>
-              <input type="number" id="editAge" class="form-control" readonly>
-            </div>
-            <div class="col-md-6">
-              <label for="editCurrentIllness">Current Illness</label>
-              <input type="text" id="editCurrentIllness" class="form-control">
+          <!-- Edit Appointment Modal -->
+          <div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="editAppointmentForm">
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="editAppointmentID">Appointment ID</label>
+                        <input type="text" id="editAppointmentID" class="form-control" readonly>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="editPatientID">Patient ID</label>
+                        <input type="text" id="editPatientID" class="form-control" readonly>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="editFirstName">First Name</label>
+                        <input type="text" id="editFirstName" class="form-control" required>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="editLastName">Last Name</label>
+                        <input type="text" id="editLastName" class="form-control" required>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="editContactNumber">Contact Number</label>
+                        <input type="tel" id="editContactNumber" class="form-control" required>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="editDateOfBirth">Date of Birth</label>
+                        <input type="date" id="editDateOfBirth" class="form-control" required>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="editAge">Age</label>
+                        <input type="number" id="editAge" class="form-control" readonly>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="editCurrentIllness">Current Illness</label>
+                        <input type="text" id="editCurrentIllness" class="form-control">
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="editAppointmentDate">Appointment Date</label>
+                        <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="editDoctor">Doctor</label>
+                        <select id="editDoctor" class="form-control" required>
+                          <option value="" disabled selected>Loading...</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12 mb-3">
+                        <label for="editNotes">Notes</label>
+                        <textarea id="editNotes" class="form-control"></textarea>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12 mb-3">
+                        <label for="editAppointmentStatus">Status</label>
+                        <select id="editAppointmentStatus" class="form-control">
+                          <option value="Waiting">Waiting</option>
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Active">Active</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Canceled">Canceled</option>
+                          <option value="Rescheduled">Rescheduled</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-check mb-3">
+                      <input type="checkbox" id="editIsEmergency" class="form-check-input">
+                      <label for="editIsEmergency" class="form-check-label">Is this an emergency?</label>
+                    </div>
+                    <div class="mt-3">
+                      <button type="button" class="btn btn-success" onclick="updateAppointment()">Save Changes</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <label for="editAppointmentDate">Appointment Date</label>
-              <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
+          <!-- Reschedule Modal -->
+          <div class="modal fade" id="rescheduleAppointmentModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Appointment</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="rescheduleForm">
+                    <input type="hidden" id="rescheduleAppointmentID">
+                    <div class="mb-3">
+                      <label for="newAppointmentDate">New Date & Time</label>
+                      <input type="datetime-local" class="form-control" id="newAppointmentDate" required>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" onclick="rescheduleAppointment()">Confirm Reschedule</button>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label for="editDoctor">Doctor</label>
-              <select id="editDoctor" class="form-control" required>
-                  <option value="" disabled selected>Loading...</option>
-              </select>
           </div>
-          
-          </div>
-
-          <div class="row mt-3">
-            <div class="col-md-12">
-              <label for="editNotes">Notes</label>
-              <textarea id="editNotes" class="form-control"></textarea>
-            </div>
-          </div>
-          
-          <div class="row mt-3">
-            <div class="col-md-12">
-                <label for="editAppointmentStatus">Status</label>
-                <select id="editAppointmentStatus" class="form-control">
-                    <option value="Waiting">Waiting</option>
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Active">Active</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Canceled">Canceled</option>
-                    <option value="Rescheduled">Rescheduled</option>
-                </select>
-            </div>
         </div>
-        
 
-          <div class="col-md-12 mt-3">
-            <label for="editIsEmergency">Is this an emergency?</label>
-            <input type="checkbox" id="editIsEmergency" class="form-check-input">
+        <!-- Footer -->
+        <footer class="footer">
+          <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="" target="_blank">Kerala. All rights reserved.</a></span>
+            <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Doctors Dashboard <i class="mdi mdi-heart text-danger"></i></span>
           </div>
-
-          <div class="mt-3">
-            <button type="button" class="btn btn-success" onclick="updateAppointment()">Save Changes</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          </div>
-        </form>
+        </footer>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Reschedule Appointment Modal -->
-<div class="modal fade" id="rescheduleAppointmentModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Appointment</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-              </button>
-          </div>
-          <div class="modal-body">
-              <form id="rescheduleForm">
-                  <input type="hidden" id="rescheduleAppointmentID">
-                  <div class="form-group">
-                      <label for="newAppointmentDate">New Date & Time</label>
-                      <input type="datetime-local" class="form-control" id="newAppointmentDate" required>
-                  </div>
-              </form>
-          </div>
-          <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-              <button type="button" class="btn btn-primary" onclick="rescheduleAppointment()">Confirm Reschedule</button>
-          </div>
-      </div>
-  </div>
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".unit-select").forEach((select) => {
-      select.addEventListener("change", function () {
-          convertMeasurement(this);
-      });
-  });
-});
-
-function convertMeasurement(select) {
-  let inputId = select.dataset.input;
-  let inputField = document.getElementById(inputId);
-  let currentValue = parseFloat(inputField.value);
-  let fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
-  let toUnit = select.value;
-
-  if (isNaN(currentValue)) return;
-
-  let newValue = convertValue(currentValue, fromUnit, toUnit);
-  inputField.value = newValue.toFixed(2);
-
-  select.setAttribute("data-prev-unit", toUnit);
-}
-
-function convertValue(value, fromUnit, toUnit) {
-  const conversions = {
-      "cm": { "in": value / 2.54 },
-      "in": { "cm": value * 2.54 },
-      "kg": { "lbs": value * 2.20462 },
-      "lbs": { "kg": value / 2.20462 },
-      "°C": { "°F": (value * 9/5) + 32 },
-      "°F": { "°C": (value - 32) * 5/9 },
-      "mmHg": { "kPa": value * 0.133322 },
-      "kPa": { "mmHg": value / 0.133322 }
-  };
-
-  return conversions[fromUnit]?.[toUnit] || value;
-}
-
-function validateVitals() {
-  let valid = true;
-  document.querySelectorAll("#vitalsForm input").forEach(input => {
-      let value = input.value.trim();
-      if (value && isNaN(value)) {
-          valid = false;
-          input.classList.add("is-invalid");
-      } else {
-          input.classList.remove("is-invalid");
+  <!-- Scripts -->
+  <script>
+    // Utility Functions
+    function getAuthHeaders() {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      const username = sessionStorage.getItem('username') || localStorage.getItem('username');
+      const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
+      if (token && username && csrftoken) {
+        return { 'Authorization': 'Token ' + token, 'X-CSRFToken': csrftoken, 'Username': username };
       }
-  });
-  return valid;
-}
+      console.warn('Missing authentication details.');
+      return {};
+    }
 
-</script>
+    function showNotification(message, type = 'success') {
+      $("#notificationMessage").text(message).removeClass("success-message error-message").addClass(type === 'success' ? "success-message" : "error-message");
+      $("#notificationModal").modal("show");
+    }
 
-  <script>
-    function showAppointmentForm() {
+    function formatDateTime(dateTimeString) {
+      return new Date(dateTimeString).toISOString().slice(0, 16);
+    }
 
-      $("#appointmentFormContainer").show();  // Show the form
-      $("#appointmentTabs .nav-link").removeClass("active");  // Remove active state from all tabs
-      //$("#appointmentTabs a[href='#waiting']").tab('show');  // Switch to the "Waiting in Clinic" tab
-  }
-  
-  function hideAppointmentForm() {
-      $("#appointmentFormContainer").hide();  // Hide the form
-      $("#appointmentForm")[0].reset();  // Clear all form fields
-  }
-  
-    // Calculate age based on date of birth
-    document.getElementById('dateOfBirth').addEventListener('change', function () {
-      const dob = new Date(this.value);
-      const age = new Date().getFullYear() - dob.getFullYear();
-      document.getElementById('age').value = age;
-    });
-  </script>
-  
-    
-  </div>
+    function calculateAge(dob) {
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age--;
+      return age;
+    }
 
+    // Session Management
+    function checkSessionOnLoad() {
+      const token = localStorage.getItem('token');
+      const username = localStorage.getItem('username');
+      const userType = localStorage.getItem('user_type');
+      if (!token || !username || !userType) {
+        console.warn('🔴 Session data missing or invalid. Redirecting...');
+        window.location.href = 'http://smarthospitalmaintain.com';
+        return;
+      }
+      validateUserSession();
+    }
 
-
-  <script>
-
-// Function to retrieve authentication headers
-function getAuthHeaders() {
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  const username = sessionStorage.getItem('username') || localStorage.getItem('username');
-  const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
-console.log(token, username, csrftoken);
-
-  if (token && username && csrftoken) {
-      return {
-          'Authorization': 'Token ' + token,
-          'X-CSRFToken': csrftoken,
-          'Username': username
-      };
-  }
-  console.warn('Missing authentication details.');
-  return {};
-}
-
-// Function to check session data on page load
-function checkSessionOnLoad() {
-  const token = localStorage.getItem('token');
-  const username = localStorage.getItem('username');
-  const userType = localStorage.getItem('user_type');
-
-  if (!token || !username || !userType) {
-      console.warn('🔴 Session data missing or invalid. Redirecting...');
-      window.location.href = 'http://smarthospitalmaintain.com';
-      return;
-  }
-
-  console.log('🟢 Session data exists. Validating session...');
-  validateUserSession();
-}
-
-// Validate user session
-function validateUserSession() {
-  const headers = getAuthHeaders();
-
-  if (!headers['Authorization']) {
-      console.warn('🔴 No valid token. User is not authenticated.');
-      window.location.href = 'http://smarthospitalmaintain.com'; // Redirect if token is missing
-      return;
-  }
-
-  $.ajax({
-      url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
-      type: 'GET',
-      headers: headers,
-      success: function(response) {
-          console.log('🟢 Session validation success:', response);
-
+    function validateUserSession() {
+      const headers = getAuthHeaders();
+      if (!headers['Authorization']) {
+        window.location.href = 'http://smarthospitalmaintain.com';
+        return;
+      }
+      $.ajax({
+        url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
+        type: 'GET',
+        headers: headers,
+        success: function(response) {
           if (response.message !== 'Cookie is valid.') {
-              console.warn('🔴 Invalid session. Logging out...');
-              showModal('Invalid session. Logging out.');
-              attemptLogout(); // Try to log out user
+            showNotification('Invalid session. Logging out.', 'error');
+            attemptLogout();
           } else {
-              // Update navigation bar with user details
-              document.getElementById("logged_in_user_name").textContent = response.name;
-              document.getElementById("timeOfDay").textContent = getGreetingTime();
+            $("#logged_in_user_name, #logged_in_user_name_breadcrumb").text(response.name);
+            $("#timeOfDay").text(getGreetingTime());
           }
-      },
-      error: function(xhr, status, error) {
+        },
+        error: function(xhr) {
           console.error('❌ Error validating session:', xhr.responseText);
-          attemptLogout(); // Try to log out if session check fails
-      }
-  });
-}
-
-// Attempt to logout and handle failures
-function attemptLogout() {
-  logoutUser(); // Try the normal logout flow
-
-  // Wait a short delay to see if logout completes; if not, force logout
-  setTimeout(function() {
-      if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) {
-          console.warn('🔴 Logout failed! Forcing session cleanup.');
-          forceLogout();
-      }
-  }, 3000); // Adjust the timeout as needed
-}
-
-// Force logout by clearing session data and redirecting
-function forceLogout() {
-  sessionStorage.clear();
-  localStorage.clear();
-  document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  console.log('🔄 Redirecting to landing page after forced logout...');
-  window.location.href = 'http://smarthospitalmaintain.com/';
-}
-
-// Function to populate doctor and editDoctor dropdowns
-function populateDoctorDropdown(doctorId, doctorName) {
-    const doctorDropdown = document.getElementById("doctor");
-    const editDoctorDropdown = document.getElementById("editDoctor");
-
-    if (doctorDropdown) {
-        doctorDropdown.innerHTML = `<option value="${doctorId}" selected>${doctorName}</option>`;
+          attemptLogout();
+        }
+      });
     }
 
-    if (editDoctorDropdown) {
-        editDoctorDropdown.innerHTML = `<option value="${doctorId}" selected>${doctorName}</option>`;
+    function attemptLogout() {
+      logoutUser();
+      setTimeout(() => {
+        if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) forceLogout();
+      }, 3000);
     }
-}
 
-// Call the function to validate session and populate doctor fields
-validateUserSession();
+    function forceLogout() {
+      sessionStorage.clear();
+      localStorage.clear();
+      document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = 'http://smarthospitalmaintain.com/';
+    }
 
-
-
-// Run session check on page load
-$(document).ready(function () {
-  checkSessionOnLoad();
-});
-
-
-// Function to get time of day greeting
-function getGreetingTime() {
-  const hours = new Date().getHours();
-  if (hours < 12) {
-      return "Morning";
-  } else if (hours < 18) {
-      return "Afternoon";
-  } else {
-      return "Evening";
-  }
-}
-
-// Logout function
-function logoutUser() {
-  const headers = getAuthHeaders();
-
-  if (!headers['Authorization']) {
-      console.error('No authentication token. Redirecting to login...');
-      window.location.href = 'http://localhost/';
-      return;
-  }
-
-  $.ajax({
-      url: 'http://smarthospitalmaintain.com:8000/users/logout/',
-      type: 'POST',
-      headers: headers,
-      success: function(response) {
-          console.log('User logged out successfully:', response);
+    function logoutUser() {
+      const headers = getAuthHeaders();
+      if (!headers['Authorization']) {
+        window.location.href = 'http://smarthospitalmaintain.com/';
+        return;
+      }
+      $.ajax({
+        url: 'http://smarthospitalmaintain.com:8000/users/logout/',
+        type: 'POST',
+        headers: headers,
+        success: function() {
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
           window.location.href = 'http://smarthospitalmaintain.com/';
         },
-      error: function(xhr, status, error) {
-          console.error('Logout error:', xhr.responseText);
-      }
-  });
-}
-
-// Attach logout event
-$(document).ready(function() {
-  $('#logoutButton').on('click', function(event) {
-      event.preventDefault();
-      logoutUser();
-  });
-});
-
-// Validate session on page load
-validateUserSession();
-
-    function fetchAppointments(status) {
-      const headers = getAuthHeaders(); // Assuming you already have a function to handle authentication headers
-  
-      $.ajax({
-          url: `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`, // Correct endpoint with status query parameter
-          type: 'GET',
-          headers: headers,
-          success: function(response) {
-              console.log(`Appointments for ${status}:`, response);
-              populateAppointmentsTable(status, response.appointments); // Populate the respective table
-          },
-          error: function(xhr, status, error) {
-              console.showModal(`Error fetching ${status} appointments:`, error);
-              console.error(`Error fetching ${status} appointments:`, error);
-          }
+        error: function(xhr) { console.error('Logout error:', xhr.responseText); }
       });
-  }
+    }
 
-  
-  function populateAppointmentsTable(status, appointments) {
-    let tbodyId = `${status}-tbody`;
-    let tbody = document.getElementById(tbodyId);
-    if (!tbody) {
-        console.error(`Element with ID '${tbodyId}' not found. Check your HTML.`);
-        return;
+    function getGreetingTime() {
+      const hours = new Date().getHours();
+      return hours < 12 ? "Morning" : hours < 18 ? "Afternoon" : "Evening";
     }
-    tbody.innerHTML = ""; // Clear existing rows
-  
-    filteredAppointments = appointments; // Store original data for filtering/sorting
-  
-    const doctorCount = {}; // Track appointment count per doctor
-  
-    // Add "Select All" checkbox and bulk action buttons (if not already present)
-    if (!document.getElementById(`${status}-bulk-actions`)) {
-        let bulkActionsContainer = document.createElement("div");
-        bulkActionsContainer.id = `${status}-bulk-actions`;
-        bulkActionsContainer.style.display = "none"; // Initially hidden
-        bulkActionsContainer.innerHTML = `
-            <button onclick="bulkReschedule('${status}')">Reschedule Appointments Selected</button>
-            <button onclick="bulkCancel('${status}')">Cancel Appointments Selected</button>
-        `;
-        tbody.parentElement.insertBefore(bulkActionsContainer, tbody);
+
+    // Appointment Management
+    function fetchAppointments(status) {
+      $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`,
+        type: 'GET',
+        headers: getAuthHeaders(),
+        success: function(response) { populateAppointmentsTable(status, response.appointments); },
+        error: function(xhr) {
+          console.error(`Error fetching ${status} appointments:`, xhr);
+          showNotification(`Error fetching ${status} appointments`, 'error');
+        }
+      });
     }
-  
-    // Insert "Select All" Row
-    if (!document.getElementById(`${status}-select-all`)) {
-        let selectAllRow = document.createElement("tr");
-        selectAllRow.innerHTML = `
+
+    let filteredAppointments = [];
+    function populateAppointmentsTable(status, appointments) {
+      let tbodyId = `${status}-tbody`;
+      let tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      filteredAppointments = appointments;
+
+      if (!document.getElementById(`${status}-select-all`)) {
+        let thead = document.createElement("thead");
+        thead.innerHTML = `
+          <tr>
             <th><input type="checkbox" id="${status}-select-all" onclick="toggleAll('${status}')"></th>
             <th>#</th>
             <th>Patient ID</th>
@@ -1181,831 +783,470 @@ validateUserSession();
             <th>Appointment Time</th>
             <th>Doctor</th>
             <th>Created By</th>
-            <th>Updated By</th> <!-- Added column for updated by -->
-
+            <th>Updated By</th>
             <th>Status</th>
             <th>Actions</th>
+          </tr>
         `;
-        tbody.appendChild(selectAllRow);
-    }
-  
-    // Make the header sticky
-    let headerRow = document.querySelector(`#${tbodyId} tr:first-child`);
-    if (headerRow) {
-      headerRow.style.position = "sticky";
-      headerRow.style.top = "0";
-      //headerRow.style.zIndex = "0";
-      headerRow.style.backgroundColor = "#fff"; // Add background to avoid overlap with content
-    }
-  
-    // Populate rows
-    appointments.forEach((appointment, index) => {
+        tbody.parentElement.insertBefore(thead, tbody);
+      }
+
+      appointments.forEach((appointment, index) => {
         let patient = appointment.patient || {};
         let doctor = appointment.doctor || {};
-        let doctorName = doctor.first_name && doctor.last_name ? `${doctor.first_name} ${doctor.last_name}` : "Unknown Doctor";
-        let doctorSpecialization = doctor.specialization || "N/A";
-  
-        // Track patients per doctor
-        doctorCount[doctorName] = (doctorCount[doctorName] || 0) + 1;
-  
-        // Convert appointment date into readable format
+        let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
         let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
-  
+
         let row = document.createElement("tr");
         row.innerHTML = `
-            <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
-            <td>${index + 1}</td>
-            <td>${patient.patient_id || "N/A"}</td>
-            <td>${patient.first_name} ${patient.last_name}</td>
-            <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
-            <td>${patient.contact_number || "N/A"}</td>
-            <td>${patient.current_illness || "N/A"}</td>
-            <td>${appointment.notes || "N/A"}</td>
-            <td>${appointmentTime}</td>
-            <td>Dr. ${doctorName} (${doctorSpecialization})</td>
-            <td>${appointment.created_by_username}</td>
-            <td>${appointment.updated_by ? `${appointment.updated_by_username} updated the appointment` : "Not Updated"}</td> <!-- Display updated by -->
-
-            <td>${appointment.status || "N/A"}</td>
-            <td>${getActionButton(appointment.status, appointment, index)}</td>
+          <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
+          <td>${index + 1}</td>
+          <td>${patient.patient_id || "N/A"}</td>
+          <td>${patient.first_name} ${patient.last_name}</td>
+          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+          <td>${patient.contact_number || "N/A"}</td>
+          <td>${patient.current_illness || "N/A"}</td>
+          <td>${appointment.notes || "N/A"}</td>
+          <td>${appointmentTime}</td>
+          <td>Dr. ${doctorName} (${doctor.specialization || "N/A"})</td>
+          <td>${appointment.created_by_username || "N/A"}</td>
+          <td>${appointment.updated_by ? `${appointment.updated_by_username} updated` : "Not Updated"}</td>
+          <td>${appointment.status || "N/A"}</td>
+          <td>${getActionButton(appointment.status, appointment, index)}</td>
         `;
-  
         tbody.appendChild(row);
-    });
-  
-    console.log("Doctor-wise Patient Count for " + status + ":", doctorCount);
-  }
-  
+      });
 
+      filterTable(); // Apply filter after populating
+    }
 
-// Function to toggle all checkboxes when "Select All" is clicked
-function toggleAll(status) {
-  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
-  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
-  let selectedIds = [];
+    function toggleAll(status) {
+      let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+      let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+      let selectedIds = [];
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+        if (checkbox.checked) selectedIds.push(checkbox.value);
+      });
+      updateBulkActions(status, selectedIds);
+    }
 
-  checkboxes.forEach((checkbox) => {
-      checkbox.checked = selectAllCheckbox.checked;
-      if (checkbox.checked) {
-          selectedIds.push(checkbox.value);
-      }
-  });
+    function updateBulkSelection(status) {
+      let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+      let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+      let selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+      selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
+      updateBulkActions(status, selectedIds);
+    }
 
-  updateBulkActions(status, selectedIds);
-}
+    function updateBulkActions(status, selectedIds) {
+      $("#cancelBtn, #rescheduleBtn").toggleClass("d-none", selectedIds.length < 1);
+    }
 
-// Function to update selection when individual checkboxes are clicked
-function updateBulkSelection(status) {
-  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
-  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
-
-  let selectedIds = Array.from(checkboxes)
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.value);
-
-  selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
-
-  updateBulkActions(status, selectedIds);
-}
-
-// Function to show/hide bulk action buttons
-function updateBulkActions(status, selectedIds) {
-  let bulkActionsContainer = document.getElementById(`${status}-bulk-actions`);
-  bulkActionsContainer.style.display = selectedIds.length >= 1 ? "block" : "none";
-}
-function bulkReschedule(status) {
-  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-      .map(checkbox => checkbox.value);
-
-  if (selectedIds.length === 0) {
-      showModal("No appointments selected for rescheduling.");
-      return;
-  }
-
-  // Open reschedule modal with selected IDs
-  openRescheduleModal(null, status);
-}
-
-
-  
-
-
-function getActionButton(status, appointment, rowIndex) {
-  let buttons = "";
-
-  // Encode appointment data safely
-  let appointmentData = encodeURIComponent(JSON.stringify(appointment));
-
-  switch (status) {
-      case 'Waiting':
+    function getActionButton(status, appointment, rowIndex) {
+      let buttons = "";
+      let appointmentData = encodeURIComponent(JSON.stringify(appointment));
+      switch (status) {
+        case 'Waiting':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
           buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
           buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
           break;
-      
-      case 'Scheduled':
+        case 'Scheduled':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
           buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
-          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id})">Reschedule</button>`;
           buttons += `<button class="btn btn-success btn-sm">Start Consulting</button>`;
-
           break;
-      
-      case 'Pending':
+        case 'Pending':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
-          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id})">Reschedule</button>`;
           break;
-      
-      case 'Canceled':
+        case 'Canceled':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
-          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id})">Reschedule</button>`;
           break;
-      
-      case 'Completed':
+        case 'Completed':
           buttons += `<button class="btn btn-secondary btn-sm">Review</button>`;
           break;
-
-      case 'Rescheduled':
+        case 'Rescheduled':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
           buttons += `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appointment.id}, ${rowIndex})">Cancel</button> `;
-          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>`;
+          buttons += `<button class="btn btn-warning btn-sm" onclick="openRescheduleModal(${appointment.id})">Reschedule</button>`;
           break;
-      
-      default:
+        default:
           buttons += `<button class="btn btn-light btn-sm">No Action</button>`;
-          break;
-  }
-
-  return buttons;
-}
-
-
-// Call the fetchAppointments function for each status when the page loads
-  $(document).ready(function () {
-      const statuses = ["Waiting","Scheduled", "Pending", "Active", "Completed", "Canceled", 'Rescheduled'];
-      statuses.forEach((status) => {
-          fetchAppointments(status);
-      });
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    // Restrict date of birth selection to past dates only
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("dateOfBirth").setAttribute("max", today);
-
-    // Restrict appointment date to today or future dates only
-    document.getElementById("appointmentDate").setAttribute("min", today);
-    
-    // Automatically calculate age when date of birth is entered
-    document.getElementById("dateOfBirth").addEventListener("change", function () {
-        const dob = new Date(this.value);
-        const age = new Date().getFullYear() - dob.getFullYear();
-        document.getElementById("age").value = age;
-    });
-});
-
-function addAppointment() {
-  const doctorId = $("#doctor").val();
-  const patientId = $("#patientID").val().trim();
-  const appointmentDate = $("#appointmentDate").val();
-  const dateOfBirth = $("#dateOfBirth").val();
-  const firstName = $("#firstName").val().trim();
-  const lastName = $("#lastName").val().trim();
-  const contactNumber = $("#contactNumber").val().trim();
-  const notes = $("#notes").val().trim();
-  const isEmergency = $("#isEmergency").is(":checked");
-
-  // Reset field styles before validation
-  $(".form-control").removeClass("is-invalid");
-
-  let missingFields = [];
-
-  // Validate required fields
-  if (!doctorId) missingFields.push("Doctor");
-  if (!patientId) missingFields.push("Patient ID");
-  if (!firstName) missingFields.push("First Name");
-  if (!lastName) missingFields.push("Last Name");
-  if (!contactNumber) missingFields.push("Contact Number");
-  if (!appointmentDate) missingFields.push("Appointment Date");
-
-  // Highlight missing fields
-  if (!doctorId) $("#doctor").addClass("is-invalid");
-  if (!patientId) $("#patientID").addClass("is-invalid");
-  if (!firstName) $("#firstName").addClass("is-invalid");
-  if (!lastName) $("#lastName").addClass("is-invalid");
-  if (!contactNumber) $("#contactNumber").addClass("is-invalid");
-  if (!appointmentDate) $("#appointmentDate").addClass("is-invalid");
-
-  if (missingFields.length > 0) {
-      showModal("Please fill in the following required fields:\n" + missingFields.join(", "));
-      return;
-  }
-
-  // Validate Contact Number (Only 10 digits allowed)
-  const contactRegex = /^\d{10}$/;
-  if (!contactRegex.test(contactNumber)) {
-      $("#contactNumber").addClass("is-invalid");
-      showModal("Contact Number must be exactly 10 digits.");
-      return;
-  }
-
-  // Validate Date of Birth (should not be in the future)
-  if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
-      $("#dateOfBirth").addClass("is-invalid");
-      showModal("Date of birth cannot be in the future.");
-      return;
-  }
-
-  // Validate Appointment Date (should not be in the past)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (new Date(appointmentDate) < today) {
-      $("#appointmentDate").addClass("is-invalid");
-      showModal("Appointment date cannot be in the past.");
-      return;
-  }
-
-  // Calculate age from Date of Birth
-  const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
-  if (age !== null && age < 0) {
-      $("#dateOfBirth").addClass("is-invalid");
-      showModal("Invalid Date of Birth.");
-      return;
-  }
-
-  // Fill the Age field if Date of Birth is provided
-  if (age !== null) {
-      $("#age").val(age);
-  }
-
-  const appointmentData = {
-      appointment: {
-          patient_id: patientId,
-          first_name: firstName,
-          last_name: lastName,
-          contact_number: contactNumber,
-          date_of_birth: dateOfBirth,  // Allow null if empty
-      },
-      appointment_date: appointmentDate,
-      doctor: doctorId,
-      notes: notes,  // Allow null if empty
-      is_emergency: isEmergency,
-  };
-
-  $.ajax({
-      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-      type: "POST",
-      headers: getAuthHeaders(),
-      data: JSON.stringify(appointmentData),
-      contentType: "application/json",
-      success: function (response) {
-          console.log("✅ Appointment created:", response);
-          const appointmentId = response.appointment?.id;
-
-          if (!appointmentId) {
-              showModal("Error: Appointment ID missing.");
-              return;
-          }
-
-          hideAppointmentForm();
-          fetchAppointments("Scheduled");
-
-          // Show vitals modal and pass appointment ID
-          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-
-      },
-      error: function (xhr, status, error) {
-          console.error("❌ Error creating appointment:", error, xhr.responseText);
-          showModal("An appointment for this patient at the specified date and time already exists.");
       }
-  });
-}
-
-// fetch patient details addEventListener
-$(document).ready(function () {
-  $("#patientID").on("blur", function () {
-    let patientId = $(this).val().trim();
-    
-    if (patientId) {
-      $.ajax({
-        url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
-        type: "GET",
-        headers: getAuthHeaders(),
-        success: function (response) {
-          console.log("Patient details fetched:", response);
-          if (response.patient) {
-            $("#firstName").val(response.patient.first_name);
-            $("#lastName").val(response.patient.last_name);
-            $("#contactNumber").val(response.patient.contact_number);
-            $("#dateOfBirth").val(response.patient.date_of_birth);
-          }
-        },
-        error: function (xhr) {
-          console.log("Patient not found, user can enter details manually.");
-        }
-      });
+      return buttons;
     }
-  });
-});
 
+    // Form Handling
+    function showAppointmentForm() {
+      $("#appointmentFormContainer").show();
+      $("#appointmentTabs .nav-link").removeClass("active");
+    }
 
-// Function to calculate age from Date of Birth
-function calculateAge(dob) {
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-  }
-  return age;
-}
+    function hideAppointmentForm() {
+      $("#appointmentFormContainer").hide();
+      $("#appointmentForm")[0].reset();
+    }
 
-
-// Setup validation for date fields
-$(document).ready(function() {
-    // Set the maximum date for Date of Birth (can't select future dates)
-    $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
-
-    // Set the minimum date for Appointment Date (can't select past dates)
-    $("#appointmentDate").attr("min", new Date().toISOString().split("T")[0]);
-});
-
-
-
-function saveVitals() {
-  // Ensure that the appointment ID is being set properly after appointment creation
-  const appointmentId = $("#vitalsModal").data("appointmentId");
-
-  // If appointmentId is not set, it means it was not properly initialized
-  if (!appointmentId) {
-      showModal("Appointment ID is missing. Please try again.");
-      return;
-  }
-
-  // Collect vitals data from the modal fields
-  let vitalsData = {
-      appointment: appointmentId, // Include appointment ID in data
-      blood_pressure: $("#modalBloodPressure").val().trim() || null,
-      heart_rate: $("#modalHeartRate").val().trim() || null,
-      temperature: $("#modalTemperature").val().trim() || null,
-      respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
-      oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
-      weight: $("#modalWeight").val().trim() || null,
-      height: $("#modalHeight").val().trim() || null,
-  };
-
-  // Remove fields that are completely null to avoid sending unnecessary data
-  Object.keys(vitalsData).forEach(key => {
-      if (vitalsData[key] === null) {
-          delete vitalsData[key];
-      }
-  });
-
-  const headers = getAuthHeaders();
-
-  // Submit vitals data using POST request
-  $.ajax({
-      url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`, // Ensure the endpoint matches your API
-      type: 'POST',
-      headers: headers,
-      data: JSON.stringify(vitalsData),
-      contentType: 'application/json',
-      success: function(response) {
-          console.log('✅ Vitals saved successfully:', response);
-          // Close the modal after saving vitals
-          $("#vitalsModal").modal("hide");
-          showModal("Vitals saved successfully.");
-          location.reload();
-
-      },
-      error: function(xhr, status, error) {
-          console.error('❌ Error saving vitals:', error);
-          // Check if the error response provides feedback on validation
-          const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals. Please check the details and try again.";
-          showModal(errorMessage);
-      }
-  });
-}
-
-let doctorMap = {}; // Global dictionary to store doctor details
-
-function loadDoctors() {
-    const headers = getAuthHeaders(); // Ensure auth headers are set
-    $.ajax({
+    let doctorMap = {};
+    function loadDoctors(selectedId = null) {
+      $.ajax({
         url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
         type: "GET",
-        headers: headers,
-        success: function (response) {
-            const doctorSelect = $("#doctor");
-            doctorSelect.empty(); // Clear existing options
-            doctorSelect.append(`<option value="" disabled selected>Select a doctor</option>`);
-            const editDoctorSelect = $("#editDoctor");
-            doctorSelect.append('<option value="" disabled selected>Select a doctor</option>');
-
-            response.doctors.forEach(doctor => {
-                doctorMap[doctor.id] = doctor; // Store doctor details in a dictionary
-                doctorSelect.append(
-                    `<option value="${doctor.id}">
-                        Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
-                    </option>`
-                );
-                editDoctorSelect.append(
-                    `<option value="${doctor.id}">
-                        Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}
-                    </option>`
-                );
-            });
+        headers: getAuthHeaders(),
+        success: function(response) {
+          $("#doctor, #editDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
+          response.doctors.forEach(doctor => {
+            doctorMap[doctor.id] = doctor;
+            let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+            $("#doctor, #editDoctor").append(option);
+          });
+          if (selectedId) $("#editDoctor").val(selectedId);
         },
-        error: function (xhr, status, error) {
-            console.error("❌ Error fetching doctors:", error);
+        error: function(xhr) { console.error("❌ Error fetching doctors:", xhr); }
+      });
+    }
+
+    function addAppointment() {
+      const doctorId = $("#doctor").val();
+      const patientId = $("#patientID").val().trim();
+      const appointmentDate = $("#appointmentDate").val();
+      const dateOfBirth = $("#dateOfBirth").val();
+      const firstName = $("#firstName").val().trim();
+      const lastName = $("#lastName").val().trim();
+      const contactNumber = $("#contactNumber").val().trim();
+      const notes = $("#notes").val().trim();
+      const isEmergency = $("#isEmergency")?.is(":checked") || false;
+
+      $(".form-control").removeClass("is-invalid");
+      let missingFields = [];
+      if (!doctorId) missingFields.push("Doctor");
+      if (!patientId) missingFields.push("Patient ID");
+      if (!firstName) missingFields.push("First Name");
+      if (!lastName) missingFields.push("Last Name");
+      if (!contactNumber) missingFields.push("Contact Number");
+      if (!appointmentDate) missingFields.push("Appointment Date");
+
+      if (missingFields.length > 0) {
+        $("#" + missingFields.map(f => f.toLowerCase().replace(" ", "")).join(", #")).addClass("is-invalid");
+        showNotification("Please fill in: " + missingFields.join(", "), 'error');
+        return;
+      }
+
+      const contactRegex = /^\d{10}$/;
+      if (!contactRegex.test(contactNumber)) {
+        $("#contactNumber").addClass("is-invalid");
+        showNotification("Contact Number must be exactly 10 digits.", 'error');
+        return;
+      }
+
+      if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
+        $("#dateOfBirth").addClass("is-invalid");
+        showNotification("Date of birth cannot be in the future.", 'error');
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (new Date(appointmentDate) < today) {
+        $("#appointmentDate").addClass("is-invalid");
+        showNotification("Appointment date cannot be in the past.", 'error');
+        return;
+      }
+
+      const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
+      if (age !== null && age < 0) {
+        $("#dateOfBirth").addClass("is-invalid");
+        showNotification("Invalid Date of Birth.", 'error');
+        return;
+      }
+      if (age !== null) $("#age").val(age);
+
+      const appointmentData = {
+        appointment: { patient_id: patientId, first_name: firstName, last_name: lastName, contact_number: contactNumber, date_of_birth: dateOfBirth },
+        appointment_date: appointmentDate,
+        doctor: doctorId,
+        notes: notes,
+        is_emergency: isEmergency
+      };
+
+      $.ajax({
+        url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+        type: "POST",
+        headers: getAuthHeaders(),
+        data: JSON.stringify(appointmentData),
+        contentType: "application/json",
+        success: function(response) {
+          const appointmentId = response.appointment?.id;
+          if (!appointmentId) {
+            showNotification("Error: Appointment ID missing.", 'error');
+            return;
+          }
+          hideAppointmentForm();
+          fetchAppointments("Scheduled");
+          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          showNotification("Appointment created successfully!");
+        },
+        error: function(xhr) {
+          showNotification("An appointment for this patient at the specified date and time already exists.", 'error');
         }
-    });
-}
+      });
+    }
 
-// Call this function when the page loads
-$(document).ready(function () {
-  loadDoctors();
-});
+    function saveVitals() {
+      const appointmentId = $("#vitalsModal").data("appointmentId");
+      if (!appointmentId) {
+        showNotification("Appointment ID is missing.", 'error');
+        return;
+      }
 
+      let vitalsData = {
+        appointment: appointmentId,
+        blood_pressure: $("#modalBloodPressure").val().trim() || null,
+        heart_rate: $("#modalHeartRate").val().trim() || null,
+        temperature: $("#modalTemperature").val().trim() || null,
+        respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
+        oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
+        weight: $("#modalWeight").val().trim() || null,
+        height: $("#modalHeight").val().trim() || null
+      };
 
-$(document).ready(function () {
+      Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
 
-// Auto-calculate age when date of birth is selected
-$("#dateOfBirth").on("change", function () {
-    const dob = new Date($(this).val());
-    if (!isNaN(dob)) {
+      $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
+        type: 'POST',
+        headers: getAuthHeaders(),
+        data: JSON.stringify(vitalsData),
+        contentType: 'application/json',
+        success: function() {
+          $("#vitalsModal").modal("hide");
+          showNotification("Vitals saved successfully!");
+          location.reload();
+        },
+        error: function(xhr) {
+          const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals.";
+          showNotification(errorMessage, 'error');
+        }
+      });
+    }
+
+    function openEditModal(appointmentData, rowIndex) {
+      let appointment = JSON.parse(decodeURIComponent(appointmentData));
+      $("#editFirstName").val(appointment.patient?.first_name || "");
+      $("#editLastName").val(appointment.patient?.last_name || "");
+      $("#editContactNumber").val(appointment.patient?.contact_number || "");
+      $("#editDateOfBirth").val(appointment.patient?.date_of_birth || "");
+      $("#editAge").val(appointment.patient?.age || "");
+      $("#editCurrentIllness").val(appointment.current_illness || "");
+      $("#editAppointmentDate").val(formatDateTime(appointment.appointment_date));
+      $("#editAppointmentStatus").val(appointment.status || "");
+      $("#editNotes").val(appointment.notes || "");
+      $("#editAppointmentID").val(appointment.id);
+      $("#editPatientID").val(appointment.patient?.patient_id || "");
+
+      $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
+      $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+      loadDoctors(appointment.doctor?.id);
+      $("#editAppointmentModal").modal("show");
+    }
+
+    function updateAppointment() {
+      let updatedAppointment = {
+        id: $("#editAppointmentID").val(),
+        patient_id: $("#editPatientID").val(),
+        date_of_birth: $("#editDateOfBirth").val(),
+        current_illness: $("#editCurrentIllness").val(),
+        doctor_id: $("#editDoctor").val(),
+        status: $("#editAppointmentStatus").val(),
+        notes: $("#editNotes").val()
+      };
+
+      fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify(updatedAppointment)
+      })
+      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+      .then(data => {
+        showNotification("Appointment updated successfully!");
+        $("#editAppointmentModal").modal("hide");
+        location.reload();
+      })
+      .catch(error => showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error'));
+    }
+
+    function cancelAppointments() {
+      const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
+      cancelAppointment(null, null, status);
+    }
+
+    function cancelAppointment(appointmentId = null, rowIndex = null, status = null) {
+      let appointmentIds = appointmentId ? [appointmentId] : Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+      if (appointmentIds.length === 0) {
+        showNotification("No appointments selected.", 'error');
+        return;
+      }
+      if (!confirm(`Are you sure you want to cancel ${appointmentIds.length} appointment(s)?`)) return;
+
+      fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ appointment_ids: appointmentIds, status: "Canceled" })
+      })
+      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+      .then(data => {
+        showNotification(`Successfully canceled ${appointmentIds.length} appointment(s).`);
+        fetchAppointments(status || "Canceled");
+      })
+      .catch(error => showNotification("Failed to cancel: " + (error.detail || "Server error"), 'error'));
+    }
+
+    function rescheduleAppointments() {
+      const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
+      openRescheduleModal(null, status);
+    }
+
+    function openRescheduleModal(appointmentId = null, status = null) {
+      let selectedAppointments = appointmentId ? [appointmentId] : Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+      if (selectedAppointments.length === 0) {
+        showNotification("No appointments selected.", 'error');
+        return;
+      }
+      $("#rescheduleAppointmentID").val(selectedAppointments.join(","));
+      $("#newAppointmentDate").val("");
+      $("#rescheduleAppointmentModal").modal("show");
+    }
+
+    function rescheduleAppointment() {
+      let appointmentIds = $("#rescheduleAppointmentID").val().split(",");
+      let newDate = $("#newAppointmentDate").val().trim();
+      if (!newDate) {
+        showNotification("Please select a new date and time.", 'error');
+        return;
+      }
+
+      fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
+      })
+      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+      .then(data => {
+        showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
+        $("#rescheduleAppointmentModal").modal("hide");
+        fetchAppointments("Rescheduled");
+      })
+      .catch(error => showNotification("Failed to reschedule: " + (error.detail || "Server error"), 'error'));
+    }
+
+    // Search Filter Logic
+    function filterTable() {
+      const patientId = $("#searchPatientId").val().toLowerCase();
+      const name = $("#searchName").val().toLowerCase();
+      const age = $("#searchAge").val();
+      const dob = $("#searchDob").val();
+      const date = $("#searchDate").val();
+
+      $(".tab-pane tbody tr").each(function() {
+        const row = $(this);
+        const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase();
+        const rowName = row.find("td:nth-child(4)").text().toLowerCase();
+        const rowAge = row.find("td:nth-child(5)").text();
+        const rowDob = row.find("td:nth-child(6)")?.text() || "";
+        const rowDate = row.find("td:nth-child(9)")?.text().split(" ")[0] || "";
+
+        const matches = (!patientId || rowPatientId.includes(patientId)) &&
+                       (!name || rowName.includes(name)) &&
+                       (!age || rowAge === age) &&
+                       (!dob || rowDob.includes(dob)) &&
+                       (!date || rowDate.includes(date));
+        row.toggle(matches);
+      });
+    }
+
+    $("#searchPatientId, #searchName, #searchAge, #searchDob, #searchDate").on("input change", filterTable);
+
+    // Phone Number Formatting
+    document.addEventListener("DOMContentLoaded", function() {
+      ["#contactNumber", "#editContactNumber"].forEach(selector => {
+        const input = document.querySelector(selector);
+        if (input) {
+          const iti = window.intlTelInput(input, {
+            initialCountry: "in",
+            preferredCountries: ["in", "us", "gb", "ke", "ng"],
+            separateDialCode: true
+          });
+          input.addEventListener("blur", () => console.log(`Full Phone Number (${selector}):`, iti.getNumber()));
+        }
+      });
+
+      // Date Restrictions
+      $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
+      let now = new Date();
+      let formattedNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      $("#appointmentDate").attr("min", formattedNow);
+
+      // Age Calculation
+      $("#dateOfBirth, #editDateOfBirth").on("change", function() {
+        const dob = new Date(this.value);
         const today = new Date();
         let age = today.getFullYear() - dob.getFullYear();
-        const monthDiff = today.getMonth() - dob.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-            age--;
-        }
-        $("#age").val(age);
-    }
-});
-
-// Prevent vitals modal unless it's an emergency
-$("#isEmergency").on("change", function () {
-    if (!$(this).is(":checked")) {
-        $("#vitalsModal").modal("hide");
-    }
-});
-});
-
-
-let appointments = []; // Store fetched appointments here
-function openEditModal(appointmentData, rowIndex) {
-  let appointment = JSON.parse(decodeURIComponent(appointmentData));
-
-  console.log("Editing Row:", rowIndex, "Appointment Data:", appointment);
-
-  let fields = [
-      "editFirstName", "editLastName", "editContactNumber", "editDateOfBirth", 
-      "editAge", "editCurrentIllness", "editAppointmentDate", "editDoctor", 
-      "editNotes", "editAppointmentID", "editPatientID", "editAppointmentStatus"
-  ];
-
-  for (let field of fields) {
-      if (!document.getElementById(field)) {
-          console.error(`Element with ID '${field}' is missing in the DOM.`);
-      }
-  }
-
-  // Populate values in the modal
-  document.getElementById("editFirstName").value = appointment.patient?.first_name || "";
-  document.getElementById("editLastName").value = appointment.patient?.last_name || "";
-  document.getElementById("editContactNumber").value = appointment.patient?.contact_number || "";
-  document.getElementById("editDateOfBirth").value = appointment.patient?.date_of_birth || "";
-  document.getElementById("editAge").value = appointment.patient?.age || "";
-  document.getElementById("editCurrentIllness").value = appointment.current_illness || "";
-  document.getElementById("editAppointmentDate").value = formatDateTime(appointment.appointment_date);
-  document.getElementById("editAppointmentStatus").value = appointment.status || "";
-  document.getElementById("editNotes").value = appointment.notes || "";
-  document.getElementById("editDoctor").value = appointment.doctor?.doctor_id || "";
-
-  // Set readonly IDs
-  document.getElementById("editAppointmentID").value = appointment.id;
-  document.getElementById("editPatientID").value = appointment.patient?.patient_id || "";
-
-  // Restrict Editing (Make Readonly)
-  document.getElementById("editFirstName").readOnly = true;
-  document.getElementById("editLastName").readOnly = true;
-  document.getElementById("editContactNumber").readOnly = true;
-  document.getElementById("editAge").readOnly = true;
-
-  // Allow editing of specific fields
-  document.getElementById("editDateOfBirth").readOnly = false;
-  document.getElementById("editCurrentIllness").readOnly = false;
-  document.getElementById("editNotes").readOnly = false;
-  document.getElementById("editAppointmentDate").readOnly = false;
-  document.getElementById("editAppointmentStatus").readOnly = false;
-
-  // Load doctors dynamically
-  loadDoctors(appointment.doctor?.doctor_id);
-
-  // Show modal
-  $("#editAppointmentModal").modal("show");
-}
-
-// Update only allowed fields
-function updateAppointment() {
-  let updatedAppointment = {
-      id: document.getElementById("editAppointmentID").value,
-      patient_id: document.getElementById("editPatientID").value,
-      date_of_birth: document.getElementById("editDateOfBirth").value,
-      current_illness: document.getElementById("editCurrentIllness").value,
-      doctor_id: document.getElementById("editDoctor").value,
-      status: document.getElementById("editAppointmentStatus").value,
-      notes: document.getElementById("editNotes").value,
-  };
-
-  fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-      method: "PATCH",
-      headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders()
-      },
-      body: JSON.stringify(updatedAppointment)
-  })
-  .then(response => {
-      if (!response.ok) {
-          return response.json().then(err => Promise.reject(err));
-      }
-      return response.json();
-  })
-  .then(data => {
-      console.log("Appointment updated successfully:", data);
-      showModal("Appointment updated successfully!");
-      $('#editAppointmentModal').modal('hide');
-      location.reload();
-  })
-  .catch(error => {
-      console.error("Error updating appointment:", error);
-      showModal("Failed to update appointment: " + (error.detail || "Unknown error"));
-  });
-}
-
-// Format datetime for input field
-function formatDateTime(dateTimeString) {
-  let date = new Date(dateTimeString);
-  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
-}
-
-
-
-// Function to cancel a single or multiple appointments
-// Function to cancel a single or multiple appointments
-function cancelAppointment(appointmentId = null, rowIndex = null, status = null) {
-  let appointmentIds = [];
-
-  if (appointmentId) {
-      // Single appointment cancellation
-      if (showModal(!confirm("Are you sure you want to cancel this appointment?"))) {
-          return;
-      }
-      appointmentIds.push(appointmentId);
-  } else {
-      // Bulk cancellation
-      appointmentIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-          .map(checkbox => checkbox.value);
-
-      if (appointmentIds.length === 0) {
-          showModal("No appointments selected for cancellation.");
-          return;
-      }
-
-      if (showModal(!confirm(`Are you sure you want to cancel the selected appointments?`))) {
-          return;
-      }
-  }
-
-  fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
-      method: "PATCH",
-      headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders()
-      },
-      body: JSON.stringify({ appointment_ids: appointmentIds, status: "Canceled" })
-  })
-  .then(response => {
-      if (!response.ok) {
-          return response.json().then(err => Promise.reject(err));
-      }
-      return response.json();
-  })
-  .then(data => {
-      console.log("Appointments canceled successfully:", data);
-      showModal(`Successfully canceled ${appointmentIds.length} appointment(s).`);
-
-      // Update the UI for each affected appointment
-      appointmentIds.forEach(id => {
-          let appointmentRow = document.querySelector(`#appointment-${id}`);
-          if (appointmentRow) {
-              let statusCell = appointmentRow.querySelector(".status-cell");
-              if (statusCell) {
-                  statusCell.textContent = "Canceled";
-                  statusCell.classList.add("text-danger"); // Highlight status change
-              }
-
-              // Disable the cancel button for this row
-              let cancelBtn = appointmentRow.querySelector(".cancel-btn");
-              if (cancelBtn) {
-                  cancelBtn.disabled = true;
-                  cancelBtn.classList.add("disabled");
-              }
-          }
+        if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+        $(this.id === "dateOfBirth" ? "#age" : "#editAge").val(age >= 0 ? age : "");
       });
-      location.reload();
 
-  })
-  .catch(error => {
-      console.error("Error canceling appointments:", error);
-      showModal("Failed to cancel appointment(s): " + (error.detail || "Unknown error"));
-  });
-}
+      // Fetch Appointments and Setup Event Listeners
+      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"];
+      statuses.forEach(fetchAppointments);
+      $("#appointmentTabs a").on("shown.bs.tab", function(e) {
+        localStorage.setItem("activeTab", $(e.target).attr("href"));
+      });
+      var activeTab = localStorage.getItem("activeTab");
+      if (activeTab) $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
 
-// Bulk cancellation function (calls cancelAppointment in bulk mode)
-function bulkCancel(status) {
-  cancelAppointment(null, null, status); // Calls cancelAppointment without an ID to trigger bulk cancellation
-}
+      $("#logoutButton, #logoutDropdown").on("click", function(e) {
+        e.preventDefault();
+        logoutUser();
+      });
 
-
-
-// Function to open the reschedule modal for single or bulk reschedule
-function openRescheduleModal(appointmentId = null, status = null) {
-  let selectedAppointments = [];
-
-  if (appointmentId) {
-      // Single reschedule
-      selectedAppointments.push(appointmentId);
-  } else {
-      // Bulk reschedule
-      selectedAppointments = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-          .map(checkbox => checkbox.value);
-
-      if (selectedAppointments.length === 0) {
-          showModal("No appointments selected for rescheduling.");
-          return;
-      }
-  }
-
-  // Store selected appointment IDs for rescheduling
-  document.getElementById("rescheduleAppointmentID").value = selectedAppointments.join(",");
-
-  // Show the modal
-  $("#rescheduleAppointmentModal").modal("show");
-}
-
-function rescheduleAppointment() {
-  let appointmentIds = document.getElementById("rescheduleAppointmentID").value.split(",");
-  let newDate = document.getElementById("newAppointmentDate").value.trim();
-
-  if (!newDate) {
-      showModal("Please select a new appointment date and time.");
-      return;
-  }
-
-  // Convert date to proper format if needed
-  let formattedDate = new Date(newDate).toISOString();
-
-  console.log("Sending request with:", {
-      appointment_ids: appointmentIds,
-      appointment_date: formattedDate  // ✅ Change "new_appointment_date" to "appointment_date"
+      checkSessionOnLoad();
+      loadDoctors();
     });
 
-  fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
-      method: "PATCH",
-      headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders()
-      },
-      body: JSON.stringify({ 
-          appointment_ids: appointmentIds, 
-          appointment_date: formattedDate 
-      })
-  })
-  .then(response => {
-      if (!response.ok) {
-          return response.json().then(err => Promise.reject(err));
-      }
-      return response.json();
-  })
-  .then(data => {
-      console.log("Appointments rescheduled successfully:", data);
-      showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s) to ${newDate}`);
-
-      // Update UI for each rescheduled appointment
-      appointmentIds.forEach(id => {
-          let appointmentRow = document.querySelector(`#appointment-${id}`);
-          if (appointmentRow) {
-              let appointmentCell = appointmentRow.querySelector(".appointment-time-cell");
-              if (appointmentCell) {
-                  appointmentCell.textContent = new Date(newDate).toLocaleString();
-                  appointmentCell.classList.add("text-warning");
-              }
-          }
-      });
-
-      // Close modal
-      $("#rescheduleAppointmentModal").modal("hide");
-      location.reload();
-
-  })
-  .catch(error => {
-      console.error("Error rescheduling appointments:", error);
-      showModal("Failed to reschedule appointment(s): " + (error.detail || "A patient has an existing Time SLot as the one assigned"));
-  });
-}
-
-
-
-function formatDateTime(dateTimeString) {
-  let date = new Date(dateTimeString);
-  return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
-}
-
-
-  </script>
-  
-  
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const phoneInputs = ["#contactNumber", "#editContactNumber"];
-    
-        phoneInputs.forEach(selector => {
-            const input = document.querySelector(selector);
-            if (input) {
-                // Initialize the intl-tel-input library for each input
-                const iti = window.intlTelInput(input, {
-                    initialCountry: "in",  // Default to India
-                    preferredCountries: ["in", "us", "gb", "ke", "ng"], // Preferred country list
-                    separateDialCode: true, // Shows country code separately
-                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
-                });
-    
-                // Get formatted phone number on blur event
-                input.addEventListener("blur", function () {
-                    console.log(`Full Phone Number (${selector}):`, iti.getNumber()); // Logs full number with country code
-                });
+    $("#patientID").on("blur", function() {
+      let patientId = $(this).val().trim();
+      if (patientId) {
+        $.ajax({
+          url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+          type: "GET",
+          headers: getAuthHeaders(),
+          success: function(response) {
+            if (response.patient) {
+              $("#firstName").val(response.patient.first_name);
+              $("#lastName").val(response.patient.last_name);
+              $("#contactNumber").val(response.patient.contact_number);
+              $("#dateOfBirth").val(response.patient.date_of_birth);
             }
+          },
+          error: function() { console.log("Patient not found."); }
         });
+      }
     });
   </script>
-  
-    
 
-    <script>
-      function showNotification(message, duration = 3000) {
-        const notification = document.getElementById("customNotification");
-        const messageContainer = document.getElementById("notificationMessage");
-      
-        messageContainer.textContent = message;
-        notification.style.display = "block";
-        notification.style.animation = `fadeInOut ${duration / 1000}s ease-in-out`;
-      
-        setTimeout(() => {
-            notification.style.display = "none";
-        }, duration);
-      }
-      
-      // Example usage:
-      // showNotification("Data saved successfully!", 3000);
-      </script>
-
-            
-            
-          <!-- content-wrapper ends -->
-          <!-- partial:partials/_footer.html -->
-          <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="" target="_blank">Kerala. All rights reserved.</span>
-              <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Doctors Dashboard <i class="mdi mdi-heart text-danger"></i></span>
-            </div>
-          </footer>
-          <!-- partial -->
-        </div>
-        <!-- main-panel ends -->
-      </div>
-      <!-- page-body-wrapper ends -->
-    </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
-    <script src="assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <script src="assets/vendors/chart.js/chart.umd.js"></script>
-    <script src="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
-    <script src="assets/js/off-canvas.js"></script>
-    <script src="assets/js/misc.js"></script>
-    <script src="assets/js/settings.js"></script>
-    <script src="assets/js/todolist.js"></script>
-    <script src="assets/js/jquery.cookie.js"></script>
-    <!-- endinject -->
-    <!-- Custom js for this page -->
-    <script src="assets/js/dashboard.js"></script>
-    <!-- End custom js for this page -->
-  </body>
+  <!-- Vendor Scripts -->
+  <script src="assets/vendors/js/vendor.bundle.base.js"></script>
+  <script src="assets/vendors/chart.js/chart.umd.js"></script>
+  <script src="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+  <script src="assets/js/off-canvas.js"></script>
+  <script src="assets/js/misc.js"></script>
+  <script src="assets/js/settings.js"></script>
+  <script src="assets/js/todolist.js"></script>
+  <script src="assets/js/jquery.cookie.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
 </html>
