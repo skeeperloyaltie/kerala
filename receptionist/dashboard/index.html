@@ -927,11 +927,20 @@ function updateBulkSelection(status) {
   updateBulkActions(status, selectedIds);
 }
 
-// Function to show/hide bulk action buttons
 function updateBulkActions(status, selectedIds) {
-  let bulkActionsContainer = document.getElementById(`${status}-bulk-actions`);
-  bulkActionsContainer.style.display = selectedIds.length >= 1 ? "block" : "none";
+  let cancelBtn = document.getElementById("cancelBtn");
+  let rescheduleBtn = document.getElementById("rescheduleBtn");
+
+  if (!cancelBtn || !rescheduleBtn) {
+      console.warn("Bulk action buttons not found in the DOM.");
+      return; // Prevent errors if elements don't exist
+  }
+
+  let shouldShow = selectedIds.length > 0;
+  cancelBtn.classList.toggle("d-none", !shouldShow);
+  rescheduleBtn.classList.toggle("d-none", !shouldShow);
 }
+
 function bulkReschedule(status) {
   let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
       .map(checkbox => checkbox.value);
