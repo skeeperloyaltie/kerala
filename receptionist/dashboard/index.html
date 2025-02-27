@@ -24,32 +24,36 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
 
   <style>
-    /* Table Styles */
-    .table {
-      table-layout: auto;
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .table th, .table td {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 14px;
-      padding: 8px;
-      text-align: left;
-    }
-    .table-responsive {
-      width: 100%;
-      overflow-x: auto;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-    .table .btn {
-      font-size: 12px;
-      padding: 5px 8px;
-      margin: 2px;
-      white-space: nowrap;
-    }
+   /* Table Styles */
+   .table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+    position: relative;
+  }
+  .table {
+    table-layout: auto;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table th, .table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    padding: 8px;
+    text-align: left;
+  }
+  .table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    z-index: 1;
+  }
+  .table .btn {
+    font-size: 12px;
+    padding: 5px 8px;
+    margin: 2px;
+  }
   
     /* Search Filter */
     .search-filter {
