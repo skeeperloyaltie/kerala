@@ -1079,69 +1079,84 @@
       .catch(error => showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error'));
     }
 
-    function cancelAppointments() {
-      const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
-      cancelAppointment(null, null, status);
-    }
+ // Bulk Cancel Action
+function cancelAppointments() {
+  const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
+  const selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+  if (selectedIds.length === 0) {
+    showNotification("No appointments selected.", 'error');
+    return;
+  }
+  cancelAppointment(null, null, status, selectedIds); // Pass selectedIds explicitly
+}
 
-    function cancelAppointment(appointmentId = null, rowIndex = null, status = null) {
-      let appointmentIds = appointmentId ? [appointmentId] : Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
-      if (appointmentIds.length === 0) {
-        showNotification("No appointments selected.", 'error');
-        return;
-      }
-      if (!confirm(`Are you sure you want to cancel ${appointmentIds.length} appointment(s)?`)) return;
+  // Cancel Appointment (Updated to accept selectedIds)
+function cancelAppointment(appointmentId = null, rowIndex = null, status = null, selectedIds = null) {
+  let appointmentIds = appointmentId ? [appointmentId] : selectedIds || Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+  if (appointmentIds.length === 0) {
+    showNotification("No appointments selected.", 'error');
+    return;
+  }
+  if (!confirm(`Are you sure you want to cancel ${appointmentIds.length} appointment(s)?`)) return;
 
-      fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ appointment_ids: appointmentIds, status: "Canceled" })
-      })
-      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-      .then(data => {
-        showNotification(`Successfully canceled ${appointmentIds.length} appointment(s).`);
-        fetchAppointments(status || "Canceled");
-      })
-      .catch(error => showNotification("Failed to cancel: " + (error.detail || "Server error"), 'error'));
-    }
+  fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ appointment_ids: appointmentIds, status: "Canceled" })
+  })
+  .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+  .then(data => {
+    showNotification(`Successfully canceled ${appointmentIds.length} appointment(s).`);
+    fetchAppointments(status || "Canceled");
+  })
+  .catch(error => showNotification("Failed to cancel: " + (error.detail || "Server error"), 'error'));
+}
 
-    function rescheduleAppointments() {
-      const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
-      openRescheduleModal(null, status);
-    }
+   // Bulk Reschedule Action
+function rescheduleAppointments() {
+  const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
+  const selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+  if (selectedIds.length === 0) {
+    showNotification("No appointments selected.", 'error');
+    return;
+  }
+  openRescheduleModal(null, status, selectedIds); // Pass selectedIds explicitly
+}
 
-    function openRescheduleModal(appointmentId = null, status = null) {
-      let selectedAppointments = appointmentId ? [appointmentId] : Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
-      if (selectedAppointments.length === 0) {
-        showNotification("No appointments selected.", 'error');
-        return;
-      }
-      $("#rescheduleAppointmentID").val(selectedAppointments.join(","));
-      $("#newAppointmentDate").val("");
-      $("#rescheduleAppointmentModal").modal("show");
-    }
+   // Open Reschedule Modal (Updated to accept selectedIds)
+function openRescheduleModal(appointmentId = null, status = null, selectedIds = null) {
+  let selectedAppointments = appointmentId ? [appointmentId] : selectedIds || Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+  if (selectedAppointments.length === 0) {
+    showNotification("No appointments selected.", 'error');
+    return;
+  }
+  $("#rescheduleAppointmentID").val(selectedAppointments.join(","));
+  $("#newAppointmentDate").val("");
+  $("#rescheduleAppointmentModal").modal("show");
+}
 
-    function rescheduleAppointment() {
-      let appointmentIds = $("#rescheduleAppointmentID").val().split(",");
-      let newDate = $("#newAppointmentDate").val().trim();
-      if (!newDate) {
-        showNotification("Please select a new date and time.", 'error');
-        return;
-      }
+    // Reschedule Appointment (No change needed here, but included for completeness)
+function rescheduleAppointment() {
+  let appointmentIds = $("#rescheduleAppointmentID").val().split(",");
+  let newDate = $("#newAppointmentDate").val().trim();
+  if (!newDate) {
+    showNotification("Please select a new date and time.", 'error');
+    return;
+  }
 
-      fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
-      })
-      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-      .then(data => {
-        showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
-        $("#rescheduleAppointmentModal").modal("hide");
-        fetchAppointments("Rescheduled");
-      })
-      .catch(error => showNotification("Failed to reschedule: " + (error.detail || "Server error"), 'error'));
-    }
+  fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
+  })
+  .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+  .then(data => {
+    showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
+    $("#rescheduleAppointmentModal").modal("hide");
+    fetchAppointments("Rescheduled");
+  })
+  .catch(error => showNotification("Failed to reschedule: " + (error.detail || "Server error"), 'error'));
+}
 
     // Search Filter Logic
     function filterTable() {
