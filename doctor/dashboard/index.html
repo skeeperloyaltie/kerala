@@ -820,16 +820,22 @@
       filterTable(); // Apply filter after populating
     }
 
-    function toggleAll(status) {
-      let selectAllCheckbox = document.getElementById(`${status}-select-all`);
-      let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
-      let selectedIds = [];
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-        if (checkbox.checked) selectedIds.push(checkbox.value);
-      });
-      updateBulkActions(status, selectedIds);
+    // Toggle All Checkboxes
+function toggleAll(status) {
+  let selectAllCheckbox = document.getElementById(`${status}-select-all`);
+  let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+  let selectedIds = [];
+
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = selectAllCheckbox.checked;
+    if (checkbox.checked) {
+      selectedIds.push(checkbox.value);
     }
+  });
+
+  console.log(`Toggle All (${status}): Selected IDs =`, selectedIds); // Debug log
+  updateBulkActions(status, selectedIds);
+}
 
     function updateBulkSelection(status) {
       let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
@@ -1091,8 +1097,11 @@ function cancelAppointments() {
 }
 
   // Cancel Appointment (Updated to accept selectedIds)
+// Cancel Appointment (Updated to accept selectedIds)
 function cancelAppointment(appointmentId = null, rowIndex = null, status = null, selectedIds = null) {
   let appointmentIds = appointmentId ? [appointmentId] : selectedIds || Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+  
+  console.log(`Cancel Appointment (${status}): Final appointment IDs =`, appointmentIds); // Debug log
   if (appointmentIds.length === 0) {
     showNotification("No appointments selected.", 'error');
     return;
