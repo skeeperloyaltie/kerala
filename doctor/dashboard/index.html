@@ -422,90 +422,86 @@
             </div>
           </div>
 
-         <!-- Vitals Modal -->
-<div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="vitalsModalLabel">Enter Patient Vitals</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="vitalsForm">
-          <div class="mb-3">
-            <label for="modalBloodPressure">Blood Pressure</label>
-            <div class="input-group">
-              <input type="text" id="modalBloodPressure" class="form-control" placeholder="e.g., 120/80">
-              <select class="form-select unit-select" data-input="modalBloodPressure">
-                <option value="mmHg">mmHg</option>
-                <option value="kPa">kPa</option>
-              </select>
-              <button type="button" class="btn btn-outline-secondary convert-btn" data-input="modalBloodPressure">Convert</button>
+          <!-- Vitals Modal -->
+          <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="vitalsModalLabel">Enter Patient Vitals</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="vitalsForm">
+                    <div class="mb-3">
+                      <label for="modalBloodPressure">Blood Pressure</label>
+                      <div class="input-group">
+                        <input type="text" id="modalBloodPressure" class="form-control" placeholder="120/80">
+                        <select class="form-select unit-select" data-input="modalBloodPressure">
+                          <option value="mmHg">mmHg</option>
+                          <option value="kPa">kPa</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalHeartRate">Heart Rate</label>
+                      <div class="input-group">
+                        <input type="text" id="modalHeartRate" class="form-control" placeholder="60-100">
+                        <span class="input-group-text">bpm</span>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalTemperature">Temperature</label>
+                      <div class="input-group">
+                        <input type="text" id="modalTemperature" class="form-control" placeholder="37.0">
+                        <select class="form-select unit-select" data-input="modalTemperature">
+                          <option value="°C">°C</option>
+                          <option value="°F">°F</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalRespiratoryRate">Respiratory Rate</label>
+                      <div class="input-group">
+                        <input type="text" id="modalRespiratoryRate" class="form-control" placeholder="12-20">
+                        <span class="input-group-text">breaths/min</span>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalOxygenSaturation">Oxygen Saturation</label>
+                      <div class="input-group">
+                        <input type="text" id="modalOxygenSaturation" class="form-control" placeholder="95-100">
+                        <span class="input-group-text">%</span>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalWeight">Weight</label>
+                      <div class="input-group">
+                        <input type="text" id="modalWeight" class="form-control" placeholder="70">
+                        <select class="form-select unit-select" data-input="modalWeight">
+                          <option value="kg">kg</option>
+                          <option value="lbs">lbs</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="modalHeight">Height</label>
+                      <div class="input-group">
+                        <input type="text" id="modalHeight" class="form-control" placeholder="170">
+                        <select class="form-select unit-select" data-input="modalHeight">
+                          <option value="cm">cm</option>
+                          <option value="in">in</option>
+                        </select>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" onclick="saveVitals()">Save Vitals</button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label for="modalHeartRate">Heart Rate</label>
-            <div class="input-group">
-              <input type="text" id="modalHeartRate" class="form-control" placeholder="e.g., 70">
-              <span class="input-group-text">bpm</span>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="modalTemperature">Temperature</label>
-            <div class="input-group">
-              <input type="text" id="modalTemperature" class="form-control" placeholder="e.g., 37">
-              <select class="form-select unit-select" data-input="modalTemperature">
-                <option value="°C">°C</option>
-                <option value="°F">°F</option>
-              </select>
-              <button type="button" class="btn btn-outline-secondary convert-btn" data-input="modalTemperature">Convert</button>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="modalRespiratoryRate">Respiratory Rate</label>
-            <div class="input-group">
-              <input type="text" id="modalRespiratoryRate" class="form-control" placeholder="e.g., 16">
-              <span class="input-group-text">breaths/min</span>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="modalOxygenSaturation">Oxygen Saturation</label>
-            <div class="input-group">
-              <input type="text" id="modalOxygenSaturation" class="form-control" placeholder="e.g., 98">
-              <span class="input-group-text">%</span>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="modalWeight">Weight</label>
-            <div class="input-group">
-              <input type="text" id="modalWeight" class="form-control" placeholder="e.g., 70">
-              <select class="form-select unit-select" data-input="modalWeight">
-                <option value="kg">kg</option>
-                <option value="lbs">lbs</option>
-              </select>
-              <button type="button" class="btn btn-outline-secondary convert-btn" data-input="modalWeight">Convert</button>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="modalHeight">Height</label>
-            <div class="input-group">
-              <input type="text" id="modalHeight" class="form-control" placeholder="e.g., 170">
-              <select class="form-select unit-select" data-input="modalHeight">
-                <option value="cm">cm</option>
-                <option value="in">in</option>
-              </select>
-              <button type="button" class="btn btn-outline-secondary convert-btn" data-input="modalHeight">Convert</button>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="saveVitals()">Save Vitals</button>
-      </div>
-    </div>
-  </div>
-</div>
 
           <!-- Edit Appointment Modal -->
           <div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
@@ -1057,30 +1053,29 @@ function toggleAll(status) {
         }
       });
     }
-    let currentAppointment = null; // Global variable to store the current appointment
-
-function openEditModal(appointmentData, rowIndex) {
-  currentAppointment = JSON.parse(decodeURIComponent(appointmentData)); // Store the appointment data
-  $("#editFirstName").val(currentAppointment.patient?.first_name || "");
-  $("#editLastName").val(currentAppointment.patient?.last_name || "");
-  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-  $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-  $("#editAge").val(currentAppointment.patient?.age || "");
-  $("#editCurrentIllness").val(currentAppointment.current_illness || "");
-  $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date)); // Set the appointment date
-  $("#editAppointmentStatus").val(currentAppointment.status || "");
-  $("#editNotes").val(currentAppointment.notes || "");
-  $("#editAppointmentID").val(currentAppointment.id);
-  $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
-
-  $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
-  $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
-
-  let previousDoctorId = currentAppointment.doctor?.id || "";
-  loadDoctors(previousDoctorId);
-
-  $("#editAppointmentModal").modal("show");
-}
+    function openEditModal(appointmentData, rowIndex) {
+      let appointment = JSON.parse(decodeURIComponent(appointmentData));
+      $("#editFirstName").val(appointment.patient?.first_name || "");
+      $("#editLastName").val(appointment.patient?.last_name || "");
+      $("#editContactNumber").val(appointment.patient?.contact_number || "");
+      $("#editDateOfBirth").val(appointment.patient?.date_of_birth || "");
+      $("#editAge").val(appointment.patient?.age || "");
+      $("#editCurrentIllness").val(appointment.current_illness || "");
+      $("#editAppointmentDate").val(formatDateTime(appointment.appointment_date));
+      $("#editAppointmentStatus").val(appointment.status || "");
+      $("#editNotes").val(appointment.notes || "");
+      $("#editAppointmentID").val(appointment.id);
+      $("#editPatientID").val(appointment.patient?.patient_id || "");
+    
+      $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
+      $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+    
+      // Load doctors and set the previously assigned doctor as selected
+      let previousDoctorId = appointment.doctor?.id || "";
+      loadDoctors(previousDoctorId); // Pass the previous doctor ID to pre-select it
+    
+      $("#editAppointmentModal").modal("show");
+    }
 
     function updateAppointment() {
       let updatedAppointment = {
@@ -1088,36 +1083,23 @@ function openEditModal(appointmentData, rowIndex) {
         patient_id: $("#editPatientID").val(),
         date_of_birth: $("#editDateOfBirth").val(),
         current_illness: $("#editCurrentIllness").val(),
-        doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
+        doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "", // Use previous doctor if none selected
         status: $("#editAppointmentStatus").val(),
-        notes: $("#editNotes").val(),
-        appointment_date: $("#editAppointmentDate").val() // Add the appointment date
+        notes: $("#editNotes").val()
       };
-    
-      // Log the data being sent to the backend
-      console.log("Data being sent to backend:", JSON.stringify(updatedAppointment, null, 2));
     
       fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(updatedAppointment)
       })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-      })
+      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
       .then(data => {
-        console.log("Response from backend:", data); // Log the response
         showNotification("Appointment updated successfully!");
         $("#editAppointmentModal").modal("hide");
         location.reload();
       })
-      .catch(error => {
-        console.error("Error updating appointment:", error); // Log any errors
-        showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error');
-      });
+      .catch(error => showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error'));
     }
 
  // Bulk Cancel Action
@@ -1313,10 +1295,10 @@ function rescheduleAppointments() {
     });
 
 
-// Add this at the top of your script to store original values and units
+    // Add this at the top of your script to store original values
 const originalVitals = {};
 
-// Initialize original values when the modal opens
+// Initialize original values when the modal opens (e.g., in saveVitals or when modal is shown)
 $("#vitalsModal").on("show.bs.modal", function() {
   ["modalBloodPressure", "modalTemperature", "modalHeartRate", "modalRespiratoryRate", 
    "modalOxygenSaturation", "modalWeight", "modalHeight"].forEach(id => {
@@ -1324,69 +1306,49 @@ $("#vitalsModal").on("show.bs.modal", function() {
     const select = document.querySelector(`.unit-select[data-input="${id}"]`);
     originalVitals[id] = {
       value: input.value || "", // Store original input (e.g., "120/80" for BP)
-      unit: select ? (select.getAttribute("data-prev-unit") || select.options[0].value) : null // Default to first option if unset
+      unit: select.getAttribute("data-prev-unit") || select.options[0].value // Default to first option if unset
     };
   });
 });
 
-// Handle unit change without immediate conversion
 document.addEventListener("DOMContentLoaded", function() {
-  $(".unit-select").on("change", function() {
-    let inputId = this.dataset.input;
-    let select = this;
-    let toUnit = select.value;
-
-    // Update the previous unit without converting the value
-    select.setAttribute("data-prev-unit", toUnit);
-    // Log the change for debugging
-    console.log(`Unit for ${inputId} changed to ${toUnit}`);
-  });
-
-  // Handle explicit conversion when "Convert" button is clicked
-  $(".convert-btn").on("click", function() {
-    let inputId = this.dataset.input;
-    convertMeasurement(inputId);
-  });
+  $(".unit-select").on("change", function() { convertMeasurement(this); });
 });
 
-function convertMeasurement(inputId) {
+function convertMeasurement(select) {
+  let inputId = select.dataset.input;
   let inputField = document.getElementById(inputId);
-  let select = document.querySelector(`.unit-select[data-input="${inputId}"]`);
   let toUnit = select.value;
-  let fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
+  let original = originalVitals[inputId] || { value: "", unit: select.options[0].value };
   let currentValue = inputField.value.trim();
 
-  // If no value entered yet, do nothing
-  if (!currentValue) {
-    console.log(`No value to convert for ${inputId}`);
-    return;
+  // Always update the previous unit, even if no value is entered
+  select.setAttribute("data-prev-unit", toUnit);
+
+  // If no value entered yet, just return (no conversion needed)
+  if (!currentValue) return;
+
+  // If the value hasn’t changed from the original, use the original for conversion
+  if (currentValue === inputField.defaultValue || currentValue === original.value) {
+    currentValue = original.value;
   }
 
   let newValue;
   if (inputId === "modalBloodPressure") {
     // Handle blood pressure (systolic/diastolic)
     const [systolic, diastolic] = currentValue.split("/").map(v => parseFloat(v.trim()));
-    if (isNaN(systolic) || isNaN(diastolic)) {
-      showNotification("Invalid blood pressure format. Use 'systolic/diastolic'.", "error");
-      return;
-    }
-    const convertedSystolic = convertValue(systolic, fromUnit, toUnit);
-    const convertedDiastolic = convertValue(diastolic, fromUnit, toUnit);
+    if (isNaN(systolic) || isNaN(diastolic)) return; // Invalid BP format
+    const convertedSystolic = convertValue(systolic, original.unit, toUnit);
+    const convertedDiastolic = convertValue(diastolic, original.unit, toUnit);
     newValue = `${convertedSystolic.toFixed(2)}/${convertedDiastolic.toFixed(2)}`;
   } else {
     // Handle single-value inputs (e.g., temperature, weight)
     const numericValue = parseFloat(currentValue);
-    if (isNaN(numericValue)) {
-      showNotification(`Invalid value for ${inputId}. Enter a number.`, "error");
-      return;
-    }
-    newValue = convertValue(numericValue, fromUnit, toUnit).toFixed(2);
+    if (isNaN(numericValue)) return; // Invalid number
+    newValue = convertValue(numericValue, original.unit, toUnit).toFixed(2);
   }
 
   inputField.value = newValue;
-  // Update the previous unit to the new unit after conversion
-  select.setAttribute("data-prev-unit", toUnit);
-  console.log(`Converted ${inputId} from ${fromUnit} to ${toUnit}: ${newValue}`);
 }
 
 function convertValue(value, fromUnit, toUnit) {
@@ -1407,11 +1369,11 @@ function convertValue(value, fromUnit, toUnit) {
   return conversionFunc ? conversionFunc(value) : value;
 }
 
-// Save vitals without altering values based on unit
+// Update saveVitals to reset original values after saving (optional)
 function saveVitals() {
   const appointmentId = $("#vitalsModal").data("appointmentId");
   if (!appointmentId) {
-    showNotification("Appointment ID is missing.", "error");
+    showNotification("Appointment ID is missing.", 'error');
     return;
   }
 
@@ -1428,20 +1390,12 @@ function saveVitals() {
 
   Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
 
-  // Optionally add unit information to the payload for backend processing
-  vitalsData.blood_pressure_unit = document.querySelector(`.unit-select[data-input="modalBloodPressure"]`)?.value || "mmHg";
-  vitalsData.temperature_unit = document.querySelector(`.unit-select[data-input="modalTemperature"]`)?.value || "°C";
-  vitalsData.weight_unit = document.querySelector(`.unit-select[data-input="modalWeight"]`)?.value || "kg";
-  vitalsData.height_unit = document.querySelector(`.unit-select[data-input="modalHeight"]`)?.value || "cm";
-
-  console.log("Vitals data being sent:", JSON.stringify(vitalsData, null, 2));
-
   $.ajax({
     url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
-    type: "POST",
+    type: 'POST',
     headers: getAuthHeaders(),
     data: JSON.stringify(vitalsData),
-    contentType: "application/json",
+    contentType: 'application/json',
     success: function() {
       $("#vitalsModal").modal("hide");
       showNotification("Vitals saved successfully!");
@@ -1449,7 +1403,7 @@ function saveVitals() {
     },
     error: function(xhr) {
       const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals.";
-      showNotification(errorMessage, "error");
+      showNotification(errorMessage, 'error');
     }
   });
 }

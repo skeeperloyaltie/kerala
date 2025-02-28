@@ -522,60 +522,112 @@ $(document).ready(function () {
   });
 });
 
-// Function to display search results with detailed patient and appointment info
 function displayResults(data) {
   let resultsContainer = $("#results");
   resultsContainer.empty(); // Clear previous results
 
   if (!data.patients?.length && !data.appointments?.length) {
-      console.log("No results found:", data); // Log if no results
-      resultsContainer.html("<p class='text-danger'>No results found.</p>");
-      return;
+    console.log("No results found:", data);
+    resultsContainer.html("<p class='text-danger'>No results found.</p>");
+    return;
   }
 
   let html = "<h5>Search Results</h5>";
 
-  // Display patients with detailed information, grouped by patient_id if multiple matches
-  if (data.patients?.length) {
-      console.log("Patients found:", data.patients);
-      html += "<h6>Patients</h6>";
-      const patientsById = {};
-      data.patients.forEach(patient => {
-          if (!patientsById[patient.patient_id]) {
-              patientsById[patient.patient_id] = [];
-          }
-          patientsById[patient.patient_id].push(patient);
-      });
+  // Group patients and their appointments
+  const patientMap = {};
 
-      for (let patientId in patientsById) {
-          html += `<div class="patient-result"><h6>Patient ID: ${patientId}</h6><ul>`;
-          patientsById[patientId].forEach(patient => {
-              html += `<li>
-                  Name: ${patient.first_name} ${patient.last_name} |
-                  Contact: ${patient.contact_number} |
-                  Email: ${patient.email || 'N/A'} |
-                  DOB: ${patient.date_of_birth || 'N/A'} |
-                  Age: ${patient.age || 'N/A'} |
-                  Illness: ${patient.current_illness || 'N/A'}
-              </li>`;
-          });
-          html += "</ul></div>";
+  // Process patients
+  if (data.patients?.length) {
+    console.log("Patients found:", data.patients);
+    data.patients.forEach(patient => {
+      if (!patientMap[patient.patient_id]) {
+        patientMap[patient.patient_id] = {
+          details: patient,
+          appointments: []
+        };
       }
+    });
   }
 
-  // Display appointments with detailed patient info
+  // Add appointments to corresponding patients
   if (data.appointments?.length) {
-      console.log("Appointments found:", data.appointments);
-      html += "<h6>Appointments</h6><ul>";
-      data.appointments.forEach(appt => {
-          html += `<li>
-              Patient: ${appt.patient.first_name} ${appt.patient.last_name} (ID: ${appt.patient.patient_id}) |
-              Doctor: ${appt.doctor ? appt.doctor.user.username : 'N/A'} |
+    console.log("Appointments found:", data.appointments);
+    data.appointments.forEach(appt => {
+      const patientId = appt.patient.patient_id;
+      if (!patientMap[patientId]) {
+        patientMap[patientId] = {
+          details: appt.patient,
+          appointments: []
+        };
+      }
+      patientMap[patientId].appointments.push(appt);
+    });
+  }
+
+  // Render results as a table if there are patients or appointments
+  if (Object.keys(patientMap).length > 0) {
+    html += `
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Patient ID</th>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Email</th>
+              <th>DOB</th>
+              <th>Age</th>
+              <th>Illness</th>
+              <th>Appointments</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    for (let patientId in patientMap) {
+      const patient = patientMap[patientId].details;
+      const appointments = patientMap[patientId].appointments;
+
+      // Patient row with nested appointment details
+      html += `
+        <tr>
+          <td>${patient.patient_id || "N/A"}</td>
+          <td>${patient.first_name} ${patient.last_name}</td>
+          <td>${patient.contact_number || "N/A"}</td>
+          <td>${patient.email || "N/A"}</td>
+          <td>${patient.date_of_birth || "N/A"}</td>
+          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+          <td>${patient.current_illness || "N/A"}</td>
+          <td>
+      `;
+
+      if (appointments.length > 0) {
+        html += '<ul style="list-style-type: none; padding-left: 0;">';
+        appointments.forEach(appt => {
+          html += `
+            <li>
+              Doctor: ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name}` : "N/A"} |
               Status: ${appt.status} |
               Date: ${new Date(appt.appointment_date).toLocaleString()}
-          </li>`;
-      });
-      html += "</ul>";
+            </li>
+          `;
+        });
+        html += "</ul>";
+      } else {
+        html += "No appointments found";
+      }
+
+      html += "</td></tr>";
+    }
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    html += "<p class='text-danger'>No patients or appointments matched your search.</p>";
   }
 
   resultsContainer.html(html);
