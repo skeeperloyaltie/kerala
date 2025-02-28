@@ -286,9 +286,9 @@
                   <h4 class="card-title">Current Patient Details & Appointments</h4>
                   <div class="d-flex justify-content-between mb-3">
                     <div>
-                      <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="cancelAppointments()">Cancel</button>
-                      <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="openRescheduleModal()">Reschedule</button>
-                    </div>
+                      <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="bulkCancel('pending')">Cancel</button>
+                      <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="bulkReschedule('pending')">Reschedule</button>
+                     </div>
                     <button class="btn btn-primary btn-sm"><a href="search.html" class="text-white text-decoration-none">Search Patient</a></button>
                   </div>
 
@@ -912,9 +912,16 @@ function toggleAll(status) {
   updateBulkActions(status, selectedIds);
 }
 
-// Bulk cancellation function (calls cancelAppointment in bulk mode)
 function bulkCancel(status) {
-  cancelAppointment(null, null, status); // Calls cancelAppointment without an ID to trigger bulk cancellation
+  let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+    .map(checkbox => checkbox.value);
+
+  if (selectedIds.length === 0) {
+    showModal("No appointments selected for cancellation.");
+    return;
+  }
+
+  cancelAppointment(selectedIds, null, status); // Pass selectedIds explicitly
 }
 
 // Function to update selection when individual checkboxes are clicked
@@ -947,15 +954,14 @@ function updateBulkActions(status, selectedIds) {
 
 function bulkReschedule(status) {
   let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-      .map(checkbox => checkbox.value);
+    .map(checkbox => checkbox.value);
 
   if (selectedIds.length === 0) {
-      showModal("No appointments selected for rescheduling.");
-      return;
+    showModal("No appointments selected for rescheduling.");
+    return;
   }
 
-  // Open reschedule modal with selected IDs
-  openRescheduleModal(null, status);
+  openRescheduleModal(selectedIds, null, status); // Pass selectedIds explicitly
 }
 
     function getActionButton(status, appointment, rowIndex) {
@@ -1255,35 +1261,49 @@ function bulkReschedule(status) {
       cancelAppointment(null, null, status);
     }
 
-    function cancelAppointment(appointmentId = null, rowIndex = null, status = null) {
-      let appointmentIds = appointmentId ? [appointmentId] : Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
-      if (appointmentIds.length === 0) {
+    function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
+      let selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds]; // Handle single or bulk IDs
+    
+      if (selectedIds.length === 0 || !selectedIds[0]) {
         showModal("No appointments selected.");
         return;
       }
-      if (!confirm(`Are you sure you want to cancel ${appointmentIds.length} appointment(s)?`)) return;
-
+    
+      if (!confirm(`Are you sure you want to cancel ${selectedIds.length} appointment(s)?`)) return;
+    
       fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ appointment_ids: appointmentIds, status: "Canceled" })
+        body: JSON.stringify({ appointment_ids: selectedIds, status: "Canceled" })
       })
-      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-      .then(data => {
-        showModal(`Successfully canceled ${appointmentIds.length} appointment(s).`);
-        fetchAppointments(status || "Canceled");
-      })
-      .catch(error => showModal("Failed to cancel: " + (error.detail || "Server Fetch Error")));
+        .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+        .then(data => {
+          showModal(`Successfully canceled ${selectedIds.length} appointment(s).`);
+          fetchAppointments(status || "Canceled");
+        })
+        .catch(error => showModal("Failed to cancel: " + (error.detail || "Server Fetch Error")));
     }
 
-    function openRescheduleModal(appointmentId = null, date = null) {
-      let selectedAppointments = appointmentId ? [appointmentId] : Array.from(document.querySelectorAll(`.${$("#appointmentTabs .nav-link.active").attr("href").substring(1)}-checkbox:checked`)).map(cb => cb.value);
-      if (selectedAppointments.length === 0) {
+    function openRescheduleModal(appointmentIds = null, date = null, status = null) {
+      let selectedIds = [];
+    
+      if (Array.isArray(appointmentIds)) {
+        selectedIds = appointmentIds; // Use passed IDs for bulk case
+      } else if (appointmentIds) {
+        selectedIds = [appointmentIds]; // Single appointment case
+      } else if (status) {
+        // Fallback to collecting IDs if none provided (for backward compatibility)
+        selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
+          .map(cb => cb.value);
+      }
+    
+      if (selectedIds.length === 0) {
         showModal("No appointments selected.");
         return;
       }
-      $("#rescheduleAppointmentID").val(selectedAppointments.join(","));
-      $("#newAppointmentDate").val("");
+    
+      $("#rescheduleAppointmentID").val(selectedIds.join(","));
+      $("#newAppointmentDate").val(date || "");
       $("#rescheduleAppointmentModal").modal("show");
     }
 
@@ -1294,19 +1314,19 @@ function bulkReschedule(status) {
         showModal("Please select a new date and time.");
         return;
       }
-
+    
       fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
       })
-      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-      .then(data => {
-        showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
-        $("#rescheduleAppointmentModal").modal("hide");
-        fetchAppointments("Rescheduled");
-      })
-      .catch(error => showModal("Failed to reschedule: " + (error.detail || "Server Fetch Error")));
+        .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+        .then(data => {
+          showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
+          $("#rescheduleAppointmentModal").modal("hide");
+          fetchAppointments("Rescheduled");
+        })
+        .catch(error => showModal("Failed to reschedule: " + (error.detail || "Server Fetch Error")));
     }
 
     function formatDateTime(dateTimeString) {
