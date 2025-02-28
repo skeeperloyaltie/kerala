@@ -286,8 +286,8 @@
                   <h4 class="card-title">Current Patient Details & Appointments</h4>
                   <div class="d-flex justify-content-between mb-3">
                     <div>
-                      <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="bulkCancel({status})">Cancel</button>
-                      <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="bulkReschedule({status})">Reschedule</button>
+                      <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="bulkCancel()">Cancel</button>
+                      <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="bulkReschedule()">Reschedule</button>
                      </div>
                     <button class="btn btn-primary btn-sm"><a href="search.html" class="text-white text-decoration-none">Search Patient</a></button>
                   </div>
@@ -912,16 +912,16 @@ function toggleAll(status) {
   updateBulkActions(status, selectedIds);
 }
 
-function bulkCancel(status) {
+function bulkCancel() { // Remove status parameter
+  const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1).charAt(0).toUpperCase() + $("#appointmentTabs .nav-link.active").attr("href").substring(2);
   let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
     .map(checkbox => checkbox.value);
-  console.log(selectedIds)
+  console.log("bulkCancel selectedIds:", selectedIds); // Debug log
   if (selectedIds.length === 0) {
     showModal("No appointments selected for cancellation.");
     return;
   }
-
-  cancelAppointment(selectedIds, null, status); // Pass selectedIds explicitly
+  cancelAppointment(selectedIds, null, status);
 }
 
 // Function to update selection when individual checkboxes are clicked
@@ -952,17 +952,19 @@ function updateBulkActions(status, selectedIds) {
   rescheduleBtn.classList.toggle("d-none", !shouldShow);
 }
 
-function bulkReschedule(status) {
+function bulkReschedule() { // Remove status parameter
+  const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1).charAt(0).toUpperCase() + $("#appointmentTabs .nav-link.active").attr("href").substring(2);
   let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
     .map(checkbox => checkbox.value);
-  console.log(selectedIds)
+  console.log("bulkReschedule selectedIds:", selectedIds); // Debug log
   if (selectedIds.length === 0) {
     showModal("No appointments selected for rescheduling.");
     return;
   }
-
-  openRescheduleModal(selectedIds, null, status); // Pass selectedIds explicitly
+  openRescheduleModal(selectedIds, null, status);
 }
+console.log(document.querySelectorAll(`.${status}-checkbox:checked`)); // Check if elements are found
+console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("href"));
 
     function getActionButton(status, appointment, rowIndex) {
       let buttons = "";
