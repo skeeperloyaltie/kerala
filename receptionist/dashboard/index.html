@@ -1259,26 +1259,27 @@ function convertValue(value, fromUnit, toUnit) {
   return conversionFunc ? conversionFunc(value) : value;
 }
 
+let currentAppointment = null; // Global variable to store the current appointment
+
 function openEditModal(appointmentData, rowIndex) {
-  let appointment = JSON.parse(decodeURIComponent(appointmentData));
-  $("#editFirstName").val(appointment.patient?.first_name || "");
-  $("#editLastName").val(appointment.patient?.last_name || "");
-  $("#editContactNumber").val(appointment.patient?.contact_number || "");
-  $("#editDateOfBirth").val(appointment.patient?.date_of_birth || "");
-  $("#editAge").val(appointment.patient?.age || "");
-  $("#editCurrentIllness").val(appointment.current_illness || "");
-  $("#editAppointmentDate").val(formatDateTime(appointment.appointment_date));
-  $("#editAppointmentStatus").val(appointment.status || "");
-  $("#editNotes").val(appointment.notes || "");
-  $("#editAppointmentID").val(appointment.id);
-  $("#editPatientID").val(appointment.patient?.patient_id || "");
+  currentAppointment = JSON.parse(decodeURIComponent(appointmentData)); // Store the appointment data
+  $("#editFirstName").val(currentAppointment.patient?.first_name || "");
+  $("#editLastName").val(currentAppointment.patient?.last_name || "");
+  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
+  $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
+  $("#editAge").val(currentAppointment.patient?.age || "");
+  $("#editCurrentIllness").val(currentAppointment.current_illness || "");
+  $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date)); // Set the appointment date
+  $("#editAppointmentStatus").val(currentAppointment.status || "");
+  $("#editNotes").val(currentAppointment.notes || "");
+  $("#editAppointmentID").val(currentAppointment.id);
+  $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
 
   $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
   $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
-  // Load doctors and set the previously assigned doctor as selected
-  let previousDoctorId = appointment.doctor?.id || "";
-  loadDoctors(previousDoctorId); // Pass the previous doctor ID to pre-select it
+  let previousDoctorId = currentAppointment.doctor?.id || "";
+  loadDoctors(previousDoctorId);
 
   $("#editAppointmentModal").modal("show");
 }
@@ -1289,23 +1290,36 @@ function updateAppointment() {
     patient_id: $("#editPatientID").val(),
     date_of_birth: $("#editDateOfBirth").val(),
     current_illness: $("#editCurrentIllness").val(),
-    doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "", // Use previous doctor if none selected
+    doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
     status: $("#editAppointmentStatus").val(),
-    notes: $("#editNotes").val()
+    notes: $("#editNotes").val(),
+    appointment_date: $("#editAppointmentDate").val() // Add the appointment date
   };
+
+  // Log the data being sent to the backend
+  console.log("Data being sent to backend:", JSON.stringify(updatedAppointment, null, 2));
 
   fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(updatedAppointment)
   })
-  .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => Promise.reject(err));
+    }
+    return response.json();
+  })
   .then(data => {
+    console.log("Response from backend:", data); // Log the response
     showNotification("Appointment updated successfully!");
     $("#editAppointmentModal").modal("hide");
     location.reload();
   })
-  .catch(error => showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error'));
+  .catch(error => {
+    console.error("Error updating appointment:", error); // Log any errors
+    showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error');
+  });
 }
 
     // Cancel and Reschedule (unchanged)
