@@ -1145,71 +1145,118 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
       return age;
     }
 
-    // Vitals Handling (unchanged)
-    function saveVitals() {
-      const appointmentId = $("#vitalsModal").data("appointmentId");
-      if (!appointmentId) {
-        showModal("Appointment ID is missing.");
-        return;
-      }
+    // Update saveVitals to reset original values after saving (optional)
+function saveVitals() {
+  const appointmentId = $("#vitalsModal").data("appointmentId");
+  if (!appointmentId) {
+    showNotification("Appointment ID is missing.", 'error');
+    return;
+  }
 
-      let vitalsData = {
-        appointment: appointmentId,
-        blood_pressure: $("#modalBloodPressure").val().trim() || null,
-        heart_rate: $("#modalHeartRate").val().trim() || null,
-        temperature: $("#modalTemperature").val().trim() || null,
-        respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
-        oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
-        weight: $("#modalWeight").val().trim() || null,
-        height: $("#modalHeight").val().trim() || null
-      };
+  let vitalsData = {
+    appointment: appointmentId,
+    blood_pressure: $("#modalBloodPressure").val().trim() || null,
+    heart_rate: $("#modalHeartRate").val().trim() || null,
+    temperature: $("#modalTemperature").val().trim() || null,
+    respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
+    oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
+    weight: $("#modalWeight").val().trim() || null,
+    height: $("#modalHeight").val().trim() || null
+  };
 
-      Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
+  Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
 
-      $.ajax({
-        url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
-        type: 'POST',
-        headers: getAuthHeaders(),
-        data: JSON.stringify(vitalsData),
-        contentType: 'application/json',
-        success: function() {
-          $("#vitalsModal").modal("hide");
-          showModal("Vitals saved successfully.");
-        },
-        error: function(xhr) {
-          const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals.";
-          showModal(errorMessage);
-        }
-      });
+  $.ajax({
+    url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
+    type: 'POST',
+    headers: getAuthHeaders(),
+    data: JSON.stringify(vitalsData),
+    contentType: 'application/json',
+    success: function() {
+      $("#vitalsModal").modal("hide");
+      showNotification("Vitals saved successfully!");
+      location.reload();
+    },
+    error: function(xhr) {
+      const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals.";
+      showNotification(errorMessage, 'error');
     }
+  });
+}
 
-    document.addEventListener("DOMContentLoaded", function() {
-      $(".unit-select").on("change", function() { convertMeasurement(this); });
-    });
+   // Add this at the top of your script to store original values
+const originalVitals = {};
 
-    function convertMeasurement(select) {
-      let inputId = select.dataset.input;
-      let inputField = document.getElementById(inputId);
-      let currentValue = parseFloat(inputField.value);
-      let fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
-      let toUnit = select.value;
+// Initialize original values when the modal opens (e.g., in saveVitals or when modal is shown)
+$("#vitalsModal").on("show.bs.modal", function() {
+  ["modalBloodPressure", "modalTemperature", "modalHeartRate", "modalRespiratoryRate", 
+   "modalOxygenSaturation", "modalWeight", "modalHeight"].forEach(id => {
+    const input = document.getElementById(id);
+    const select = document.querySelector(`.unit-select[data-input="${id}"]`);
+    originalVitals[id] = {
+      value: input.value || "", // Store original input (e.g., "120/80" for BP)
+      unit: select.getAttribute("data-prev-unit") || select.options[0].value // Default to first option if unset
+    };
+  });
+});
 
-      if (isNaN(currentValue)) return;
+document.addEventListener("DOMContentLoaded", function() {
+  $(".unit-select").on("change", function() { convertMeasurement(this); });
+});
 
-      let newValue = convertValue(currentValue, fromUnit, toUnit);
-      inputField.value = newValue.toFixed(2);
-      select.setAttribute("data-prev-unit", toUnit);
-    }
+function convertMeasurement(select) {
+  let inputId = select.dataset.input;
+  let inputField = document.getElementById(inputId);
+  let toUnit = select.value;
+  let original = originalVitals[inputId] || { value: "", unit: select.options[0].value };
+  let currentValue = inputField.value.trim();
 
-    function convertValue(value, fromUnit, toUnit) {
-      const conversions = {
-        "cm": { "in": value / 2.54 }, "in": { "cm": value * 2.54 },
-        "kg": { "lbs": value * 2.20462 }, "lbs": { "kg": value / 2.20462 },
-        "°C": { "°F": (value * 9/5) + 32 }, "°F": { "°C": (value - 32) * 5/9 },
-        "mmHg": { "kPa": value * 0.133322 }, "kPa": { "mmHg": value / 0.133322 }
-      };
-      return conversions[fromUnit]?.[toUnit] || value;
-    }
+  // Always update the previous unit, even if no value is entered
+  select.setAttribute("data-prev-unit", toUnit);
+
+  // If no value entered yet, just return (no conversion needed)
+  if (!currentValue) return;
+
+  // If the value hasn’t changed from the original, use the original for conversion
+  if (currentValue === inputField.defaultValue || currentValue === original.value) {
+    currentValue = original.value;
+  }
+
+  let newValue;
+  if (inputId === "modalBloodPressure") {
+    // Handle blood pressure (systolic/diastolic)
+    const [systolic, diastolic] = currentValue.split("/").map(v => parseFloat(v.trim()));
+    if (isNaN(systolic) || isNaN(diastolic)) return; // Invalid BP format
+    const convertedSystolic = convertValue(systolic, original.unit, toUnit);
+    const convertedDiastolic = convertValue(diastolic, original.unit, toUnit);
+    newValue = `${convertedSystolic.toFixed(2)}/${convertedDiastolic.toFixed(2)}`;
+  } else {
+    // Handle single-value inputs (e.g., temperature, weight)
+    const numericValue = parseFloat(currentValue);
+    if (isNaN(numericValue)) return; // Invalid number
+    newValue = convertValue(numericValue, original.unit, toUnit).toFixed(2);
+  }
+
+  inputField.value = newValue;
+}
+
+function convertValue(value, fromUnit, toUnit) {
+  if (fromUnit === toUnit) return value;
+
+  const conversions = {
+    "cm": { "in": v => v / 2.54 },
+    "in": { "cm": v => v * 2.54 },
+    "kg": { "lbs": v => v * 2.20462 },
+    "lbs": { "kg": v => v / 2.20462 },
+    "°C": { "°F": v => (v * 9/5) + 32 },
+    "°F": { "°C": v => (v - 32) * 5/9 },
+    "mmHg": { "kPa": v => v * 0.133322 },
+    "kPa": { "mmHg": v => v / 0.133322 }
+  };
+
+  const conversionFunc = conversions[fromUnit]?.[toUnit];
+  return conversionFunc ? conversionFunc(value) : value;
+}
 
     // Edit Appointment (unchanged)
     function openEditModal(appointmentData, rowIndex) {
@@ -1282,6 +1329,7 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
         .then(data => {
           showModal(`Successfully canceled ${selectedIds.length} appointment(s).`);
           fetchAppointments(status || "Canceled");
+          location.reload()
         })
         .catch(error => showModal("Failed to cancel: " + (error.detail || "Server Fetch Error")));
     }
@@ -1327,6 +1375,7 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
           showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
           $("#rescheduleAppointmentModal").modal("hide");
           fetchAppointments("Rescheduled");
+          location.reload()
         })
         .catch(error => showModal("Failed to reschedule: " + (error.detail || "Server Fetch Error")));
     }
