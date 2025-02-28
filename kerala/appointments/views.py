@@ -425,26 +425,23 @@ KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 class EditAppointmentView(APIView):
     """
     Allows doctors and receptionists to edit an appointment's details, including status.
-    Preserves the original appointment_date unless explicitly updated.
+    Preserves the original doctor if no new doctor_id is provided.
     """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, appointment_id):
         user = request.user
-        data = request.data.copy()  # Make a mutable copy of request.data
+        data = request.data.copy()
 
         logger.info(f"User {user.username} ({user.user_type}) attempting to edit appointment {appointment_id}.")
         logger.info(f"Received data: {data}")
 
-        # Ensure user is a doctor or receptionist
         if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
             logger.warning(f"Unauthorized attempt to edit appointment {appointment_id} by {user.username}.")
             return Response({"error": "Only doctors and receptionists can edit appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Fetch the appointment
         appointment = get_object_or_404(Appointment, id=appointment_id)
 
-        # Ensure doctor can only edit their own appointments
         if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
             logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
             return Response({"error": "You can only edit your own appointments."}, status=status.HTTP_403_FORBIDDEN)
@@ -464,7 +461,7 @@ class EditAppointmentView(APIView):
             appointment.patient.current_illness = data["current_illness"]
             appointment.patient.save()
 
-        # Handle appointment_date: Use existing value unless explicitly provided
+        # Handle appointment_date
         if "appointment_date" in data:
             try:
                 appointment_date_str = data["appointment_date"]
@@ -474,7 +471,6 @@ class EditAppointmentView(APIView):
                     appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M:%S")
                     appointment_date = KOLKATA_TZ.localize(appointment_date)
                 appointment.appointment_date = appointment_date.astimezone(KOLKATA_TZ)
-                # Ensure the new date is in the future
                 now_kolkata = datetime.now(KOLKATA_TZ)
                 if appointment.appointment_date < now_kolkata:
                     logger.warning(f"Attempt to set appointment {appointment_id} date in the past: {appointment.appointment_date}")
@@ -482,16 +478,16 @@ class EditAppointmentView(APIView):
             except ValueError as e:
                 logger.error(f"Invalid appointment date format: {e}")
                 return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
-        # If not provided, appointment.appointment_date remains unchanged (original DB value)
 
-        # Update other fields if provided
-        if "doctor_id" in data:
+        # Handle doctor_id: Use existing doctor if not provided
+        if "doctor_id" in data and data["doctor_id"]:
             try:
                 doctor = get_object_or_404(Doctor, id=data["doctor_id"])
                 appointment.doctor = doctor
             except ObjectDoesNotExist:
                 logger.error(f"Doctor with ID {data['doctor_id']} not found.")
                 return Response({"error": "Invalid doctor ID."}, status=status.HTTP_400_BAD_REQUEST)
+        # If no doctor_id is provided or it's empty, keep the existing doctor (no change)
 
         appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user

@@ -1259,51 +1259,54 @@ function convertValue(value, fromUnit, toUnit) {
   return conversionFunc ? conversionFunc(value) : value;
 }
 
-    // Edit Appointment (unchanged)
-    function openEditModal(appointmentData, rowIndex) {
-      let appointment = JSON.parse(decodeURIComponent(appointmentData));
-      $("#editFirstName").val(appointment.patient?.first_name || "");
-      $("#editLastName").val(appointment.patient?.last_name || "");
-      $("#editContactNumber").val(appointment.patient?.contact_number || "");
-      $("#editDateOfBirth").val(appointment.patient?.date_of_birth || "");
-      $("#editAge").val(appointment.patient?.age || "");
-      $("#editCurrentIllness").val(appointment.current_illness || "");
-      $("#editAppointmentDate").val(formatDateTime(appointment.appointment_date));
-      $("#editAppointmentStatus").val(appointment.status || "");
-      $("#editNotes").val(appointment.notes || "");
-      $("#editAppointmentID").val(appointment.id);
-      $("#editPatientID").val(appointment.patient?.patient_id || "");
+function openEditModal(appointmentData, rowIndex) {
+  let appointment = JSON.parse(decodeURIComponent(appointmentData));
+  $("#editFirstName").val(appointment.patient?.first_name || "");
+  $("#editLastName").val(appointment.patient?.last_name || "");
+  $("#editContactNumber").val(appointment.patient?.contact_number || "");
+  $("#editDateOfBirth").val(appointment.patient?.date_of_birth || "");
+  $("#editAge").val(appointment.patient?.age || "");
+  $("#editCurrentIllness").val(appointment.current_illness || "");
+  $("#editAppointmentDate").val(formatDateTime(appointment.appointment_date));
+  $("#editAppointmentStatus").val(appointment.status || "");
+  $("#editNotes").val(appointment.notes || "");
+  $("#editAppointmentID").val(appointment.id);
+  $("#editPatientID").val(appointment.patient?.patient_id || "");
 
-      $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
-      $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
-      loadDoctors(appointment.doctor?.id);
-      $("#editAppointmentModal").modal("show");
-    }
+  $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
+  $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
-    function updateAppointment() {
-      let updatedAppointment = {
-        id: $("#editAppointmentID").val(),
-        patient_id: $("#editPatientID").val(),
-        date_of_birth: $("#editDateOfBirth").val(),
-        current_illness: $("#editCurrentIllness").val(),
-        doctor_id: $("#editDoctor").val(),
-        status: $("#editAppointmentStatus").val(),
-        notes: $("#editNotes").val()
-      };
+  // Load doctors and set the previously assigned doctor as selected
+  let previousDoctorId = appointment.doctor?.id || "";
+  loadDoctors(previousDoctorId); // Pass the previous doctor ID to pre-select it
 
-      fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify(updatedAppointment)
-      })
-      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-      .then(data => {
-        showModal("Appointment updated successfully!");
-        $("#editAppointmentModal").modal("hide");
-        location.reload();
-      })
-      .catch(error => showModal("Failed to update appointment: " + (error.detail || "Server Fetch Error")));
-    }
+  $("#editAppointmentModal").modal("show");
+}
+
+function updateAppointment() {
+  let updatedAppointment = {
+    id: $("#editAppointmentID").val(),
+    patient_id: $("#editPatientID").val(),
+    date_of_birth: $("#editDateOfBirth").val(),
+    current_illness: $("#editCurrentIllness").val(),
+    doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "", // Use previous doctor if none selected
+    status: $("#editAppointmentStatus").val(),
+    notes: $("#editNotes").val()
+  };
+
+  fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(updatedAppointment)
+  })
+  .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+  .then(data => {
+    showNotification("Appointment updated successfully!");
+    $("#editAppointmentModal").modal("hide");
+    location.reload();
+  })
+  .catch(error => showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error'));
+}
 
     // Cancel and Reschedule (unchanged)
     function cancelAppointments() {

@@ -1053,7 +1053,6 @@ function toggleAll(status) {
         }
       });
     }
-
     function openEditModal(appointmentData, rowIndex) {
       let appointment = JSON.parse(decodeURIComponent(appointmentData));
       $("#editFirstName").val(appointment.patient?.first_name || "");
@@ -1067,10 +1066,14 @@ function toggleAll(status) {
       $("#editNotes").val(appointment.notes || "");
       $("#editAppointmentID").val(appointment.id);
       $("#editPatientID").val(appointment.patient?.patient_id || "");
-
+    
       $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
       $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
-      loadDoctors(appointment.doctor?.id);
+    
+      // Load doctors and set the previously assigned doctor as selected
+      let previousDoctorId = appointment.doctor?.id || "";
+      loadDoctors(previousDoctorId); // Pass the previous doctor ID to pre-select it
+    
       $("#editAppointmentModal").modal("show");
     }
 
@@ -1080,11 +1083,11 @@ function toggleAll(status) {
         patient_id: $("#editPatientID").val(),
         date_of_birth: $("#editDateOfBirth").val(),
         current_illness: $("#editCurrentIllness").val(),
-        doctor_id: $("#editDoctor").val(),
+        doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "", // Use previous doctor if none selected
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val()
       };
-
+    
       fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
