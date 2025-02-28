@@ -924,7 +924,20 @@ function toggleAll(status) {
       }
       return buttons;
     }
+    const modal = document.getElementById("messageModal");
+    const closeBtn = document.querySelector(".close-btn");
+    const modalMessage = document.getElementById("modalMessage");
 
+    function showModal(message, type) {
+      modalMessage.textContent = message;
+      modalMessage.classList.toggle("success-message", type === 'success');
+      modalMessage.classList.toggle("error-message", type === 'error');
+      modal.classList.add("show");
+      modal.style.display = "block";
+    }
+
+    closeBtn.onclick = () => modal.style.display = "none";
+    window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
     // Form Handling
     function showAppointmentForm() {
       $("#appointmentFormContainer").show();
@@ -1181,6 +1194,8 @@ function rescheduleAppointments() {
         })
         .catch(error => showModal("Failed to reschedule: " + (error.detail || "Server Fetch Error")));
     }
+
+  
 
     // Search Filter Logic
     function filterTable() {

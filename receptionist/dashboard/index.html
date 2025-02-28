@@ -1112,6 +1112,7 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
           hideAppointmentForm();
           fetchAppointments("Scheduled");
           $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          showNotification("Appointment created successfully!");
         },
         error: function(xhr) { showModal("Failed to create appointment."); }
       });
