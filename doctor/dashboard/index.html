@@ -942,15 +942,21 @@ function showModal(message, type) {
 }
 
     // Form Handling
-    function showAppointmentForm() {
-      $("#appointmentFormContainer").show();
-      $("#appointmentTabs .nav-link").removeClass("active");
-    }
+   // Modified appointment form visibility functions
+function showAppointmentForm() {
+  $("#appointmentFormContainer").show();
+  // Hide all tab contents except the form
+  $(".tab-pane").removeClass("show active");
+  $("#appointmentTabs .nav-link").removeClass("active");
+}
 
-    function hideAppointmentForm() {
-      $("#appointmentFormContainer").hide();
-      $("#appointmentForm")[0].reset();
-    }
+function hideAppointmentForm() {
+  $("#appointmentFormContainer").hide();
+  $("#appointmentForm")[0].reset();
+  // Restore the previously active tab
+  var activeTab = localStorage.getItem("activeTab") || "#waiting";
+  $(`#appointmentTabs a[href="${activeTab}"]`).tab("show");
+}
 
     let doctorMap = {};
     function loadDoctors(selectedId = null) {
@@ -1062,22 +1068,35 @@ function showModal(message, type) {
     }
     let currentAppointment = null; // Global variable to store the current appointment
 
+// Updated openEditModal with age calculation
 function openEditModal(appointmentData, rowIndex) {
-  currentAppointment = JSON.parse(decodeURIComponent(appointmentData)); // Store the appointment data
+  currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
+  
   $("#editFirstName").val(currentAppointment.patient?.first_name || "");
   $("#editLastName").val(currentAppointment.patient?.last_name || "");
   $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
   $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-  $("#editAge").val(currentAppointment.patient?.age || "");
+  
+  // Calculate and update age
+  const dob = currentAppointment.patient?.date_of_birth;
+  if (dob) {
+      const calculatedAge = calculateAge(dob);
+      $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
+  } else {
+      $("#editAge").val("");
+  }
+  
   $("#editCurrentIllness").val(currentAppointment.current_illness || "");
-  $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date)); // Set the appointment date
+  $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
   $("#editAppointmentStatus").val(currentAppointment.status || "");
   $("#editNotes").val(currentAppointment.notes || "");
   $("#editAppointmentID").val(currentAppointment.id);
   $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
 
-  $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
-  $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+  // Make fields read-only
+  $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
+  $("#editAge").prop("readonly", true); // Age should also be readonly since it's calculated
+  $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
   let previousDoctorId = currentAppointment.doctor?.id || "";
   loadDoctors(previousDoctorId);
@@ -1248,46 +1267,48 @@ function rescheduleAppointments() {
 
     $("#searchPatientId, #searchName, #searchAge, #searchDob, #searchDate").on("input change", filterTable);
 
-    document.addEventListener("DOMContentLoaded", function() {
-      ["#contactNumber", "#editContactNumber"].forEach(selector => {
-        const input = document.querySelector(selector);
-        if (input) {
+    // Ensure tab switching works correctly
+document.addEventListener("DOMContentLoaded", function() {
+  ["#contactNumber", "#editContactNumber"].forEach(selector => {
+      const input = document.querySelector(selector);
+      if (input) {
           const iti = window.intlTelInput(input, {
-            initialCountry: "in",
-            preferredCountries: ["in", "us", "gb", "ke", "ng"],
-            separateDialCode: true
+              initialCountry: "in",
+              preferredCountries: ["in", "us", "gb", "ke", "ng"],
+              separateDialCode: true
           });
           input.addEventListener("blur", () => console.log(`Full Phone Number (${selector}):`, iti.getNumber()));
-        }
-      });
-    
-      $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
-      let now = new Date();
-      let formattedNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      $("#appointmentDate").attr("min", formattedNow);
-    
-      $("#dateOfBirth, #editDateOfBirth").on("change", function() {
-        const dob = new Date(this.value);
-        const today = new Date();
-        let age = today.getFullYear() - dob.getFullYear();
-        if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
-        $(this.id === "dateOfBirth" ? "#age" : "#editAge").val(age >= 0 ? age : "");
-      });
-    
-      $("#appointmentTabs a").on("shown.bs.tab", function(e) {
-        localStorage.setItem("activeTab", $(e.target).attr("href"));
-      });
-      var activeTab = localStorage.getItem("activeTab");
-      if (activeTab) $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
-    
-      $("#logoutButton, #logoutDropdown").on("click", function(e) {
-        e.preventDefault();
-        logoutUser();
-      });
-    
-      // Move fetchAppointments and loadDoctors to validateUserSession success callback
-      checkSessionOnLoad();
-    });
+      }
+  });
+
+  $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
+  let now = new Date();
+  let formattedNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  $("#appointmentDate").attr("min", formattedNow);
+
+  $("#dateOfBirth, #editDateOfBirth").on("change", function() {
+      const dob = new Date(this.value);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+      $(this.id === "dateOfBirth" ? "#age" : "#editAge").val(age >= 0 ? age : "");
+  });
+
+  $("#appointmentTabs a").on("shown.bs.tab", function(e) {
+      localStorage.setItem("activeTab", $(e.target).attr("href"));
+      $("#appointmentFormContainer").hide(); // Hide form when switching tabs
+  });
+  
+  var activeTab = localStorage.getItem("activeTab");
+  if (activeTab) $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
+
+  $("#logoutButton, #logoutDropdown").on("click", function(e) {
+      e.preventDefault();
+      logoutUser();
+  });
+
+  checkSessionOnLoad();
+});
 
     $("#patientID").on("blur", function() {
       let patientId = $(this).val().trim();
