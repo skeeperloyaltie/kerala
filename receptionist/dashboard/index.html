@@ -24,6 +24,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
 
   <style>
+    .tab-pane {
+      display: none;
+  }
+  .tab-pane.show {
+      display: block;
+  }
+  #appointmentFormContainer {
+      position: relative;
+      z-index: 10;
+  }
    /* Table Styles */
    .table-responsive {
     max-height: 400px;
@@ -692,15 +702,22 @@
     closeBtn.onclick = () => modal.style.display = "none";
     window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
 
-    // Appointment Form Handling
-    function showAppointmentForm() {
-      $("#appointmentFormContainer").show();
-      $("#appointmentTabs .nav-link").removeClass("active");
-    }
-    function hideAppointmentForm() {
-      $("#appointmentFormContainer").hide();
-      $("#appointmentForm")[0].reset();
-    }
+   // Modified appointment form visibility functions
+function showAppointmentForm() {
+  $("#appointmentFormContainer").show();
+  // Hide all tab contents except the form
+  $(".tab-pane").removeClass("show active");
+  $("#appointmentTabs .nav-link").removeClass("active");
+}
+
+function hideAppointmentForm() {
+  $("#appointmentFormContainer").hide();
+  $("#appointmentForm")[0].reset();
+  $("#appointmentForm .form-control").removeClass("is-invalid");
+  // Restore the previously active tab
+  var activeTab = localStorage.getItem("activeTab") || "#waiting";
+  $(`#appointmentTabs a[href="${activeTab}"]`).tab("show");
+}
 
     // Date Restrictions
     document.getElementById("dateOfBirth").setAttribute("max", new Date().toISOString().split("T")[0]);
@@ -758,6 +775,36 @@
 
   <!-- Inline Scripts (Moved from body for organization) -->
   <script>
+
+    // Utility function to format error messages from server responses
+function getErrorMessage(xhrOrError, defaultMessage) {
+  let message = defaultMessage;
+  if (xhrOrError.responseJSON) {
+      const response = xhrOrError.responseJSON;
+      if (response.detail) {
+          message = response.detail; // Standard Django REST Framework error
+      } else if (response.error) {
+          message = response.error; // Custom error field
+      } else if (response.non_field_errors) {
+          message = response.non_field_errors.join(", "); // Form validation errors
+      } else {
+          message = JSON.stringify(response); // Fallback to raw response
+      }
+  } else if (xhrOrError.status) {
+      switch (xhrOrError.status) {
+          case 400: message = "Bad request: Invalid data provided."; break;
+          case 401: message = "Unauthorized: Please log in again."; break;
+          case 403: message = "Forbidden: You don’t have permission."; break;
+          case 404: message = "Not found: Resource unavailable."; break;
+          case 409: message = "Conflict: Duplicate entry detected."; break;
+          case 500: message = "Server error: Please try again later."; break;
+          default: message = `Error ${xhrOrError.status}: ${xhrOrError.statusText || "Unknown error"}`;
+      }
+  } else if (xhrOrError.message) {
+      message = xhrOrError.message; // Generic JS error
+  }
+  return message;
+}
     // Session and Logout (unchanged)
     function checkSessionOnLoad() {
       const token = localStorage.getItem('token');
@@ -771,31 +818,46 @@
       validateUserSession();
     }
 
-    function validateUserSession() {
-      const headers = getAuthHeaders();
-      if (!headers['Authorization']) {
-        window.location.href = 'http://smarthospitalmaintain.com';
-        return;
-      }
-      $.ajax({
-        url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
-        type: 'GET',
-        headers: headers,
-        success: function(response) {
+// Modified validateUserSession with detailed logging and error handling
+function validateUserSession() {
+  const headers = getAuthHeaders();
+  if (!headers['Authorization']) {
+      console.warn("No authorization token found, redirecting to login...");
+      window.location.href = 'http://smarthospitalmaintain.com';
+      return;
+  }
+  console.log("Validating user session with headers:", headers);
+
+  $.ajax({
+      url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
+      type: 'GET',
+      headers: headers,
+      success: function(response) {
           if (response.message !== 'Cookie is valid.') {
-            showModal('Invalid session. Logging out.');
-            attemptLogout();
+              console.error("Invalid session response:", response);
+              showModal("Invalid session. Logging out.", "error");
+              attemptLogout();
           } else {
-            $("#logged_in_user_name, #logged_in_user_name_sidebar, #logged_in_user_name_breadcrumb").text(response.name);
-            $("#timeOfDay").text(getGreetingTime());
+              console.log("Session validated successfully:", response);
+              $("#logged_in_user_name, #logged_in_user_name_sidebar, #logged_in_user_name_breadcrumb").text(response.name);
+              $("#timeOfDay").text(getGreetingTime());
+              const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"];
+              statuses.forEach(fetchAppointments);
+              loadDoctors();
           }
-        },
-        error: function(xhr) {
-          console.error('❌ Error validating session:', xhr.responseText);
+      },
+      error: function(xhr) {
+          console.error("Failed to validate session:", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              response: xhr.responseJSON
+          });
+          const errorMsg = getErrorMessage(xhr, "Failed to validate session.");
+          showNotification(errorMsg, "error");
           attemptLogout();
-        }
-      });
-    }
+      }
+  });
+}
 
     function attemptLogout() {
       logoutUser();
@@ -846,20 +908,42 @@
       });
     });
 
-    // Appointment Fetching and Population (unchanged)
-    function fetchAppointments(status) {
-      const headers = getAuthHeaders();
-      let url = `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`;
-      $.ajax({
-        url: url,
-        type: 'GET',
-        headers: headers,
-        success: function(response) {
+    // Enhanced notification function with type parameter
+function showNotification(message, type = "error", duration = 4000) {
+  $("#notificationMessage").text(message);
+  $("#customNotification")
+      .removeClass("success-message error-message")
+      .addClass(type === "success" ? "success-message" : "error-message")
+      .show()
+      .css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
+  setTimeout(() => $("#customNotification").hide(), duration);
+}
+
+// Modified fetchAppointments with detailed logging and error handling
+function fetchAppointments(status) {
+  const headers = getAuthHeaders();
+  let url = `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`;
+  console.log(`Fetching appointments for status: ${status}, URL: ${url}`);
+  
+  $.ajax({
+      url: url,
+      type: 'GET',
+      headers: headers,
+      success: function(response) {
+          console.log(`Successfully fetched ${status} appointments:`, response);
           populateAppointmentsTable(status, response.appointments);
-        },
-        error: function(xhr) { console.error(`Error fetching ${status} appointments:`, xhr); }
-      });
-    }
+      },
+      error: function(xhr) {
+          console.error(`Failed to fetch ${status} appointments:`, {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              response: xhr.responseJSON
+          });
+          const errorMsg = getErrorMessage(xhr, `Failed to fetch ${status} appointments.`);
+          showNotification(errorMsg, "error");
+      }
+  });
+}
 
     let filteredAppointments = [];
     function populateAppointmentsTable(status, appointments) {
@@ -1018,109 +1102,137 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
 
     // Doctor Loading (unchanged)
     let doctorMap = {};
-    function loadDoctors(selectedId = null) {
-      $.ajax({
-        url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-        type: "GET",
-        headers: getAuthHeaders(),
-        success: function(response) {
+    // Modified loadDoctors with detailed logging and error handling
+function loadDoctors(selectedId = null) {
+  console.log("Loading doctors list...");
+  $.ajax({
+      url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function(response) {
+          console.log("Doctors loaded successfully:", response);
           $("#doctor, #editDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
           response.doctors.forEach(doctor => {
-            doctorMap[doctor.id] = doctor;
-            let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-            $("#doctor, #editDoctor").append(option);
+              doctorMap[doctor.id] = doctor;
+              let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+              $("#doctor, #editDoctor").append(option);
           });
           if (selectedId) $("#editDoctor").val(selectedId);
-        },
-        error: function(xhr) { console.error("❌ Error fetching doctors:", xhr); }
-      });
-    }
+      },
+      error: function(xhr) {
+          console.error("Failed to load doctors:", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              response: xhr.responseJSON
+          });
+          const errorMsg = getErrorMessage(xhr, "Failed to load doctors list.");
+          showNotification(errorMsg, "error");
+      }
+  });
+}
     $(document).ready(loadDoctors);
 
-    // Appointment Creation (unchanged)
-    function addAppointment() {
-      const doctorId = $("#doctor").val();
-      const patientId = $("#patientID").val().trim();
-      const appointmentDate = $("#appointmentDate").val();
-      const dateOfBirth = $("#dateOfBirth").val();
-      const firstName = $("#firstName").val().trim();
-      const lastName = $("#lastName").val().trim();
-      const contactNumber = $("#contactNumber").val().trim();
-      const notes = $("#notes").val().trim();
-      const isEmergency = $("#isEmergency").is(":checked");
+    // Modified addAppointment with detailed logging and error handling
+function addAppointment() {
+  const doctorId = $("#doctor").val();
+  const patientId = $("#patientID").val().trim();
+  const appointmentDate = $("#appointmentDate").val();
+  const dateOfBirth = $("#dateOfBirth").val();
+  const firstName = $("#firstName").val().trim();
+  const lastName = $("#lastName").val().trim();
+  const contactNumber = $("#contactNumber").val().trim();
+  const notes = $("#notes").val().trim();
+  const isEmergency = $("#isEmergency")?.is(":checked") || false;
 
-      $(".form-control").removeClass("is-invalid");
-      let missingFields = [];
-      if (!doctorId) missingFields.push("Doctor");
-      if (!patientId) missingFields.push("Patient ID");
-      if (!firstName) missingFields.push("First Name");
-      if (!lastName) missingFields.push("Last Name");
-      if (!contactNumber) missingFields.push("Contact Number");
-      if (!appointmentDate) missingFields.push("Appointment Date");
+  $(".form-control").removeClass("is-invalid");
+  let missingFields = [];
+  if (!doctorId) missingFields.push("Doctor");
+  if (!patientId) missingFields.push("Patient ID");
+  if (!firstName) missingFields.push("First Name");
+  if (!lastName) missingFields.push("Last Name");
+  if (!contactNumber) missingFields.push("Contact Number");
+  if (!appointmentDate) missingFields.push("Appointment Date");
 
-      if (missingFields.length > 0) {
-        $("#" + missingFields.map(f => f.toLowerCase().replace(" ", "")).join(", #")).addClass("is-invalid");
-        showModal("Please fill in: " + missingFields.join(", "));
-        return;
-      }
+  if (missingFields.length > 0) {
+      $("#" + missingFields.map(f => f.toLowerCase().replace(" ", "")).join(", #")).addClass("is-invalid");
+      console.warn("Missing fields:", missingFields);
+      showModal("Please fill in: " + missingFields.join(", "));
+      return;
+  }
 
-      const contactRegex = /^\d{10}$/;
-      if (!contactRegex.test(contactNumber)) {
-        $("#contactNumber").addClass("is-invalid");
-        showModal("Contact Number must be exactly 10 digits.");
-        return;
-      }
+  const contactRegex = /^\d{10}$/;
+  if (!contactRegex.test(contactNumber)) {
+      $("#contactNumber").addClass("is-invalid");
+      console.warn("Invalid contact number:", contactNumber);
+      showModal("Contact Number must be exactly 10 digits.");
+      return;
+  }
 
-      if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
-        $("#dateOfBirth").addClass("is-invalid");
-        showModal("Date of birth cannot be in the future.");
-        return;
-      }
+  if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
+      $("#dateOfBirth").addClass("is-invalid");
+      console.warn("Future date of birth:", dateOfBirth);
+      showModal("Date of birth cannot be in the future.");
+      return;
+  }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (new Date(appointmentDate) < today) {
-        $("#appointmentDate").addClass("is-invalid");
-        showModal("Appointment date cannot be in the past.");
-        return;
-      }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (new Date(appointmentDate) < today) {
+      $("#appointmentDate").addClass("is-invalid");
+      console.warn("Past appointment date:", appointmentDate);
+      showModal("Appointment date cannot be in the past.");
+      return;
+  }
 
-      const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
-      if (age !== null && age < 0) {
-        $("#dateOfBirth").addClass("is-invalid");
-        showModal("Invalid Date of Birth.");
-        return;
-      }
-      if (age !== null) $("#age").val(age);
+  const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
+  if (age !== null && age < 0) {
+      $("#dateOfBirth").addClass("is-invalid");
+      console.warn("Invalid age calculated:", age);
+      showModal("Invalid Date of Birth.");
+      return;
+  }
+  if (age !== null) $("#age").val(age);
 
-      const appointmentData = {
-        appointment: { patient_id: patientId, first_name: firstName, last_name: lastName, contact_number: contactNumber, date_of_birth: dateOfBirth },
-        appointment_date: appointmentDate,
-        doctor: doctorId,
-        notes: notes,
-        is_emergency: isEmergency
-      };
+  const appointmentData = {
+      appointment: { patient_id: patientId, first_name: firstName, last_name: lastName, contact_number: contactNumber, date_of_birth: dateOfBirth },
+      appointment_date: appointmentDate,
+      doctor: doctorId,
+      notes: notes,
+      is_emergency: isEmergency
+  };
 
-      $.ajax({
-        url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-        type: "POST",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(appointmentData),
-        contentType: "application/json",
-        success: function(response) {
+  console.log("Creating appointment with data:", appointmentData);
+
+  $.ajax({
+      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(appointmentData),
+      contentType: "application/json",
+      success: function(response) {
+          console.log("Appointment created successfully:", response);
           const appointmentId = response.appointment?.id;
           if (!appointmentId) {
-            showModal("Error: Appointment ID missing.");
-            return;
+              console.error("Appointment ID missing in response:", response);
+              showModal("Error: Appointment ID missing.");
+              return;
           }
           hideAppointmentForm();
           fetchAppointments("Scheduled");
           $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-          showNotification("Appointment created successfully!");
-        },
-        error: function(xhr) { showModal("Failed to create appointment."); }
-      });
-    }
+          showNotification("Appointment created successfully!", "success");
+      },
+      error: function(xhr) {
+          console.error("Failed to create appointment:", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              response: xhr.responseJSON
+          });
+          const errorMsg = getErrorMessage(xhr, "Failed to create appointment.");
+          showNotification(errorMsg, "error");
+      }
+  });
+}
 
     $("#patientID").on("blur", function() {
       let patientId = $(this).val().trim();
@@ -1243,113 +1355,138 @@ function convertValue(value, fromUnit, toUnit) {
   return conversionFunc ? conversionFunc(value) : value;
 }
 
-// Save vitals without altering values based on unit
+// Modified saveVitals with detailed logging and error handling
 function saveVitals() {
   const appointmentId = $("#vitalsModal").data("appointmentId");
   if (!appointmentId) {
-    showNotification("Appointment ID is missing.", "error");
-    return;
+      console.error("Missing appointment ID for vitals");
+      showNotification("Appointment ID is missing.", "error");
+      return;
   }
 
   let vitalsData = {
-    appointment: appointmentId,
-    blood_pressure: $("#modalBloodPressure").val().trim() || null,
-    heart_rate: $("#modalHeartRate").val().trim() || null,
-    temperature: $("#modalTemperature").val().trim() || null,
-    respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
-    oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
-    weight: $("#modalWeight").val().trim() || null,
-    height: $("#modalHeight").val().trim() || null
+      appointment: appointmentId,
+      blood_pressure: $("#modalBloodPressure").val().trim() || null,
+      heart_rate: $("#modalHeartRate").val().trim() || null,
+      temperature: $("#modalTemperature").val().trim() || null,
+      respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
+      oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
+      weight: $("#modalWeight").val().trim() || null,
+      height: $("#modalHeight").val().trim() || null,
+      blood_pressure_unit: document.querySelector(`.unit-select[data-input="modalBloodPressure"]`)?.value || "mmHg",
+      temperature_unit: document.querySelector(`.unit-select[data-input="modalTemperature"]`)?.value || "°C",
+      weight_unit: document.querySelector(`.unit-select[data-input="modalWeight"]`)?.value || "kg",
+      height_unit: document.querySelector(`.unit-select[data-input="modalHeight"]`)?.value || "cm"
   };
 
   Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
 
-  // Optionally add unit information to the payload for backend processing
-  vitalsData.blood_pressure_unit = document.querySelector(`.unit-select[data-input="modalBloodPressure"]`)?.value || "mmHg";
-  vitalsData.temperature_unit = document.querySelector(`.unit-select[data-input="modalTemperature"]`)?.value || "°C";
-  vitalsData.weight_unit = document.querySelector(`.unit-select[data-input="modalWeight"]`)?.value || "kg";
-  vitalsData.height_unit = document.querySelector(`.unit-select[data-input="modalHeight"]`)?.value || "cm";
-
-  console.log("Vitals data being sent:", JSON.stringify(vitalsData, null, 2));
+  console.log("Saving vitals with data:", vitalsData);
 
   $.ajax({
-    url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
-    type: "POST",
-    headers: getAuthHeaders(),
-    data: JSON.stringify(vitalsData),
-    contentType: "application/json",
-    success: function() {
-      $("#vitalsModal").modal("hide");
-      showNotification("Vitals saved successfully!");
-      location.reload();
-    },
-    error: function(xhr) {
-      const errorMessage = xhr.responseJSON ? xhr.responseJSON.error : "Failed to save vitals.";
-      showNotification(errorMessage, "error");
-    }
+      url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(vitalsData),
+      contentType: "application/json",
+      success: function(response) {
+          console.log("Vitals saved successfully:", response);
+          $("#vitalsModal").modal("hide");
+          showNotification("Vitals saved successfully!", "success");
+          location.reload();
+      },
+      error: function(xhr) {
+          console.error("Failed to save vitals:", {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              response: xhr.responseJSON
+          });
+          const errorMsg = getErrorMessage(xhr, "Failed to save vitals.");
+          showNotification(errorMsg, "error");
+      }
   });
 }
 
+// Updated openEditModal with age calculation and non-editable fields
 let currentAppointment = null; // Global variable to store the current appointment
 
 function openEditModal(appointmentData, rowIndex) {
-  currentAppointment = JSON.parse(decodeURIComponent(appointmentData)); // Store the appointment data
-  $("#editFirstName").val(currentAppointment.patient?.first_name || "");
-  $("#editLastName").val(currentAppointment.patient?.last_name || "");
-  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-  $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-  $("#editAge").val(currentAppointment.patient?.age || "");
-  $("#editCurrentIllness").val(currentAppointment.current_illness || "");
-  $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date)); // Set the appointment date
-  $("#editAppointmentStatus").val(currentAppointment.status || "");
-  $("#editNotes").val(currentAppointment.notes || "");
-  $("#editAppointmentID").val(currentAppointment.id);
-  $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
+    currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
+    
+    $("#editFirstName").val(currentAppointment.patient?.first_name || "");
+    $("#editLastName").val(currentAppointment.patient?.last_name || "");
+    $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
+    $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
+    
+    // Calculate and update age
+    const dob = currentAppointment.patient?.date_of_birth;
+    if (dob) {
+        const calculatedAge = calculateAge(dob);
+        $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
+    } else {
+        $("#editAge").val("");
+    }
+    
+    $("#editCurrentIllness").val(currentAppointment.current_illness || "");
+    $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
+    $("#editAppointmentStatus").val(currentAppointment.status || "");
+    $("#editNotes").val(currentAppointment.notes || "");
+    $("#editAppointmentID").val(currentAppointment.id);
+    $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
 
-  $("#editFirstName, #editLastName, #editContactNumber, #editAge").prop("readonly", true);
-  $("#editDateOfBirth, #editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+    // Make fields read-only
+    $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
+    $("#editAge").prop("readonly", true); // Age should also be readonly since it's calculated
+    $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
-  let previousDoctorId = currentAppointment.doctor?.id || "";
-  loadDoctors(previousDoctorId);
+    let previousDoctorId = currentAppointment.doctor?.id || "";
+    loadDoctors(previousDoctorId);
 
-  $("#editAppointmentModal").modal("show");
+    $("#editAppointmentModal").modal("show");
 }
 
+// Modified updateAppointment with detailed logging and error handling
 function updateAppointment() {
   let updatedAppointment = {
-    id: $("#editAppointmentID").val(),
-    patient_id: $("#editPatientID").val(),
-    date_of_birth: $("#editDateOfBirth").val(),
-    current_illness: $("#editCurrentIllness").val(),
-    doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
-    status: $("#editAppointmentStatus").val(),
-    notes: $("#editNotes").val(),
-    appointment_date: $("#editAppointmentDate").val() // Add the appointment date
+      id: $("#editAppointmentID").val(),
+      patient_id: $("#editPatientID").val(),
+      date_of_birth: $("#editDateOfBirth").val(),
+      current_illness: $("#editCurrentIllness").val(),
+      doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
+      status: $("#editAppointmentStatus").val(),
+      notes: $("#editNotes").val(),
+      appointment_date: $("#editAppointmentDate").val()
   };
 
-  // Log the data being sent to the backend
-  console.log("Data being sent to backend:", JSON.stringify(updatedAppointment, null, 2));
+  console.log("Updating appointment with data:", updatedAppointment);
 
   fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(updatedAppointment)
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(updatedAppointment)
   })
   .then(response => {
-    if (!response.ok) {
-      return response.json().then(err => Promise.reject(err));
-    }
-    return response.json();
+      if (!response.ok) {
+          return response.json().then(err => {
+              console.error("Failed to update appointment:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  response: err
+              });
+              throw err;
+          });
+      }
+      return response.json();
   })
   .then(data => {
-    console.log("Response from backend:", data); // Log the response
-    showNotification("Appointment updated successfully!");
-    $("#editAppointmentModal").modal("hide");
-    location.reload();
+      console.log("Appointment updated successfully:", data);
+      showNotification("Appointment updated successfully!", "success");
+      $("#editAppointmentModal").modal("hide");
+      location.reload();
   })
   .catch(error => {
-    console.error("Error updating appointment:", error); // Log any errors
-    showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error');
+      const errorMsg = getErrorMessage(error, "Failed to update appointment.");
+      showNotification(errorMsg, "error");
   });
 }
 
@@ -1359,29 +1496,50 @@ function updateAppointment() {
       cancelAppointment(null, null, status);
     }
 
-    function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
-      let selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds]; // Handle single or bulk IDs
-    
-      if (selectedIds.length === 0 || !selectedIds[0]) {
-        showModal("No appointments selected.");
-        return;
+  // Modified cancelAppointment with detailed logging and error handling
+function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
+  let selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds];
+
+  if (selectedIds.length === 0 || !selectedIds[0]) {
+      console.warn("No appointments selected for cancellation");
+      showModal("No appointments selected.");
+      return;
+  }
+
+  if (!confirm(`Are you sure you want to cancel ${selectedIds.length} appointment(s)?`)) return;
+
+  const payload = { appointment_ids: selectedIds, status: "Canceled" };
+  console.log("Cancelling appointments with payload:", payload);
+
+  fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(payload)
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => {
+              console.error("Failed to cancel appointments:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  response: err
+              });
+              throw err;
+          });
       }
-    
-      if (!confirm(`Are you sure you want to cancel ${selectedIds.length} appointment(s)?`)) return;
-    
-      fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ appointment_ids: selectedIds, status: "Canceled" })
-      })
-        .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-        .then(data => {
-          showModal(`Successfully canceled ${selectedIds.length} appointment(s).`);
-          fetchAppointments(status || "Canceled");
-          location.reload()
-        })
-        .catch(error => showModal("Failed to cancel: " + (error.detail || "Server Fetch Error")));
-    }
+      return response.json();
+  })
+  .then(data => {
+      console.log(`Successfully canceled ${selectedIds.length} appointments:`, data);
+      showModal(`Successfully canceled ${selectedIds.length} appointment(s).`, "success");
+      fetchAppointments(status || "Canceled");
+      location.reload();
+  })
+  .catch(error => {
+      const errorMsg = getErrorMessage(error, "Failed to cancel appointments.");
+      showModal(errorMsg, "error");
+  });
+}
 
     function openRescheduleModal(appointmentIds = null, date = null, status = null) {
       let selectedIds = [];
@@ -1406,54 +1564,102 @@ function updateAppointment() {
       $("#rescheduleAppointmentModal").modal("show");
     }
 
-    function rescheduleAppointment() {
-      let appointmentIds = $("#rescheduleAppointmentID").val().split(",");
-      let newDate = $("#newAppointmentDate").val().trim();
-      if (!newDate) {
-        showModal("Please select a new date and time.");
-        return;
+   // Modified rescheduleAppointment with detailed logging and error handling
+function rescheduleAppointment() {
+  let appointmentIds = $("#rescheduleAppointmentID").val().split(",");
+  let newDate = $("#newAppointmentDate").val().trim();
+  if (!newDate) {
+      console.warn("No new date provided for rescheduling");
+      showModal("Please select a new date and time.");
+      return;
+  }
+
+  const payload = { appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() };
+  console.log("Rescheduling appointments with payload:", payload);
+
+  fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(payload)
+  })
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => {
+              console.error("Failed to reschedule appointments:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  response: err
+              });
+              throw err;
+          });
       }
-    
-      fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
-      })
-        .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-        .then(data => {
-          showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
-          $("#rescheduleAppointmentModal").modal("hide");
-          fetchAppointments("Rescheduled");
-          location.reload()
-        })
-        .catch(error => showModal("Failed to reschedule: " + (error.detail || "Server Fetch Error")));
-    }
+      return response.json();
+  })
+  .then(data => {
+      console.log(`Successfully rescheduled ${appointmentIds.length} appointments:`, data);
+      showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`, "success");
+      $("#rescheduleAppointmentModal").modal("hide");
+      fetchAppointments("Rescheduled");
+      location.reload();
+  })
+  .catch(error => {
+      const errorMsg = getErrorMessage(error, "Failed to reschedule appointments.");
+      showModal(errorMsg, "error");
+  });
+}
 
     function formatDateTime(dateTimeString) {
       return new Date(dateTimeString).toISOString().slice(0, 16);
     }
 
-    // Notification (unchanged)
-    function showNotification(message, duration = 3000) {
-      $("#notificationMessage").text(message);
-      $("#customNotification").show().css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
-      setTimeout(() => $("#customNotification").hide(), duration);
-    }
+  
 
-    // Phone Input (unchanged)
-    document.addEventListener("DOMContentLoaded", function() {
-      ["#contactNumber", "#editContactNumber"].forEach(selector => {
-        const input = document.querySelector(selector);
-        if (input) {
+    
+// Ensure tab switching works correctly and integrates with form
+document.addEventListener("DOMContentLoaded", function() {
+  ["#contactNumber", "#editContactNumber"].forEach(selector => {
+      const input = document.querySelector(selector);
+      if (input) {
           const iti = window.intlTelInput(input, {
-            initialCountry: "in",
-            preferredCountries: ["in", "us", "gb", "ke", "ng"],
-            separateDialCode: true
+              initialCountry: "in",
+              preferredCountries: ["in", "us", "gb", "ke", "ng"],
+              separateDialCode: true
           });
           input.addEventListener("blur", () => console.log(`Full Phone Number (${selector}):`, iti.getNumber()));
-        }
-      });
-    });
+      }
+  });
+
+  $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
+  let now = new Date();
+  let formattedNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  $("#appointmentDate").attr("min", formattedNow);
+
+  $("#dateOfBirth, #editDateOfBirth").on("change", function() {
+      const dob = new Date(this.value);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+      $(this.id === "dateOfBirth" ? "#age" : "#editAge").val(age >= 0 ? age : "");
+  });
+
+  $("#appointmentTabs a").on("shown.bs.tab", function(e) {
+      localStorage.setItem("activeTab", $(e.target).attr("href"));
+      $("#appointmentFormContainer").hide(); // Hide form when switching tabs
+  });
+  
+  var activeTab = localStorage.getItem("activeTab");
+  if (activeTab) $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
+
+  $("#logoutButton").on("click", function(e) {
+      e.preventDefault();
+      logoutUser();
+  });
+
+  checkSessionOnLoad();
+  const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"];
+  statuses.forEach(fetchAppointments);
+  loadDoctors();
+});
   </script>
 </body>
 </html>
