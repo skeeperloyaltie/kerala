@@ -778,32 +778,32 @@ function hideAppointmentForm() {
 
     // Utility function to format error messages from server responses
 function getErrorMessage(xhrOrError, defaultMessage) {
-  let message = defaultMessage;
-  if (xhrOrError.responseJSON) {
-      const response = xhrOrError.responseJSON;
-      if (response.detail) {
-          message = response.detail; // Standard Django REST Framework error
-      } else if (response.error) {
-          message = response.error; // Custom error field
-      } else if (response.non_field_errors) {
-          message = response.non_field_errors.join(", "); // Form validation errors
-      } else {
-          message = JSON.stringify(response); // Fallback to raw response
-      }
-  } else if (xhrOrError.status) {
-      switch (xhrOrError.status) {
-          case 400: message = "Bad request: Invalid data provided."; break;
-          case 401: message = "Unauthorized: Please log in again."; break;
-          case 403: message = "Forbidden: You don’t have permission."; break;
-          case 404: message = "Not found: Resource unavailable."; break;
-          case 409: message = "Conflict: Duplicate entry detected."; break;
-          case 500: message = "Server error: Please try again later."; break;
-          default: message = `Error ${xhrOrError.status}: ${xhrOrError.statusText || "Unknown error"}`;
-      }
-  } else if (xhrOrError.message) {
-      message = xhrOrError.message; // Generic JS error
-  }
-  return message;
+    let message = defaultMessage;
+    if (xhrOrError.responseJSON) {
+        const response = xhrOrError.responseJSON;
+        if (response.detail) {
+            message = response.detail; // Standard Django REST Framework error
+        } else if (response.error) {
+            message = response.error; // Custom error field
+        } else if (response.non_field_errors) {
+            message = response.non_field_errors.join(", "); // Form validation errors
+        } else {
+            message = JSON.stringify(response); // Fallback to raw response
+        }
+    } else if (xhrOrError.status) {
+        switch (xhrOrError.status) {
+            case 400: message = "Bad request: Invalid data provided."; break;
+            case 401: message = "Unauthorized: Please log in again."; break;
+            case 403: message = "Forbidden: You don’t have permission."; break;
+            case 404: message = "Not found: Resource unavailable."; break;
+            case 409: message = "Conflict: Duplicate entry detected."; break;
+            case 500: message = "Server error: Please try again later."; break;
+            default: message = `Error ${xhrOrError.status}: ${xhrOrError.statusText || "Unknown error"}`;
+        }
+    } else if (xhrOrError.message) {
+        message = xhrOrError.message; // Generic JS error
+    }
+    return message;
 }
     // Session and Logout (unchanged)
     function checkSessionOnLoad() {
