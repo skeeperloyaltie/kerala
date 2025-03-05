@@ -504,100 +504,207 @@
           </div>
 
           <!-- Edit Appointment Modal -->
-          <div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <form id="editAppointmentForm">
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="editAppointmentID">Appointment ID</label>
-                        <input type="text" id="editAppointmentID" class="form-control" readonly>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="editPatientID">Patient ID</label>
-                        <input type="text" id="editPatientID" class="form-control" readonly>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="editFirstName">First Name</label>
-                        <input type="text" id="editFirstName" class="form-control" required>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="editLastName">Last Name</label>
-                        <input type="text" id="editLastName" class="form-control" required>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="editContactNumber">Contact Number</label>
-                        <input type="tel" id="editContactNumber" class="form-control" required>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="editDateOfBirth">Date of Birth</label>
-                        <input type="date" id="editDateOfBirth" class="form-control" required>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="editAge">Age</label>
-                        <input type="number" id="editAge" class="form-control" readonly>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="editCurrentIllness">Current Illness</label>
-                        <input type="text" id="editCurrentIllness" class="form-control">
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="editAppointmentDate">Appointment Date</label>
-                        <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="editDoctor">Doctor</label>
-                        <select id="editDoctor" class="form-control" required>
-                          <option value="" disabled selected>Loading...</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-12 mb-3">
-                        <label for="editNotes">Notes</label>
-                        <textarea id="editNotes" class="form-control"></textarea>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-12 mb-3">
-                        <label for="editAppointmentStatus">Status</label>
-                        <select id="editAppointmentStatus" class="form-control">
-                          <option value="Waiting">Waiting</option>
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Active">Active</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Canceled">Canceled</option>
-                          <option value="Rescheduled">Rescheduled</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="form-check mb-3">
-                      <input type="checkbox" id="editIsEmergency" class="form-check-input">
-                      <label for="editIsEmergency" class="form-check-label">Is this an emergency?</label>
-                    </div>
-                    <div class="mt-3">
-                      <button type="button" class="btn btn-success" onclick="updateAppointment()">Save Changes</button>
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+<div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg"> <!-- Increased size with modal-lg -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editAppointmentForm">
+          <!-- Basic Information -->
+          <h6>Basic Information</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editAppointmentID">Appointment ID</label>
+              <input type="text" id="editAppointmentID" class="form-control" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="editPatientID">Patient ID</label>
+              <input type="text" id="editPatientID" class="form-control" readonly>
             </div>
           </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editFirstName">First Name</label>
+              <input type="text" id="editFirstName" class="form-control" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="editLastName">Last Name</label>
+              <input type="text" id="editLastName" class="form-control" readonly>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="editGender">Gender</label>
+              <input type="text" id="editGender" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editDateOfBirth">Date of Birth</label>
+              <input type="date" id="editDateOfBirth" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editAge">Age</label>
+              <input type="number" id="editAge" class="form-control" readonly>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editFatherName">Father's Name</label>
+              <input type="text" id="editFatherName" class="form-control" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="editAddress">Address</label>
+              <input type="text" id="editAddress" class="form-control" readonly>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="editCity">City</label>
+              <input type="text" id="editCity" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editPincode">Pincode</label>
+              <input type="text" id="editPincode" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editEmail">Email Address</label>
+              <input type="email" id="editEmail" class="form-control" readonly>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editMobileNumber">Mobile Number</label>
+              <input type="tel" id="editMobileNumber" class="form-control" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="editAlternateMobileNumber">Alternate Mobile Number</label>
+              <input type="tel" id="editAlternateMobileNumber" class="form-control" readonly>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editAadharNumber">Aadhar Number</label>
+              <input type="text" id="editAadharNumber" class="form-control" readonly>
+            </div>
+          </div>
+
+          <!-- Medical Information -->
+          <h6>Medical Information</h6>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="editBloodGroup">Blood Group</label>
+              <input type="text" id="editBloodGroup" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editKnownAllergies">Known Allergies</label>
+              <input type="text" id="editKnownAllergies" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editCurrentMedications">Current Medications</label>
+              <input type="text" id="editCurrentMedications" class="form-control" readonly>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editPastMedicalHistory">Past Medical History</label>
+              <textarea id="editPastMedicalHistory" class="form-control" readonly></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="editSpecificNotes">Specific Notes</label>
+              <textarea id="editSpecificNotes" class="form-control" readonly></textarea>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editCurrentIllness">Current Illness</label>
+              <input type="text" id="editCurrentIllness" class="form-control">
+            </div>
+          </div>
+
+          <!-- Emergency Contact -->
+          <h6>Emergency Contact</h6>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="editEmergencyContactName">Emergency Contact Name</label>
+              <input type="text" id="editEmergencyContactName" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editEmergencyContactRelationship">Relationship</label>
+              <input type="text" id="editEmergencyContactRelationship" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editEmergencyContactNumber">Emergency Contact Number</label>
+              <input type="tel" id="editEmergencyContactNumber" class="form-control" readonly>
+            </div>
+          </div>
+
+          <!-- Insurance & Billing Details -->
+          <h6>Insurance & Billing Details</h6>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="editInsuranceProviderName">Insurance Provider</label>
+              <input type="text" id="editInsuranceProviderName" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editPolicyNumber">Policy Number</label>
+              <input type="text" id="editPolicyNumber" class="form-control" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="editPaymentPreferences">Payment Preferences</label>
+              <input type="text" id="editPaymentPreferences" class="form-control" readonly>
+            </div>
+          </div>
+
+          <!-- Appointment Details -->
+          <h6>Appointment Details</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editAppointmentDate">Appointment Date</label>
+              <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="editDoctor">Doctor</label>
+              <select id="editDoctor" class="form-control" required>
+                <option value="" disabled selected>Loading...</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label for="editNotes">Notes</label>
+              <textarea id="editNotes" class="form-control"></textarea>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editAppointmentStatus">Status</label>
+              <select id="editAppointmentStatus" class="form-control">
+                <option value="Waiting">Waiting</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Pending">Pending</option>
+                <option value="Active">Active</option>
+                <option value="Completed">Completed</option>
+                <option value="Canceled">Canceled</option>
+                <option value="Rescheduled">Rescheduled</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3 form-check">
+              <input type="checkbox" id="editIsEmergency" class="form-check-input">
+              <label for="editIsEmergency" class="form-check-label">Is this an emergency?</label>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <button type="button" class="btn btn-success" onclick="updateAppointment()">Save Changes</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
           <!-- Reschedule Modal -->
           <div class="modal fade" id="rescheduleAppointmentModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
@@ -769,65 +876,68 @@ function validateUserSession() {
     
 
     let filteredAppointments = [];
-    function populateAppointmentsTable(status, appointments) {
-      let tbodyId = `${status}-tbody`;
-      let tbody = document.getElementById(tbodyId);
-      if (!tbody) return;
-      tbody.innerHTML = "";
+    // Update populateAppointmentsTable to display more patient details
+function populateAppointmentsTable(status, appointments) {
+  let tbodyId = `${status}-tbody`;
+  let tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-      filteredAppointments = appointments;
+  filteredAppointments = appointments;
 
-      if (!document.getElementById(`${status}-select-all`)) {
-        let thead = document.createElement("thead");
-        thead.innerHTML = `
-          <tr>
-            <th><input type="checkbox" id="${status}-select-all" onclick="toggleAll('${status}')"></th>
-            <th>#</th>
-            <th>Patient ID</th>
-            <th>Patient Name</th>
-            <th>Age</th>
-            <th>Contact Number</th>
-            <th>Current Illness</th>
-            <th>Notes</th>
-            <th>Appointment Time</th>
-            <th>Doctor</th>
-            <th>Created By</th>
-            <th>Updated By</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        `;
-        tbody.parentElement.insertBefore(thead, tbody);
-      }
+  if (!document.getElementById(`${status}-select-all`)) {
+    let thead = document.createElement("thead");
+    thead.innerHTML = `
+      <tr>
+        <th><input type="checkbox" id="${status}-select-all" onclick="toggleAll('${status}')"></th>
+        <th>#</th>
+        <th>Patient ID</th>
+        <th>Patient Name</th>
+        <th>Gender</th>
+        <th>Age</th>
+        <th>Mobile Number</th>
+        <th>Current Illness</th>
+        <th>Blood Group</th>
+        <th>Appointment Time</th>
+        <th>Doctor</th>
+        <th>Created By</th>
+        <th>Updated By</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    `;
+    tbody.parentElement.insertBefore(thead, tbody);
+  }
 
-      appointments.forEach((appointment, index) => {
-        let patient = appointment.patient || {};
-        let doctor = appointment.doctor || {};
-        let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
-        let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
+  appointments.forEach((appointment, index) => {
+    let patient = appointment.patient || {};
+    let doctor = appointment.doctor || {};
+    let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
+    let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
 
-        let row = document.createElement("tr");
-        row.innerHTML = `
-          <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
-          <td>${index + 1}</td>
-          <td>${patient.patient_id || "N/A"}</td>
-          <td>${patient.first_name} ${patient.last_name}</td>
-          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
-          <td>${patient.contact_number || "N/A"}</td>
-          <td>${patient.current_illness || "N/A"}</td>
-          <td>${appointment.notes || "N/A"}</td>
-          <td>${appointmentTime}</td>
-          <td>Dr. ${doctorName} (${doctor.specialization || "N/A"})</td>
-          <td>${appointment.created_by_username || "N/A"}</td>
-          <td>${appointment.updated_by ? `${appointment.updated_by_username} updated` : "Not Updated"}</td>
-          <td>${appointment.status || "N/A"}</td>
-          <td>${getActionButton(appointment.status, appointment, index)}</td>
-        `;
-        tbody.appendChild(row);
-      });
+    let row = document.createElement("tr");
+    row.innerHTML = `
+      <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
+      <td>${index + 1}</td>
+      <td>${patient.patient_id || "N/A"}</td>
+      <td>${patient.first_name} ${patient.last_name}</td>
+      <td>${patient.gender || "N/A"}</td>
+      <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
+      <td>${patient.mobile_number || "N/A"}</td>
+      <td>${patient.current_illness || "N/A"}</td>
+      <td>${patient.blood_group || "N/A"}</td>
+      <td>${appointmentTime}</td>
+      <td>Dr. ${doctorName} (${doctor.specialization || "N/A"})</td>
+      <td>${appointment.created_by_username || "N/A"}</td>
+      <td>${appointment.updated_by ? `${appointment.updated_by_username} updated` : "Not Updated"}</td>
+      <td>${appointment.status || "N/A"}</td>
+      <td>${getActionButton(appointment.status, appointment, index)}</td>
+    `;
+    tbody.appendChild(row);
+  });
 
-      filterTable(); // Apply filter after populating
-    }
+  filterTable(); // Apply filter after populating
+}
 // Function to toggle all checkboxes when "Select All" is clicked
 function toggleAll(status) {
     let selectAllCheckbox = document.getElementById(`${status}-select-all`);
@@ -981,121 +1091,223 @@ function hideAppointmentForm() {
       });
     }
 
-    function addAppointment() {
-      const doctorId = $("#doctor").val();
-      const patientId = $("#patientID").val().trim();
-      const appointmentDate = $("#appointmentDate").val();
-      const dateOfBirth = $("#dateOfBirth").val();
-      const firstName = $("#firstName").val().trim();
-      const lastName = $("#lastName").val().trim();
-      const contactNumber = $("#contactNumber").val().trim();
-      const notes = $("#notes").val().trim();
-      const isEmergency = $("#isEmergency")?.is(":checked") || false;
+  // Update addAppointment to handle new patient fields
+function addAppointment() {
+  const doctorId = $("#doctor").val();
+  const patientId = $("#patientID").val().trim();
+  const appointmentDate = $("#appointmentDate").val();
+  const firstName = $("#firstName").val().trim();
+  const lastName = $("#lastName").val().trim();
+  const gender = $("#gender").val();
+  const dateOfBirth = $("#dateOfBirth").val();
+  const fatherName = $("#fatherName").val().trim();
+  const address = $("#address").val().trim();
+  const city = $("#city").val().trim();
+  const pincode = $("#pincode").val().trim();
+  const email = $("#email").val().trim();
+  const mobileNumber = $("#mobileNumber").val().trim();
+  const alternateMobileNumber = $("#alternateMobileNumber").val().trim();
+  const aadharNumber = $("#aadharNumber").val().trim();
+  const bloodGroup = $("#bloodGroup").val();
+  const knownAllergies = $("#knownAllergies").val().trim();
+  const currentMedications = $("#currentMedications").val().trim();
+  const pastMedicalHistory = $("#pastMedicalHistory").val().trim();
+  const specificNotes = $("#specificNotes").val().trim();
+  const emergencyContactName = $("#emergencyContactName").val().trim();
+  const emergencyContactRelationship = $("#emergencyContactRelationship").val().trim();
+  const emergencyContactNumber = $("#emergencyContactNumber").val().trim();
+  const insuranceProviderName = $("#insuranceProviderName").val().trim();
+  const policyNumber = $("#policyNumber").val().trim();
+  const paymentPreferences = $("#paymentPreferences").val();
+  const currentIllness = $("#currentIllness").val().trim();
+  const notes = $("#notes").val().trim();
+  const isEmergency = $("#isEmergency").is(":checked");
 
-      $(".form-control").removeClass("is-invalid");
-      let missingFields = [];
-      if (!doctorId) missingFields.push("Doctor");
-      if (!patientId) missingFields.push("Patient ID");
-      if (!firstName) missingFields.push("First Name");
-      if (!lastName) missingFields.push("Last Name");
-      if (!contactNumber) missingFields.push("Contact Number");
-      if (!appointmentDate) missingFields.push("Appointment Date");
+  $(".form-control").removeClass("is-invalid");
+  let missingFields = [];
+  if (!doctorId) missingFields.push("Doctor");
+  if (!patientId) missingFields.push("Patient ID");
+  if (!firstName) missingFields.push("First Name");
+  if (!lastName) missingFields.push("Last Name");
+  if (!gender) missingFields.push("Gender");
+  if (!dateOfBirth) missingFields.push("Date of Birth");
+  if (!fatherName) missingFields.push("Father's Name");
+  if (!address) missingFields.push("Address");
+  if (!city) missingFields.push("City");
+  if (!pincode) missingFields.push("Pincode");
+  if (!mobileNumber) missingFields.push("Mobile Number");
+  if (!appointmentDate) missingFields.push("Appointment Date");
 
-      if (missingFields.length > 0) {
-        $("#" + missingFields.map(f => f.toLowerCase().replace(" ", "")).join(", #")).addClass("is-invalid");
-        showNotification("Please fill in: " + missingFields.join(", "), 'error');
+  if (missingFields.length > 0) {
+    $("#" + missingFields.map(f => f.toLowerCase().replace(" ", "")).join(", #")).addClass("is-invalid");
+    showNotification("Please fill in: " + missingFields.join(", "), 'error');
+    return;
+  }
+
+  const contactRegex = /^\d{10}$/;
+  if (!contactRegex.test(mobileNumber)) {
+    $("#mobileNumber").addClass("is-invalid");
+    showNotification("Mobile Number must be exactly 10 digits.", 'error');
+    return;
+  }
+  if (alternateMobileNumber && !contactRegex.test(alternateMobileNumber)) {
+    $("#alternateMobileNumber").addClass("is-invalid");
+    showNotification("Alternate Mobile Number must be exactly 10 digits.", 'error');
+    return;
+  }
+  if (emergencyContactNumber && !contactRegex.test(emergencyContactNumber)) {
+    $("#emergencyContactNumber").addClass("is-invalid");
+    showNotification("Emergency Contact Number must be exactly 10 digits.", 'error');
+    return;
+  }
+  if (aadharNumber && (!aadharNumber.match(/^\d{12}$/))) {
+    $("#aadharNumber").addClass("is-invalid");
+    showNotification("Aadhar Number must be exactly 12 digits.", 'error');
+    return;
+  }
+  if (!pincode.match(/^\d+$/)) {
+    $("#pincode").addClass("is-invalid");
+    showNotification("Pincode must be numeric.", 'error');
+    return;
+  }
+
+  if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
+    $("#dateOfBirth").addClass("is-invalid");
+    showNotification("Date of birth cannot be in the future.", 'error');
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (new Date(appointmentDate) < today) {
+    $("#appointmentDate").addClass("is-invalid");
+    showNotification("Appointment date cannot be in the past.", 'error');
+    return;
+  }
+
+  const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
+  if (age !== null && age < 0) {
+    $("#dateOfBirth").addClass("is-invalid");
+    showNotification("Invalid Date of Birth.", 'error');
+    return;
+  }
+  if (age !== null) $("#age").val(age);
+
+  const appointmentData = {
+    appointment: {
+      patient_id: patientId,
+      first_name: firstName,
+      last_name: lastName,
+      gender: gender,
+      date_of_birth: dateOfBirth,
+      father_name: fatherName,
+      address: address,
+      city: city,
+      pincode: pincode,
+      email: email || null,
+      mobile_number: mobileNumber,
+      alternate_mobile_number: alternateMobileNumber || null,
+      aadhar_number: aadharNumber || null,
+      blood_group: bloodGroup || null,
+      known_allergies: knownAllergies || null,
+      current_medications: currentMedications || null,
+      past_medical_history: pastMedicalHistory || null,
+      specific_notes: specificNotes || null,
+      emergency_contact_name: emergencyContactName || null,
+      emergency_contact_relationship: emergencyContactRelationship || null,
+      emergency_contact_number: emergencyContactNumber || null,
+      insurance_provider_name: insuranceProviderName || null,
+      policy_number: policyNumber || null,
+      payment_preferences: paymentPreferences || null,
+      current_illness: currentIllness || null
+    },
+    appointment_date: appointmentDate,
+    doctor: doctorId,
+    notes: notes || null,
+    is_emergency: isEmergency
+  };
+
+  console.log("Sending appointment data:", appointmentData);
+
+  $.ajax({
+    url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+    type: "POST",
+    headers: getAuthHeaders(),
+    data: JSON.stringify(appointmentData),
+    contentType: "application/json",
+    success: function(response) {
+      const appointmentId = response.appointment?.id;
+      if (!appointmentId) {
+        showNotification("Error: Appointment ID missing.", 'error');
         return;
       }
-
-      const contactRegex = /^\d{10}$/;
-      if (!contactRegex.test(contactNumber)) {
-        $("#contactNumber").addClass("is-invalid");
-        showNotification("Contact Number must be exactly 10 digits.", 'error');
-        return;
-      }
-
-      if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
-        $("#dateOfBirth").addClass("is-invalid");
-        showNotification("Date of birth cannot be in the future.", 'error');
-        return;
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (new Date(appointmentDate) < today) {
-        $("#appointmentDate").addClass("is-invalid");
-        showNotification("Appointment date cannot be in the past.", 'error');
-        return;
-      }
-
-      const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
-      if (age !== null && age < 0) {
-        $("#dateOfBirth").addClass("is-invalid");
-        showNotification("Invalid Date of Birth.", 'error');
-        return;
-      }
-      if (age !== null) $("#age").val(age);
-
-      const appointmentData = {
-        appointment: { patient_id: patientId, first_name: firstName, last_name: lastName, contact_number: contactNumber, date_of_birth: dateOfBirth },
-        appointment_date: appointmentDate,
-        doctor: doctorId,
-        notes: notes,
-        is_emergency: isEmergency
-      };
-
-      $.ajax({
-        url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-        type: "POST",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(appointmentData),
-        contentType: "application/json",
-        success: function(response) {
-          const appointmentId = response.appointment?.id;
-          if (!appointmentId) {
-            showNotification("Error: Appointment ID missing.", 'error');
-            return;
-          }
-          hideAppointmentForm();
-          fetchAppointments("Scheduled");
-          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-          showNotification("Appointment created successfully!");
-        },
-        error: function(xhr) {
-          showNotification("An appointment for this patient at the specified date and time already exists.", 'error');
-        }
-      });
+      hideAppointmentForm();
+      fetchAppointments("Scheduled");
+      $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+      showNotification("Appointment created successfully!", 'success');
+    },
+    error: function(xhr) {
+      const errorMsg = xhr.responseJSON ? xhr.responseJSON.detail || "An error occurred." : "Failed to create appointment.";
+      showNotification(errorMsg, 'error');
     }
+  });
+}
     let currentAppointment = null; // Global variable to store the current appointment
 
 // Updated openEditModal with age calculation
+// Updated openEditModal with all new patient fields
 function openEditModal(appointmentData, rowIndex) {
   currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
   
+  // Basic Information
   $("#editFirstName").val(currentAppointment.patient?.first_name || "");
   $("#editLastName").val(currentAppointment.patient?.last_name || "");
-  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
+  $("#editGender").val(currentAppointment.patient?.gender || "");
   $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-  
-  // Calculate and update age
   const dob = currentAppointment.patient?.date_of_birth;
   if (dob) {
-      const calculatedAge = calculateAge(dob);
-      $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
+    const calculatedAge = calculateAge(dob);
+    $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
   } else {
-      $("#editAge").val("");
+    $("#editAge").val("");
   }
-  
-  $("#editCurrentIllness").val(currentAppointment.current_illness || "");
+  $("#editFatherName").val(currentAppointment.patient?.father_name || "");
+  $("#editAddress").val(currentAppointment.patient?.address || "");
+  $("#editCity").val(currentAppointment.patient?.city || "");
+  $("#editPincode").val(currentAppointment.patient?.pincode || "");
+  $("#editEmail").val(currentAppointment.patient?.email || "");
+  $("#editMobileNumber").val(currentAppointment.patient?.mobile_number || ""); // Updated to mobile_number
+  $("#editAlternateMobileNumber").val(currentAppointment.patient?.alternate_mobile_number || "");
+  $("#editAadharNumber").val(currentAppointment.patient?.aadhar_number || "");
+
+  // Medical Information
+  $("#editBloodGroup").val(currentAppointment.patient?.blood_group || "");
+  $("#editKnownAllergies").val(currentAppointment.patient?.known_allergies || "");
+  $("#editCurrentMedications").val(currentAppointment.patient?.current_medications || "");
+  $("#editPastMedicalHistory").val(currentAppointment.patient?.past_medical_history || "");
+  $("#editSpecificNotes").val(currentAppointment.patient?.specific_notes || "");
+  $("#editCurrentIllness").val(currentAppointment.patient?.current_illness || "");
+
+  // Emergency Contact
+  $("#editEmergencyContactName").val(currentAppointment.patient?.emergency_contact_name || "");
+  $("#editEmergencyContactRelationship").val(currentAppointment.patient?.emergency_contact_relationship || "");
+  $("#editEmergencyContactNumber").val(currentAppointment.patient?.emergency_contact_number || "");
+
+  // Insurance & Billing Details
+  $("#editInsuranceProviderName").val(currentAppointment.patient?.insurance_provider_name || "");
+  $("#editPolicyNumber").val(currentAppointment.patient?.policy_number || "");
+  $("#editPaymentPreferences").val(currentAppointment.patient?.payment_preferences || "");
+
+  // Appointment Details
   $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
   $("#editAppointmentStatus").val(currentAppointment.status || "");
   $("#editNotes").val(currentAppointment.notes || "");
   $("#editAppointmentID").val(currentAppointment.id);
   $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
+  $("#editIsEmergency").prop("checked", currentAppointment.is_emergency || false);
 
-  // Make fields read-only
-  $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
-  $("#editAge").prop("readonly", true); // Age should also be readonly since it's calculated
+  // Make patient fields read-only
+  $("#editFirstName, #editLastName, #editGender, #editDateOfBirth, #editAge, #editFatherName, #editAddress, #editCity, #editPincode, #editEmail, #editMobileNumber, #editAlternateMobileNumber, #editAadharNumber, #editBloodGroup, #editKnownAllergies, #editCurrentMedications, #editPastMedicalHistory, #editSpecificNotes, #editEmergencyContactName, #editEmergencyContactRelationship, #editEmergencyContactNumber, #editInsuranceProviderName, #editPolicyNumber, #editPaymentPreferences, #editPatientID").prop("readonly", true);
   $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
   let previousDoctorId = currentAppointment.doctor?.id || "";
@@ -1310,25 +1522,51 @@ document.addEventListener("DOMContentLoaded", function() {
   checkSessionOnLoad();
 });
 
-    $("#patientID").on("blur", function() {
-      let patientId = $(this).val().trim();
-      if (patientId) {
-        $.ajax({
-          url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
-          type: "GET",
-          headers: getAuthHeaders(),
-          success: function(response) {
-            if (response.patient) {
-              $("#firstName").val(response.patient.first_name);
-              $("#lastName").val(response.patient.last_name);
-              $("#contactNumber").val(response.patient.contact_number);
-              $("#dateOfBirth").val(response.patient.date_of_birth);
-            }
-          },
-          error: function() { console.log("Patient not found."); }
-        });
+    // Update patientID blur event to fetch all new fields
+$("#patientID").on("blur", function() {
+  let patientId = $(this).val().trim();
+  if (patientId) {
+    $.ajax({
+      url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function(response) {
+        if (response.patient) {
+          $("#firstName").val(response.patient.first_name || "");
+          $("#lastName").val(response.patient.last_name || "");
+          $("#gender").val(response.patient.gender || "");
+          $("#dateOfBirth").val(response.patient.date_of_birth || "");
+          if (response.patient.date_of_birth) {
+            $("#age").val(calculateAge(response.patient.date_of_birth));
+          }
+          $("#fatherName").val(response.patient.father_name || "");
+          $("#address").val(response.patient.address || "");
+          $("#city").val(response.patient.city || "");
+          $("#pincode").val(response.patient.pincode || "");
+          $("#email").val(response.patient.email || "");
+          $("#mobileNumber").val(response.patient.mobile_number || "");
+          $("#alternateMobileNumber").val(response.patient.alternate_mobile_number || "");
+          $("#aadharNumber").val(response.patient.aadhar_number || "");
+          $("#bloodGroup").val(response.patient.blood_group || "");
+          $("#knownAllergies").val(response.patient.known_allergies || "");
+          $("#currentMedications").val(response.patient.current_medications || "");
+          $("#pastMedicalHistory").val(response.patient.past_medical_history || "");
+          $("#specificNotes").val(response.patient.specific_notes || "");
+          $("#emergencyContactName").val(response.patient.emergency_contact_name || "");
+          $("#emergencyContactRelationship").val(response.patient.emergency_contact_relationship || "");
+          $("#emergencyContactNumber").val(response.patient.emergency_contact_number || "");
+          $("#insuranceProviderName").val(response.patient.insurance_provider_name || "");
+          $("#policyNumber").val(response.patient.policy_number || "");
+          $("#paymentPreferences").val(response.patient.payment_preferences || "");
+          $("#currentIllness").val(response.patient.current_illness || "");
+        }
+      },
+      error: function() {
+        console.log("Patient not found.");
       }
     });
+  }
+});
 
 
     // Add this at the top of your script to store original values
