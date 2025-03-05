@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 # Set the timezone to Asia/Kolkata
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -29,11 +31,11 @@ class CreateAppointmentView(APIView):
         data = request.data
         logger.info(f"Received appointment creation request from user {user.id} ({user.username}): {data}")
 
-        # Validate required fields
+        # Validate required top-level fields
         required_fields = ["appointment", "appointment_date"]
         missing_fields = [field for field in required_fields if field not in data or not data[field]]
         if missing_fields:
-            logger.warning(f"Missing fields in request: {missing_fields}")
+            logger.warning(f"Missing top-level fields in request: {missing_fields}")
             return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
 
         appointment_info = data.get("appointment")
@@ -45,20 +47,43 @@ class CreateAppointmentView(APIView):
         patient_id = appointment_info.get("patient_id")
         first_name = appointment_info.get("first_name", "").strip()
         last_name = appointment_info.get("last_name", "").strip()
-        contact_number = appointment_info.get("contact_number", "").strip()
+        mobile_number = appointment_info.get("mobile_number", "").strip()  # Updated to mobile_number
         date_of_birth = appointment_info.get("date_of_birth")
+        gender = appointment_info.get("gender")
+        father_name = appointment_info.get("father_name", "").strip()
+        address = appointment_info.get("address", "").strip()
+        city = appointment_info.get("city", "").strip()
+        pincode = appointment_info.get("pincode", "").strip()
         current_illness = appointment_info.get("current_illness", "").strip()  # Extract current illness
         appointment_date_str = data.get("appointment_date")
         doctor_id = data.get("doctor")
         notes = data.get("notes", "")
         is_emergency = data.get("is_emergency", False)
-        
+
         logger.info(f"Data received from the frontend: {data}")
 
-        # Ensure patient details are complete
-        if not (first_name and last_name and contact_number and date_of_birth):
-            logger.error("Patient details are incomplete.")
-            return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
+        # Define required patient fields based on the Patient model
+        required_patient_fields = {
+            "patient_id": patient_id,
+            "first_name": first_name,
+            "last_name": last_name,
+            "mobile_number": mobile_number,
+            "date_of_birth": date_of_birth,
+            "gender": gender,
+            "father_name": father_name,
+            "address": address,
+            "city": city,
+            "pincode": pincode
+        }
+
+        # Check for missing required patient fields
+        missing_patient_fields = [field for field, value in required_patient_fields.items() if not value]
+        if missing_patient_fields:
+            logger.error(f"Patient details are incomplete. Missing required fields: {missing_patient_fields}")
+            return Response(
+                {"error": f"Patient details are incomplete. Missing required fields: {', '.join(missing_patient_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Validate and convert appointment_date
         try:
@@ -66,15 +91,12 @@ class CreateAppointmentView(APIView):
 
             # Check if the incoming date contains timezone information
             if "Z" in appointment_date_str or "+" in appointment_date_str or "-" in appointment_date_str:
-                # If the date has timezone info, parse it directly as an aware datetime
                 appointment_date = datetime.fromisoformat(appointment_date_str)
                 logger.info(f"Parsed timezone-aware appointment date: {appointment_date}")
             else:
-                # If no timezone info, assume it's local to Asia/Kolkata
                 appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")
                 appointment_date = KOLKATA_TZ.localize(appointment_date)  # Assign Kolkata timezone
 
-            # Convert to Kolkata timezone (only if it's from another timezone)
             appointment_date = appointment_date.astimezone(KOLKATA_TZ)
             logger.info(f"Final stored appointment date (Asia/Kolkata): {appointment_date}")
 
@@ -95,23 +117,34 @@ class CreateAppointmentView(APIView):
                 defaults={
                     "first_name": first_name,
                     "last_name": last_name,
-                    "contact_number": contact_number,
+                    "mobile_number": mobile_number,  # Updated to mobile_number
                     "date_of_birth": date_of_birth,
-                    "current_illness": current_illness,  # Save the current illness if new patient
+                    "gender": gender,
+                    "father_name": father_name,
+                    "address": address,
+                    "city": city,
+                    "pincode": pincode,
+                    "current_illness": current_illness if current_illness else None  # Handle current_illness
                 }
             )
             
             if created:
-                # If the patient is newly created, update the last name
-                patient.last_name = f"{last_name}"
-                patient.save()
+                logger.info(f"Created new patient: {patient_id} - {first_name} {last_name}")
             else:
-                # If the patient already exists, update contact_number, date_of_birth, and current_illness
-                patient.contact_number = contact_number
+                # Update existing patient details if provided
+                patient.first_name = first_name
+                patient.last_name = last_name
+                patient.mobile_number = mobile_number
                 patient.date_of_birth = date_of_birth
+                patient.gender = gender
+                patient.father_name = father_name
+                patient.address = address
+                patient.city = city
+                patient.pincode = pincode
                 if current_illness:
-                    patient.current_illness = current_illness  # Update current illness
+                    patient.current_illness = current_illness
                 patient.save()
+                logger.info(f"Updated existing patient: {patient_id} - {first_name} {last_name}")
 
         except Exception as e:
             logger.error(f"Error while fetching or creating patient: {e}")
@@ -119,12 +152,12 @@ class CreateAppointmentView(APIView):
 
         logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
 
-        # **Check for duplicate appointment**
+        # Check for duplicate appointment
         if Appointment.objects.filter(
             patient=patient,
             appointment_date=appointment_date
         ).exists():
-            logger.warning(f"Duplicate appointment detected for {patient.first_name} ({patient.contact_number}) on {appointment_date}")
+            logger.warning(f"Duplicate appointment detected for {patient.first_name} ({patient.mobile_number}) on {appointment_date}")
             return Response(
                 {"error": "An appointment for this patient at the specified date and time already exists."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -160,7 +193,6 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 
 
