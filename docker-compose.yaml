@@ -34,6 +34,8 @@ services:
              python manage.py migrate appointments &&
              python manage.py makemigrations monitor && 
              python manage.py migrate monitor &&
+             python manage.py makemigrations cookie &&
+             python manage.py migrate cookie &&
              python manage.py makemigrations patients &&
              python manage.py makemigrations &&
              python manage.py migrate &&
