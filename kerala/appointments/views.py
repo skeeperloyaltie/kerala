@@ -6,8 +6,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.utils import timezone
-from django.utils.timezone import make_aware
-
 import pytz
 from datetime import datetime
 from .models import Appointment, Patient
@@ -19,8 +17,6 @@ logger = logging.getLogger(__name__)
 
 # Set the timezone to Asia/Kolkata
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
@@ -47,17 +43,32 @@ class CreateAppointmentView(APIView):
         patient_id = appointment_info.get("patient_id")
         first_name = appointment_info.get("first_name", "").strip()
         last_name = appointment_info.get("last_name", "").strip()
-        mobile_number = appointment_info.get("mobile_number", "").strip()  # Updated to mobile_number
+        mobile_number = appointment_info.get("mobile_number", "").strip()
         date_of_birth = appointment_info.get("date_of_birth")
         gender = appointment_info.get("gender")
         father_name = appointment_info.get("father_name", "").strip()
         address = appointment_info.get("address", "").strip()
         city = appointment_info.get("city", "").strip()
         pincode = appointment_info.get("pincode", "").strip()
-        current_illness = appointment_info.get("current_illness", "").strip()  # Extract current illness
+        email = appointment_info.get("email", "").strip()
+        alternate_mobile_number = appointment_info.get("alternate_mobile_number", "").strip()
+        aadhar_number = appointment_info.get("aadhar_number", "").strip()
+        blood_group = appointment_info.get("blood_group", "")
+        known_allergies = appointment_info.get("known_allergies", "").strip()
+        current_medications = appointment_info.get("current_medications", "").strip()  # Corrected to match model
+        past_medical_history = appointment_info.get("past_medical_history", "").strip()
+        specific_notes = appointment_info.get("specific_notes", "").strip()
+        emergency_contact_name = appointment_info.get("emergency_contact_name", "").strip()
+        emergency_contact_relationship = appointment_info.get("emergency_contact_relationship", "").strip()
+        emergency_contact_number = appointment_info.get("emergency_contact_number", "").strip()
+        insurance_provider_name = appointment_info.get("insurance_provider_name", "").strip()
+        policy_number = appointment_info.get("policy_number", "").strip()
+        payment_preferences = appointment_info.get("payment_preferences", "")
+
+        # Appointment-specific fields
         appointment_date_str = data.get("appointment_date")
         doctor_id = data.get("doctor")
-        notes = data.get("notes", "")
+        notes = data.get("notes", "").strip()
         is_emergency = data.get("is_emergency", False)
 
         logger.info(f"Data received from the frontend: {data}")
@@ -88,8 +99,6 @@ class CreateAppointmentView(APIView):
         # Validate and convert appointment_date
         try:
             logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
-
-            # Check if the incoming date contains timezone information
             if "Z" in appointment_date_str or "+" in appointment_date_str or "-" in appointment_date_str:
                 appointment_date = datetime.fromisoformat(appointment_date_str)
                 logger.info(f"Parsed timezone-aware appointment date: {appointment_date}")
@@ -117,14 +126,27 @@ class CreateAppointmentView(APIView):
                 defaults={
                     "first_name": first_name,
                     "last_name": last_name,
-                    "mobile_number": mobile_number,  # Updated to mobile_number
+                    "mobile_number": mobile_number,
                     "date_of_birth": date_of_birth,
                     "gender": gender,
                     "father_name": father_name,
                     "address": address,
                     "city": city,
                     "pincode": pincode,
-                    "current_illness": current_illness if current_illness else None  # Handle current_illness
+                    "email": email or None,
+                    "alternate_mobile_number": alternate_mobile_number or None,
+                    "aadhar_number": aadhar_number or None,
+                    "blood_group": blood_group or None,
+                    "known_allergies": known_allergies or None,
+                    "current_medications": current_medications or None,
+                    "past_medical_history": past_medical_history or None,
+                    "specific_notes": specific_notes or None,
+                    "emergency_contact_name": emergency_contact_name or None,
+                    "emergency_contact_relationship": emergency_contact_relationship or None,
+                    "emergency_contact_number": emergency_contact_number or None,
+                    "insurance_provider_name": insurance_provider_name or None,
+                    "policy_number": policy_number or None,
+                    "payment_preferences": payment_preferences or None,
                 }
             )
             
@@ -141,8 +163,20 @@ class CreateAppointmentView(APIView):
                 patient.address = address
                 patient.city = city
                 patient.pincode = pincode
-                if current_illness:
-                    patient.current_illness = current_illness
+                patient.email = email or patient.email
+                patient.alternate_mobile_number = alternate_mobile_number or patient.alternate_mobile_number
+                patient.aadhar_number = aadhar_number or patient.aadhar_number
+                patient.blood_group = blood_group or patient.blood_group
+                patient.known_allergies = known_allergies or patient.known_allergies
+                patient.current_medications = current_medications or patient.current_medications
+                patient.past_medical_history = past_medical_history or patient.past_medical_history
+                patient.specific_notes = specific_notes or patient.specific_notes
+                patient.emergency_contact_name = emergency_contact_name or patient.emergency_contact_name
+                patient.emergency_contact_relationship = emergency_contact_relationship or patient.emergency_contact_relationship
+                patient.emergency_contact_number = emergency_contact_number or patient.emergency_contact_number
+                patient.insurance_provider_name = insurance_provider_name or patient.insurance_provider_name
+                patient.policy_number = policy_number or patient.policy_number
+                patient.payment_preferences = payment_preferences or patient.payment_preferences
                 patient.save()
                 logger.info(f"Updated existing patient: {patient_id} - {first_name} {last_name}")
 
@@ -193,7 +227,6 @@ class CreateAppointmentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 
 
