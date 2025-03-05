@@ -580,13 +580,14 @@
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
   <div class="card-body">
     <h5 class="card-title">Create New Appointment</h5>
+    <button type="button" class="btn btn-outline-primary" onclick="$('#createPatientModal').modal('show')">Add Patient</button>
+
     <form id="appointmentForm">
       <div class="row">
         <div class="col-md-4 mb-3">
           <label for="patientID">Patient ID <span class="text-danger">*</span></label>
           <div class="input-group">
             <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
-            <button type="button" class="btn btn-outline-primary" onclick="$('#createPatientModal').modal('show')">Add Patient</button>
           </div>
         </div>
         <div class="col-md-4 mb-3">
