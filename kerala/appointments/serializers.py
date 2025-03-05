@@ -1,25 +1,31 @@
 from rest_framework import serializers
-from .models import Appointment, Patient, AppointmentTests
+from .models import Appointment, Patient, AppointmentTests, Vitals
 from users.models import Doctor, Receptionist
+from datetime import date, datetime
+import pytz
 
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
-from rest_framework import serializers
-from .models import Patient
-from datetime import date
-
-
+# Patient Serializer
 class PatientSerializer(serializers.ModelSerializer):
     date_of_birth = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+    age = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
-        fields = ['patient_id','first_name', 'last_name', 'contact_number', 'current_illness', 'email', 'date_of_birth', 'age']  # Add 'age' here
+        fields = [
+            'patient_id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'age',
+            'father_name', 'address', 'city', 'pincode', 'email', 'mobile_number',
+            'alternate_mobile_number', 'aadhar_number', 'blood_group', 'known_allergies',
+            'current_medications', 'past_medical_history', 'specific_notes', 'primary_doctor',
+            'emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_number',
+            'insurance_provider_name', 'policy_number', 'payment_preferences'
+        ]
 
     def get_age(self, obj):
         # Check if date_of_birth is not None
         if obj.date_of_birth is None:
-            return None  # or return 0 or any other value you prefer
-
+            return None
         # Calculate age from date_of_birth
         today = date.today()
         age = today.year - obj.date_of_birth.year
@@ -27,15 +33,8 @@ class PatientSerializer(serializers.ModelSerializer):
             age -= 1
         return age
 
-
-    age = serializers.SerializerMethodField()
-
-from rest_framework import serializers
-from rest_framework import serializers
-from users.models import Doctor
-
+# Doctor Serializer
 class DoctorSerializer(serializers.ModelSerializer):
-    # If you want to include the related User model's first_name and last_name
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
 
@@ -43,21 +42,8 @@ class DoctorSerializer(serializers.ModelSerializer):
         model = Doctor
         fields = ['id', 'user', 'specialization', 'contact_number', 'email', 'first_name', 'last_name']
 
-
-
-
-from rest_framework import serializers
-from .models import Appointment, Patient, AppointmentTests
-from users.models import Doctor, Receptionist
-from datetime import datetime
-import pytz
-
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-
+# Appointment Serializer
 class AppointmentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Appointment model, ensuring validation and including necessary relationships.
-    """
     patient = PatientSerializer(read_only=True)
     patient_id = serializers.PrimaryKeyRelatedField(
         queryset=Patient.objects.all(), write_only=True, source="patient"
@@ -73,8 +59,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
     doctor_name = serializers.CharField(source="doctor.user.get_full_name", read_only=True)
-
-    # Handle appointment_date explicitly
     appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
 
     class Meta:
@@ -83,9 +67,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "id", "patient", "patient_id", "doctor", "doctor_id", "doctor_name",
             "receptionist", "receptionist_name", "appointment_date", "status",
             "notes", "created_by_username", "updated_by_username", "is_emergency",
-            "updated_by", "updated_at"
+            "updated_by", "updated_at", "first_name", "mobile_number"
         ]
-        read_only_fields = ["id", "status", "created_by", "created_by_username", "updated_by", "updated_by_username"]
+        read_only_fields = ["id", "status", "created_by", "created_by_username", "updated_by", "updated_by_username", "first_name", "mobile_number"]
 
     def to_internal_value(self, data):
         # Handle appointment_date parsing explicitly
@@ -103,16 +87,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"appointment_date": f"Invalid format: {str(e)}. Use 'YYYY-MM-DDTHH:MM:SS'."})
         return super().to_internal_value(data)
 
-
-
-        
-        
-
-
-
-from rest_framework import serializers
-from .models import Appointment, Patient, AppointmentTests, Vitals
-
+# Vitals Serializer
 class VitalsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vitals
@@ -127,10 +102,8 @@ class VitalsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Vitals for this appointment already exist.")
         return data
 
+# AppointmentTests Serializer
 class AppointmentTestsSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Appointment Tests, ensuring validation.
-    """
     class Meta:
         model = AppointmentTests
-        fields = ["id", "appointment", "test_name", "result"]
+        fields = ["id", "appointment", "temperature", "height", "weight", "blood_pressure"]  # Updated fields to match model
