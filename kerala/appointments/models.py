@@ -3,78 +3,82 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import date
 
-from datetime import date, datetime
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
-from datetime import date, datetime
-import uuid
-from datetime import date, datetime
-from django.db import models
-
 class Patient(models.Model):
-    patient_id = models.CharField(
-        max_length=10, unique=True, editable=False, default=None, null=True
-    )
+    ADMISSION_TYPE_CHOICES = [
+        ('IN', 'Inpatient'),
+        ('OU', 'Outpatient'),
+    ]
+
+    patient_id = models.CharField(max_length=12, unique=True, editable=False, null=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    contact_number = models.CharField(max_length=15)
+    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+    date_of_birth = models.DateField()
+    age = models.IntegerField(editable=False)
+    father_name = models.CharField(max_length=255)
+    address = models.TextField(null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    pincode = models.CharField(max_length=6, null=True, blank=True)  # Assuming 6-digit pincode
     email = models.EmailField(null=True, blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)
-    current_illness = models.TextField(null=True, blank=True)
-    age = models.IntegerField(null=True, blank=True)
+    mobile_number = models.CharField(max_length=15)
+    alternate_mobile_number = models.CharField(max_length=15, null=True, blank=True)
+    aadhar_number = models.CharField(max_length=12, null=True, blank=True, unique=True)
+
+    # Medical Information
+    blood_group = models.CharField(max_length=5, null=True, blank=True)
+    known_allergies = models.TextField(null=True, blank=True)
+    current_medications = models.TextField(null=True, blank=True)
+    past_medical_history = models.TextField(null=True, blank=True)
+    specific_notes = models.TextField(null=True, blank=True)
+    primary_doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Emergency Contact
+    emergency_contact_name = models.CharField(max_length=255, null=True, blank=True)
+    emergency_contact_relationship = models.CharField(max_length=100, null=True, blank=True)
+    emergency_contact_number = models.CharField(max_length=15, null=True, blank=True)
+
+    # Insurance & Billing
+    insurance_provider = models.CharField(max_length=255, null=True, blank=True)
+    policy_number = models.CharField(max_length=50, null=True, blank=True)
+    payment_preference = models.CharField(max_length=20, choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Insurance', 'Insurance')], null=True, blank=True)
+
+    admission_type = models.CharField(max_length=2, choices=ADMISSION_TYPE_CHOICES, default='OU')  # Default to Outpatient
+    hospital_code = models.CharField(max_length=3, default='115')  # Default hospital code
 
     class Meta:
-        unique_together = ('first_name', 'contact_number')
+        unique_together = ('first_name', 'mobile_number')
 
     def __str__(self):
         return f"{self.patient_id} - {self.first_name} {self.last_name}"
 
     def save(self, *args, **kwargs):
-        if self.date_of_birth:
-            if isinstance(self.date_of_birth, str):
-                self.date_of_birth = datetime.strptime(self.date_of_birth, "%Y-%m-%d").date()
-            self.age = self.calculate_age()
-        
-        if not self.patient_id:  
+        if not self.patient_id:
             self.patient_id = self.generate_patient_id()
-        
+        if self.date_of_birth:
+            self.age = self.calculate_age()
         super().save(*args, **kwargs)
 
     def calculate_age(self):
         today = date.today()
-        if isinstance(self.date_of_birth, date):
-            age = today.year - self.date_of_birth.year
-            if (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day):
-                age -= 1
-            return age
-        return None
+        age = today.year - self.date_of_birth.year
+        if (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day):
+            age -= 1
+        return age
 
     def generate_patient_id(self):
-        """Generate a unique patient ID."""
-        first_letter = self.first_name[0].upper() if self.first_name else "X"
-        year_of_birth = str(self.date_of_birth.year)[-2:] if self.date_of_birth else "00"
-        
-        existing_patients = Patient.objects.filter(first_name=self.first_name, contact_number=self.contact_number)
-        if existing_patients.exists():
-            return existing_patients.first().patient_id  # Reuse existing patient ID
-        
-        last_patient = Patient.objects.filter(patient_id__startswith=f"{first_letter}{year_of_birth}").order_by("-patient_id").first()
+        """Generate patient ID in format KH[AdmissionType][HospitalCode][PatientNumber]"""
+        prefix = f"KH{self.admission_type}{self.hospital_code}"
+        last_patient = Patient.objects.filter(patient_id__startswith=prefix).order_by('-patient_id').first()
         if last_patient:
-            last_number = int(last_patient.patient_id[-4:])
+            last_number = int(last_patient.patient_id[-3:])
             new_number = last_number + 1
         else:
             new_number = 1
-        
-        return f"{first_letter}{year_of_birth}{new_number:04d}"
-
+        return f"{prefix}{new_number:03d}"
 
 
 
 class Appointment(models.Model):
-    """
-    Stores appointment details for patients, linked to doctors and receptionists.
-    """
     STATUS_CHOICES = [
         ('waiting', 'Waiting'),
         ('scheduled', 'Scheduled'),
@@ -88,42 +92,20 @@ class Appointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
-
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)  
-
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Scheduled')
-    appointment_date = models.DateTimeField(default=timezone.now)
+    appointment_date = models.DateTimeField()
     notes = models.TextField(null=True, blank=True)
     is_emergency = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name="updated_appointments"
-    )
-
-    # Store first_name and contact_number explicitly for uniqueness constraints
-    first_name = models.CharField(max_length=255, default="Unknown")  
-    contact_number = models.CharField(max_length=15, default="0702940509")
-
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="updated_appointments")
 
     class Meta:
-        unique_together = ('first_name', 'contact_number', 'appointment_date')  
+        unique_together = ('patient', 'appointment_date')
 
     def __str__(self):
         return f"Appointment for {self.patient} with {self.doctor} on {self.appointment_date}"
-
-    def save(self, *args, **kwargs):
-        """Ensure first_name and contact_number are saved based on patient details."""
-        self.first_name = self.patient.first_name
-        self.contact_number = self.patient.contact_number
-        super().save(*args, **kwargs)
-
-
 
 class AppointmentTests(models.Model):
     """

@@ -403,7 +403,7 @@
             </div>
           </div>
 
-          <!-- Create Patient Modal -->
+      <!-- Create Patient Modal -->
 <div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -480,6 +480,15 @@
             <div class="col-md-4 mb-3">
               <label for="patientAadhar">Aadhar Number</label>
               <input type="text" id="patientAadhar" class="form-control" maxlength="12" pattern="\d{12}">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
+              <select id="admissionType" class="form-control" required>
+                <option value="OU" selected>Outpatient</option>
+                <option value="IN">Inpatient</option>
+              </select>
             </div>
           </div>
 
@@ -1487,107 +1496,13 @@ function loadDoctors(selectedId = null) {
 }
     $(document).ready(loadDoctors);
 
-    // Modified addAppointment with detailed logging and error handling
-function addAppointment() {
-  const doctorId = $("#doctor").val();
-  const patientId = $("#patientID").val().trim();
-  const appointmentDate = $("#appointmentDate").val();
-  const dateOfBirth = $("#dateOfBirth").val();
-  const firstName = $("#firstName").val().trim();
-  const lastName = $("#lastName").val().trim();
-  const contactNumber = $("#contactNumber").val().trim();
-  const notes = $("#notes").val().trim();
-  const isEmergency = $("#isEmergency")?.is(":checked") || false;
 
-  $(".form-control").removeClass("is-invalid");
-  let missingFields = [];
-  if (!doctorId) missingFields.push("Doctor");
-  if (!patientId) missingFields.push("Patient ID");
-  if (!firstName) missingFields.push("First Name");
-  if (!lastName) missingFields.push("Last Name");
-  if (!contactNumber) missingFields.push("Contact Number");
-  if (!appointmentDate) missingFields.push("Appointment Date");
 
-  if (missingFields.length > 0) {
-      $("#" + missingFields.map(f => f.toLowerCase().replace(" ", "")).join(", #")).addClass("is-invalid");
-      console.warn("Missing fields:", missingFields);
-      showModal("Please fill in: " + missingFields.join(", "));
-      return;
-  }
+$("#createPatientModal").on("show.bs.modal", function() {
+  loadDoctorsForPatientModal();
+});
 
-  const contactRegex = /^\d{10}$/;
-  if (!contactRegex.test(contactNumber)) {
-      $("#contactNumber").addClass("is-invalid");
-      console.warn("Invalid contact number:", contactNumber);
-      showModal("Contact Number must be exactly 10 digits.");
-      return;
-  }
 
-  if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
-      $("#dateOfBirth").addClass("is-invalid");
-      console.warn("Future date of birth:", dateOfBirth);
-      showModal("Date of birth cannot be in the future.");
-      return;
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (new Date(appointmentDate) < today) {
-      $("#appointmentDate").addClass("is-invalid");
-      console.warn("Past appointment date:", appointmentDate);
-      showModal("Appointment date cannot be in the past.");
-      return;
-  }
-
-  const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
-  if (age !== null && age < 0) {
-      $("#dateOfBirth").addClass("is-invalid");
-      console.warn("Invalid age calculated:", age);
-      showModal("Invalid Date of Birth.");
-      return;
-  }
-  if (age !== null) $("#age").val(age);
-
-  const appointmentData = {
-      appointment: { patient_id: patientId, first_name: firstName, last_name: lastName, contact_number: contactNumber, date_of_birth: dateOfBirth },
-      appointment_date: appointmentDate,
-      doctor: doctorId,
-      notes: notes,
-      is_emergency: isEmergency
-  };
-
-  console.log("Creating appointment with data:", appointmentData);
-
-  $.ajax({
-      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-      type: "POST",
-      headers: getAuthHeaders(),
-      data: JSON.stringify(appointmentData),
-      contentType: "application/json",
-      success: function(response) {
-          console.log("Appointment created successfully:", response);
-          const appointmentId = response.appointment?.id;
-          if (!appointmentId) {
-              console.error("Appointment ID missing in response:", response);
-              showModal("Error: Appointment ID missing.");
-              return;
-          }
-          hideAppointmentForm();
-          fetchAppointments("Scheduled");
-          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-          showNotification("Appointment created successfully!", "success");
-      },
-      error: function(xhr) {
-          console.error("Failed to create appointment:", {
-              status: xhr.status,
-              statusText: xhr.statusText,
-              response: xhr.responseJSON
-          });
-          const errorMsg = getErrorMessage(xhr, "Failed to create appointment.");
-          showNotification(errorMsg, "error");
-      }
-  });
-}
 
    
 

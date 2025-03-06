@@ -20,6 +20,21 @@ logger = logging.getLogger(__name__)
 # Set the timezone to Asia/Kolkata
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CreatePatientView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        logger.info(f"Received patient creation request from user {request.user.username}: {request.data}")
+        serializer = PatientSerializer(data=request.data)
+        if serializer.is_valid():
+            patient = serializer.save()
+            logger.info(f"Patient created successfully: {patient.patient_id}")
+            return Response({"message": "Patient created successfully.", "patient": PatientSerializer(patient).data}, status=status.HTTP_201_CREATED)
+        logger.error(f"Patient creation failed: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -27,140 +42,54 @@ class CreateAppointmentView(APIView):
     def post(self, request, *args, **kwargs):
         user = request.user
         data = request.data
-        logger.info(f"Received appointment creation request from user {user.id} ({user.username}): {data}")
+        logger.info(f"Received appointment creation request from user {user.username}: {data}")
 
-        # Validate required fields
-        required_fields = ["appointment", "appointment_date"]
+        required_fields = ["patient_id", "appointment_date", "doctor_id"]
         missing_fields = [field for field in required_fields if field not in data or not data[field]]
         if missing_fields:
-            logger.warning(f"Missing fields in request: {missing_fields}")
+            logger.warning(f"Missing fields: {missing_fields}")
             return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        appointment_info = data.get("appointment")
-        if not isinstance(appointment_info, dict):
-            logger.error("Invalid format for appointment details.")
-            return Response({"error": "Appointment details must be a dictionary."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Extract patient details from the appointment data
-        patient_id = appointment_info.get("patient_id")
-        first_name = appointment_info.get("first_name", "").strip()
-        last_name = appointment_info.get("last_name", "").strip()
-        contact_number = appointment_info.get("contact_number", "").strip()
-        date_of_birth = appointment_info.get("date_of_birth")
-        current_illness = appointment_info.get("current_illness", "").strip()  # Extract current illness
-        appointment_date_str = data.get("appointment_date")
-        doctor_id = data.get("doctor")
-        notes = data.get("notes", "")
-        is_emergency = data.get("is_emergency", False)
-        
-        logger.info(f"Data received from the frontend: {data}")
-
-        # Ensure patient details are complete
-        if not (first_name and last_name and contact_number and date_of_birth):
-            logger.error("Patient details are incomplete.")
-            return Response({"error": "Patient details (first name, last name, contact number, and date of birth) are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Validate and convert appointment_date
         try:
-            logger.info(f"Raw appointment date from frontend: {appointment_date_str}")
+            patient = Patient.objects.get(patient_id=data["patient_id"])
+        except Patient.DoesNotExist:
+            logger.error(f"Patient with ID {data['patient_id']} not found.")
+            return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Check if the incoming date contains timezone information
-            if "Z" in appointment_date_str or "+" in appointment_date_str or "-" in appointment_date_str:
-                # If the date has timezone info, parse it directly as an aware datetime
-                appointment_date = datetime.fromisoformat(appointment_date_str)
-                logger.info(f"Parsed timezone-aware appointment date: {appointment_date}")
-            else:
-                # If no timezone info, assume it's local to Asia/Kolkata
-                appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")
-                appointment_date = KOLKATA_TZ.localize(appointment_date)  # Assign Kolkata timezone
-
-            # Convert to Kolkata timezone (only if it's from another timezone)
-            appointment_date = appointment_date.astimezone(KOLKATA_TZ)
-            logger.info(f"Final stored appointment date (Asia/Kolkata): {appointment_date}")
-
-        except ValueError as e:
-            logger.error(f"Invalid appointment date format: {e}")
+        try:
+            appointment_date = datetime.fromisoformat(data["appointment_date"].replace("Z", "+00:00"))
+            appointment_date = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date.astimezone(KOLKATA_TZ)
+        except ValueError:
+            logger.error("Invalid appointment date format.")
             return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DDTHH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ensure appointment date is in the future
         now_kolkata = datetime.now(KOLKATA_TZ)
         if appointment_date < now_kolkata:
-            logger.warning(f"Attempt to schedule an appointment in the past: {appointment_date}")
+            logger.warning(f"Past appointment date: {appointment_date}")
             return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if the patient exists or create a new one
+        if Appointment.objects.filter(patient=patient, appointment_date=appointment_date).exists():
+            logger.warning(f"Duplicate appointment for {patient.patient_id} on {appointment_date}")
+            return Response({"error": "An appointment for this patient at this date and time already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            patient, created = Patient.objects.get_or_create(
-                patient_id=patient_id,
-                defaults={
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "contact_number": contact_number,
-                    "date_of_birth": date_of_birth,
-                    "current_illness": current_illness,  # Save the current illness if new patient
-                }
-            )
-            
-            if created:
-                # If the patient is newly created, update the last name
-                patient.last_name = f"{last_name}"
-                patient.save()
-            else:
-                # If the patient already exists, update contact_number, date_of_birth, and current_illness
-                patient.contact_number = contact_number
-                patient.date_of_birth = date_of_birth
-                if current_illness:
-                    patient.current_illness = current_illness  # Update current illness
-                patient.save()
+            doctor = Doctor.objects.get(id=data["doctor_id"])
+        except Doctor.DoesNotExist:
+            logger.error(f"Doctor with ID {data['doctor_id']} not found.")
+            return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        except Exception as e:
-            logger.error(f"Error while fetching or creating patient: {e}")
-            return Response({"error": "Error processing patient details."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        logger.info(f"Using patient: {patient.id} ({patient.first_name} {patient.last_name})")
-
-        # **Check for duplicate appointment**
-        if Appointment.objects.filter(
-            patient=patient,
-            appointment_date=appointment_date
-        ).exists():
-            logger.warning(f"Duplicate appointment detected for {patient.first_name} ({patient.contact_number}) on {appointment_date}")
-            return Response(
-                {"error": "An appointment for this patient at the specified date and time already exists."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Assign doctor if provided
-        doctor = None
-        if doctor_id:
-            try:
-                doctor = Doctor.objects.get(id=doctor_id)
-            except Doctor.DoesNotExist:
-                logger.error(f"Doctor with ID {doctor_id} not found.")
-                return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Create appointment
         appointment = Appointment.objects.create(
             patient=patient,
-            appointment_date=appointment_date,
             doctor=doctor,
-            notes=notes,
+            appointment_date=appointment_date,
+            notes=data.get("notes", ""),
             status="Scheduled",
-            is_emergency=is_emergency,
+            is_emergency=data.get("is_emergency", False),
             created_by=user
         )
 
-        logger.info(f"Appointment created successfully: {appointment.id} for patient {patient.id}")
-
-        return Response(
-            {
-                "message": "Appointment created successfully.",
-                "appointment": AppointmentSerializer(appointment).data,
-                "patient": PatientSerializer(patient).data,
-            },
-            status=status.HTTP_201_CREATED,
-        )
-
+        logger.info(f"Appointment created: {appointment.id}")
+        return Response({"message": "Appointment created successfully.", "appointment": AppointmentSerializer(appointment).data}, status=status.HTTP_201_CREATED)
 
 
 
