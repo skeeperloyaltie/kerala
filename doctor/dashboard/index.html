@@ -1591,7 +1591,7 @@ function savePatient() {
   }
 
   $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/patients/create/", // Adjust this endpoint as per your backend
+    url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/", // Adjust this endpoint as per your backend
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(patientData),
