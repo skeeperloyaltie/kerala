@@ -1887,7 +1887,7 @@ function openEditModal(appointmentData, rowIndex) {
         $("#editAge").val("");
     }
     
-    $("#editCurrentIllness").val(currentAppointment.current_illness || "");
+    $("#editCurrentIllness").val(currentAppointment.current_medications || "");
     $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
     $("#editAppointmentStatus").val(currentAppointment.status || "");
     $("#editNotes").val(currentAppointment.notes || "");
