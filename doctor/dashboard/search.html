@@ -557,6 +557,9 @@ validateUserSession();
           }
   
           let queryString = filters.join("&");
+
+          console.log("Sending query:", queryString);  // Add this to debug
+
   
           $.ajax({
               url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
