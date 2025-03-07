@@ -35,12 +35,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = ["id", "status", "appointment_date", "notes", "is_emergency", "doctor", "vitals"]
 
+from rest_framework import generics
+from appointments.models import Patient
+from appointments.serializers import PatientSerializer
 
-class PatientSerializer(serializers.ModelSerializer):
-    """Serializer for Patient details, including appointments"""
-    appointments = AppointmentSerializer(many=True, read_only=True)  # Fetch all appointments
+class PatientListView(generics.ListAPIView):
+    serializer_class = PatientSerializer
 
-    class Meta:
-        model = Patient
-        fields = ["patient_id", "first_name", "last_name", "contact_number", "email", 
-                  "date_of_birth", "current_illness", "age", "appointments"]  # Includes appointments
+    def get_queryset(self):
+        queryset = Patient.objects.all()
+        if self.request.user.user_type == 'Doctor':
+            return queryset.filter(primary_doctor__user=self.request.user)
+        return queryset
