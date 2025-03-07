@@ -491,12 +491,14 @@ validateUserSession();
       event.preventDefault();
   
       let filters = [];
+      let patientIdFilter = null;
       $('#searchFilters .input-group').each(function () {
         let field = $(this).find('.search-category').val();
         let value = $(this).find('input[name="query[]"]').val().trim();
         if (value) {
-          if (field === "patient_id" && value.includes(",")) {
-            value = value.split(",").map(id => id.trim()).join(",");
+          if (field === "patient_id") {
+            patientIdFilter = value.split(",").map(id => id.trim()); // Store patient IDs for filtering
+            value = patientIdFilter.join(",");
           }
           filters.push(`${field}=${encodeURIComponent(value)}`);
         }
@@ -515,7 +517,7 @@ validateUserSession();
         headers: getAuthHeaders(),
         success: function (response) {
           console.log("API Response:", response);
-          displayResults(response);
+          displayResults(response, patientIdFilter);
         },
         error: function (xhr) {
           console.error("Search error:", xhr.responseText);
@@ -526,7 +528,7 @@ validateUserSession();
   });
   
   // Function to display search results with tabs
-  function displayResults(data) {
+  function displayResults(data, patientIdFilter) {
     let resultsContainer = $("#results");
     resultsContainer.empty(); // Clear previous results
   
@@ -541,10 +543,13 @@ validateUserSession();
     // Process patients
     if (data.patients && data.patients.length) {
       data.patients.forEach(patient => {
-        patientMap[patient.patient_id] = {
-          details: patient,
-          appointments: []
-        };
+        // Only include if no patientIdFilter or if patient_id matches one of the filtered IDs
+        if (!patientIdFilter || patientIdFilter.includes(patient.patient_id)) {
+          patientMap[patient.patient_id] = {
+            details: patient,
+            appointments: []
+          };
+        }
       });
     }
   
@@ -552,13 +557,16 @@ validateUserSession();
     if (data.appointments && data.appointments.length) {
       data.appointments.forEach(appt => {
         const patientId = appt.patient.patient_id;
-        if (!patientMap[patientId]) {
+        // Only include if patient is already in patientMap (matches filter)
+        if (patientMap[patientId]) {
+          patientMap[patientId].appointments.push(appt);
+        } else if (!patientIdFilter || patientIdFilter.includes(patientId)) {
+          // If patient wasn't in patients list but matches filter, add it
           patientMap[patientId] = {
             details: appt.patient,
-            appointments: []
+            appointments: [appt]
           };
         }
-        patientMap[patientId].appointments.push(appt);
       });
     }
   
@@ -569,7 +577,6 @@ validateUserSession();
       const patient = patientMap[patientId].details;
       const appointments = patientMap[patientId].appointments;
   
-      // Unique ID for tabs to avoid conflicts
       const tabId = `patient-${patientId.replace(/[^a-zA-Z0-9]/g, "")}`;
   
       html += `
@@ -643,7 +650,7 @@ validateUserSession();
     html += "</tbody></table></div>";
     resultsContainer.html(html);
   
-    // Activate Bootstrap tabs (ensure Bootstrap JS is loaded)
+    // Activate Bootstrap tabs
     $(`[data-bs-toggle="tab"]`).tab();
   }
   
