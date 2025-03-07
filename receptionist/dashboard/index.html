@@ -858,6 +858,29 @@
             </div>
           </div>
         </div>
+<!-- Patient ID Popup Modal -->
+<div class="modal fade" id="patientIdPopupModal" tabindex="-1" aria-labelledby="patientIdPopupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="patientIdPopupModalLabel">Patient Created Successfully</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>The patient has been created successfully. Below is the Patient ID:</p>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" id="newPatientIdInput" readonly>
+          <button class="btn btn-outline-secondary" type="button" id="copyPatientIdBtn">Copy</button>
+        </div>
+        <p class="text-success" id="copySuccessMsg" style="display: none;">Patient ID copied to clipboard!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
         <!-- Footer -->
         <footer class="footer">
@@ -1116,31 +1139,8 @@ $("#patientDob").on("change", function() {
   $("#patientAge").val(age >= 0 ? age : "");
 });
 
-// Load doctors into patient modal
-function loadDoctorsForPatientModal() {
-  $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function(response) {
-      $("#patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
-      response.doctors.forEach(doctor => {
-        let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-        $("#patientPrimaryDoctor").append(option);
-      });
-    },
-    error: function(xhr) {
-      showNotification("Failed to load doctors.", "error");
-    }
-  });
-}
 
-// Call this when the patient modal opens
-$("#createPatientModal").on("show.bs.modal", function() {
-  loadDoctorsForPatientModal();
-});
 
-// Save patient
 function savePatient() {
   const patientData = {
     first_name: $("#patientFirstName").val().trim(),
@@ -1166,7 +1166,8 @@ function savePatient() {
     emergency_contact_number: $("#emergencyNumber").val().trim() || null,
     insurance_provider: $("#insuranceProvider").val().trim() || null,
     policy_number: $("#policyNumber").val().trim() || null,
-    payment_preference: $("#paymentPreference").val() || null
+    payment_preference: $("#paymentPreference").val() || null,
+    admission_type: $("#admissionType").val() // Added admission_type
   };
 
   // Validation
@@ -1176,7 +1177,8 @@ function savePatient() {
     "Gender": patientData.gender,
     "Date of Birth": patientData.date_of_birth,
     "Father's Name": patientData.father_name,
-    "Mobile Number": patientData.mobile_number
+    "Mobile Number": patientData.mobile_number,
+    "Admission Type": patientData.admission_type // Added to required fields
   };
   let missingFields = Object.keys(requiredFields).filter(key => !requiredFields[key]);
   if (missingFields.length > 0) {
@@ -1205,7 +1207,7 @@ function savePatient() {
   }
 
   $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/", // Adjust this endpoint as per your backend
+    url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/",
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(patientData),
@@ -1214,6 +1216,10 @@ function savePatient() {
       showNotification("Patient created successfully!", "success");
       $("#createPatientModal").modal("hide");
       $("#createPatientForm")[0].reset();
+
+      // Show the patient ID popup modal with the new patient ID
+      $("#newPatientIdInput").val(response.patient.patient_id);
+      $("#patientIdPopupModal").modal("show");
     },
     error: function(xhr) {
       const errorMsg = getErrorMessage(xhr, "Failed to create patient.");
@@ -1221,6 +1227,18 @@ function savePatient() {
     }
   });
 }
+
+
+// Copy Patient ID to Clipboard
+$("#copyPatientIdBtn").on("click", function() {
+  const patientId = $("#newPatientIdInput").val();
+  navigator.clipboard.writeText(patientId).then(() => {
+    $("#copySuccessMsg").show();
+    setTimeout(() => $("#copySuccessMsg").hide(), 2000); // Hide success message after 2 seconds
+  }).catch(err => {
+    showNotification("Failed to copy patient ID: " + err, "error");
+  });
+});
 
 // Fetch patient details for appointment form
 $("#patientID").on("blur", function() {
@@ -1466,34 +1484,33 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
 
     // Doctor Loading (unchanged)
     let doctorMap = {};
-    // Modified loadDoctors with detailed logging and error handling
-function loadDoctors(selectedId = null) {
-  console.log("Loading doctors list...");
-  $.ajax({
-      url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function(response) {
+    function loadDoctors(selectedId = null) {
+      console.log("Loading doctors list...");
+      $.ajax({
+        url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function(response) {
           console.log("Doctors loaded successfully:", response);
-          $("#doctor, #editDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
+          $("#doctor, #editDoctor, #patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
           response.doctors.forEach(doctor => {
-              doctorMap[doctor.id] = doctor;
-              let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-              $("#doctor, #editDoctor").append(option);
+            doctorMap[doctor.id] = doctor;
+            let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+            $("#doctor, #editDoctor, #patientPrimaryDoctor").append(option);
           });
           if (selectedId) $("#editDoctor").val(selectedId);
-      },
-      error: function(xhr) {
+        },
+        error: function(xhr) {
           console.error("Failed to load doctors:", {
-              status: xhr.status,
-              statusText: xhr.statusText,
-              response: xhr.responseJSON
+            status: xhr.status,
+            statusText: xhr.statusText,
+            response: xhr.responseJSON
           });
           const errorMsg = getErrorMessage(xhr, "Failed to load doctors list.");
           showNotification(errorMsg, "error");
-      }
-  });
-}
+        }
+      });
+    }
     $(document).ready(loadDoctors);
 
 

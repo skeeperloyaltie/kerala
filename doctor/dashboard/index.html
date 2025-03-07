@@ -540,6 +540,30 @@
   </div>
 </div>
 
+<!-- Patient ID Popup Modal -->
+<div class="modal fade" id="patientIdPopupModal" tabindex="-1" aria-labelledby="patientIdPopupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="patientIdPopupModalLabel">Patient Created</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Patient has been successfully created!</p>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" id="newPatientIdInput" readonly>
+          <button class="btn btn-outline-secondary" type="button" id="copyPatientIdBtn">Copy</button>
+        </div>
+        <p class="text-success" id="copySuccessMsg" style="display: none;">Patient ID copied to clipboard!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="makeAppointmentBtn">Make Appointment</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
     <!-- Appointment Form -->
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
   <div class="card-body">
@@ -1142,28 +1166,28 @@ function hideAppointmentForm() {
   $(`#appointmentTabs a[href="${activeTab}"]`).tab("show");
 }
 
-    let doctorMap = {};
-    function loadDoctors(selectedId = null) {
-      $.ajax({
-        url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-        type: "GET",
-        headers: getAuthHeaders(),
-        success: function(response) {
-          console.log("Doctors response:", response); // Debug log
-          $("#doctor, #editDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
-          response.doctors.forEach(doctor => {
-            doctorMap[doctor.id] = doctor;
-            let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-            $("#doctor, #editDoctor").append(option);
-          });
-          if (selectedId) $("#editDoctor").val(selectedId);
-        },
-        error: function(xhr) {
-          console.error("❌ Error fetching doctors:", xhr.status, xhr.responseText);
-          showNotification("Failed to load doctors list.", 'error');
-        }
+let doctorMap = {};
+function loadDoctors(selectedId = null) {
+  $.ajax({
+    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function(response) {
+      console.log("Doctors response:", response);
+      $("#doctor, #editDoctor, #patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
+      response.doctors.forEach(doctor => {
+        doctorMap[doctor.id] = doctor;
+        let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+        $("#doctor, #editDoctor, #patientPrimaryDoctor").append(option);
       });
+      if (selectedId) $("#editDoctor").val(selectedId);
+    },
+    error: function(xhr) {
+      console.error("❌ Error fetching doctors:", xhr.status, xhr.responseText);
+      showNotification("Failed to load doctors list.", 'error');
     }
+  });
+}
 
     function addAppointment() {
       const doctorId = $("#doctor").val();
@@ -1502,29 +1526,7 @@ $("#patientDob").on("change", function() {
   $("#patientAge").val(age >= 0 ? age : "");
 });
 
-// Load doctors into patient modal
-function loadDoctorsForPatientModal() {
-  $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function(response) {
-      $("#patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
-      response.doctors.forEach(doctor => {
-        let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-        $("#patientPrimaryDoctor").append(option);
-      });
-    },
-    error: function(xhr) {
-      showNotification("Failed to load doctors.", "error");
-    }
-  });
-}
 
-// Call this when the patient modal opens
-$("#createPatientModal").on("show.bs.modal", function() {
-  loadDoctorsForPatientModal();
-});
 // Save patient
 function savePatient() {
   const patientData = {
