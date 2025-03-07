@@ -40,6 +40,27 @@ class DoctorSerializer(serializers.ModelSerializer):
 
 
 
+from rest_framework import serializers
+from .models import Appointment, Patient, AppointmentTests, Vitals
+
+from rest_framework import serializers
+from .models import Vitals
+
+class VitalsSerializer(serializers.ModelSerializer):
+    recorded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+    class Meta:
+        model = Vitals
+        fields = [
+            'temperature', 'height', 'weight', 'blood_pressure', 'heart_rate',
+            'respiratory_rate', 'oxygen_saturation', 'blood_sugar_level', 'bmi',
+            'recorded_at', 'recorded_by'
+        ]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['recorded_by'] = instance.recorded_by.username if instance.recorded_by else "N/A"
+        return representation
 
 from rest_framework import serializers
 from .models import Appointment, Patient, AppointmentTests
@@ -55,6 +76,10 @@ from users.models import Doctor, Receptionist
 
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
+
+
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
+
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
     patient_id = serializers.CharField(write_only=True, source="patient.patient_id")
@@ -62,13 +87,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
     doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor")
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
-    appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
+    appointment_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S%z")
+    vitals = VitalsSerializer(read_only=True)  # Nested Vitals
 
     class Meta:
         model = Appointment
         fields = [
             "id", "patient", "patient_id", "doctor", "doctor_id", "appointment_date", "status",
-            "notes", "created_by_username", "updated_by_username", "is_emergency", "updated_by", "updated_at"
+            "notes", "created_by_username", "updated_by_username", "is_emergency", "updated_by",
+            "updated_at", "vitals"
         ]
         read_only_fields = ["id", "created_by", "created_by_username", "updated_by", "updated_by_username"]
 
@@ -86,6 +113,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"appointment_date": "Invalid format. Use 'YYYY-MM-DDTHH:MM'."})
         return super().to_internal_value(data)
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Add Illness (current_medications) from patient
+        representation['illness'] = instance.patient.current_medications if instance.patient.current_medications else "None"
+        # Placeholder for Visited Time and Completion Status
+        representation['visited_time'] = None  # To be implemented later
+        representation['completion_status'] = None  # To be implemented later
+        return representation
+
 
 
         
@@ -93,22 +129,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 
 
-from rest_framework import serializers
-from .models import Appointment, Patient, AppointmentTests, Vitals
 
-class VitalsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Vitals
-        fields = '__all__'
-
-    def validate(self, data):
-        """
-        Ensure that an appointment can only have one vitals record.
-        """
-        appointment = data.get('appointment')
-        if Vitals.objects.filter(appointment=appointment).exists():
-            raise serializers.ValidationError("Vitals for this appointment already exist.")
-        return data
 
 class AppointmentTestsSerializer(serializers.ModelSerializer):
     """

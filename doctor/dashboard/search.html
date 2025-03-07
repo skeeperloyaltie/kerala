@@ -49,7 +49,18 @@ console.log(token, username, csrftoken);
 
     </script>
 
-    <style>
+
+   <!-- Add this in the <head> section -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .vitals-btn {
+        cursor: pointer;
+        color: #007bff;
+        text-decoration: underline;
+    }
+    .vitals-btn:hover {
+        color: #0056b3;
+    }
       .table {
         table-layout: auto; /* Allow the table to adjust column widths dynamically */
         width: 100%;
@@ -599,127 +610,182 @@ validateUserSession();
   
       // Updated displayResults function with appointment sorting
       function displayResults(data, patientIdFilter) {
-          let resultsContainer = $("#results");
-          resultsContainer.empty();
-  
-          if ((!data.patients || data.patients.length === 0) && (!data.appointments || data.appointments.length === 0)) {
-              resultsContainer.html("<p class='text-danger'>No patients found.</p>");
-              return;
-          }
-  
-          let patientMap = {};
-  
-          // Process patients
-          if (data.patients && data.patients.length) {
-              data.patients.forEach(patient => {
-                  if (!patientIdFilter || patientIdFilter.includes(patient.patient_id)) {
-                      patientMap[patient.patient_id] = {
-                          details: patient,
-                          appointments: []
-                      };
-                  }
-              });
-          }
-  
-          // Add appointments with sorting
-          if (data.appointments && data.appointments.length) {
-              // Sort appointments by date descending (latest first)
-              data.appointments.sort((a, b) => 
-                  new Date(b.appointment_date) - new Date(a.appointment_date)
-              );
-  
-              data.appointments.forEach(appt => {
-                  const patientId = appt.patient.patient_id;
-                  if (patientMap[patientId]) {
-                      patientMap[patientId].appointments.push(appt);
-                  } else if (!patientIdFilter || patientIdFilter.includes(patientId)) {
-                      patientMap[patientId] = {
-                          details: appt.patient,
-                          appointments: [appt]
-                      };
-                  }
-              });
-          }
-  
-          let html = '<div class="table-responsive"><table class="table table-striped"><tbody>';
-  
-          for (let patientId in patientMap) {
-              const patient = patientMap[patientId].details;
-              const appointments = patientMap[patientId].appointments;
-  
-              const tabId = `patient-${patientId.replace(/[^a-zA-Z0-9]/g, "")}`;
-  
-              html += `
-                  <tr>
-                      <td colspan="2">
-                          <h5>${patient.first_name} ${patient.last_name || ""} (ID: ${patient.patient_id || "N/A"})</h5>
-                          <ul class="nav nav-tabs" id="${tabId}-tabs" role="tablist">
-                              <li class="nav-item">
-                                  <a class="nav-link active" id="${tabId}-details-tab" data-bs-toggle="tab" href="#${tabId}-details" role="tab">Patient Details</a>
-                              </li>
-                              <li class="nav-item">
-                                  <a class="nav-link" id="${tabId}-appointments-tab" data-bs-toggle="tab" href="#${tabId}-appointments" role="tab">Appointments</a>
-                              </li>
-                          </ul>
-                          <div class="tab-content" id="${tabId}-content">
-                              <div class="tab-pane fade show active" id="${tabId}-details" role="tabpanel">
-                                  <table class="table table-bordered">
-                                      <tr><th>Patient ID</th><td>${patient.patient_id || "N/A"}</td></tr>
-                                      <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ""}</td></tr>
-                                      <tr><th>Gender</th><td>${patient.gender || "N/A"}</td></tr>
-                                      <tr><th>Date of Birth</th><td>${patient.date_of_birth || "N/A"}</td></tr>
-                                      <tr><th>Age</th><td>${patient.age >= 0 ? patient.age : calculateAge(patient.date_of_birth)}</td></tr>
-                                      <tr><th>Contact</th><td>${patient.mobile_number || patient.contact_number || "N/A"}</td></tr>
-                                      <tr><th>Email</th><td>${patient.email || "N/A"}</td></tr>
-                                      <tr><th>Address</th><td>${patient.address || "N/A"}, ${patient.city || "N/A"}, ${patient.pincode || "N/A"}</td></tr>
-                                      <tr><th>Blood Group</th><td>${patient.blood_group || "N/A"}</td></tr>
-                                      <tr><th>Allergies</th><td>${patient.known_allergies || "None"}</td></tr>
-                                      <tr><th>Current Medications</th><td>${patient.current_medications || "None"}</td></tr>
-                                      <tr><th>Past Medical History</th><td>${patient.past_medical_history || "None"}</td></tr>
-                                      <tr><th>Specific Notes</th><td>${patient.specific_notes || "None"}</td></tr>
-                                      <tr><th>Emergency Contact</th><td>${patient.emergency_contact_name || "N/A"} (${patient.emergency_contact_relationship || "N/A"}): ${patient.emergency_contact_number || "N/A"}</td></tr>
-                                  </table>
-                              </div>
-                              <div class="tab-pane fade" id="${tabId}-appointments" role="tabpanel">
-              `;
-  
-              if (appointments.length > 0) {
-                  html += '<table class="table table-bordered"><thead><tr><th>Doctor</th><th>Specialization</th><th>Contact</th><th>Email</th><th>Date</th><th>Status</th><th>Notes</th><th>Emergency</th></tr></thead><tbody>';
-                  appointments.forEach(appt => {
-                      const doctor = appt.doctor || {};
-                      const doctorName = doctor ? `${doctor.first_name || ""} ${doctor.last_name || ""}` : "N/A";
-                      const apptDate = new Date(appt.appointment_date).toLocaleString();
-                      html += `
-                          <tr>
-                              <td>${doctorName}</td>
-                              <td>${doctor.specialization || "N/A"}</td>
-                              <td>${doctor.contact_number || "N/A"}</td>
-                              <td>${doctor.email || "N/A"}</td>
-                              <td>${apptDate}</td>
-                              <td>${appt.status || "N/A"}</td>
-                              <td>${appt.notes || "None"}</td>
-                              <td>${appt.is_emergency ? "Yes" : "No"}</td>
-                          </tr>
-                      `;
-                  });
-                  html += "</tbody></table>";
-              } else {
-                  html += "<p>No appointments found.</p>";
-              }
-  
-              html += `
-                              </div>
-                          </div>
-                      </td>
-                  </tr>
-              `;
-          }
-  
-          html += "</tbody></table></div>";
-          resultsContainer.html(html);
-  
-          $(`[data-bs-toggle="tab"]`).tab();
-      }
+        let resultsContainer = $("#results");
+        resultsContainer.empty();
+    
+        if ((!data.patients || data.patients.length === 0) && (!data.appointments || data.appointments.length === 0)) {
+            resultsContainer.html("<p class='text-danger'>No patients found.</p>");
+            return;
+        }
+    
+        let patientMap = {};
+    
+        if (data.patients && data.patients.length) {
+            data.patients.forEach(patient => {
+                if (!patientIdFilter || patientIdFilter.includes(patient.patient_id)) {
+                    patientMap[patient.patient_id] = {
+                        details: patient,
+                        appointments: []
+                    };
+                }
+            });
+        }
+    
+        if (data.appointments && data.appointments.length) {
+            data.appointments.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
+            data.appointments.forEach(appt => {
+                const patientId = appt.patient.patient_id;
+                if (patientMap[patientId]) {
+                    patientMap[patientId].appointments.push(appt);
+                } else if (!patientIdFilter || patientIdFilter.includes(patientId)) {
+                    patientMap[patientId] = {
+                        details: appt.patient,
+                        appointments: [appt]
+                    };
+                }
+            });
+        }
+    
+        let html = '<div class="table-responsive"><table class="table table-striped"><tbody>';
+    
+        for (let patientId in patientMap) {
+            const patient = patientMap[patientId].details;
+            const appointments = patientMap[patientId].appointments;
+            const tabId = `patient-${patientId.replace(/[^a-zA-Z0-9]/g, "")}`;
+    
+            html += `
+                <tr>
+                    <td colspan="2">
+                        <h5>${patient.first_name} ${patient.last_name || ""} (ID: ${patient.patient_id || "N/A"})</h5>
+                        <ul class="nav nav-tabs" id="${tabId}-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="${tabId}-details-tab" data-bs-toggle="tab" href="#${tabId}-details" role="tab">Patient Details</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="${tabId}-appointments-tab" data-bs-toggle="tab" href="#${tabId}-appointments" role="tab">Appointments</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="${tabId}-content">
+                            <div class="tab-pane fade show active" id="${tabId}-details" role="tabpanel">
+                                <table class="table table-bordered">
+                                    <tr><th>Patient ID</th><td>${patient.patient_id || "N/A"}</td></tr>
+                                    <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ""}</td></tr>
+                                    <tr><th>Gender</th><td>${patient.gender || "N/A"}</td></tr>
+                                    <tr><th>Date of Birth</th><td>${patient.date_of_birth || "N/A"}</td></tr>
+                                    <tr><th>Age</th><td>${patient.age >= 0 ? patient.age : calculateAge(patient.date_of_birth)}</td></tr>
+                                    <tr><th>Contact</th><td>${patient.mobile_number || patient.contact_number || "N/A"}</td></tr>
+                                    <tr><th>Email</th><td>${patient.email || "N/A"}</td></tr>
+                                    <tr><th>Address</th><td>${patient.address || "N/A"}, ${patient.city || "N/A"}, ${patient.pincode || "N/A"}</td></tr>
+                                    <tr><th>Blood Group</th><td>${patient.blood_group || "N/A"}</td></tr>
+                                    <tr><th>Allergies</th><td>${patient.known_allergies || "None"}</td></tr>
+                                    <tr><th>Current Medications</th><td>${patient.current_medications || "None"}</td></tr>
+                                    <tr><th>Past Medical History</th><td>${patient.past_medical_history || "None"}</td></tr>
+                                    <tr><th>Specific Notes</th><td>${patient.specific_notes || "None"}</td></tr>
+                                    <tr><th>Emergency Contact</th><td>${patient.emergency_contact_name || "N/A"} (${patient.emergency_contact_relationship || "N/A"}): ${patient.emergency_contact_number || "N/A"}</td></tr>
+                                </table>
+                            </div>
+                            <div class="tab-pane fade" id="${tabId}-appointments" role="tabpanel">
+            `;
+    
+            if (appointments.length > 0) {
+                html += `
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Appointment ID</th>
+                                <th>Doctor</th>
+                                <th>Specialization</th>
+                                <th>Illness</th>
+                                <th>Appointment Date & Time</th>
+                                <th>Notes</th>
+                                <th>Visited Time</th>
+                                <th>Vitals</th>
+                                <th>Completion Status</th>
+                                <th>Created By</th>
+                                <th>Updated By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                appointments.forEach(appt => {
+                    const doctor = appt.doctor || {};
+                    const doctorName = doctor ? `${doctor.first_name || ""} ${doctor.last_name || ""}` : "N/A";
+                    const apptDate = new Date(appt.appointment_date).toLocaleString();
+                    const vitalsId = `vitals-${appt.id}`;
+                    const hasVitals = appt.vitals && Object.keys(appt.vitals).length > 0;
+    
+                    html += `
+                        <tr>
+                            <td>${appt.id || "N/A"}</td>
+                            <td>${doctorName}</td>
+                            <td>${doctor.specialization || "N/A"}</td>
+                            <td>${appt.illness || "None"}</td>
+                            <td>${apptDate}</td>
+                            <td>${appt.notes || "None"}</td>
+                            <td>${appt.visited_time || "N/A"}</td>
+                            <td>
+                                <span class="vitals-btn" data-bs-toggle="modal" data-bs-target="#${vitalsId}">
+                                    ${hasVitals ? "View Vitals" : "No Vitals"}
+                                </span>
+                            </td>
+                            <td>${appt.completion_status || "N/A"}</td>
+                            <td>${appt.created_by_username || "N/A"}</td>
+                            <td>${appt.updated_by_username || "N/A"}</td>
+                        </tr>
+                    `;
+    
+                    // Add Vitals Modal
+                    if (hasVitals) {
+                        html += `
+                            <div class="modal fade" id="${vitalsId}" tabindex="-1" aria-labelledby="${vitalsId}Label" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="${vitalsId}Label">Vitals for Appointment ${appt.id}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <table class="table">
+                                                <tr><th>Temperature</th><td>${appt.vitals.temperature || "N/A"} °C</td></tr>
+                                                <tr><th>Height</th><td>${appt.vitals.height || "N/A"} cm</td></tr>
+                                                <tr><th>Weight</th><td>${appt.vitals.weight || "N/A"} kg</td></tr>
+                                                <tr><th>Blood Pressure</th><td>${appt.vitals.blood_pressure || "N/A"} mmHg</td></tr>
+                                                <tr><th>Heart Rate</th><td>${appt.vitals.heart_rate || "N/A"} BPM</td></tr>
+                                                <tr><th>Respiratory Rate</th><td>${appt.vitals.respiratory_rate || "N/A"} breaths/min</td></tr>
+                                                <tr><th>Oxygen Saturation</th><td>${appt.vitals.oxygen_saturation || "N/A"}%</td></tr>
+                                                <tr><th>Blood Sugar Level</th><td>${appt.vitals.blood_sugar_level || "N/A"} mg/dL</td></tr>
+                                                <tr><th>BMI</th><td>${appt.vitals.bmi || "N/A"}</td></tr>
+                                                <tr><th>Recorded At</th><td>${appt.vitals.recorded_at || "N/A"}</td></tr>
+                                                <tr><th>Recorded By</th><td>${appt.vitals.recorded_by || "N/A"}</td></tr>
+                                            </table>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                html += "</tbody></table>";
+            } else {
+                html += "<p>No appointments found.</p>";
+            }
+    
+            html += `
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    
+        html += "</tbody></table></div>";
+        resultsContainer.html(html);
+    
+        $(`[data-bs-toggle="tab"]`).tab();
+    }
   
       // Utility function to calculate age
       function calculateAge(dob) {
@@ -760,6 +826,7 @@ validateUserSession();
     <!-- Plugin js for this page -->
     <script src="assets/vendors/chart.js/chart.umd.js"></script>
     <script src="assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- End plugin js for this page -->
     <!-- inject:js -->
     <script src="assets/js/off-canvas.js"></script>

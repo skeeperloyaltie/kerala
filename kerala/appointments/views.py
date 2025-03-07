@@ -599,6 +599,7 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
     max_page_size = 100
+
 class SearchView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
@@ -617,7 +618,7 @@ class SearchView(generics.ListAPIView):
         status = query_params.get("status", "").strip()
         date_of_birth = query_params.get("date_of_birth", "").strip()
         appointment_date = query_params.get("appointment_date", "").strip()
-        doctor_id = query_params.get("doctor_id", "").strip()  # New parameter for doctor ID
+        doctor_id = query_params.get("doctor_id", "").strip()
 
         query_key = f"{','.join(patient_ids)}_{first_name}_{last_name}_{contact_number}_{email}_{status}_{date_of_birth}_{appointment_date}_{doctor_id}"
         cache_key = f"search_{user.id}_{query_key}"
@@ -633,7 +634,7 @@ class SearchView(generics.ListAPIView):
 
         if not any([patient_ids, first_name, last_name, contact_number, email, status, date_of_birth, appointment_date, doctor_id]):
             logger.info(f"Empty query received from user {user.id}.")
-            return []
+            return {"patients": [], "appointments": []}  # Consistent return type
 
         # Prepare query sets
         patients, appointments = [], []
@@ -642,42 +643,41 @@ class SearchView(generics.ListAPIView):
             if patient_ids:
                 patients = Patient.objects.filter(patient_id__in=patient_ids)
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients)
+                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
             elif doctor_id:
-                # Filter by doctor_id
-                appointments = Appointment.objects.filter(doctor__id=doctor_id)
+                appointments = Appointment.objects.filter(doctor__id=doctor_id).prefetch_related('vitals')
                 patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
                 patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
             elif first_name:
                 patients = Patient.objects.filter(first_name__iexact=first_name)
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients)
+                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
             elif date_of_birth:
                 try:
                     dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
                     patients = Patient.objects.filter(date_of_birth=dob)
                     patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                    appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients)
+                    appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
                 except ValueError:
                     logger.error(f"Invalid date_of_birth format: {date_of_birth}")
-                    return []
+                    return {"patients": [], "appointments": []}
             elif appointment_date:
                 try:
                     apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
-                    appointments = Appointment.objects.filter(appointment_date__date=apt_date)
+                    appointments = Appointment.objects.filter(appointment_date__date=apt_date).prefetch_related('vitals')
                     patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
                     patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
                 except ValueError:
                     logger.error(f"Invalid appointment_date format: {appointment_date}")
-                    return []
+                    return {"patients": [], "appointments": []}
             else:
                 patients = Patient.objects.filter(
                     Q(last_name__icontains=last_name) |
-                    Q(contact_number__icontains=contact_number) |
+                    Q(mobile_number__icontains=contact_number) |  # Updated to match Patient model field
                     Q(email__icontains=email)
                 )
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients)
+                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
 
         elif hasattr(user, "doctor"):  # Doctors search only their patients
             if patient_ids:
@@ -689,15 +689,14 @@ class SearchView(generics.ListAPIView):
                 appointments = Appointment.objects.filter(
                     doctor=user.doctor,
                     patient__patient_id__in=patient_ids_from_patients
-                )
+                ).prefetch_related('vitals')
             elif doctor_id:
-                # Restrict to doctor's own patients if doctor_id matches their ID
                 if str(user.doctor.id) == doctor_id:
-                    appointments = Appointment.objects.filter(doctor=user.doctor)
+                    appointments = Appointment.objects.filter(doctor=user.doctor).prefetch_related('vitals')
                     patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
                     patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
                 else:
-                    return {"patients": [], "appointments": []}  # No access to other doctors' patients
+                    return {"patients": [], "appointments": []}
             elif first_name:
                 patients = Patient.objects.filter(
                     Q(appointments__doctor=user.doctor) & Q(first_name__iexact=first_name)
@@ -706,8 +705,8 @@ class SearchView(generics.ListAPIView):
                 appointments = Appointment.objects.filter(
                     doctor=user.doctor,
                     patient__patient_id__in=patient_ids_from_patients
-                )
-            # ... (rest of doctor logic remains unchanged)
+                ).prefetch_related('vitals')
+            # Add additional doctor-specific conditions as needed...
 
         # Compile results
         results = {
