@@ -1284,19 +1284,23 @@ $("#patientID").on("blur", function() {
       headers: getAuthHeaders(),
       success: function(response) {
         if (response.patient) {
-          $("#firstName").val(response.patient.first_name);
-          $("#lastName").val(response.patient.last_name);
-          $("#contactNumber").val(response.patient.mobile_number);
-          $("#dateOfBirth").val(response.patient.date_of_birth);
-          $("#age").val(calculateAge(response.patient.date_of_birth));
+          $("#firstName").val(response.patient.first_name || "");
+          $("#lastName").val(response.patient.last_name || "");
+          $("#contactNumber").val(response.patient.mobile_number || "");
+          $("#dateOfBirth").val(response.patient.date_of_birth || "");
+          $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
         } else {
           showNotification("Patient not found.", "error");
+          $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
         }
       },
       error: function(xhr) {
         showNotification("Failed to fetch patient details.", "error");
+        $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
       }
     });
+  } else {
+    $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
   }
 });
 
@@ -1554,7 +1558,77 @@ $("#createPatientModal").on("show.bs.modal", function() {
 });
 
 
+function addAppointment() {
+  const patientId = $("#patientID").val().trim();
+  const doctorId = $("#doctor").val();
+  const appointmentDate = $("#appointmentDate").val();
+  const notes = $("#notes").val().trim();
+  const isEmergency = $("#isEmergency")?.is(":checked") || false;
 
+  // Clear previous validation states
+  $(".form-control").removeClass("is-invalid");
+  let missingFields = [];
+  if (!patientId) missingFields.push("Patient ID");
+  if (!doctorId) missingFields.push("Doctor");
+  if (!appointmentDate) missingFields.push("Appointment Date");
+
+  if (missingFields.length > 0) {
+    missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
+    showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (new Date(appointmentDate) < today) {
+    $("#appointmentDate").addClass("is-invalid");
+    showNotification("Appointment date cannot be in the past.", "error");
+    return;
+  }
+
+  const appointmentData = {
+    patient_id: patientId,
+    doctor_id: doctorId,
+    appointment_date: appointmentDate,
+    notes: notes,
+    is_emergency: isEmergency
+  };
+
+  $.ajax({
+    url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+    type: "POST",
+    headers: getAuthHeaders(),
+    data: JSON.stringify(appointmentData),
+    contentType: "application/json",
+    success: function(response) {
+      const appointmentId = response.appointment?.id;
+      if (!appointmentId) {
+        showNotification("Error: Appointment ID missing from response.", "error");
+        return;
+      }
+      hideAppointmentForm();
+      fetchAppointments("Scheduled"); // Refresh the appointment list
+      $("#vitalsModal").modal("show").data("appointmentId", appointmentId); // Open vitals modal
+      showNotification("Appointment created successfully!");
+    },
+    error: function(xhr) {
+      const errorMsg = xhr.responseJSON?.error || "Failed to create appointment.";
+      showNotification(errorMsg, "error");
+    }
+  });
+}
+
+// Helper function to calculate age (unchanged)
+function calculateAge(dob) {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
    
 
     function calculateAge(dob) {

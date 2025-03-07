@@ -57,6 +57,12 @@ class CreateAppointmentView(APIView):
             return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
+            doctor = Doctor.objects.get(id=data["doctor_id"])
+        except Doctor.DoesNotExist:
+            logger.error(f"Doctor with ID {data['doctor_id']} not found.")
+            return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
             appointment_date = datetime.fromisoformat(data["appointment_date"].replace("Z", "+00:00"))
             appointment_date = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date.astimezone(KOLKATA_TZ)
         except ValueError:
@@ -72,12 +78,6 @@ class CreateAppointmentView(APIView):
             logger.warning(f"Duplicate appointment for {patient.patient_id} on {appointment_date}")
             return Response({"error": "An appointment for this patient at this date and time already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            doctor = Doctor.objects.get(id=data["doctor_id"])
-        except Doctor.DoesNotExist:
-            logger.error(f"Doctor with ID {data['doctor_id']} not found.")
-            return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
-
         appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor,
@@ -89,7 +89,10 @@ class CreateAppointmentView(APIView):
         )
 
         logger.info(f"Appointment created: {appointment.id}")
-        return Response({"message": "Appointment created successfully.", "appointment": AppointmentSerializer(appointment).data}, status=status.HTTP_201_CREATED)
+        return Response({
+            "message": "Appointment created successfully.",
+            "appointment": AppointmentSerializer(appointment).data
+        }, status=status.HTTP_201_CREATED)
 
 
 
