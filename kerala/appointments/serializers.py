@@ -47,7 +47,7 @@ from rest_framework import serializers
 from .models import Vitals
 
 class VitalsSerializer(serializers.ModelSerializer):
-    recorded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    recorded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)  # Make read-only
 
     class Meta:
         model = Vitals
@@ -56,11 +56,14 @@ class VitalsSerializer(serializers.ModelSerializer):
             'respiratory_rate', 'oxygen_saturation', 'blood_sugar_level', 'bmi',
             'recorded_at', 'recorded_by'
         ]
+        read_only_fields = ['recorded_at', 'recorded_by']  # Add recorded_by as read-only too
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['recorded_by'] = instance.recorded_by.username if instance.recorded_by else "N/A"
         return representation
+    
+    
 
 from rest_framework import serializers
 from .models import Appointment, Patient, AppointmentTests
