@@ -336,16 +336,16 @@ console.log(token, username, csrftoken);
   </div>
 
   <div class="container mt-5">
-    <h2>Search Page</h2>
+    <h2>Search Patients</h2>
     <form id="searchForm">
-      <div id="searchFilters">
-       
-    </div>
-        <button type="button" id="addFilter" class="btn btn-secondary">Add Filter</button>
-        <button type="submit" class="btn btn-primary">Search</button>
+      <div id="searchFilters"></div>
+      <button type="button" id="addFilter" class="btn btn-secondary">Add Filter</button>
+      <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    <div class="mt-4" id="results"></div>
-</div>
+    <div class="mt-4 table-responsive" id="results">
+      <!-- Results will be dynamically populated here -->
+    </div>
+  </div>
 
   
 
@@ -458,180 +458,206 @@ $(document).ready(function() {
 
 // Validate session on page load
 validateUserSession();
-$(document).ready(function () {
-  // Add new search filter
-  $('#addFilter').click(function () {
+  // Run session check on page load
+  $(document).ready(function () {
+    checkSessionOnLoad();
+  
+    // Add new search filter
+    $('#addFilter').click(function () {
       $('#searchFilters').append(`
         <div class="mb-3 input-group">
-            <select class="form-select search-category">
-                <option value="patient_id">Patient ID(s)</option>
-                <option value="first_name">First Name</option>
-                <option value="last_name">Last Name</option>
-                <option value="email">Email</option>
-                <option value="contact_number">Contact Number</option>
-                <option value="date_of_birth">Date of Birth</option>
-                <option value="appointment_date">Appointment Date</option>
-            </select>
-            <input type="text" class="form-control" name="query[]" placeholder="Enter search term (e.g., PAT1234 or PAT1234,PAT5678 for multiple IDs, YYYY-MM-DD for dates)">
-            <button type="button" class="btn btn-danger removeFilter">Remove</button>
+          <select class="form-select search-category">
+            <option value="patient_id">Patient ID(s)</option>
+            <option value="first_name">First Name</option>
+            <option value="last_name">Last Name</option>
+            <option value="email">Email</option>
+            <option value="contact_number">Contact Number</option>
+            <option value="date_of_birth">Date of Birth</option>
+            <option value="appointment_date">Appointment Date</option>
+          </select>
+          <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or PAT1234,PAT5678 or YYYY-MM-DD">
+          <button type="button" class="btn btn-danger removeFilter">Remove</button>
         </div>
       `);
-  });
-
-  // Remove search filter
-  $(document).on('click', '.removeFilter', function () {
+    });
+  
+    // Remove search filter
+    $(document).on('click', '.removeFilter', function () {
       $(this).closest('.input-group').remove();
-  });
-
-  $('#searchForm').submit(function (event) {
+    });
+  
+    // Handle search form submission
+    $('#searchForm').submit(function (event) {
       event.preventDefault();
-
+  
       let filters = [];
       $('#searchFilters .input-group').each(function () {
-          let field = $(this).find('.search-category').val();
-          let value = $(this).find('input[name="query[]"]').val().trim();
-          if (value) {
-              // Handle multiple patient_ids (e.g., "PAT1234,PAT5678")
-              if (field === "patient_id" && value.includes(",")) {
-                  value = value.split(",").map(id => id.trim()).join(",");
-              }
-              filters.push(`${field}=${encodeURIComponent(value)}`);
+        let field = $(this).find('.search-category').val();
+        let value = $(this).find('input[name="query[]"]').val().trim();
+        if (value) {
+          if (field === "patient_id" && value.includes(",")) {
+            value = value.split(",").map(id => id.trim()).join(",");
           }
+          filters.push(`${field}=${encodeURIComponent(value)}`);
+        }
       });
-
+  
       if (filters.length === 0) {
-          alert("Please enter at least one search term.");
-          return;
+        Swal.fire("Error", "Please enter at least one search term.", "error");
+        return;
       }
-
+  
       let queryString = filters.join("&");
-
+  
       $.ajax({
-          url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
-          method: "GET",
-          headers: getAuthHeaders(),
-          success: function (response) {
-              console.log("Full API Response:", response); // Log the full response
-              displayResults(response);
-          },
-          error: function (xhr, status, error) {
-              console.error("Search error:", xhr.responseText);
-              alert("Failed to fetch search results. Please try again.");
-          }
+        url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
+        method: "GET",
+        headers: getAuthHeaders(),
+        success: function (response) {
+          console.log("API Response:", response);
+          displayResults(response);
+        },
+        error: function (xhr) {
+          console.error("Search error:", xhr.responseText);
+          Swal.fire("Error", "Failed to fetch search results. Please try again.", "error");
+        }
       });
+    });
   });
-});
-
-function displayResults(data) {
-  let resultsContainer = $("#results");
-  resultsContainer.empty(); // Clear previous results
-
-  if (!data.patients?.length && !data.appointments?.length) {
-    console.log("No results found:", data);
-    resultsContainer.html("<p class='text-danger'>No results found.</p>");
-    return;
-  }
-
-  let html = "<h5>Search Results</h5>";
-
-  // Group patients and their appointments
-  const patientMap = {};
-
-  // Process patients
-  if (data.patients?.length) {
-    console.log("Patients found:", data.patients);
-    data.patients.forEach(patient => {
-      if (!patientMap[patient.patient_id]) {
+  
+  // Function to display search results with tabs
+  function displayResults(data) {
+    let resultsContainer = $("#results");
+    resultsContainer.empty(); // Clear previous results
+  
+    if ((!data.patients || data.patients.length === 0) && (!data.appointments || data.appointments.length === 0)) {
+      resultsContainer.html("<p class='text-danger'>No patients found.</p>");
+      return;
+    }
+  
+    // Build patient-centric data structure
+    let patientMap = {};
+  
+    // Process patients
+    if (data.patients && data.patients.length) {
+      data.patients.forEach(patient => {
         patientMap[patient.patient_id] = {
           details: patient,
           appointments: []
         };
-      }
-    });
-  }
-
-  // Add appointments to corresponding patients
-  if (data.appointments?.length) {
-    console.log("Appointments found:", data.appointments);
-    data.appointments.forEach(appt => {
-      const patientId = appt.patient.patient_id;
-      if (!patientMap[patientId]) {
-        patientMap[patientId] = {
-          details: appt.patient,
-          appointments: []
-        };
-      }
-      patientMap[patientId].appointments.push(appt);
-    });
-  }
-
-  // Render results as a table if there are patients or appointments
-  if (Object.keys(patientMap).length > 0) {
-    html += `
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Patient ID</th>
-              <th>Name</th>
-              <th>Contact</th>
-              <th>Email</th>
-              <th>DOB</th>
-              <th>Age</th>
-              <th>Illness</th>
-              <th>Appointments</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-
+      });
+    }
+  
+    // Add appointments to corresponding patients
+    if (data.appointments && data.appointments.length) {
+      data.appointments.forEach(appt => {
+        const patientId = appt.patient.patient_id;
+        if (!patientMap[patientId]) {
+          patientMap[patientId] = {
+            details: appt.patient,
+            appointments: []
+          };
+        }
+        patientMap[patientId].appointments.push(appt);
+      });
+    }
+  
+    // Generate tabbed HTML
+    let html = '<div class="table-responsive"><table class="table table-striped"><tbody>';
+  
     for (let patientId in patientMap) {
       const patient = patientMap[patientId].details;
       const appointments = patientMap[patientId].appointments;
-
-      // Patient row with nested appointment details
+  
+      // Unique ID for tabs to avoid conflicts
+      const tabId = `patient-${patientId.replace(/[^a-zA-Z0-9]/g, "")}`;
+  
       html += `
         <tr>
-          <td>${patient.patient_id || "N/A"}</td>
-          <td>${patient.first_name} ${patient.last_name}</td>
-          <td>${patient.contact_number || "N/A"}</td>
-          <td>${patient.email || "N/A"}</td>
-          <td>${patient.date_of_birth || "N/A"}</td>
-          <td>${patient.age >= 0 ? patient.age : "N/A"}</td>
-          <td>${patient.current_illness || "N/A"}</td>
-          <td>
+          <td colspan="2">
+            <h5>${patient.first_name} ${patient.last_name || ""} (ID: ${patient.patient_id || "N/A"})</h5>
+            <ul class="nav nav-tabs" id="${tabId}-tabs" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" id="${tabId}-details-tab" data-bs-toggle="tab" href="#${tabId}-details" role="tab">Patient Details</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="${tabId}-appointments-tab" data-bs-toggle="tab" href="#${tabId}-appointments" role="tab">Appointments</a>
+              </li>
+            </ul>
+            <div class="tab-content" id="${tabId}-content">
+              <!-- Patient Details Tab -->
+              <div class="tab-pane fade show active" id="${tabId}-details" role="tabpanel">
+                <table class="table table-bordered">
+                  <tr><th>Patient ID</th><td>${patient.patient_id || "N/A"}</td></tr>
+                  <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ""}</td></tr>
+                  <tr><th>Gender</th><td>${patient.gender || "N/A"}</td></tr>
+                  <tr><th>Date of Birth</th><td>${patient.date_of_birth || "N/A"}</td></tr>
+                  <tr><th>Age</th><td>${patient.age >= 0 ? patient.age : "N/A"}</td></tr>
+                  <tr><th>Contact</th><td>${patient.mobile_number || patient.contact_number || "N/A"}</td></tr>
+                  <tr><th>Email</th><td>${patient.email || "N/A"}</td></tr>
+                  <tr><th>Address</th><td>${patient.address || "N/A"}, ${patient.city || "N/A"}, ${patient.pincode || "N/A"}</td></tr>
+                  <tr><th>Blood Group</th><td>${patient.blood_group || "N/A"}</td></tr>
+                  <tr><th>Allergies</th><td>${patient.known_allergies || "None"}</td></tr>
+                  <tr><th>Current Medications</th><td>${patient.current_medications || "None"}</td></tr>
+                  <tr><th>Past Medical History</th><td>${patient.past_medical_history || "None"}</td></tr>
+                  <tr><th>Specific Notes</th><td>${patient.specific_notes || "None"}</td></tr>
+                  <tr><th>Emergency Contact</th><td>${patient.emergency_contact_name || "N/A"} (${patient.emergency_contact_relationship || "N/A"}): ${patient.emergency_contact_number || "N/A"}</td></tr>
+                </table>
+              </div>
+              <!-- Appointments Tab -->
+              <div class="tab-pane fade" id="${tabId}-appointments" role="tabpanel">
       `;
-
+  
       if (appointments.length > 0) {
-        html += '<ul style="list-style-type: none; padding-left: 0;">';
+        html += '<table class="table table-bordered"><thead><tr><th>Doctor</th><th>Specialization</th><th>Contact</th><th>Email</th><th>Date</th><th>Status</th><th>Notes</th><th>Emergency</th></tr></thead><tbody>';
         appointments.forEach(appt => {
+          const doctor = appt.doctor || {};
+          const doctorName = doctor ? `${doctor.first_name || ""} ${doctor.last_name || ""}` : "N/A";
+          const apptDate = new Date(appt.appointment_date).toLocaleString();
           html += `
-            <li>
-              Doctor: ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name}` : "N/A"} |
-              Status: ${appt.status} |
-              Date: ${new Date(appt.appointment_date).toLocaleString()}
-            </li>
+            <tr>
+              <td>${doctorName}</td>
+              <td>${doctor.specialization || "N/A"}</td>
+              <td>${doctor.contact_number || "N/A"}</td>
+              <td>${doctor.email || "N/A"}</td>
+              <td>${apptDate}</td>
+              <td>${appt.status || "N/A"}</td>
+              <td>${appt.notes || "None"}</td>
+              <td>${appt.is_emergency ? "Yes" : "No"}</td>
+            </tr>
           `;
         });
-        html += "</ul>";
+        html += "</tbody></table>";
       } else {
-        html += "No appointments found";
+        html += "<p>No appointments found.</p>";
       }
-
-      html += "</td></tr>";
+  
+      html += `
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
     }
-
-    html += `
-          </tbody>
-        </table>
-      </div>
-    `;
-  } else {
-    html += "<p class='text-danger'>No patients or appointments matched your search.</p>";
+  
+    html += "</tbody></table></div>";
+    resultsContainer.html(html);
+  
+    // Activate Bootstrap tabs (ensure Bootstrap JS is loaded)
+    $(`[data-bs-toggle="tab"]`).tab();
   }
-
-  resultsContainer.html(html);
-}
+  
+  // Utility function to calculate age (if not provided by backend)
+  function calculateAge(dob) {
+    if (!dob) return "N/A";
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : "N/A";
+  }
   </script>
 </div>
 
