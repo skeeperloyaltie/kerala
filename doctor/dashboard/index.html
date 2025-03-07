@@ -1203,12 +1203,69 @@ function showModal(message, type) {
 
     // Form Handling
    // Modified appointment form visibility functions
-function showAppointmentForm() {
-  $("#appointmentFormContainer").show();
-  // Hide all tab contents except the form
-  $(".tab-pane").removeClass("show active");
-  $("#appointmentTabs .nav-link").removeClass("active");
-}
+    // Event listener for "Make Appointment" button in patient ID popup modal
+    $("#makeAppointmentBtn").on("click", function() {
+      const patientId = $("#newPatientIdInput").val().trim(); // Get the patient ID
+      if (!patientId) {
+        showNotification("Patient ID is missing!", "error");
+        return;
+      }
+    
+      // Hide all open modals
+      $(".modal").modal("hide");
+    
+      // Show appointment form with pre-filled patient ID
+      showAppointmentForm(patientId);
+    
+      // Optionally fetch patient details immediately
+      fetchPatientDetails(patientId);
+    });
+    
+       // Modified appointment form visibility functions
+    // Modified showAppointmentForm to accept an optional patientId parameter
+    function showAppointmentForm(patientId = null) {
+      $("#appointmentFormContainer").show();
+      $(".tab-pane").removeClass("show active"); // Hide all tab contents
+      $("#appointmentTabs .nav-link").removeClass("active"); // Remove active tab highlighting
+    
+      // Clear the form and reset validation
+      $("#appointmentForm")[0].reset();
+      $("#appointmentForm .form-control").removeClass("is-invalid");
+    
+      // Pre-fill patient ID if provided
+      if (patientId) {
+        $("#patientID").val(patientId);
+        // Trigger blur event to fetch patient details (if the logic is in place)
+        $("#patientID").trigger("blur");
+      }
+    }
+    
+    // Function to fetch patient details (already in your code, included here for completeness)
+    function fetchPatientDetails(patientId) {
+      if (patientId) {
+        $.ajax({
+          url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+          type: "GET",
+          headers: getAuthHeaders(),
+          success: function(response) {
+            if (response.patient) {
+              $("#firstName").val(response.patient.first_name || "");
+              $("#lastName").val(response.patient.last_name || "");
+              $("#contactNumber").val(response.patient.mobile_number || "");
+              $("#dateOfBirth").val(response.patient.date_of_birth || "");
+              $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
+            } else {
+              showNotification("Patient not found.", "error");
+              $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+            }
+          },
+          error: function(xhr) {
+            showNotification("Failed to fetch patient details.", "error");
+            $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+          }
+        });
+      }
+    }
 
 function hideAppointmentForm() {
   $("#appointmentFormContainer").hide();
