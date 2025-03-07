@@ -463,69 +463,116 @@ validateUserSession();
     checkSessionOnLoad();
   
     // Add new search filter
-    $('#addFilter').click(function () {
-      $('#searchFilters').append(`
-        <div class="mb-3 input-group">
-          <select class="form-select search-category">
-            <option value="patient_id">Patient ID(s)</option>
-            <option value="first_name">First Name</option>
-            <option value="last_name">Last Name</option>
-            <option value="email">Email</option>
-            <option value="contact_number">Contact Number</option>
-            <option value="date_of_birth">Date of Birth</option>
-            <option value="appointment_date">Appointment Date</option>
+  $('#addFilter').click(function () {
+    $('#searchFilters').append(`
+      <div class="mb-3 input-group">
+        <select class="form-select search-category">
+          <option value="patient_id">Patient ID(s)</option>
+          <option value="first_name">First Name</option>
+          <option value="last_name">Last Name</option>
+          <option value="email">Email</option>
+          <option value="contact_number">Contact Number</option>
+          <option value="date_of_birth">Date of Birth</option>
+          <option value="appointment_date">Appointment Date</option>
+          <option value="doctor_id">Doctor</option> <!-- New Doctor filter -->
+        </select>
+        <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or YYYY-MM-DD">
+        <button type="button" class="btn btn-danger removeFilter">Remove</button>
+      </div>
+    `);
+
+    // Dynamically change input to select when "Doctor" is selected
+    $(document).on('change', '.search-category', function () {
+      const $inputGroup = $(this).closest('.input-group');
+      const $input = $inputGroup.find('[name="query[]"]');
+      const value = $(this).val();
+
+      if (value === "doctor_id" && $input.is('input')) {
+        $input.replaceWith(`
+          <select class="form-control filter" name="query[]">
+            <option value="" disabled selected>Select a doctor</option>
           </select>
-          <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or PAT1234,PAT5678 or YYYY-MM-DD">
-          <button type="button" class="btn btn-danger removeFilter">Remove</button>
-        </div>
-      `);
-    });
-  
-    // Remove search filter
-    $(document).on('click', '.removeFilter', function () {
-      $(this).closest('.input-group').remove();
-    });
-  
-    // Handle search form submission
-    $('#searchForm').submit(function (event) {
-      event.preventDefault();
-  
-      let filters = [];
-      let patientIdFilter = null;
-      $('#searchFilters .input-group').each(function () {
-        let field = $(this).find('.search-category').val();
-        let value = $(this).find('input[name="query[]"]').val().trim();
-        if (value) {
-          if (field === "patient_id") {
-            patientIdFilter = value.split(",").map(id => id.trim()); // Store patient IDs for filtering
-            value = patientIdFilter.join(",");
-          }
-          filters.push(`${field}=${encodeURIComponent(value)}`);
-        }
-      });
-  
-      if (filters.length === 0) {
-        Swal.fire("Error", "Please enter at least one search term.", "error");
-        return;
+        `);
+        loadDoctors($inputGroup.find('select[name="query[]"]'));
+      } else if (value !== "doctor_id" && $input.is('select')) {
+        $input.replaceWith(`
+          <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or YYYY-MM-DD">
+        `);
       }
-  
-      let queryString = filters.join("&");
-  
-      $.ajax({
-        url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
-        method: "GET",
-        headers: getAuthHeaders(),
-        success: function (response) {
-          console.log("API Response:", response);
-          displayResults(response, patientIdFilter);
-        },
-        error: function (xhr) {
-          console.error("Search error:", xhr.responseText);
-          Swal.fire("Error", "Failed to fetch search results. Please try again.", "error");
-        }
-      });
     });
   });
+
+  // Remove search filter
+  $(document).on('click', '.removeFilter', function () {
+    $(this).closest('.input-group').remove();
+  });
+
+  // Handle search form submission
+  $('#searchForm').submit(function (event) {
+    event.preventDefault();
+
+    let filters = [];
+    let patientIdFilter = null;
+    $('#searchFilters .input-group').each(function () {
+      let field = $(this).find('.search-category').val();
+      let $input = $(this).find('[name="query[]"]');
+      let value = $input.val().trim();
+
+      if (value) {
+        if (field === "patient_id") {
+          patientIdFilter = value.split(",").map(id => id.trim());
+          value = patientIdFilter.join(",");
+        }
+        filters.push(`${field}=${encodeURIComponent(value)}`);
+      }
+    });
+
+    if (filters.length === 0) {
+      Swal.fire("Error", "Please enter at least one search term.", "error");
+      return;
+    }
+
+    let queryString = filters.join("&");
+
+    $.ajax({
+      url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
+      method: "GET",
+      headers: getAuthHeaders(),
+      success: function (response) {
+        console.log("API Response:", response);
+        displayResults(response, patientIdFilter);
+      },
+      error: function (xhr) {
+        console.error("Search error:", xhr.responseText);
+        Swal.fire("Error", "Failed to fetch search results. Please try again.", "error");
+      }
+    });
+  });
+});
+
+  // Function to load doctors into a select element
+  function loadDoctors($select, selectedId = null) {
+    $.ajax({
+      url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function(response) {
+        console.log("Doctors response:", response);
+        $select.empty().append('<option value="" disabled selected>Select a doctor</option>');
+        response.doctors.forEach(doctor => {
+          let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+          $select.append(option);
+        });
+        if (selectedId) $select.val(selectedId);
+      },
+      error: function(xhr) {
+        console.error("❌ Error fetching doctors:", xhr.status, xhr.responseText);
+        $select.append('<option value="">Failed to load doctors</option>');
+      }
+    });
+  }
+
+  
   
   // Function to display search results with tabs
   function displayResults(data, patientIdFilter) {
