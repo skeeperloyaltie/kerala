@@ -458,263 +458,280 @@ $(document).ready(function() {
 
 // Validate session on page load
 validateUserSession();
-  // Run session check on page load
   $(document).ready(function () {
-    checkSessionOnLoad();
+      checkSessionOnLoad();
+      
+      // Store the current search timeout
+      let searchTimeout;
   
-    // Add new search filter
-  $('#addFilter').click(function () {
-    $('#searchFilters').append(`
-      <div class="mb-3 input-group">
-        <select class="form-select search-category">
-          <option value="patient_id">Patient ID(s)</option>
-          <option value="first_name">First Name</option>
-          <option value="last_name">Last Name</option>
-          <option value="email">Email</option>
-          <option value="contact_number">Contact Number</option>
-          <option value="date_of_birth">Date of Birth</option>
-          <option value="appointment_date">Appointment Date</option>
-          <option value="doctor_id">Doctor</option> <!-- New Doctor filter -->
-        </select>
-        <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or YYYY-MM-DD">
-        <button type="button" class="btn btn-danger removeFilter">Remove</button>
-      </div>
-    `);
-
-    // Dynamically change input to select when "Doctor" is selected
-    $(document).on('change', '.search-category', function () {
-      const $inputGroup = $(this).closest('.input-group');
-      const $input = $inputGroup.find('[name="query[]"]');
-      const value = $(this).val();
-
-      if (value === "doctor_id" && $input.is('input')) {
-        $input.replaceWith(`
-          <select class="form-control filter" name="query[]">
-            <option value="" disabled selected>Select a doctor</option>
-          </select>
-        `);
-        loadDoctors($inputGroup.find('select[name="query[]"]'));
-      } else if (value !== "doctor_id" && $input.is('select')) {
-        $input.replaceWith(`
-          <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or YYYY-MM-DD">
-        `);
-      }
-    });
-  });
-
-  // Remove search filter
-  $(document).on('click', '.removeFilter', function () {
-    $(this).closest('.input-group').remove();
-  });
-
-  // Handle search form submission
-  $('#searchForm').submit(function (event) {
-    event.preventDefault();
-
-    let filters = [];
-    let patientIdFilter = null;
-    $('#searchFilters .input-group').each(function () {
-      let field = $(this).find('.search-category').val();
-      let $input = $(this).find('[name="query[]"]');
-      let value = $input.val().trim();
-
-      if (value) {
-        if (field === "patient_id") {
-          patientIdFilter = value.split(",").map(id => id.trim());
-          value = patientIdFilter.join(",");
-        }
-        filters.push(`${field}=${encodeURIComponent(value)}`);
-      }
-    });
-
-    if (filters.length === 0) {
-      Swal.fire("Error", "Please enter at least one search term.", "error");
-      return;
-    }
-
-    let queryString = filters.join("&");
-
-    $.ajax({
-      url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
-      method: "GET",
-      headers: getAuthHeaders(),
-      success: function (response) {
-        console.log("API Response:", response);
-        displayResults(response, patientIdFilter);
-      },
-      error: function (xhr) {
-        console.error("Search error:", xhr.responseText);
-        Swal.fire("Error", "Failed to fetch search results. Please try again.", "error");
-      }
-    });
-  });
-});
-
-  // Function to load doctors into a select element
-  function loadDoctors($select, selectedId = null) {
-    $.ajax({
-      url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function(response) {
-        console.log("Doctors response:", response);
-        $select.empty().append('<option value="" disabled selected>Select a doctor</option>');
-        response.doctors.forEach(doctor => {
-          let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-          $select.append(option);
-        });
-        if (selectedId) $select.val(selectedId);
-      },
-      error: function(xhr) {
-        console.error("❌ Error fetching doctors:", xhr.status, xhr.responseText);
-        $select.append('<option value="">Failed to load doctors</option>');
-      }
-    });
-  }
-
-  
-  
-  // Function to display search results with tabs
-  function displayResults(data, patientIdFilter) {
-    let resultsContainer = $("#results");
-    resultsContainer.empty(); // Clear previous results
-  
-    if ((!data.patients || data.patients.length === 0) && (!data.appointments || data.appointments.length === 0)) {
-      resultsContainer.html("<p class='text-danger'>No patients found.</p>");
-      return;
-    }
-  
-    // Build patient-centric data structure
-    let patientMap = {};
-  
-    // Process patients
-    if (data.patients && data.patients.length) {
-      data.patients.forEach(patient => {
-        // Only include if no patientIdFilter or if patient_id matches one of the filtered IDs
-        if (!patientIdFilter || patientIdFilter.includes(patient.patient_id)) {
-          patientMap[patient.patient_id] = {
-            details: patient,
-            appointments: []
-          };
-        }
+      // Add new search filter
+      $('#addFilter').click(function () {
+          addNewFilter();
       });
-    }
   
-    // Add appointments to corresponding patients
-    if (data.appointments && data.appointments.length) {
-      data.appointments.forEach(appt => {
-        const patientId = appt.patient.patient_id;
-        // Only include if patient is already in patientMap (matches filter)
-        if (patientMap[patientId]) {
-          patientMap[patientId].appointments.push(appt);
-        } else if (!patientIdFilter || patientIdFilter.includes(patientId)) {
-          // If patient wasn't in patients list but matches filter, add it
-          patientMap[patientId] = {
-            details: appt.patient,
-            appointments: [appt]
-          };
-        }
-      });
-    }
-  
-    // Generate tabbed HTML
-    let html = '<div class="table-responsive"><table class="table table-striped"><tbody>';
-  
-    for (let patientId in patientMap) {
-      const patient = patientMap[patientId].details;
-      const appointments = patientMap[patientId].appointments;
-  
-      const tabId = `patient-${patientId.replace(/[^a-zA-Z0-9]/g, "")}`;
-  
-      html += `
-        <tr>
-          <td colspan="2">
-            <h5>${patient.first_name} ${patient.last_name || ""} (ID: ${patient.patient_id || "N/A"})</h5>
-            <ul class="nav nav-tabs" id="${tabId}-tabs" role="tablist">
-              <li class="nav-item">
-                <a class="nav-link active" id="${tabId}-details-tab" data-bs-toggle="tab" href="#${tabId}-details" role="tab">Patient Details</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="${tabId}-appointments-tab" data-bs-toggle="tab" href="#${tabId}-appointments" role="tab">Appointments</a>
-              </li>
-            </ul>
-            <div class="tab-content" id="${tabId}-content">
-              <!-- Patient Details Tab -->
-              <div class="tab-pane fade show active" id="${tabId}-details" role="tabpanel">
-                <table class="table table-bordered">
-                  <tr><th>Patient ID</th><td>${patient.patient_id || "N/A"}</td></tr>
-                  <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ""}</td></tr>
-                  <tr><th>Gender</th><td>${patient.gender || "N/A"}</td></tr>
-                  <tr><th>Date of Birth</th><td>${patient.date_of_birth || "N/A"}</td></tr>
-                  <tr><th>Age</th><td>${patient.age >= 0 ? patient.age : "N/A"}</td></tr>
-                  <tr><th>Contact</th><td>${patient.mobile_number || patient.contact_number || "N/A"}</td></tr>
-                  <tr><th>Email</th><td>${patient.email || "N/A"}</td></tr>
-                  <tr><th>Address</th><td>${patient.address || "N/A"}, ${patient.city || "N/A"}, ${patient.pincode || "N/A"}</td></tr>
-                  <tr><th>Blood Group</th><td>${patient.blood_group || "N/A"}</td></tr>
-                  <tr><th>Allergies</th><td>${patient.known_allergies || "None"}</td></tr>
-                  <tr><th>Current Medications</th><td>${patient.current_medications || "None"}</td></tr>
-                  <tr><th>Past Medical History</th><td>${patient.past_medical_history || "None"}</td></tr>
-                  <tr><th>Specific Notes</th><td>${patient.specific_notes || "None"}</td></tr>
-                  <tr><th>Emergency Contact</th><td>${patient.emergency_contact_name || "N/A"} (${patient.emergency_contact_relationship || "N/A"}): ${patient.emergency_contact_number || "N/A"}</td></tr>
-                </table>
+      // Function to add new filter
+      function addNewFilter() {
+          $('#searchFilters').append(`
+              <div class="mb-3 input-group">
+                  <select class="form-select search-category">
+                      <option value="patient_id">Patient ID(s)</option>
+                      <option value="first_name">First Name</option>
+                      <option value="last_name">Last Name</option>
+                      <option value="email">Email</option>
+                      <option value="contact_number">Contact Number</option>
+                      <option value="date_of_birth">Date of Birth</option>
+                      <option value="appointment_date">Appointment Date</option>
+                      <option value="doctor_id">Doctor</option>
+                  </select>
+                  <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or YYYY-MM-DD">
+                  <button type="button" class="btn btn-danger removeFilter">Remove</button>
               </div>
-              <!-- Appointments Tab -->
-              <div class="tab-pane fade" id="${tabId}-appointments" role="tabpanel">
-      `;
-  
-      if (appointments.length > 0) {
-        html += '<table class="table table-bordered"><thead><tr><th>Doctor</th><th>Specialization</th><th>Contact</th><th>Email</th><th>Date</th><th>Status</th><th>Notes</th><th>Emergency</th></tr></thead><tbody>';
-        appointments.forEach(appt => {
-          const doctor = appt.doctor || {};
-          const doctorName = doctor ? `${doctor.first_name || ""} ${doctor.last_name || ""}` : "N/A";
-          const apptDate = new Date(appt.appointment_date).toLocaleString();
-          html += `
-            <tr>
-              <td>${doctorName}</td>
-              <td>${doctor.specialization || "N/A"}</td>
-              <td>${doctor.contact_number || "N/A"}</td>
-              <td>${doctor.email || "N/A"}</td>
-              <td>${apptDate}</td>
-              <td>${appt.status || "N/A"}</td>
-              <td>${appt.notes || "None"}</td>
-              <td>${appt.is_emergency ? "Yes" : "No"}</td>
-            </tr>
-          `;
-        });
-        html += "</tbody></table>";
-      } else {
-        html += "<p>No appointments found.</p>";
+          `);
+          triggerSearch();
       }
   
-      html += `
-              </div>
-            </div>
-          </td>
-        </tr>
-      `;
-    }
+      // Handle dynamic filter changes
+      $(document).on('change', '.search-category', function () {
+          const $inputGroup = $(this).closest('.input-group');
+          const $input = $inputGroup.find('[name="query[]"]');
+          const value = $(this).val();
   
-    html += "</tbody></table></div>";
-    resultsContainer.html(html);
+          if (value === "doctor_id" && $input.is('input')) {
+              $input.replaceWith(`
+                  <select class="form-control filter" name="query[]">
+                      <option value="" disabled selected>Select a doctor</option>
+                  </select>
+              `);
+              loadDoctors($inputGroup.find('select[name="query[]"]'));
+          } else if (value !== "doctor_id" && $input.is('select')) {
+              $input.replaceWith(`
+                  <input type="text" class="form-control filter" name="query[]" placeholder="e.g., PAT1234 or YYYY-MM-DD">
+              `);
+          }
+          triggerSearch();
+      });
   
-    // Activate Bootstrap tabs
-    $(`[data-bs-toggle="tab"]`).tab();
-  }
+      // Handle input changes and filter removal
+      $(document).on('input change', '.filter', function() {
+          triggerSearch();
+      });
   
-  // Utility function to calculate age (if not provided by backend)
-  function calculateAge(dob) {
-    if (!dob) return "N/A";
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age >= 0 ? age : "N/A";
-  }
+      $(document).on('click', '.removeFilter', function () {
+          $(this).closest('.input-group').remove();
+          triggerSearch();
+      });
+  
+      // Prevent form submission
+      $('#searchForm').submit(function (event) {
+          event.preventDefault();
+      });
+  
+      // Function to trigger search with debounce
+      function triggerSearch() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(performSearch, 500); // 500ms debounce
+      }
+  
+      // Perform the actual search
+      function performSearch() {
+          let filters = [];
+          let patientIdFilter = null;
+          
+          $('#searchFilters .input-group').each(function () {
+              let field = $(this).find('.search-category').val();
+              let $input = $(this).find('[name="query[]"]');
+              let value = $input.val().trim();
+  
+              if (value) {
+                  if (field === "patient_id") {
+                      patientIdFilter = value.split(",").map(id => id.trim());
+                      value = patientIdFilter.join(",");
+                  }
+                  filters.push(`${field}=${encodeURIComponent(value)}`);
+              }
+          });
+  
+          if (filters.length === 0) {
+              $("#results").html("<p class='text-muted'>Enter search criteria to see results</p>");
+              return;
+          }
+  
+          let queryString = filters.join("&");
+  
+          $.ajax({
+              url: `http://smarthospitalmaintain.com:8000/appointments/search/?${queryString}`,
+              method: "GET",
+              headers: getAuthHeaders(),
+              success: function (response) {
+                  console.log("API Response:", response);
+                  displayResults(response, patientIdFilter);
+              },
+              error: function (xhr) {
+                  console.error("Search error:", xhr.responseText);
+                  Swal.fire("Error", "Failed to fetch search results. Please try again.", "error");
+              }
+          });
+      }
+  
+      // Function to load doctors
+      function loadDoctors($select, selectedId = null) {
+          $.ajax({
+              url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+              type: "GET",
+              headers: getAuthHeaders(),
+              success: function(response) {
+                  $select.empty().append('<option value="" disabled selected>Select a doctor</option>');
+                  response.doctors.forEach(doctor => {
+                      let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+                      $select.append(option);
+                  });
+                  if (selectedId) $select.val(selectedId);
+              },
+              error: function(xhr) {
+                  console.error("Error fetching doctors:", xhr.responseText);
+                  $select.append('<option value="">Failed to load doctors</option>');
+              }
+          });
+      }
+  
+      // Updated displayResults function with appointment sorting
+      function displayResults(data, patientIdFilter) {
+          let resultsContainer = $("#results");
+          resultsContainer.empty();
+  
+          if ((!data.patients || data.patients.length === 0) && (!data.appointments || data.appointments.length === 0)) {
+              resultsContainer.html("<p class='text-danger'>No patients found.</p>");
+              return;
+          }
+  
+          let patientMap = {};
+  
+          // Process patients
+          if (data.patients && data.patients.length) {
+              data.patients.forEach(patient => {
+                  if (!patientIdFilter || patientIdFilter.includes(patient.patient_id)) {
+                      patientMap[patient.patient_id] = {
+                          details: patient,
+                          appointments: []
+                      };
+                  }
+              });
+          }
+  
+          // Add appointments with sorting
+          if (data.appointments && data.appointments.length) {
+              // Sort appointments by date descending (latest first)
+              data.appointments.sort((a, b) => 
+                  new Date(b.appointment_date) - new Date(a.appointment_date)
+              );
+  
+              data.appointments.forEach(appt => {
+                  const patientId = appt.patient.patient_id;
+                  if (patientMap[patientId]) {
+                      patientMap[patientId].appointments.push(appt);
+                  } else if (!patientIdFilter || patientIdFilter.includes(patientId)) {
+                      patientMap[patientId] = {
+                          details: appt.patient,
+                          appointments: [appt]
+                      };
+                  }
+              });
+          }
+  
+          let html = '<div class="table-responsive"><table class="table table-striped"><tbody>';
+  
+          for (let patientId in patientMap) {
+              const patient = patientMap[patientId].details;
+              const appointments = patientMap[patientId].appointments;
+  
+              const tabId = `patient-${patientId.replace(/[^a-zA-Z0-9]/g, "")}`;
+  
+              html += `
+                  <tr>
+                      <td colspan="2">
+                          <h5>${patient.first_name} ${patient.last_name || ""} (ID: ${patient.patient_id || "N/A"})</h5>
+                          <ul class="nav nav-tabs" id="${tabId}-tabs" role="tablist">
+                              <li class="nav-item">
+                                  <a class="nav-link active" id="${tabId}-details-tab" data-bs-toggle="tab" href="#${tabId}-details" role="tab">Patient Details</a>
+                              </li>
+                              <li class="nav-item">
+                                  <a class="nav-link" id="${tabId}-appointments-tab" data-bs-toggle="tab" href="#${tabId}-appointments" role="tab">Appointments</a>
+                              </li>
+                          </ul>
+                          <div class="tab-content" id="${tabId}-content">
+                              <div class="tab-pane fade show active" id="${tabId}-details" role="tabpanel">
+                                  <table class="table table-bordered">
+                                      <tr><th>Patient ID</th><td>${patient.patient_id || "N/A"}</td></tr>
+                                      <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ""}</td></tr>
+                                      <tr><th>Gender</th><td>${patient.gender || "N/A"}</td></tr>
+                                      <tr><th>Date of Birth</th><td>${patient.date_of_birth || "N/A"}</td></tr>
+                                      <tr><th>Age</th><td>${patient.age >= 0 ? patient.age : calculateAge(patient.date_of_birth)}</td></tr>
+                                      <tr><th>Contact</th><td>${patient.mobile_number || patient.contact_number || "N/A"}</td></tr>
+                                      <tr><th>Email</th><td>${patient.email || "N/A"}</td></tr>
+                                      <tr><th>Address</th><td>${patient.address || "N/A"}, ${patient.city || "N/A"}, ${patient.pincode || "N/A"}</td></tr>
+                                      <tr><th>Blood Group</th><td>${patient.blood_group || "N/A"}</td></tr>
+                                      <tr><th>Allergies</th><td>${patient.known_allergies || "None"}</td></tr>
+                                      <tr><th>Current Medications</th><td>${patient.current_medications || "None"}</td></tr>
+                                      <tr><th>Past Medical History</th><td>${patient.past_medical_history || "None"}</td></tr>
+                                      <tr><th>Specific Notes</th><td>${patient.specific_notes || "None"}</td></tr>
+                                      <tr><th>Emergency Contact</th><td>${patient.emergency_contact_name || "N/A"} (${patient.emergency_contact_relationship || "N/A"}): ${patient.emergency_contact_number || "N/A"}</td></tr>
+                                  </table>
+                              </div>
+                              <div class="tab-pane fade" id="${tabId}-appointments" role="tabpanel">
+              `;
+  
+              if (appointments.length > 0) {
+                  html += '<table class="table table-bordered"><thead><tr><th>Doctor</th><th>Specialization</th><th>Contact</th><th>Email</th><th>Date</th><th>Status</th><th>Notes</th><th>Emergency</th></tr></thead><tbody>';
+                  appointments.forEach(appt => {
+                      const doctor = appt.doctor || {};
+                      const doctorName = doctor ? `${doctor.first_name || ""} ${doctor.last_name || ""}` : "N/A";
+                      const apptDate = new Date(appt.appointment_date).toLocaleString();
+                      html += `
+                          <tr>
+                              <td>${doctorName}</td>
+                              <td>${doctor.specialization || "N/A"}</td>
+                              <td>${doctor.contact_number || "N/A"}</td>
+                              <td>${doctor.email || "N/A"}</td>
+                              <td>${apptDate}</td>
+                              <td>${appt.status || "N/A"}</td>
+                              <td>${appt.notes || "None"}</td>
+                              <td>${appt.is_emergency ? "Yes" : "No"}</td>
+                          </tr>
+                      `;
+                  });
+                  html += "</tbody></table>";
+              } else {
+                  html += "<p>No appointments found.</p>";
+              }
+  
+              html += `
+                              </div>
+                          </div>
+                      </td>
+                  </tr>
+              `;
+          }
+  
+          html += "</tbody></table></div>";
+          resultsContainer.html(html);
+  
+          $(`[data-bs-toggle="tab"]`).tab();
+      }
+  
+      // Utility function to calculate age
+      function calculateAge(dob) {
+          if (!dob) return "N/A";
+          const birthDate = new Date(dob);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          if (today.getMonth() < birthDate.getMonth() || 
+              (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+              age--;
+          }
+          return age >= 0 ? age : "N/A";
+      }
+  });
   </script>
-</div>
-
 
             
             
