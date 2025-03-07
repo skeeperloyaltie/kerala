@@ -1638,6 +1638,32 @@ function convertValue(value, fromUnit, toUnit) {
   return conversionFunc ? conversionFunc(value) : value;
 }
 
+
+// Load doctors into patient modal
+function loadDoctorsForPatientModal() {
+  $.ajax({
+    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function(response) {
+      $("#patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
+      response.doctors.forEach(doctor => {
+        let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+        $("#patientPrimaryDoctor").append(option);
+      });
+    },
+    error: function(xhr) {
+      showNotification("Failed to load doctors.", "error");
+    }
+  });
+}
+
+// Call this when the patient modal opens
+$("#createPatientModal").on("show.bs.modal", function() {
+  loadDoctorsForPatientModal();
+});
+
+
 // Modified saveVitals with detailed logging and error handling
 function saveVitals() {
   const appointmentId = $("#vitalsModal").data("appointmentId");
