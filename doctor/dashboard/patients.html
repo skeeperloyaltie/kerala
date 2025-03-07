@@ -150,7 +150,7 @@
                                                     <th data-sort="last_name">Last Name <span class="sort-arrow"></span></th>
                                                     <th data-sort="age">Age <span class="sort-arrow"></span></th>
                                                     <th data-sort="date_of_birth">DOB <span class="sort-arrow"></span></th>
-                                                    <th data-sort="mobile_number">Contact <span class="sort-arrow"></span></th>
+                                                    <th data-sort="mobile_number">Mobile Number <span class="sort-arrow"></span></th>
                                                     <th data-sort="email">Email <span class="sort-arrow"></span></th>
                                                     <th>Actions</th>
                                                 </tr>
@@ -285,7 +285,7 @@
                         $('#logged_in_user_name, #sidebar_user_name, #welcome_user_name').text(fullName);
                         $('#sidebar_user_role').text(response.user_type === 'Doctor' ? 'Doctor' : 'Receptionist');
                         $('#timeOfDay').text(getGreetingTime());
-                        fetchPatientsAndAppointments();
+                        fetchPatients();
                     },
                     error: function(xhr) {
                         console.error('❌ Session validation error:', xhr.responseText);
@@ -321,31 +321,51 @@
                 });
             }
 
-            // Fetch Patients and Appointments
+            // Fetch Patients
             let allPatients = [];
-            function fetchPatientsAndAppointments() {
+            function fetchPatients() {
                 const headers = getAuthHeaders();
                 const userType = localStorage.getItem('user_type');
-                let url = 'http://smarthospitalmaintain.com:8000/appointments/search/';
+                let url = 'http://smarthospitalmaintain.com:8000/patients/list/';
                 if (userType === 'Doctor') {
                     const doctorId = localStorage.getItem('doctor_id') || '';
-                    url += `?doctor_id=${doctorId}`;
+                    url += `?primary_doctor=${doctorId}`; // Filter by primary_doctor for doctors
                 }
                 $.ajax({
                     url: url,
                     type: 'GET',
                     headers: headers,
                     success: function(response) {
-                        console.log('✅ Patients and appointments fetched:', response);
-                        allPatients = response.patients.map(patient => {
+                        console.log('✅ Patients fetched:', response);
+                        allPatients = response; // Assuming response is a list of patients
+                        fetchAppointmentsForPatients();
+                    },
+                    error: function(xhr) {
+                        console.error('❌ Fetch patients error:', xhr.responseText);
+                        Swal.fire('Error', 'Failed to fetch patients.', 'error');
+                    }
+                });
+            }
+
+            // Fetch Appointments for Patients
+            function fetchAppointmentsForPatients() {
+                const headers = getAuthHeaders();
+                const patientIds = allPatients.map(p => p.patient_id).join(',');
+                $.ajax({
+                    url: `http://smarthospitalmaintain.com:8000/appointments/search/?patient_ids=${patientIds}`,
+                    type: 'GET',
+                    headers: headers,
+                    success: function(response) {
+                        console.log('✅ Appointments fetched:', response);
+                        allPatients = allPatients.map(patient => {
                             patient.appointments = response.appointments.filter(appt => appt.patient.patient_id === patient.patient_id);
                             return patient;
                         });
                         populatePatientsTable(allPatients);
                     },
                     error: function(xhr) {
-                        console.error('❌ Fetch error:', xhr.responseText);
-                        Swal.fire('Error', 'Failed to fetch patients and appointments.', 'error');
+                        console.error('❌ Fetch appointments error:', xhr.responseText);
+                        Swal.fire('Error', 'Failed to fetch appointments.', 'error');
                     }
                 });
             }
@@ -436,14 +456,14 @@
                     <h5>${patient.first_name} ${patient.last_name || ''}</h5>
                     <table class="table table-bordered">
                         <tr><th>Patient ID</th><td>${patient.patient_id}</td></tr>
-                        <tr><th>Contact</th><td>${patient.mobile_number || 'N/A'}</td></tr>
+                        <tr><th>Mobile Number</th><td>${patient.mobile_number || 'N/A'}</td></tr>
                         <tr><th>Email</th><td>${patient.email || 'N/A'}</td></tr>
                         <tr><th>DOB</th><td>${patient.date_of_birth || 'N/A'}</td></tr>
                         <tr><th>Age</th><td>${patient.age || 'N/A'}</td></tr>
                         <tr><th>Illness</th><td>${patient.current_illness || 'None'}</td></tr>
                     </table>
                     <h6>Appointments</h6>
-                    ${patient.appointments.length ? '<table class="table table-bordered"><thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Doctor</th><th>Emergency</th><th>Actions</th></tr></thead><tbody>' + patient.appointments.map(appt => `
+                    ${patient.appointments && patient.appointments.length ? '<table class="table table-bordered"><thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Doctor</th><th>Emergency</th><th>Actions</th></tr></thead><tbody>' + patient.appointments.map(appt => `
                         <tr>
                             <td>${appt.id}</td>
                             <td>${new Date(appt.appointment_date).toLocaleString()}</td>
@@ -466,7 +486,7 @@
 
             // View Appointment
             function viewAppointment(id) {
-                const appt = allPatients.flatMap(p => p.appointments).find(a => a.id === id);
+                const appt = allPatients.flatMap(p => p.appointments || []).find(a => a.id === id);
                 if (!appt) return Swal.fire('Error', 'Appointment not found.', 'error');
                 Swal.fire({
                     title: 'Appointment Details',
@@ -487,7 +507,7 @@
 
             // Edit Appointment
             function editAppointment(id) {
-                const appt = allPatients.flatMap(p => p.appointments).find(a => a.id === id);
+                const appt = allPatients.flatMap(p => p.appointments || []).find(a => a.id === id);
                 if (!appt) return Swal.fire('Error', 'Appointment not found.', 'error');
                 $('#editNotes').val(appt.notes || '');
                 $('#editStatus').val(appt.status);
@@ -505,7 +525,7 @@
                         success: function(response) {
                             console.log('✅ Appointment updated:', response);
                             Swal.fire('Success', 'Appointment updated successfully.', 'success');
-                            fetchPatientsAndAppointments();
+                            fetchPatients();
                             $('#editModal').modal('hide');
                         },
                         error: function(xhr) {
@@ -538,7 +558,7 @@
                             success: function(response) {
                                 console.log('✅ Appointment canceled:', response);
                                 Swal.fire('Canceled', 'Appointment has been canceled.', 'success');
-                                fetchPatientsAndAppointments();
+                                fetchPatients();
                             },
                             error: function(xhr) {
                                 console.error('❌ Cancel error:', xhr.responseText);
@@ -578,7 +598,7 @@
                             success: function(response) {
                                 console.log('✅ Appointment rescheduled:', response);
                                 Swal.fire('Success', 'Appointment rescheduled successfully.', 'success');
-                                fetchPatientsAndAppointments();
+                                fetchPatients();
                             },
                             error: function(xhr) {
                                 console.error('❌ Reschedule error:', xhr.responseText);
