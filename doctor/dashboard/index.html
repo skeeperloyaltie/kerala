@@ -540,29 +540,6 @@
   </div>
 </div>
 
-<!-- Patient ID Popup Modal -->
-<div class="modal fade" id="patientIdPopupModal" tabindex="-1" aria-labelledby="patientIdPopupModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="patientIdPopupModalLabel">Patient Created</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p>Patient has been successfully created!</p>
-        <div class="input-group mb-3">
-          <input type="text" class="form-control" id="newPatientIdInput" readonly>
-          <button class="btn btn-outline-secondary" type="button" id="copyPatientIdBtn">Copy</button>
-        </div>
-        <p class="text-success" id="copySuccessMsg" style="display: none;">Patient ID copied to clipboard!</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="makeAppointmentBtn">Make Appointment</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
 
     <!-- Appointment Form -->
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
@@ -833,6 +810,33 @@
           </div>
         </div>
 
+
+        <!-- Patient ID Popup Modal -->
+<div class="modal fade" id="patientIdPopupModal" tabindex="-1" aria-labelledby="patientIdPopupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="patientIdPopupModalLabel">Patient Created</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Patient has been successfully created!</p>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" id="newPatientIdInput" readonly>
+          <button class="btn btn-outline-secondary" type="button" id="copyPatientIdBtn">Copy</button>
+        </div>
+        <p class="text-success" id="copySuccessMsg" style="display: none;">Patient ID copied to clipboard!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="makeAppointmentBtn">Make Appointment</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
         <!-- Footer -->
         <footer class="footer">
           <div class="d-sm-flex justify-content-center justify-content-sm-between">
@@ -846,6 +850,54 @@
 
   <!-- Scripts -->
   <script>
+
+
+    $(document).ready(function() {
+      // Show appointment form
+      $(".btn-primary.btn-sm.mb-3").on("click", function() {
+        if ($(this).text() === "Add Appointment") {
+          console.log("Add Appointment clicked");
+          showAppointmentForm();
+        }
+      });
+    
+      // Show patient modal
+      $("#addPatientBtn").on("click", function() {
+        console.log("Add Patient clicked");
+        $("#createPatientModal").modal("show");
+      });
+    });
+
+
+    // Copy Patient ID to Clipboard
+$("#copyPatientIdBtn").on("click", function() {
+  const patientId = $("#newPatientIdInput").val();
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    // Modern Clipboard API
+    navigator.clipboard.writeText(patientId).then(() => {
+      $("#copySuccessMsg").show();
+      setTimeout(() => $("#copySuccessMsg").hide(), 2000);
+    }).catch(err => {
+      showNotification("Failed to copy patient ID: " + err, "error");
+    });
+  } else {
+    // Fallback to execCommand
+    try {
+      const input = $("#newPatientIdInput")[0]; // Get DOM element
+      input.select(); // Select the text
+      const success = document.execCommand("copy");
+      if (success) {
+        $("#copySuccessMsg").show();
+        setTimeout(() => $("#copySuccessMsg").hide(), 2000);
+      } else {
+        showNotification("Failed to copy patient ID using fallback method.", "error");
+      }
+    } catch (err) {
+      showNotification("Clipboard access failed: " + err, "error");
+    }
+  }
+});
     // Utility Functions
     function getAuthHeaders() {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -1553,7 +1605,8 @@ function savePatient() {
     emergency_contact_number: $("#emergencyNumber").val().trim() || null,
     insurance_provider: $("#insuranceProvider").val().trim() || null,
     policy_number: $("#policyNumber").val().trim() || null,
-    payment_preference: $("#paymentPreference").val() || null
+    payment_preference: $("#paymentPreference").val() || null,
+    admission_type: $("#admissionType").val() // Added admission_type
   };
 
   // Validation
@@ -1563,7 +1616,8 @@ function savePatient() {
     "Gender": patientData.gender,
     "Date of Birth": patientData.date_of_birth,
     "Father's Name": patientData.father_name,
-    "Mobile Number": patientData.mobile_number
+    "Mobile Number": patientData.mobile_number,
+    "Admission Type": patientData.admission_type // Added to required fields
   };
   let missingFields = Object.keys(requiredFields).filter(key => !requiredFields[key]);
   if (missingFields.length > 0) {
@@ -1592,7 +1646,7 @@ function savePatient() {
   }
 
   $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/", // Adjust this endpoint as per your backend
+    url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/",
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(patientData),
@@ -1601,6 +1655,10 @@ function savePatient() {
       showNotification("Patient created successfully!", "success");
       $("#createPatientModal").modal("hide");
       $("#createPatientForm")[0].reset();
+
+      // Show the patient ID popup modal with the new patient ID
+      $("#newPatientIdInput").val(response.patient.patient_id);
+      $("#patientIdPopupModal").modal("show");
     },
     error: function(xhr) {
       const errorMsg = getErrorMessage(xhr, "Failed to create patient.");
