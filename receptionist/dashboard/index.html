@@ -589,8 +589,7 @@
 <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
   <div class="card-body">
     <h5 class="card-title">Create New Appointment</h5>
-    <button type="button" class="btn btn-outline-primary" onclick="$('#createPatientModal').modal('show')">Add Patient</button>
-
+    <button type="button" class="btn btn-outline-primary" id="addPatientBtn">Add Patient</button>
     <form id="appointmentForm">
       <div class="row">
         <div class="col-md-4 mb-3">
@@ -985,6 +984,21 @@ function hideAppointmentForm() {
   <!-- Inline Scripts (Moved from body for organization) -->
   <script>
 
+    $(document).ready(function() {
+      // Show appointment form
+      $(".btn-primary.btn-sm.mb-3").on("click", function() {
+        if ($(this).text() === "Add Appointment") {
+          console.log("Add Appointment clicked");
+          showAppointmentForm();
+        }
+      });
+    
+      // Show patient modal
+      $("#addPatientBtn").on("click", function() {
+        console.log("Add Patient clicked");
+        $("#createPatientModal").modal("show");
+      });
+    });
     // Utility function to format error messages from server responses
 function getErrorMessage(xhrOrError, defaultMessage) {
     let message = defaultMessage;
