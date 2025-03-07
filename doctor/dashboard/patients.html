@@ -442,19 +442,31 @@
             }
 
             // Filter Patients
-            function filterPatients() {
-                const searchTerm = $('#patientFilter').val().toLowerCase();
-                const filtered = allPatients.filter(patient =>
-                    patient.patient_id.toLowerCase().includes(searchTerm) ||
-                    patient.first_name.toLowerCase().includes(searchTerm) ||
-                    (patient.last_name && patient.last_name.toLowerCase().includes(searchTerm)) ||
-                    (patient.age && patient.age.toString().includes(searchTerm)) ||
-                    (patient.date_of_birth && patient.date_of_birth.toLowerCase().includes(searchTerm)) ||
-                    (patient.mobile_number && patient.mobile_number.toLowerCase().includes(searchTerm)) ||
-                    (patient.email && patient.email.toLowerCase().includes(searchTerm))
-                );
-                populatePatientsTable(filtered);
-            }
+            let filteredPatients = [];
+
+function filterPatients() {
+    const searchTerm = $('#patientFilter').val().toLowerCase();
+    filteredPatients = allPatients.filter(patient =>
+        patient.patient_id.toLowerCase().includes(searchTerm) ||
+        patient.first_name.toLowerCase().includes(searchTerm) ||
+        (patient.last_name && patient.last_name.toLowerCase().includes(searchTerm)) ||
+        (patient.age && patient.age.toString().includes(searchTerm)) ||
+        (patient.date_of_birth && patient.date_of_birth.toLowerCase().includes(searchTerm)) ||
+        (patient.mobile_number && patient.mobile_number.toLowerCase().includes(searchTerm)) ||
+        (patient.email && patient.email.toLowerCase().includes(searchTerm))
+    );
+    populatePatientsTable(filteredPatients);
+}
+
+$(document).ready(function() {
+    checkSessionOnLoad();
+    $('#logoutButton, #logoutButtonDropdown').on('click', logoutUser);
+    $('#patientFilter').on('input', filterPatients);
+    $('#patientsTable th[data-sort]').on('click', function() {
+        const column = $(this).data('sort');
+        sortTable(column);
+    });
+});
 
             // Show Patient Modal
             function showPatientModal(patientId) {
@@ -462,6 +474,7 @@
                 if (!patient) return Swal.fire('Error', 'Patient not found.', 'error');
                 const userType = localStorage.getItem('user_type');
                 const doctorId = localStorage.getItem('doctor_id');
+                
                 $('#modalPatientDetails').html(`
                     <h5>${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</h5>
                     <div class="btn-group mb-3" role="group">
@@ -529,12 +542,50 @@
                             ` : '<p>No appointments.</p>'}
                         </div>
                         <div id="change-history" class="section" style="display: none;">
-                            <p>Change history not yet implemented. Fetch from backend API.</p>
+                            <h6>Change History</h6>
+                            <div id="history-content">Loading...</div>
                         </div>
                     </div>
                 `);
                 $('#patientModal').modal('show');
-                showSection('personal-info', patientId); // Default to Personal Info
+                showSection('personal-info', patientId);
+            
+                // Fetch change history
+                $.ajax({
+                    url: `http://smarthospitalmaintain.com:8000/appointments/patients/${patientId}/history/`,
+                    type: 'GET',
+                    headers: getAuthHeaders(),
+                    success: function(response) {
+                        console.log('✅ Change history fetched:', response);
+                        const historyContent = $('#history-content');
+                        if (response.history && response.history.length) {
+                            historyContent.html(`
+                                <table class="table table-bordered">
+                                    <thead><tr><th>Date</th><th>Changed By</th><th>Action</th><th>Details</th></tr></thead>
+                                    <tbody>${response.history.map(entry => `
+                                        <tr>
+                                            <td>${new Date(entry.changed_at).toLocaleString()}</td>
+                                            <td>${entry.changed_by}</td>
+                                            <td>${entry.change_type === '+' ? 'Created' : entry.change_type === '~' ? 'Updated' : 'Deleted'}</td>
+                                            <td>${entry.model}${entry.appointment_id ? ` (Appt ID: ${entry.appointment_id})` : ''}: ${formatChanges(entry.changes)}</td>
+                                        </tr>
+                                    `).join('')}</tbody>
+                                </table>
+                            `);
+                        } else {
+                            historyContent.html('<p>No change history available.</p>');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('❌ Fetch history error:', xhr.responseText);
+                        $('#history-content').html('<p>Failed to load change history.</p>');
+                    }
+                });
+            }
+            
+            function formatChanges(changes) {
+                if (!changes || !changes.length) return 'N/A';
+                return changes.map(change => `${change.field}: ${change.old} → ${change.new}`).join(', ');
             }
             
             function showSection(sectionId, patientId) {

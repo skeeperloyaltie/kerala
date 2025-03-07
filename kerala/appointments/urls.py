@@ -5,6 +5,7 @@ from .views import (
     CreatePatientView,
     DoctorListView,
     GetPatientDetailsView,
+    PatientHistoryView,
     SearchView,
     VitalsAPIView,
     EditAppointmentView,
@@ -26,4 +27,6 @@ urlpatterns = [
     path('reschedule/<int:appointment_id>/', RescheduleAppointmentView.as_view(), name='reschedule-appointment'),
     path('reschedule/', RescheduleAppointmentView.as_view(), name='bulk-reschedule-appointment'),
     path('search/', SearchView.as_view(), name='search-appointment'),
+    path('patients/<str:patient_id>/history/', PatientHistoryView.as_view(), name='patient-history'),
+
 ]

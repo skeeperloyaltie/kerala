@@ -7,3 +7,5 @@ django
 requests
 postfix
 pytz
+
+django-simple-history

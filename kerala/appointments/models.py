@@ -2,13 +2,15 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import date
+from simple_history.models import HistoricalRecords
+
 
 class Patient(models.Model):
     ADMISSION_TYPE_CHOICES = [
         ('IN', 'Inpatient'),
         ('OU', 'Outpatient'),
     ]
-
+    history = HistoricalRecords()
     patient_id = models.CharField(max_length=12, unique=True, editable=False, null=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -88,6 +90,7 @@ class Appointment(models.Model):
         ('canceled', 'Canceled'),
         ('rescheduled', 'Rescheduled'),
     ]
+    history = HistoricalRecords()
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
@@ -139,6 +142,8 @@ class Vitals(models.Model):
     appointment = models.OneToOneField(
         'Appointment', on_delete=models.CASCADE, related_name='vitals'
     )
+    history = HistoricalRecords()
+
     temperature = models.FloatField(null=True, blank=True, help_text="Temperature in °C")
     height = models.FloatField(null=True, blank=True, help_text="Height in cm")
     weight = models.FloatField(null=True, blank=True, help_text="Weight in kg")

@@ -749,3 +749,68 @@ class GetPatientDetailsView(APIView):
             return Response({"patient": PatientSerializer(patient).data}, status=200)
         except Patient.DoesNotExist:
             return Response({"error": "Patient not found"}, status=404)
+
+
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import Patient
+import logging
+
+logger = logging.getLogger(__name__)
+
+class PatientHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, patient_id):
+        try:
+            patient = get_object_or_404(Patient, patient_id=patient_id)
+            # Fetch history for Patient, Appointments, and Vitals
+            patient_history = patient.history.all().order_by('-history_date')
+            appointment_history = []
+            vitals_history = []
+            for appt in patient.appointments.all():
+                appointment_history.extend(appt.history.all())
+                if hasattr(appt, 'vitals'):
+                    vitals_history.extend(appt.vitals.history.all())
+
+            # Combine and format history data
+            history_data = []
+            for record in patient_history:
+                history_data.append({
+                    'changed_at': record.history_date,
+                    'changed_by': record.history_user.username if record.history_user else 'N/A',
+                    'change_type': record.history_type,
+                    'changes': record.diff_against(record.prev_record).changes if record.prev_record else [],
+                    'model': 'Patient',
+                })
+            for record in appointment_history:
+                history_data.append({
+                    'changed_at': record.history_date,
+                    'changed_by': record.history_user.username if record.history_user else 'N/A',
+                    'change_type': record.history_type,
+                    'changes': record.diff_against(record.prev_record).changes if record.prev_record else [],
+                    'model': 'Appointment',
+                    'appointment_id': record.id,
+                })
+            for record in vitals_history:
+                history_data.append({
+                    'changed_at': record.history_date,
+                    'changed_by': record.history_user.username if record.history_user else 'N/A',
+                    'change_type': record.history_type,
+                    'changes': record.diff_against(record.prev_record).changes if record.prev_record else [],
+                    'model': 'Vitals',
+                    'appointment_id': record.appointment_id,
+                })
+
+            # Sort by date descending
+            history_data.sort(key=lambda x: x['changed_at'], reverse=True)
+
+            logger.info(f"History fetched for patient {patient_id} by {request.user.username}")
+            return Response({'history': history_data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error fetching history for patient {patient_id}: {str(e)}")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
