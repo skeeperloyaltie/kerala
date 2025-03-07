@@ -384,7 +384,7 @@
                             <td>${patient.date_of_birth || 'N/A'}</td>
                             <td>${patient.mobile_number || 'N/A'}</td>
                             <td>${patient.email || 'N/A'}</td>
-                            <td><button class="btn btn-primary btn-sm view-details-btn" data-patient-id="${patient.patient_id}">View Appointments</button></td>
+                            <td><button class="btn btn-primary btn-sm view-details-btn" data-patient-id="${patient.patient_id}">View More Details</button></td>
                         </tr>
                     `);
                 });
@@ -395,39 +395,49 @@
             }
 
             // Sorting Function
-            let sortDirection = {};
+            let sortCriteria = []; // Array to store { column, direction } objects
+
             function sortTable(column) {
-                sortDirection[column] = !sortDirection[column]; // Toggle direction
-                const sortedPatients = [...allPatients].sort((a, b) => {
-                    let valA = a[column] || '';
-                    let valB = b[column] || '';
-                    if (column === 'age') {
-                        valA = parseInt(valA) || 0;
-                        valB = parseInt(valB) || 0;
-                    } else if (column === 'date_of_birth') {
-                        valA = new Date(valA).getTime() || 0;
-                        valB = new Date(valB).getTime() || 0;
-                    } else {
-                        valA = valA.toString().toLowerCase();
-                        valB = valB.toString().toLowerCase();
+                const existingIndex = sortCriteria.findIndex(c => c.column === column);
+                if (existingIndex > -1) {
+                    // Toggle direction if column already exists
+                    sortCriteria[existingIndex].direction = !sortCriteria[existingIndex].direction;
+                } else {
+                    // Add new sort criterion
+                    sortCriteria.push({ column, direction: true });
+                }
+                const filteredPatients = $('#patientsList tr').map((_, row) => allPatients[$(row).index()]).get();
+                const sortedPatients = [...(filteredPatients.length ? filteredPatients : allPatients)].sort((a, b) => {
+                    for (let { column, direction } of sortCriteria) {
+                        let valA = a[column] || '';
+                        let valB = b[column] || '';
+                        if (column === 'age') {
+                            valA = parseInt(valA) || 0;
+                            valB = parseInt(valB) || 0;
+                        } else if (column === 'date_of_birth') {
+                            valA = new Date(valA).getTime() || 0;
+                            valB = new Date(valB).getTime() || 0;
+                        } else {
+                            valA = valA.toString().toLowerCase();
+                            valB = valB.toString().toLowerCase();
+                        }
+                        if (valA !== valB) {
+                            return direction ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+                        }
                     }
-                    return sortDirection[column] ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+                    return 0; // Equal if all criteria match
                 });
                 populatePatientsTable(sortedPatients);
-                updateSortArrows(column);
+                updateSortArrows();
             }
-
-            // Update Sort Arrows
-            function updateSortArrows(column) {
-                $('th').each(function() {
+            
+            function updateSortArrows() {
+                $('th[data-sort]').each(function() {
                     const th = $(this);
                     const col = th.data('sort');
+                    const criterion = sortCriteria.find(c => c.column === col);
                     const arrow = th.find('.sort-arrow');
-                    if (col === column) {
-                        arrow.text(sortDirection[column] ? '↑' : '↓');
-                    } else {
-                        arrow.text('');
-                    }
+                    arrow.text(criterion ? (criterion.direction ? '↑' : '↓') : '');
                 });
             }
 
@@ -453,35 +463,104 @@
                 const userType = localStorage.getItem('user_type');
                 const doctorId = localStorage.getItem('doctor_id');
                 $('#modalPatientDetails').html(`
-                    <h5>${patient.first_name} ${patient.last_name || ''}</h5>
-                    <table class="table table-bordered">
-                        <tr><th>Patient ID</th><td>${patient.patient_id}</td></tr>
-                        <tr><th>Mobile Number</th><td>${patient.mobile_number || 'N/A'}</td></tr>
-                        <tr><th>Email</th><td>${patient.email || 'N/A'}</td></tr>
-                        <tr><th>DOB</th><td>${patient.date_of_birth || 'N/A'}</td></tr>
-                        <tr><th>Age</th><td>${patient.age || 'N/A'}</td></tr>
-                        <tr><th>Illness</th><td>${patient.current_illness || 'None'}</td></tr>
-                    </table>
-                    <h6>Appointments</h6>
-                    ${patient.appointments && patient.appointments.length ? '<table class="table table-bordered"><thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Doctor</th><th>Emergency</th><th>Actions</th></tr></thead><tbody>' + patient.appointments.map(appt => `
-                        <tr>
-                            <td>${appt.id}</td>
-                            <td>${new Date(appt.appointment_date).toLocaleString()}</td>
-                            <td>${appt.status}</td>
-                            <td>${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name}` : 'N/A'}</td>
-                            <td>${appt.is_emergency ? 'Yes' : 'No'}</td>
-                            <td>
-                                ${userType === 'Receptionist' || (userType === 'Doctor' && appt.doctor && appt.doctor.id === parseInt(doctorId)) ? `
-                                    <button class="btn btn-primary btn-sm" onclick="viewAppointment(${appt.id})">View</button>
-                                    <button class="btn btn-warning btn-sm" onclick="editAppointment(${appt.id})">Edit</button>
-                                    <button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appt.id})">Cancel</button>
-                                    <button class="btn btn-info btn-sm" onclick="rescheduleAppointment(${appt.id})">Reschedule</button>
-                                ` : 'N/A'}
-                            </td>
-                        </tr>
-                    `).join('') + '</tbody></table>' : '<p>No appointments.</p>'}
+                    <h5>${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</h5>
+                    <div class="btn-group mb-3" role="group">
+                        <button class="btn btn-outline-primary" onclick="showSection('personal-info', '${patientId}')">Personal Info</button>
+                        <button class="btn btn-outline-primary" onclick="showSection('medical-info', '${patientId}')">Medical Info</button>
+                        <button class="btn btn-outline-primary" onclick="showSection('appointments', '${patientId}')">Appointments</button>
+                        <button class="btn btn-outline-primary" onclick="showSection('change-history', '${patientId}')">View Change History</button>
+                    </div>
+                    <div id="patient-sections">
+                        <div id="personal-info" class="section" style="display: none;">
+                            <h6>Basic Information</h6>
+                            <table class="table table-bordered">
+                                <tr><th>Patient ID</th><td>${patient.patient_id}</td></tr>
+                                <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ''}</td></tr>
+                                <tr><th>Gender</th><td>${patient.gender || 'N/A'}</td></tr>
+                                <tr><th>DOB</th><td>${patient.date_of_birth || 'N/A'}</td></tr>
+                                <tr><th>Age</th><td>${patient.age || 'N/A'}</td></tr>
+                                <tr><th>Mobile Number</th><td>${patient.mobile_number || 'N/A'}</td></tr>
+                                <tr><th>Email</th><td>${patient.email || 'N/A'}</td></tr>
+                                <tr><th>Address</th><td>${patient.address || 'N/A'}, ${patient.city || 'N/A'}, ${patient.pincode || 'N/A'}</td></tr>
+                            </table>
+                            <h6>Emergency Contact</h6>
+                            <table class="table table-bordered">
+                                <tr><th>Name</th><td>${patient.emergency_contact_name || 'N/A'}</td></tr>
+                                <tr><th>Relationship</th><td>${patient.emergency_contact_relationship || 'N/A'}</td></tr>
+                                <tr><th>Number</th><td>${patient.emergency_contact_number || 'N/A'}</td></tr>
+                            </table>
+                        </div>
+                        <div id="medical-info" class="section" style="display: none;">
+                            <h6>Medical Info</h6>
+                            <table class="table table-bordered">
+                                <tr><th>Blood Group</th><td>${patient.blood_group || 'N/A'}</td></tr>
+                                <tr><th>Allergies</th><td>${patient.known_allergies || 'None'}</td></tr>
+                                <tr><th>Current Medications</th><td>${patient.current_medications || 'None'}</td></tr>
+                                <tr><th>Past Medical History</th><td>${patient.past_medical_history || 'None'}</td></tr>
+                                <tr><th>Specific Notes</th><td>${patient.specific_notes || 'None'}</td></tr>
+                            </table>
+                            <h6>Insurance Details</h6>
+                            <table class="table table-bordered">
+                                <tr><th>Provider</th><td>${patient.insurance_provider || 'N/A'}</td></tr>
+                                <tr><th>Policy Number</th><td>${patient.policy_number || 'N/A'}</td></tr>
+                            </table>
+                        </div>
+                        <div id="appointments" class="section" style="display: none;">
+                            ${patient.appointments && patient.appointments.length ? `
+                                <table class="table table-bordered">
+                                    <thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Doctor</th><th>Emergency</th><th>Vitals</th><th>Actions</th></tr></thead>
+                                    <tbody>${patient.appointments.map(appt => `
+                                        <tr>
+                                            <td>${appt.id}</td>
+                                            <td>${new Date(appt.appointment_date).toLocaleString()}</td>
+                                            <td>${appt.status}</td>
+                                            <td>${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name}` : 'N/A'}</td>
+                                            <td>${appt.is_emergency ? 'Yes' : 'No'}</td>
+                                            <td>${appt.vitals ? `<button class="btn btn-info btn-sm" onclick="showVitals(${appt.id})">View Vitals</button>` : 'N/A'}</td>
+                                            <td>${userType === 'Receptionist' || (userType === 'Doctor' && appt.doctor && appt.doctor.id === parseInt(doctorId)) ? `
+                                                <button class="btn btn-primary btn-sm" onclick="viewAppointment(${appt.id})">View</button>
+                                                <button class="btn btn-warning btn-sm" onclick="editAppointment(${appt.id})">Edit</button>
+                                                <button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appt.id})">Cancel</button>
+                                                <button class="btn btn-info btn-sm" onclick="rescheduleAppointment(${appt.id})">Reschedule</button>
+                                            ` : 'N/A'}</td>
+                                        </tr>
+                                    `).join('')}</tbody>
+                                </table>
+                            ` : '<p>No appointments.</p>'}
+                        </div>
+                        <div id="change-history" class="section" style="display: none;">
+                            <p>Change history not yet implemented. Fetch from backend API.</p>
+                        </div>
+                    </div>
                 `);
                 $('#patientModal').modal('show');
+                showSection('personal-info', patientId); // Default to Personal Info
+            }
+            
+            function showSection(sectionId, patientId) {
+                $('.section').hide();
+                $(`#${sectionId}`).show();
+            }
+            
+            function showVitals(appointmentId) {
+                const appt = allPatients.flatMap(p => p.appointments || []).find(a => a.id === appointmentId);
+                if (!appt || !appt.vitals) return Swal.fire('Error', 'Vitals not found.', 'error');
+                Swal.fire({
+                    title: `Vitals for Appointment ${appt.id}`,
+                    html: `
+                        <table class="table table-bordered">
+                            <tr><th>Temperature</th><td>${appt.vitals.temperature || 'N/A'} °C</td></tr>
+                            <tr><th>Height</th><td>${appt.vitals.height || 'N/A'} cm</td></tr>
+                            <tr><th>Weight</th><td>${appt.vitals.weight || 'N/A'} kg</td></tr>
+                            <tr><th>Blood Pressure</th><td>${appt.vitals.blood_pressure || 'N/A'} mmHg</td></tr>
+                            <tr><th>Heart Rate</th><td>${appt.vitals.heart_rate || 'N/A'} BPM</td></tr>
+                            <tr><th>Respiratory Rate</th><td>${appt.vitals.respiratory_rate || 'N/A'} breaths/min</td></tr>
+                            <tr><th>Oxygen Saturation</th><td>${appt.vitals.oxygen_saturation || 'N/A'}%</td></tr>
+                            <tr><th>Recorded At</th><td>${appt.vitals.recorded_at || 'N/A'}</td></tr>
+                        </table>
+                    `,
+                    icon: 'info'
+                });
             }
 
             // View Appointment
