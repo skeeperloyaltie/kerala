@@ -65,3 +65,35 @@ class PatientListView(generics.ListAPIView):
         except Exception as e:
             logger.error(f"Error fetching patient list for {request.user.username}: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while retrieving patients."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+
+from rest_framework import generics
+from rest_framework.response import Response
+from .models import Patient
+from .serializers import PatientSerializer
+from django.db.models import Q
+from rest_framework import generics, permissions, pagination
+
+
+class PatientSearchView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PatientSerializer
+
+    def get_queryset(self):
+        query = self.request.query_params.get('query', '').strip()
+        if not query:
+            return Patient.objects.none()
+
+        return Patient.objects.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(patient_id__icontains=query) |
+            Q(mobile_number__icontains=query) |
+            Q(date_of_birth__icontains=query)
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'patients': serializer.data})

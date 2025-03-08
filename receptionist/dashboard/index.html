@@ -24,6 +24,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
 
   <style>
+    .patient-search-container {
+      margin-bottom: 20px;
+    }
+    #patientSearchInput {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+    }
+    #patientSearchResults {
+      position: absolute;
+      z-index: 1060; /* Above modals */
+      background: white;
+      border: 1px solid #ddd;
+      max-height: 200px;
+      overflow-y: auto;
+      width: calc(100% - 30px); /* Match input width */
+    }
+    #patientSearchResults div {
+      padding: 8px;
+      cursor: pointer;
+    }
+    #patientSearchResults div:hover {
+      background-color: #f0f0f0;
+    }
     .tab-pane {
       display: none;
   }
@@ -288,6 +312,15 @@
             </div>
           </div>
 
+           <!-- New Patient Search Filter -->
+           <div class="row">
+            <div class="col-md-12 stretch-card">
+              <div class="patient-search-container">
+                <input type="text" class="form-control" id="patientSearchInput" placeholder="Search for a patient (Name, ID, Mobile, DOB) to make an appointment...">
+                <div id="patientSearchResults" class="dropdown-menu" style="display: none;"></div>
+              </div>
+            </div>
+          </div>
           <!-- Tabbed Table Section -->
           <div class="row">
             <div class="col-md-12 stretch-card">
@@ -393,6 +426,25 @@
               </div>
             </div>
           </div>
+
+             <!-- New Patient Details Modal -->
+             <div class="modal fade" id="patientDetailsModal" tabindex="-1" aria-labelledby="patientDetailsModalLabel" aria-hidden="true">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="patientDetailsModalLabel">Patient Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body" id="patientDetailsContent">
+                    <!-- Patient details will be populated here -->
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="makeAppointmentFromPatientBtn">Make Appointment</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
       <!-- Create Patient Modal -->
 <div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
@@ -938,6 +990,96 @@ function showAppointmentForm(patientId = null) {
     $("#patientID").trigger("blur");
   }
 }
+
+// New Patient Search Functionality
+let allPatients = [];
+function searchPatients(query) {
+  if (!query.trim()) {
+    $('#patientSearchResults').hide().empty();
+    return;
+  }
+
+  $.ajax({
+    url: `http://smarthospitalmaintain.com:8000/patients/search/?query=${encodeURIComponent(query)}`,
+    type: 'GET',
+    headers: getAuthHeaders(),
+    success: function(response) {
+      console.log('✅ Patients search response:', response);
+      allPatients = response.patients || [];
+      const resultsContainer = $('#patientSearchResults');
+      resultsContainer.empty();
+
+      if (allPatients.length === 0) {
+        resultsContainer.append('<div>No patients found.</div>');
+      } else {
+        allPatients.forEach(patient => {
+          resultsContainer.append(`
+            <div data-patient-id="${patient.patient_id}" onclick="showPatientDetails('${patient.patient_id}')">
+              ${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id}, Mobile: ${patient.mobile_number || 'N/A'})
+            </div>
+          `);
+        });
+      }
+      resultsContainer.show();
+    },
+    error: function(xhr) {
+      console.error('❌ Patient search error:', xhr.responseText);
+      $('#patientSearchResults').hide().empty();
+      showNotification('Failed to search patients.', 'error');
+    }
+  });
+}
+function showPatientDetails(patientId) {
+  const patient = allPatients.find(p => p.patient_id === patientId);
+  if (!patient) {
+    showNotification('Patient not found.', 'error');
+    return;
+  }
+
+  $('#patientDetailsContent').html(`
+    <h6>Basic Information</h6>
+    <table class="table table-bordered">
+      <tr><th>Patient ID</th><td>${patient.patient_id}</td></tr>
+      <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ''}</td></tr>
+      <tr><th>Gender</th><td>${patient.gender || 'N/A'}</td></tr>
+      <tr><th>DOB</th><td>${patient.date_of_birth || 'N/A'}</td></tr>
+      <tr><th>Age</th><td>${patient.age || calculateAge(patient.date_of_birth) || 'N/A'}</td></tr>
+      <tr><th>Mobile Number</th><td>${patient.mobile_number || 'N/A'}</td></tr>
+      <tr><th>Email</th><td>${patient.email || 'N/A'}</td></tr>
+      <tr><th>Address</th><td>${patient.address || 'N/A'}, ${patient.city || 'N/A'}, ${patient.pincode || 'N/A'}</td></tr>
+    </table>
+  `);
+
+  $('#patientDetailsModal').modal('show');
+  $('#patientSearchResults').hide();
+
+  // Set up the Make Appointment button
+  $('#makeAppointmentFromPatientBtn').off('click').on('click', function() {
+    $('.modal').modal('hide'); // Close all modals
+    showAppointmentForm(patient.patient_id); // Open appointment form with patient ID
+    fetchPatientDetails(patient.patient_id); // Pre-fill the form
+  });
+}
+
+// Add event listeners for the new search filter
+$(document).ready(function() {
+  // Existing event listeners remain unchanged
+  checkSessionOnLoad();
+  $("#logoutButton, #logoutDropdown").on("click", logoutUser);
+
+  // New patient search listener
+  $('#patientSearchInput').on('input', function() {
+    const query = $(this).val();
+    searchPatients(query);
+  });
+
+  // Hide search results when clicking outside
+  $(document).on('click', function(e) {
+    if (!$(e.target).closest('.patient-search-container').length) {
+      $('#patientSearchResults').hide();
+    }
+  });
+});
 
 // Function to fetch patient details (already in your code, included here for completeness)
 function fetchPatientDetails(patientId) {
