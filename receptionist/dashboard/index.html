@@ -311,7 +311,7 @@
                       <input type="text" class="form-control" id="searchName" placeholder="Patient Name">
                     </div>
                     <div class="col-md-2">
-                      <input type="number" class="form-control" id="searchAge" placeholder="Age">
+                      <input type="text" class="form-control" id="searchMobile" placeholder="Mobile Number">
                     </div>
                     <div class="col-md-2">
                       <input type="date" class="form-control" id="searchDob" placeholder="Date of Birth">
@@ -990,32 +990,43 @@ function hideAppointmentForm() {
       $(this.id === "dateOfBirth" ? "#age" : "#editAge").val(age >= 0 ? age : "");
     });
 
-    // Search Filter Logic
-    function filterTable() {
-      const patientId = $("#searchPatientId").val().toLowerCase();
-      const name = $("#searchName").val().toLowerCase();
-      const age = $("#searchAge").val();
-      const dob = $("#searchDob").val();
-      const date = $("#searchDate").val();
+     // Search Filter Logic
+function filterTable() {
+  const patientId = $("#searchPatientId").val().toLowerCase().trim();
+  const name = $("#searchName").val().toLowerCase().trim();
+  const mobile = $("#searchMobile").val().trim();
+  const dob = $("#searchDob").val();
+  const date = $("#searchDate").val();
 
-      $(".tab-pane tbody tr").each(function() {
-        const row = $(this);
-        const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase();
-        const rowName = row.find("td:nth-child(4)").text().toLowerCase();
-        const rowAge = row.find("td:nth-child(5)").text();
-        const rowDob = row.find("td:nth-child(6)").text(); // Assuming DOB is populated
-        const rowDate = row.find("td:nth-child(8)").text(); // Appointment date
+  $(".tab-pane tbody tr").each(function() {
+    const row = $(this);
+    const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase().trim();
+    const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
+    const rowMobile = row.find("td:nth-child(6)").text().trim(); // Mobile number is in column 6
+    const rowDob = row.find("td:nth-child(5)")?.text() || ""; // Assuming DOB might not be displayed; adjust if present
+    const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim(); // Extract date part (e.g., "3/7/2025")
 
-        const matches = (!patientId || rowPatientId.includes(patientId)) &&
-                       (!name || rowName.includes(name)) &&
-                       (!age || rowAge === age) &&
-                       (!dob || rowDob.includes(dob)) &&
-                       (!date || rowDate.includes(date));
-        row.toggle(matches);
-      });
+    // Convert rowDate to YYYY-MM-DD format for comparison
+    let formattedRowDate = "";
+    if (rowDate) {
+      const dateParts = rowDate.split("/");
+      if (dateParts.length === 3) {
+        formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
+      }
     }
 
-    $("#searchPatientId, #searchName, #searchAge, #searchDob, #searchDate").on("input change", filterTable);
+    const matches = (!patientId || rowPatientId.includes(patientId)) &&
+                   (!name || rowName.includes(name)) &&
+                   (!mobile || rowMobile.includes(mobile)) &&
+                   (!dob || rowDob.includes(dob)) &&
+                   (!date || formattedRowDate === date);
+
+    row.toggle(matches);
+  });
+}
+
+// Attach event listeners to search inputs
+$("#searchPatientId, #searchName, #searchMobile, #searchDob, #searchDate").on("input change", filterTable);
   </script>
 
   <!-- Existing JavaScript (unchanged functionality) -->

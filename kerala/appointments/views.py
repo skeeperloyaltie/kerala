@@ -325,6 +325,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
@@ -430,6 +431,17 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import logging
+
+from .models import Appointment  # Import the Appointment model
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+import logging
 from .models import Appointment
 import pytz
 
@@ -478,6 +490,7 @@ class CancelAppointmentView(APIView):
         logger.info(f"User {user.username} successfully canceled {updated_count} appointment(s) at {now_kolkata}.")
         return Response({"message": f"Successfully canceled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
 
+
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
@@ -487,7 +500,6 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import logging
 from .models import Appointment
-from .serializers import AppointmentSerializer
 from datetime import datetime
 import pytz
 
@@ -496,14 +508,18 @@ KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RescheduleAppointmentView(APIView):
+    """
+    Allows doctors and receptionists to reschedule single or multiple appointments.
+    Ensures the new appointment date is in the future (Kolkata timezone).
+    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
-        new_date_str = data.get("appointment_date")
-        appointment_ids = data.get("appointment_ids")
-        patient_id = data.get("patient_id")
+        new_date_str = data.get("appointment_date")  # Expecting ISO format: "YYYY-MM-DDTHH:MM:SS"
+        appointment_ids = data.get("appointment_ids")  # List of appointment IDs for bulk reschedule
+        patient_id = data.get("patient_id")  # If rescheduling all appointments of a patient
 
         logger.info(f"User {user.username} attempting to reschedule appointments.")
 
@@ -517,7 +533,9 @@ class RescheduleAppointmentView(APIView):
 
         # Parse and validate appointment_date in Kolkata timezone
         try:
+            # Convert string to datetime, assuming ISO format like "2025-03-10T14:30:00"
             new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00"))
+            # Localize to Kolkata timezone if not already timezone-aware
             new_date = KOLKATA_TZ.localize(new_date) if not new_date.tzinfo else new_date.astimezone(KOLKATA_TZ)
         except ValueError:
             logger.error(f"Invalid date format: {new_date_str}")
@@ -527,16 +545,19 @@ class RescheduleAppointmentView(APIView):
         now_kolkata = datetime.now(KOLKATA_TZ)
         if new_date <= now_kolkata:
             logger.warning(f"Attempt to reschedule to past date: {new_date}")
-            return Response({"error": "New appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "New appointment date must be in the future (Kolkata time: " + str(now_kolkata) + ")."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Fetch appointments to reschedule
         appointments = []
         if appointment_id:
+            # Single appointment reschedule
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
         elif appointment_ids:
+            # Bulk reschedule using list of appointment IDs
             appointments = list(Appointment.objects.filter(id__in=appointment_ids))
         elif patient_id:
-            appointments = list(Appointment.objects.filter(patient__patient_id=patient_id))
+            # Reschedule all appointments of a given patient
+            appointments = list(Appointment.objects.filter(patient__id=patient_id))
         else:
             return Response({"error": "Provide an appointment ID, list of IDs, or patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -545,30 +566,23 @@ class RescheduleAppointmentView(APIView):
 
         # Process appointment updates
         updated_count = 0
-        updated_appointments = []
         for appointment in appointments:
+            # Doctors should only modify their own patients' appointments
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
-                continue
+                continue  # Skip unauthorized reschedules
 
-            # Update fields
             appointment.appointment_date = new_date
-            appointment.status = "rescheduled"  # Always set to "rescheduled"
-            appointment.updated_by = user
+            appointment.status = data.get("status", "Rescheduled")
+            appointment.updated_by = user  # Track who made the change
             appointment.save()
-
             updated_count += 1
-            updated_appointments.append(AppointmentSerializer(appointment).data)
 
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
-        return Response({
-            "message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time).",
-            "appointments": updated_appointments
-        }, status=status.HTTP_200_OK)
-
+        return Response({"message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time)."}, status=status.HTTP_200_OK)
 import logging
 from rest_framework import generics, permissions, pagination
 from rest_framework.response import Response
