@@ -502,6 +502,7 @@ import logging
 from .models import Appointment
 from datetime import datetime
 import pytz
+from django.core.cache import cache  # Import cache
 
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
@@ -511,6 +512,7 @@ class RescheduleAppointmentView(APIView):
     """
     Allows doctors and receptionists to reschedule single or multiple appointments.
     Ensures the new appointment date is in the future (Kolkata timezone).
+    Invalidates search cache for affected patients.
     """
     permission_classes = [IsAuthenticated]
 
@@ -533,9 +535,7 @@ class RescheduleAppointmentView(APIView):
 
         # Parse and validate appointment_date in Kolkata timezone
         try:
-            # Convert string to datetime, assuming ISO format like "2025-03-10T14:30:00"
             new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00"))
-            # Localize to Kolkata timezone if not already timezone-aware
             new_date = KOLKATA_TZ.localize(new_date) if not new_date.tzinfo else new_date.astimezone(KOLKATA_TZ)
         except ValueError:
             logger.error(f"Invalid date format: {new_date_str}")
@@ -550,13 +550,10 @@ class RescheduleAppointmentView(APIView):
         # Fetch appointments to reschedule
         appointments = []
         if appointment_id:
-            # Single appointment reschedule
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
         elif appointment_ids:
-            # Bulk reschedule using list of appointment IDs
             appointments = list(Appointment.objects.filter(id__in=appointment_ids))
         elif patient_id:
-            # Reschedule all appointments of a given patient
             appointments = list(Appointment.objects.filter(patient__id=patient_id))
         else:
             return Response({"error": "Provide an appointment ID, list of IDs, or patient ID."}, status=status.HTTP_400_BAD_REQUEST)
@@ -564,22 +561,31 @@ class RescheduleAppointmentView(APIView):
         if not appointments:
             return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Process appointment updates
+        # Process appointment updates and collect affected patient IDs
         updated_count = 0
+        affected_patient_ids = set()
         for appointment in appointments:
-            # Doctors should only modify their own patients' appointments
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
-                continue  # Skip unauthorized reschedules
+                continue
 
             appointment.appointment_date = new_date
             appointment.status = data.get("status", "Rescheduled")
-            appointment.updated_by = user  # Track who made the change
+            appointment.updated_by = user
             appointment.save()
             updated_count += 1
+            affected_patient_ids.add(appointment.patient.patient_id)
 
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Invalidate cache for affected patients
+        for patient_id in affected_patient_ids:
+            cache_pattern = f"search_*_{patient_id}_*"
+            cache_keys = cache.keys(cache_pattern)  # Get all matching cache keys
+            if cache_keys:
+                cache.delete_many(cache_keys)
+                logger.info(f"Invalidated cache keys for patient {patient_id}: {cache_keys}")
 
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
         return Response({"message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time)."}, status=status.HTTP_200_OK)
@@ -590,11 +596,9 @@ from django.core.cache import cache
 from django.db.models import Q
 from users.models import Doctor, Receptionist
 from .models import Patient, Appointment
-from users.serializers import UserSerializer
 from .serializers import PatientSerializer, AppointmentSerializer
 from datetime import datetime
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
 class StandardResultsSetPagination(pagination.PageNumberPagination):
@@ -630,18 +634,18 @@ class SearchView(generics.ListAPIView):
 
         # Check cached results
         cached_results = cache.get(cache_key)
-        if cached_results:
+        if cached_results and not appointment_date:  # Skip cache if searching by appointment_date
             logger.info(f"Cache hit for user {user.id}, query: {query_key}")
             return cached_results
 
         if not any([patient_ids, first_name, last_name, contact_number, email, status, date_of_birth, appointment_date, doctor_id]):
             logger.info(f"Empty query received from user {user.id}.")
-            return {"patients": [], "appointments": []}  # Consistent return type
+            return {"patients": [], "appointments": []}
 
         # Prepare query sets
         patients, appointments = [], []
 
-        if hasattr(user, "receptionist"):  # Receptionists can search all
+        if hasattr(user, "receptionist"):
             if patient_ids:
                 patients = Patient.objects.filter(patient_id__in=patient_ids)
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
@@ -675,13 +679,13 @@ class SearchView(generics.ListAPIView):
             else:
                 patients = Patient.objects.filter(
                     Q(last_name__icontains=last_name) |
-                    Q(mobile_number__icontains=contact_number) |  # Updated to match Patient model field
+                    Q(mobile_number__icontains=contact_number) |
                     Q(email__icontains=email)
                 )
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
                 appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
 
-        elif hasattr(user, "doctor"):  # Doctors search only their patients
+        elif hasattr(user, "doctor"):
             if patient_ids:
                 patients = Patient.objects.filter(
                     patient_id__in=patient_ids,
@@ -708,7 +712,6 @@ class SearchView(generics.ListAPIView):
                     doctor=user.doctor,
                     patient__patient_id__in=patient_ids_from_patients
                 ).prefetch_related('vitals')
-            # Add additional doctor-specific conditions as needed...
 
         # Compile results
         results = {
@@ -717,7 +720,7 @@ class SearchView(generics.ListAPIView):
         }
 
         logger.info(f"Total search results fetched for user {user.id}: {sum(len(v) for v in results.values())}")
-        cache.set(cache_key, results, timeout=600)
+        cache.set(cache_key, results, timeout=60)  # Cache for 10 minutes
         return results
 
     def list(self, request, *args, **kwargs):
