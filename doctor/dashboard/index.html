@@ -1730,6 +1730,7 @@
       });
     }
 // Tab Navigation for Create Patient Modal
+// Tab Navigation for Create Patient Modal
 $(document).ready(function() {
   const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
   let currentTabIndex = 0;
@@ -1791,6 +1792,16 @@ $(document).ready(function() {
     return isValid;
   }
 
+  function activateBasicTab() {
+    // Ensure the Basic tab is active and visible
+    currentTabIndex = 0;
+    $('#patientFormTabs .nav-link').removeClass('active');
+    $('#patientFormTabContent .tab-pane').removeClass('show active');
+    $('#basic-tab').addClass('active');
+    $('#basic').addClass('show active');
+    updateTabButtons();
+  }
+
   $('#nextTabBtn').on('click', function() {
     const currentTab = tabs[currentTabIndex];
     if (validateTab(currentTab)) {
@@ -1812,19 +1823,29 @@ $(document).ready(function() {
     savePatient(); // Assumes savePatient function exists
   });
 
-  // Reset tab state and attach age calculation when modal opens
+  // Reset tab state and ensure Basic tab is active when modal opens
   $('#createPatientModal').on('show.bs.modal', function() {
-    currentTabIndex = 0;
-    $('#basic-tab').tab('show');
-    updateTabButtons();
+    // Reset form and tab state
     $('#createPatientForm')[0].reset();
     $('#createPatientForm .form-control').removeClass('is-invalid');
 
-    // Attach or re-attach the age calculation event listener
+    // Force Basic tab to be active
+    activateBasicTab();
+
+    // Attach age calculation event listener
     $("#patientDob").off('change').on('change', function() {
       const age = calculateAge(this.value);
       $("#patientAge").val(age);
     });
+  });
+
+  // Use shown.bs.modal as a fallback to ensure visibility
+  $('#createPatientModal').on('shown.bs.modal', function() {
+    // Double-check that Basic tab is active after modal is fully rendered
+    if (currentTabIndex !== 0 || !$('#basic').hasClass('show active')) {
+      console.log('Fallback: Forcing Basic tab activation');
+      activateBasicTab();
+    }
   });
 
   // Allow clicking tab headers to navigate freely
@@ -1834,6 +1855,9 @@ $(document).ready(function() {
     updateTabButtons();
   });
 });
+
+
+
 $("#patientID").on("blur", function() {
   let patientId = $(this).val().trim();
   if (patientId) {
