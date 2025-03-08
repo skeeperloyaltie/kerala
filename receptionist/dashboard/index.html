@@ -161,6 +161,19 @@
       font-size: 14px;
       white-space: nowrap;
     }
+
+    /* Ensure tab content is scrollable if too tall */
+.tab-content {
+  max-height: 400px; /* Adjust as needed */
+  overflow-y: auto;
+}
+
+/* Style for disabled tabs */
+.nav-tabs .nav-link.disabled {
+  color: #6c757d;
+  pointer-events: none;
+  background-color: #e9ecef;
+}
   </style>
 
   <script>
@@ -470,7 +483,7 @@
               </div>
             </div>
 
-      <!-- Create Patient Modal -->
+     <!-- Create Patient Modal -->
 <div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -480,173 +493,198 @@
       </div>
       <div class="modal-body">
         <form id="createPatientForm">
-          <!-- Basic Information -->
-          <h6>Basic Information</h6>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
-              <input type="text" id="patientFirstName" class="form-control" required>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
-              <input type="text" id="patientLastName" class="form-control" required>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientGender">Gender <span class="text-danger">*</span></label>
-              <select id="patientGender" class="form-control" required>
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
-              <input type="date" id="patientDob" class="form-control" required>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientAge">Age <span class="text-danger">*</span></label>
-              <input type="number" id="patientAge" class="form-control" readonly>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
-              <input type="text" id="patientFatherName" class="form-control" required>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientAddress">Address</label>
-              <input type="text" id="patientAddress" class="form-control">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientCity">City</label>
-              <input type="text" id="patientCity" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientPincode">Pincode</label>
-              <input type="number" id="patientPincode" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientEmail">Email Address</label>
-              <input type="email" id="patientEmail" class="form-control">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientMobile">Mobile Number <span class="text-danger">*</span></label>
-              <input type="tel" id="patientMobile" class="form-control" required>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientAltMobile">Alternate Mobile Number</label>
-              <input type="tel" id="patientAltMobile" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientAadhar">Aadhar Number</label>
-              <input type="text" id="patientAadhar" class="form-control" maxlength="12" pattern="\d{12}">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
-              <select id="admissionType" class="form-control" required>
-                <option value="OU" selected>Outpatient</option>
-                <option value="IN">Inpatient</option>
-              </select>
-            </div>
-          </div>
+          <!-- Tab Navigation -->
+          <ul class="nav nav-tabs" id="patientFormTabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" id="basic-tab" data-bs-toggle="tab" href="#basic" role="tab" aria-controls="basic" aria-selected="true">Basic Information</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="medical-tab" data-bs-toggle="tab" href="#medical" role="tab" aria-controls="medical" aria-selected="false">Medical Information</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="emergency-tab" data-bs-toggle="tab" href="#emergency" role="tab" aria-controls="emergency" aria-selected="false">Emergency Contact</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="insurance-tab" data-bs-toggle="tab" href="#insurance" role="tab" aria-controls="insurance" aria-selected="false">Insurance & Billing</a>
+            </li>
+          </ul>
 
-          <!-- Medical Information -->
-          <h6>Medical Information</h6>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientBloodGroup">Blood Group</label>
-              <select id="patientBloodGroup" class="form-control">
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
+          <!-- Tab Content -->
+          <div class="tab-content mt-3" id="patientFormTabContent">
+            <!-- Basic Information Tab -->
+            <div class="tab-pane fade show active" id="basic" role="tabpanel" aria-labelledby="basic-tab">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
+                  <input type="text" id="patientFirstName" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
+                  <input type="text" id="patientLastName" class="form-control" required>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="patientGender">Gender <span class="text-danger">*</span></label>
+                  <select id="patientGender" class="form-control" required>
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
+                  <input type="date" id="patientDob" class="form-control" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="patientAge">Age <span class="text-danger">*</span></label>
+                  <input type="number" id="patientAge" class="form-control" readonly>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
+                  <input type="text" id="patientFatherName" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientAddress">Address</label>
+                  <input type="text" id="patientAddress" class="form-control">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="patientCity">City</label>
+                  <input type="text" id="patientCity" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="patientPincode">Pincode</label>
+                  <input type="number" id="patientPincode" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="patientEmail">Email Address</label>
+                  <input type="email" id="patientEmail" class="form-control">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="patientMobile">Mobile Number <span class="text-danger">*</span></label>
+                  <input type="tel" id="patientMobile" class="form-control" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="patientAltMobile">Alternate Mobile Number</label>
+                  <input type="tel" id="patientAltMobile" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="patientAadhar">Aadhar Number</label>
+                  <input type="text" id="patientAadhar" class="form-control" maxlength="12" pattern="\d{12}">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
+                  <select id="admissionType" class="form-control" required>
+                    <option value="OU" selected>Outpatient</option>
+                    <option value="IN">Inpatient</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div class="col-md-8 mb-3">
-              <label for="patientAllergies">Known Allergies</label>
-              <textarea id="patientAllergies" class="form-control"></textarea>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientMedications">Current Medications</label>
-              <textarea id="patientMedications" class="form-control"></textarea>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientPastHistory">Past Medical History</label>
-              <textarea id="patientPastHistory" class="form-control"></textarea>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientNotes">Specific Notes</label>
-              <textarea id="patientNotes" class="form-control"></textarea>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientPrimaryDoctor">Primary Doctor Assigned</label>
-              <select id="patientPrimaryDoctor" class="form-control">
-                <option value="" disabled selected>Select a doctor</option>
-              </select>
-            </div>
-          </div>
 
-          <!-- Emergency Contact -->
-          <h6>Emergency Contact</h6>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="emergencyName">Emergency Contact Name</label>
-              <input type="text" id="emergencyName" class="form-control">
+            <!-- Medical Information Tab -->
+            <div class="tab-pane fade" id="medical" role="tabpanel" aria-labelledby="medical-tab">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="patientBloodGroup">Blood Group</label>
+                  <select id="patientBloodGroup" class="form-control">
+                    <option value="">Select Blood Group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+                <div class="col-md-8 mb-3">
+                  <label for="patientAllergies">Known Allergies</label>
+                  <textarea id="patientAllergies" class="form-control"></textarea>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="patientMedications">Current Medications</label>
+                  <textarea id="patientMedications" class="form-control"></textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientPastHistory">Past Medical History</label>
+                  <textarea id="patientPastHistory" class="form-control"></textarea>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="patientNotes">Specific Notes</label>
+                  <textarea id="patientNotes" class="form-control"></textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientPrimaryDoctor">Primary Doctor Assigned</label>
+                  <select id="patientPrimaryDoctor" class="form-control">
+                    <option value="" disabled selected>Select a doctor</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div class="col-md-4 mb-3">
-              <label for="emergencyRelation">Relationship to Patient</label>
-              <input type="text" id="emergencyRelation" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="emergencyNumber">Emergency Contact Number</label>
-              <input type="tel" id="emergencyNumber" class="form-control">
-            </div>
-          </div>
 
-          <!-- Insurance & Billing Details -->
-          <h6>Insurance & Billing Details</h6>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="insuranceProvider">Insurance Provider Name</label>
-              <input type="text" id="insuranceProvider" class="form-control">
+            <!-- Emergency Contact Tab -->
+            <div class="tab-pane fade" id="emergency" role="tabpanel" aria-labelledby="emergency-tab">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="emergencyName">Emergency Contact Name</label>
+                  <input type="text" id="emergencyName" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="emergencyRelation">Relationship to Patient</label>
+                  <input type="text" id="emergencyRelation" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="emergencyNumber">Emergency Contact Number</label>
+                  <input type="tel" id="emergencyNumber" class="form-control">
+                </div>
+              </div>
             </div>
-            <div class="col-md-4 mb-3">
-              <label for="policyNumber">Policy Number</label>
-              <input type="text" id="policyNumber" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="paymentPreference">Payment Preferences</label>
-              <select id="paymentPreference" class="form-control">
-                <option value="">Select Preference</option>
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="Insurance">Insurance</option>
-              </select>
+
+            <!-- Insurance & Billing Details Tab -->
+            <div class="tab-pane fade" id="insurance" role="tabpanel" aria-labelledby="insurance-tab">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="insuranceProvider">Insurance Provider Name</label>
+                  <input type="text" id="insuranceProvider" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="policyNumber">Policy Number</label>
+                  <input type="text" id="policyNumber" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="paymentPreference">Payment Preferences</label>
+                  <select id="paymentPreference" class="form-control">
+                    <option value="">Select Preference</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="Insurance">Insurance</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="prevTabBtn" style="display: none;">Previous</button>
+        <button type="button" class="btn btn-primary" id="nextTabBtn">Next</button>
+        <button type="button" class="btn btn-primary" id="savePatientBtn" style="display: none;">Save Patient</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="savePatient()">Save Patient</button>
       </div>
     </div>
   </div>
@@ -1466,7 +1504,100 @@ function savePatient() {
     }
   });
 }
+// Tab Navigation for Create Patient Modal
+$(document).ready(function() {
+  const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
+  let currentTabIndex = 0;
 
+  function updateTabButtons() {
+    const $prevBtn = $('#prevTabBtn');
+    const $nextBtn = $('#nextTabBtn');
+    const $saveBtn = $('#savePatientBtn');
+
+    $prevBtn.toggle(currentTabIndex > 0);
+    $nextBtn.toggle(currentTabIndex < tabs.length - 1);
+    $saveBtn.toggle(currentTabIndex === tabs.length - 1);
+  }
+
+  function validateTab(tabId) {
+    const $tab = $(tabId);
+    let isValid = true;
+
+    if (tabId === '#basic') {
+      const requiredFields = {
+        'First Name': $('#patientFirstName').val().trim(),
+        'Last Name': $('#patientLastName').val().trim(),
+        'Gender': $('#patientGender').val(),
+        'Date of Birth': $('#patientDob').val(),
+        'Father\'s Name': $('#patientFatherName').val().trim(),
+        'Mobile Number': $('#patientMobile').val().trim(),
+        'Admission Type': $('#admissionType').val()
+      };
+
+      Object.keys(requiredFields).forEach(field => {
+        if (!requiredFields[field]) {
+          isValid = false;
+          $(`#${field.toLowerCase().replace(/'|\s/g, '')}`).addClass('is-invalid');
+        } else {
+          $(`#${field.toLowerCase().replace(/'|\s/g, '')}`).removeClass('is-invalid');
+        }
+      });
+
+      const mobile = $('#patientMobile').val().trim();
+      if (mobile && !/^\d{10}$/.test(mobile)) {
+        isValid = false;
+        $('#patientMobile').addClass('is-invalid');
+        showNotification('Mobile number must be exactly 10 digits.', 'error');
+      }
+    }
+
+    // Add validation for other tabs if required fields are added later
+    return isValid;
+  }
+
+  $('#nextTabBtn').on('click', function() {
+    const currentTab = tabs[currentTabIndex];
+    if (validateTab(currentTab)) {
+      currentTabIndex++;
+      $(tabs[currentTabIndex]).tab('show');
+      updateTabButtons();
+    } else {
+      showNotification('Please fill all required fields correctly.', 'error');
+    }
+  });
+
+  $('#prevTabBtn').on('click', function() {
+    currentTabIndex--;
+    $(tabs[currentTabIndex]).tab('show');
+    updateTabButtons();
+  });
+
+  $('#savePatientBtn').on('click', function() {
+    savePatient(); // Call the existing savePatient function
+  });
+
+  // Reset tab state when modal opens
+  $('#createPatientModal').on('show.bs.modal', function() {
+    currentTabIndex = 0;
+    $('#basic-tab').tab('show');
+    updateTabButtons();
+    $('#createPatientForm')[0].reset();
+    $('#createPatientForm .form-control').removeClass('is-invalid');
+  });
+
+  // Allow clicking tab headers to navigate freely
+  $('#patientFormTabs .nav-link').on('click', function() {
+    const targetTab = $(this).attr('href');
+    currentTabIndex = tabs.indexOf(targetTab);
+    updateTabButtons();
+  });
+
+  // Existing age calculation
+  $("#patientDob").on("change", function() {
+    const age = calculateAge(this.value);
+    $("#patientAge").val(age >= 0 ? age : "");
+  });
+});
 
 // Copy Patient ID to ClipboardAp
 $("#copyPatientIdBtn").on("click", function() {
