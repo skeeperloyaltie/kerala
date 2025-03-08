@@ -960,7 +960,7 @@ function validateUserSession() {
         $("#logged_in_user_name, #logged_in_user_name_breadcrumb").text(response.name);
         $("#timeOfDay").text(getGreetingTime());
         // Load content only after successful validation
-        const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"];
+        const statuses = ["Waiting", "Scheduled", "Pending", "Completed", "Canceled", "Rescheduled"];
         statuses.forEach(fetchAppointments);
         loadDoctors();
       }

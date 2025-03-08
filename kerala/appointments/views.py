@@ -325,18 +325,6 @@ from django.core.exceptions import ObjectDoesNotExist
 
 # Set up logging
 logger = logging.getLogger(__name__)
-
-
-from django.shortcuts import get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.views import APIView
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-
-import logging
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
@@ -349,16 +337,13 @@ from .serializers import AppointmentSerializer
 from users.models import Doctor, Receptionist
 from datetime import datetime
 import pytz
+import logging
 
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class EditAppointmentView(APIView):
-    """
-    Allows doctors and receptionists to edit an appointment's details, including status.
-    Preserves the original doctor if no new doctor_id is provided.
-    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, appointment_id):
@@ -380,13 +365,9 @@ class EditAppointmentView(APIView):
 
         # Process patient_id if provided
         if "patient_id" in data:
-            try:
-                patient = get_object_or_404(Patient, patient_id=data["patient_id"])
-                appointment.patient = patient
-                logger.info(f"Matched patient ID {data['patient_id']} to DB ID {patient.id}")
-            except ObjectDoesNotExist:
-                logger.error(f"Patient with ID {data['patient_id']} not found.")
-                return Response({"error": "Invalid patient ID."}, status=status.HTTP_400_BAD_REQUEST)
+            patient = get_object_or_404(Patient, patient_id=data["patient_id"])
+            appointment.patient = patient
+            logger.info(f"Matched patient ID {data['patient_id']} to DB ID {patient.id}")
 
         # Update patient fields if provided
         if "current_illness" in data:
@@ -397,29 +378,23 @@ class EditAppointmentView(APIView):
         if "appointment_date" in data:
             try:
                 appointment_date_str = data["appointment_date"]
-                if "Z" in appointment_date_str or "+" in appointment_date_str or "-" in appointment_date_str:
-                    appointment_date = datetime.fromisoformat(appointment_date_str)
-                else:
-                    appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M:%S")
-                    appointment_date = KOLKATA_TZ.localize(appointment_date)
-                appointment.appointment_date = appointment_date.astimezone(KOLKATA_TZ)
+                appointment_date = datetime.fromisoformat(appointment_date_str.replace("Z", "+00:00"))
+                appointment_date = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date.astimezone(KOLKATA_TZ)
+                
                 now_kolkata = datetime.now(KOLKATA_TZ)
-                if appointment.appointment_date < now_kolkata:
-                    logger.warning(f"Attempt to set appointment {appointment_id} date in the past: {appointment.appointment_date}")
+                if appointment_date <= now_kolkata:
+                    logger.warning(f"Attempt to set appointment {appointment_id} date in the past: {appointment_date}")
                     return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
+                
+                appointment.appointment_date = appointment_date
             except ValueError as e:
                 logger.error(f"Invalid appointment date format: {e}")
-                return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Handle doctor_id: Use existing doctor if not provided
+        # Handle doctor_id
         if "doctor_id" in data and data["doctor_id"]:
-            try:
-                doctor = get_object_or_404(Doctor, id=data["doctor_id"])
-                appointment.doctor = doctor
-            except ObjectDoesNotExist:
-                logger.error(f"Doctor with ID {data['doctor_id']} not found.")
-                return Response({"error": "Invalid doctor ID."}, status=status.HTTP_400_BAD_REQUEST)
-        # If no doctor_id is provided or it's empty, keep the existing doctor (no change)
+            doctor = get_object_or_404(Doctor, id=data["doctor_id"])
+            appointment.doctor = doctor
 
         appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user
@@ -455,22 +430,20 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import logging
-
-from .models import Appointment  # Import the Appointment model
+from .models import Appointment
+import pytz
 
 logger = logging.getLogger(__name__)
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CancelAppointmentView(APIView):
-    """
-    Allows doctors and receptionists to cancel a single or multiple appointments.
-    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
-        appointment_ids = data.get("appointment_ids")  # List of appointment IDs for bulk cancellation
+        appointment_ids = data.get("appointment_ids")
 
         logger.info(f"User {user.username} attempting to cancel appointment(s).")
 
@@ -479,10 +452,8 @@ class CancelAppointmentView(APIView):
             return Response({"error": "Only doctors and receptionists can cancel appointments."}, status=status.HTTP_403_FORBIDDEN)
 
         if appointment_id:
-            # Single appointment cancellation
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
         elif appointment_ids:
-            # Bulk cancellation
             appointments = Appointment.objects.filter(id__in=appointment_ids)
             if not appointments.exists():
                 return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
@@ -490,12 +461,12 @@ class CancelAppointmentView(APIView):
             return Response({"error": "Appointment ID or list of IDs required."}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_count = 0
+        now_kolkata = datetime.now(KOLKATA_TZ)  # Use for logging or future checks if needed
         for appointment in appointments:
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} tried to cancel an appointment they don't own.")
-                continue  # Skip unauthorized cancellations
+                continue
 
-            # Update status and track user making the change
             appointment.status = data.get("status", "Canceled")
             appointment.updated_by = user
             appointment.save()
@@ -504,9 +475,8 @@ class CancelAppointmentView(APIView):
         if updated_count == 0:
             return Response({"error": "No appointments were canceled. Check permissions or appointment IDs."}, status=status.HTTP_403_FORBIDDEN)
 
-        logger.info(f"User {user.username} successfully canceled {updated_count} appointment(s).")
+        logger.info(f"User {user.username} successfully canceled {updated_count} appointment(s) at {now_kolkata}.")
         return Response({"message": f"Successfully canceled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
-
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -516,23 +486,24 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import logging
-
-from .models import Appointment  # Ensure you import your Appointment model
+from .models import Appointment
+from .serializers import AppointmentSerializer  # Add this for serialization
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
+
 @method_decorator(csrf_exempt, name='dispatch')
 class RescheduleAppointmentView(APIView):
-    """
-    Allows doctors and receptionists to reschedule single or multiple appointments.
-    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
-        new_date = data.get("appointment_date")
-        appointment_ids = data.get("appointment_ids")  # List of appointment IDs for bulk reschedule
-        patient_id = data.get("patient_id")  # If rescheduling all appointments of a patient
+        new_date_str = data.get("appointment_date")
+        appointment_ids = data.get("appointment_ids")
+        patient_id = data.get("patient_id")
 
         logger.info(f"User {user.username} attempting to reschedule appointments.")
 
@@ -540,22 +511,32 @@ class RescheduleAppointmentView(APIView):
             logger.warning(f"Unauthorized attempt by {user.username}.")
             return Response({"error": "Only doctors and receptionists can reschedule appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-        if not new_date:
+        if not new_date_str:
             logger.error("Reschedule request is missing the new date.")
             return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Parse and validate appointment_date in Kolkata timezone
+        try:
+            new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00"))
+            new_date = KOLKATA_TZ.localize(new_date) if not new_date.tzinfo else new_date.astimezone(KOLKATA_TZ)
+        except ValueError:
+            logger.error(f"Invalid date format: {new_date_str}")
+            return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure the date is in the future
+        now_kolkata = datetime.now(KOLKATA_TZ)
+        if new_date <= now_kolkata:
+            logger.warning(f"Attempt to reschedule to past date: {new_date}")
+            return Response({"error": "New appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
+
         # Fetch appointments to reschedule
         appointments = []
-
         if appointment_id:
-            # Single appointment reschedule
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
         elif appointment_ids:
-            # Bulk reschedule using list of appointment IDs
             appointments = list(Appointment.objects.filter(id__in=appointment_ids))
         elif patient_id:
-            # Reschedule all appointments of a given patient
-            appointments = list(Appointment.objects.filter(patient__id=patient_id))
+            appointments = list(Appointment.objects.filter(patient__patient_id=patient_id))
         else:
             return Response({"error": "Provide an appointment ID, list of IDs, or patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -564,23 +545,57 @@ class RescheduleAppointmentView(APIView):
 
         # Process appointment updates
         updated_count = 0
+        allowed_statuses = [choice[0] for choice in Appointment.STATUS_CHOICES]
+        requested_status = data.get("status", "scheduled").lower()  # Default to "scheduled"
+
+        if requested_status not in allowed_statuses:
+            logger.error(f"Invalid status '{requested_status}' provided.")
+            return Response({"error": f"Invalid status value. Allowed values: {', '.join(allowed_statuses)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_appointments = []
         for appointment in appointments:
-            # Doctors should only modify their own patients' appointments
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
-                continue  # Skip unauthorized reschedules
+                continue
 
+            # Check if this is a reschedule by comparing dates
+            was_rescheduled = appointment.appointment_date != new_date
+
+            # Update fields
+            original_status = appointment.status
             appointment.appointment_date = new_date
-            appointment.status = data.get("status", "Rescheduled")
-            appointment.updated_by = user  # Track who made the change
+            appointment.status = requested_status  # Set to "scheduled" or requested status
+            appointment.updated_by = user
             appointment.save()
+
+            # Check history for prior rescheduling
+            history_records = appointment.history.all().order_by('-history_date')
+            is_rescheduled = was_rescheduled or any(
+                record.status == 'rescheduled' for record in history_records[1:]  # Skip current change
+            )
+
             updated_count += 1
+            updated_appointments.append({
+                "appointment": AppointmentSerializer(appointment).data,
+                "is_rescheduled": is_rescheduled
+            })
 
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
-        return Response({"message": f"Successfully rescheduled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
+        return Response({
+            "message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time).",
+            "appointments": [
+                {
+                    "id": appt["appointment"]["id"],
+                    "status": appt["appointment"]["status"],
+                    "is_rescheduled": appt["is_rescheduled"],
+                    "appointment_date": appt["appointment"]["appointment_date"]
+                } for appt in updated_appointments
+            ]
+        }, status=status.HTTP_200_OK)
+
 import logging
 from rest_framework import generics, permissions, pagination
 from rest_framework.response import Response

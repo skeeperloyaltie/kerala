@@ -1568,7 +1568,7 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
     }
 
     $(document).ready(function() {
-      const statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"];
+      const statuses = ["Waiting", "Scheduled", "Pending", "Completed", "Canceled", "Rescheduled"];
       statuses.forEach(fetchAppointments);
       $("#appointmentTabs a").on("shown.bs.tab", function(e) {
         localStorage.setItem("activeTab", $(e.target).attr("href"));
