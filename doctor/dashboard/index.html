@@ -1824,19 +1824,16 @@ $(document).ready(function() {
   });
 
   // Reset tab state and ensure Basic tab is active when modal opens
-  $('#createPatientModal').on('show.bs.modal', function() {
-    // Reset form and tab state
-    $('#createPatientForm')[0].reset();
-    $('#createPatientForm .form-control').removeClass('is-invalid');
-
-    // Force Basic tab to be active
+  $('#createPatientModal').on('shown.bs.modal', function() {
+    $("#createPatientForm")[0].reset();
+    $("#createPatientForm .form-control").removeClass('is-invalid');
     activateBasicTab();
-
-    // Attach age calculation event listener
-    $("#patientDob").off('change').on('change', function() {
-      const age = calculateAge(this.value);
-      $("#patientAge").val(age);
-    });
+    
+    // If DOB is pre-filled (e.g., from another source), trigger calculation
+    const dob = $("#patientDob").val();
+    if (dob) {
+      $("#patientDob").trigger("change");
+    }
   });
 
   // Use shown.bs.modal as a fallback to ensure visibility
@@ -1854,6 +1851,22 @@ $(document).ready(function() {
     currentTabIndex = tabs.indexOf(targetTab);
     updateTabButtons();
   });
+});
+
+$("#dateOfBirth, #editDateOfBirth, #patientDob").on("change", function() {
+  const dob = new Date(this.value);
+  if (isNaN(dob.getTime())) {
+    console.warn("Invalid date of birth:", this.value);
+    $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val("");
+    return;
+  }
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  console.log(`Calculated age for ${this.id}:`, age);
+  $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val(age >= 0 ? age : "");
 });
 
 
