@@ -487,7 +487,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import logging
 from .models import Appointment
-from .serializers import AppointmentSerializer  # Add this for serialization
+from .serializers import AppointmentSerializer
 from datetime import datetime
 import pytz
 
@@ -545,40 +545,20 @@ class RescheduleAppointmentView(APIView):
 
         # Process appointment updates
         updated_count = 0
-        allowed_statuses = [choice[0] for choice in Appointment.STATUS_CHOICES]
-        requested_status = data.get("status", "scheduled").lower()  # Default to "scheduled"
-
-        if requested_status not in allowed_statuses:
-            logger.error(f"Invalid status '{requested_status}' provided.")
-            return Response({"error": f"Invalid status value. Allowed values: {', '.join(allowed_statuses)}"}, status=status.HTTP_400_BAD_REQUEST)
-
         updated_appointments = []
         for appointment in appointments:
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
                 continue
 
-            # Check if this is a reschedule by comparing dates
-            was_rescheduled = appointment.appointment_date != new_date
-
             # Update fields
-            original_status = appointment.status
             appointment.appointment_date = new_date
-            appointment.status = requested_status  # Set to "scheduled" or requested status
+            appointment.status = "rescheduled"  # Always set to "rescheduled"
             appointment.updated_by = user
             appointment.save()
 
-            # Check history for prior rescheduling
-            history_records = appointment.history.all().order_by('-history_date')
-            is_rescheduled = was_rescheduled or any(
-                record.status == 'rescheduled' for record in history_records[1:]  # Skip current change
-            )
-
             updated_count += 1
-            updated_appointments.append({
-                "appointment": AppointmentSerializer(appointment).data,
-                "is_rescheduled": is_rescheduled
-            })
+            updated_appointments.append(AppointmentSerializer(appointment).data)
 
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
@@ -586,14 +566,7 @@ class RescheduleAppointmentView(APIView):
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
         return Response({
             "message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time).",
-            "appointments": [
-                {
-                    "id": appt["appointment"]["id"],
-                    "status": appt["appointment"]["status"],
-                    "is_rescheduled": appt["is_rescheduled"],
-                    "appointment_date": appt["appointment"]["appointment_date"]
-                } for appt in updated_appointments
-            ]
+            "appointments": updated_appointments
         }, status=status.HTTP_200_OK)
 
 import logging
