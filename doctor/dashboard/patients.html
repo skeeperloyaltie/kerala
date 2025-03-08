@@ -321,85 +321,7 @@
                 });
             }
 
-           // Fetch Patients
-let allPatients = [];
-function fetchPatients() {
-    const headers = getAuthHeaders();
-    const userType = localStorage.getItem('user_type');
-    let url = 'http://smarthospitalmaintain.com:8000/patients/list/';
-    if (userType === 'Doctor') {
-        const doctorId = localStorage.getItem('doctor_id') || '';
-        url += `?primary_doctor=${doctorId}`; // Filter by primary_doctor for doctors
-    }
-    $.ajax({
-        url: url,
-        type: 'GET',
-        headers: headers,
-        success: function(response) {
-            console.log('✅ Patients fetched:', response);
-            allPatients = response.patients || []; // Extract the 'patients' array, default to empty array if missing
-            fetchAppointmentsForPatients();
-        },
-        error: function(xhr) {
-            console.error('❌ Fetch patients error:', xhr.responseText);
-            Swal.fire('Error', 'Failed to fetch patients.', 'error');
-        }
-    });
-}
-
-// Fetch Appointments for Patients
-function fetchAppointmentsForPatients() {
-    const headers = getAuthHeaders();
-    if (!allPatients.length) {
-        console.warn('No patients to fetch appointments for.');
-        populatePatientsTable(allPatients); // Still populate with patients, even if no appointments
-        return;
-    }
-    const patientIds = allPatients.map(p => p.patient_id).join(',');
-    $.ajax({
-        url: `http://smarthospitalmaintain.com:8000/appointments/search/?patient_ids=${patientIds}`,
-        type: 'GET',
-        headers: headers,
-        success: function(response) {
-            console.log('✅ Appointments fetched:', response);
-            allPatients = allPatients.map(patient => {
-                patient.appointments = response.appointments.filter(appt => appt.patient.patient_id === patient.patient_id);
-                return patient;
-            });
-            populatePatientsTable(allPatients);
-        },
-        error: function(xhr) {
-            console.error('❌ Fetch appointments error:', xhr.responseText);
-            Swal.fire('Error', 'Failed to fetch appointments.', 'error');
-            populatePatientsTable(allPatients); // Populate with patients even if appointments fail
-        }
-    });
-}
-
-            // Populate Patients Table
-            function populatePatientsTable(patients) {
-                const tbody = $('#patientsList');
-                tbody.empty();
-                patients.forEach(patient => {
-                    tbody.append(`
-                        <tr>
-                            <td>${patient.patient_id}</td>
-                            <td>${patient.first_name}</td>
-                            <td>${patient.last_name || 'N/A'}</td>
-                            <td>${patient.age || 'N/A'}</td>
-                            <td>${patient.date_of_birth || 'N/A'}</td>
-                            <td>${patient.mobile_number || 'N/A'}</td>
-                            <td>${patient.email || 'N/A'}</td>
-                            <td><button class="btn btn-primary btn-sm view-details-btn" data-patient-id="${patient.patient_id}">View More Details</button></td>
-                        </tr>
-                    `);
-                });
-                $('.view-details-btn').on('click', function() {
-                    const patientId = $(this).data('patient-id');
-                    showPatientModal(patientId);
-                });
-            }
-
+           
             // Sorting Function
             let sortCriteria = []; // Array to store { column, direction } objects
 
@@ -447,6 +369,221 @@ function fetchAppointmentsForPatients() {
                 });
             }
 
+            // Fetch Patients
+let allPatients = [];
+function fetchPatients() {
+    const headers = getAuthHeaders();
+    const userType = localStorage.getItem('user_type');
+    let url = 'http://smarthospitalmaintain.com:8000/patients/list/';
+    if (userType === 'Doctor') {
+        const doctorId = localStorage.getItem('doctor_id') || '';
+        url += `?primary_doctor=${doctorId}`; // Filter by primary_doctor for doctors
+    }
+    $.ajax({
+        url: url,
+        type: 'GET',
+        headers: headers,
+        success: function(response) {
+            console.log('✅ Patients fetched:', response);
+            allPatients = response.patients || []; // Extract the 'patients' array
+            fetchAppointmentsForPatients();
+        },
+        error: function(xhr) {
+            console.error('❌ Fetch patients error:', xhr.responseText);
+            Swal.fire('Error', 'Failed to fetch patients.', 'error');
+        }
+    });
+}
+
+// Fetch Appointments for Patients
+function fetchAppointmentsForPatients() {
+    const headers = getAuthHeaders();
+    if (!allPatients.length) {
+        console.warn('No patients to fetch appointments for.');
+        populatePatientsTable(allPatients);
+        return;
+    }
+
+    const patientIds = allPatients.map(p => p.patient_id).join(',');
+    console.log('Fetching appointments for patient IDs:', patientIds);
+
+    $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/search/?patient_ids=${patientIds}`,
+        type: 'GET',
+        headers: headers,
+        success: function(response) {
+            console.log('✅ Appointments fetched:', response);
+            if (!response.appointments || !Array.isArray(response.appointments)) {
+                console.warn('No valid appointments array in response:', response);
+                allPatients = allPatients.map(p => ({ ...p, appointments: [] }));
+            } else {
+                // Map appointments to patients
+                allPatients = allPatients.map(patient => {
+                    const patientAppointments = response.appointments.filter(appt => {
+                        const apptPatientId = appt.patient?.patient_id || appt.patient_id;
+                        return apptPatientId === patient.patient_id;
+                    });
+                    return { ...patient, appointments: patientAppointments };
+                });
+            }
+            console.log('Updated allPatients with appointments:', allPatients);
+            populatePatientsTable(allPatients);
+        },
+        error: function(xhr) {
+            console.error('❌ Fetch appointments error:', xhr.responseText);
+            Swal.fire('Error', 'Failed to fetch appointments.', 'error');
+            // Populate with patients even if appointments fail, but with empty appointments
+            allPatients = allPatients.map(p => ({ ...p, appointments: [] }));
+            populatePatientsTable(allPatients);
+        }
+    });
+}
+
+// Populate Patients Table
+function populatePatientsTable(patients) {
+    const tbody = $('#patientsList');
+    tbody.empty();
+    patients.forEach(patient => {
+        const appointmentCount = patient.appointments ? patient.appointments.length : 0;
+        tbody.append(`
+            <tr>
+                <td>${patient.patient_id}</td>
+                <td>${patient.first_name}</td>
+                <td>${patient.last_name || 'N/A'}</td>
+                <td>${patient.age || 'N/A'}</td>
+                <td>${patient.date_of_birth || 'N/A'}</td>
+                <td>${patient.mobile_number || 'N/A'}</td>
+                <td>${patient.email || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm view-details-btn" data-patient-id="${patient.patient_id}">
+                        View More Details (${appointmentCount} appts)
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+    $('.view-details-btn').on('click', function() {
+        const patientId = $(this).data('patient-id');
+        showPatientModal(patientId);
+    });
+}
+
+// Show Patient Modal (unchanged except for debugging)
+function showPatientModal(patientId) {
+    const patient = allPatients.find(p => p.patient_id === patientId);
+    if (!patient) return Swal.fire('Error', 'Patient not found.', 'error');
+    console.log('Showing modal for patient:', patient); // Debug patient data
+
+    const userType = localStorage.getItem('user_type');
+    const doctorId = localStorage.getItem('doctor_id');
+
+    $('#modalPatientDetails').html(`
+        <h5>${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</h5>
+        <div class="btn-group mb-3" role="group">
+            <button class="btn btn-outline-primary" onclick="showSection('personal-info', '${patientId}')">Personal Info</button>
+            <button class="btn btn-outline-primary" onclick="showSection('medical-info', '${patientId}')">Medical Info</button>
+            <button class="btn btn-outline-primary" onclick="showSection('appointments', '${patientId}')">Appointments</button>
+            <button class="btn btn-outline-primary" onclick="showSection('change-history', '${patientId}')">View Change History</button>
+        </div>
+        <div id="patient-sections">
+            <div id="personal-info" class="section" style="display: none;">
+                <h6>Basic Information</h6>
+                <table class="table table-bordered">
+                    <tr><th>Patient ID</th><td>${patient.patient_id}</td></tr>
+                    <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ''}</td></tr>
+                    <tr><th>Gender</th><td>${patient.gender || 'N/A'}</td></tr>
+                    <tr><th>DOB</th><td>${patient.date_of_birth || 'N/A'}</td></tr>
+                    <tr><th>Age</th><td>${patient.age || 'N/A'}</td></tr>
+                    <tr><th>Mobile Number</th><td>${patient.mobile_number || 'N/A'}</td></tr>
+                    <tr><th>Email</th><td>${patient.email || 'N/A'}</td></tr>
+                    <tr><th>Address</th><td>${patient.address || 'N/A'}, ${patient.city || 'N/A'}, ${patient.pincode || 'N/A'}</td></tr>
+                </table>
+                <h6>Emergency Contact</h6>
+                <table class="table table-bordered">
+                    <tr><th>Name</th><td>${patient.emergency_contact_name || 'N/A'}</td></tr>
+                    <tr><th>Relationship</th><td>${patient.emergency_contact_relationship || 'N/A'}</td></tr>
+                    <tr><th>Number</th><td>${patient.emergency_contact_number || 'N/A'}</td></tr>
+                </table>
+            </div>
+            <div id="medical-info" class="section" style="display: none;">
+                <h6>Medical Info</h6>
+                <table class="table table-bordered">
+                    <tr><th>Blood Group</th><td>${patient.blood_group || 'N/A'}</td></tr>
+                    <tr><th>Allergies</th><td>${patient.known_allergies || 'None'}</td></tr>
+                    <tr><th>Current Medications</th><td>${patient.current_medications || 'None'}</td></tr>
+                    <tr><th>Past Medical History</th><td>${patient.past_medical_history || 'None'}</td></tr>
+                    <tr><th>Specific Notes</th><td>${patient.specific_notes || 'None'}</td></tr>
+                </table>
+                <h6>Insurance Details</h6>
+                <table class="table table-bordered">
+                    <tr><th>Provider</th><td>${patient.insurance_provider || 'N/A'}</td></tr>
+                    <tr><th>Policy Number</th><td>${patient.policy_number || 'N/A'}</td></tr>
+                </table>
+            </div>
+            <div id="appointments" class="section" style="display: none;">
+                ${patient.appointments && patient.appointments.length ? `
+                    <table class="table table-bordered">
+                        <thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Doctor</th><th>Emergency</th><th>Vitals</th><th>Actions</th></tr></thead>
+                        <tbody>${patient.appointments.map(appt => `
+                            <tr>
+                                <td>${appt.id}</td>
+                                <td>${new Date(appt.appointment_date).toLocaleString()}</td>
+                                <td>${appt.status}</td>
+                                <td>${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name}` : 'N/A'}</td>
+                                <td>${appt.is_emergency ? 'Yes' : 'No'}</td>
+                                <td>${appt.vitals ? `<button class="btn btn-info btn-sm" onclick="showVitals(${appt.id})">View Vitals</button>` : 'N/A'}</td>
+                                <td>${userType === 'Receptionist' || (userType === 'Doctor' && appt.doctor && appt.doctor.id === parseInt(doctorId)) ? `
+                                    <button class="btn btn-primary btn-sm" onclick="viewAppointment(${appt.id})">View</button>
+                                    <button class="btn btn-warning btn-sm" onclick="editAppointment(${appt.id})">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appt.id})">Cancel</button>
+                                    <button class="btn btn-info btn-sm" onclick="rescheduleAppointment(${appt.id})">Reschedule</button>
+                                ` : 'N/A'}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                ` : '<p>No appointments.</p>'}
+            </div>
+            <div id="change-history" class="section" style="display: none;">
+                <h6>Change History</h6>
+                <div id="history-content">Loading...</div>
+            </div>
+        </div>
+    `);
+    $('#patientModal').modal('show');
+    showSection('personal-info', patientId);
+
+    // Fetch change history (unchanged)
+    $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/patients/${patientId}/history/`,
+        type: 'GET',
+        headers: getAuthHeaders(),
+        success: function(response) {
+            console.log('✅ Change history fetched:', response);
+            const historyContent = $('#history-content');
+            if (response.history && response.history.length) {
+                historyContent.html(`
+                    <table class="table table-bordered">
+                        <thead><tr><th>Date</th><th>Changed By</th><th>Action</th><th>Details</th></tr></thead>
+                        <tbody>${response.history.map(entry => `
+                            <tr>
+                                <td>${new Date(entry.changed_at).toLocaleString()}</td>
+                                <td>${entry.changed_by}</td>
+                                <td>${entry.change_type === '+' ? 'Created' : entry.change_type === '~' ? 'Updated' : 'Deleted'}</td>
+                                <td>${entry.model}${entry.appointment_id ? ` (Appt ID: ${entry.appointment_id})` : ''}: ${formatChanges(entry.changes)}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                `);
+            } else {
+                historyContent.html('<p>No change history available.</p>');
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Fetch history error:', xhr.responseText);
+            $('#history-content').html('<p>Failed to load change history.</p>');
+        }
+    });
+}
             // Filter Patients
             let filteredPatients = [];
 
@@ -474,131 +611,7 @@ $(document).ready(function() {
     });
 });
 
-            // Show Patient Modal
-            function showPatientModal(patientId) {
-                const patient = allPatients.find(p => p.patient_id === patientId);
-                if (!patient) return Swal.fire('Error', 'Patient not found.', 'error');
-                const userType = localStorage.getItem('user_type');
-                const doctorId = localStorage.getItem('doctor_id');
-                
-                $('#modalPatientDetails').html(`
-                    <h5>${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</h5>
-                    <div class="btn-group mb-3" role="group">
-                        <button class="btn btn-outline-primary" onclick="showSection('personal-info', '${patientId}')">Personal Info</button>
-                        <button class="btn btn-outline-primary" onclick="showSection('medical-info', '${patientId}')">Medical Info</button>
-                        <button class="btn btn-outline-primary" onclick="showSection('appointments', '${patientId}')">Appointments</button>
-                        <button class="btn btn-outline-primary" onclick="showSection('change-history', '${patientId}')">View Change History</button>
-                    </div>
-                    <div id="patient-sections">
-                        <div id="personal-info" class="section" style="display: none;">
-                            <h6>Basic Information</h6>
-                            <table class="table table-bordered">
-                                <tr><th>Patient ID</th><td>${patient.patient_id}</td></tr>
-                                <tr><th>Name</th><td>${patient.first_name} ${patient.last_name || ''}</td></tr>
-                                <tr><th>Gender</th><td>${patient.gender || 'N/A'}</td></tr>
-                                <tr><th>DOB</th><td>${patient.date_of_birth || 'N/A'}</td></tr>
-                                <tr><th>Age</th><td>${patient.age || 'N/A'}</td></tr>
-                                <tr><th>Mobile Number</th><td>${patient.mobile_number || 'N/A'}</td></tr>
-                                <tr><th>Email</th><td>${patient.email || 'N/A'}</td></tr>
-                                <tr><th>Address</th><td>${patient.address || 'N/A'}, ${patient.city || 'N/A'}, ${patient.pincode || 'N/A'}</td></tr>
-                            </table>
-                            <h6>Emergency Contact</h6>
-                            <table class="table table-bordered">
-                                <tr><th>Name</th><td>${patient.emergency_contact_name || 'N/A'}</td></tr>
-                                <tr><th>Relationship</th><td>${patient.emergency_contact_relationship || 'N/A'}</td></tr>
-                                <tr><th>Number</th><td>${patient.emergency_contact_number || 'N/A'}</td></tr>
-                            </table>
-                        </div>
-                        <div id="medical-info" class="section" style="display: none;">
-                            <h6>Medical Info</h6>
-                            <table class="table table-bordered">
-                                <tr><th>Blood Group</th><td>${patient.blood_group || 'N/A'}</td></tr>
-                                <tr><th>Allergies</th><td>${patient.known_allergies || 'None'}</td></tr>
-                                <tr><th>Current Medications</th><td>${patient.current_medications || 'None'}</td></tr>
-                                <tr><th>Past Medical History</th><td>${patient.past_medical_history || 'None'}</td></tr>
-                                <tr><th>Specific Notes</th><td>${patient.specific_notes || 'None'}</td></tr>
-                            </table>
-                            <h6>Insurance Details</h6>
-                            <table class="table table-bordered">
-                                <tr><th>Provider</th><td>${patient.insurance_provider || 'N/A'}</td></tr>
-                                <tr><th>Policy Number</th><td>${patient.policy_number || 'N/A'}</td></tr>
-                            </table>
-                        </div>
-                        <div id="appointments" class="section" style="display: none;">
-                            ${patient.appointments && patient.appointments.length ? `
-                                <table class="table table-bordered">
-                                    <thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Doctor</th><th>Emergency</th><th>Vitals</th><th>Actions</th></tr></thead>
-                                    <tbody>${patient.appointments.map(appt => `
-                                        <tr>
-                                            <td>${appt.id}</td>
-                                            <td>${new Date(appt.appointment_date).toLocaleString()}</td>
-                                            <td>${appt.status}</td>
-                                            <td>${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name}` : 'N/A'}</td>
-                                            <td>${appt.is_emergency ? 'Yes' : 'No'}</td>
-                                            <td>${appt.vitals ? `<button class="btn btn-info btn-sm" onclick="showVitals(${appt.id})">View Vitals</button>` : 'N/A'}</td>
-                                            <td>${userType === 'Receptionist' || (userType === 'Doctor' && appt.doctor && appt.doctor.id === parseInt(doctorId)) ? `
-                                                <button class="btn btn-primary btn-sm" onclick="viewAppointment(${appt.id})">View</button>
-                                                <button class="btn btn-warning btn-sm" onclick="editAppointment(${appt.id})">Edit</button>
-                                                <button class="btn btn-danger btn-sm" onclick="cancelAppointment(${appt.id})">Cancel</button>
-                                                <button class="btn btn-info btn-sm" onclick="rescheduleAppointment(${appt.id})">Reschedule</button>
-                                            ` : 'N/A'}</td>
-                                        </tr>
-                                    `).join('')}</tbody>
-                                </table>
-                            ` : '<p>No appointments.</p>'}
-                        </div>
-                        <div id="change-history" class="section" style="display: none;">
-                            <h6>Change History</h6>
-                            <div id="history-content">Loading...</div>
-                        </div>
-                    </div>
-                `);
-                $('#patientModal').modal('show');
-                showSection('personal-info', patientId);
-            
-                // Fetch change history
-                $.ajax({
-                    url: `http://smarthospitalmaintain.com:8000/appointments/patients/${patientId}/history/`,
-                    type: 'GET',
-                    headers: getAuthHeaders(),
-                    success: function(response) {
-                        console.log('✅ Change history fetched:', response);
-                        const historyContent = $('#history-content');
-                        if (response.history && response.history.length) {
-                            historyContent.html(`
-                                <table class="table table-bordered">
-                                    <thead><tr><th>Date</th><th>Changed By</th><th>Action</th><th>Details</th></tr></thead>
-                                    <tbody>${response.history.map(entry => `
-                                        <tr>
-                                            <td>${new Date(entry.changed_at).toLocaleString()}</td>
-                                            <td>${entry.changed_by}</td>
-                                            <td>${entry.change_type === '+' ? 'Created' : entry.change_type === '~' ? 'Updated' : 'Deleted'}</td>
-                                            <td>${entry.model}${entry.appointment_id ? ` (Appt ID: ${entry.appointment_id})` : ''}: ${formatChanges(entry.changes)}</td>
-                                        </tr>
-                                    `).join('')}</tbody>
-                                </table>
-                            `);
-                        } else {
-                            historyContent.html('<p>No change history available.</p>');
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error('❌ Fetch history error:', xhr.responseText);
-                        $('#history-content').html('<p>Failed to load change history.</p>');
-                    }
-                });
-            }
-            
-            function formatChanges(changes) {
-                if (!changes || !changes.length) return 'N/A';
-                return changes.map(change => `${change.field}: ${change.old} → ${change.new}`).join(', ');
-            }
-            
-            function showSection(sectionId, patientId) {
-                $('.section').hide();
-                $(`#${sectionId}`).show();
-            }
-            
+                       
             function showVitals(appointmentId) {
                 const appt = allPatients.flatMap(p => p.appointments || []).find(a => a.id === appointmentId);
                 if (!appt || !appt.vitals) return Swal.fire('Error', 'Vitals not found.', 'error');
