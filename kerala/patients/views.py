@@ -70,7 +70,6 @@ class PatientListView(generics.ListAPIView):
 
 from rest_framework import generics
 from rest_framework.response import Response
-from .models import Patient
 from .serializers import PatientSerializer
 from django.db.models import Q
 from rest_framework import generics, permissions, pagination
