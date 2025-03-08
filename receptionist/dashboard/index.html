@@ -88,7 +88,16 @@
     padding: 5px 8px;
     margin: 2px;
   }
-  
+  .modal-content {
+    border-radius: 5px;
+  }
+  .success-message { color: green; }
+  .error-message { color: red; }
+  /* Ensure modals stack correctly */
+  .modal {
+    z-index: 1100; /* Default Bootstrap modal z-index is 1050, increase for stacking */
+  }
+
     /* Search Filter */
     .search-filter {
       margin-bottom: 15px;
@@ -111,7 +120,7 @@
       border-radius: 5px;
       font-size: 16px;
       text-align: center;
-      z-index: 9999;
+      z-index: 1200;
       min-width: 250px;
       max-width: 400px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
@@ -123,11 +132,7 @@
       100% { opacity: 0; }
     }
 
-    /* Modal Styles */
-    .modal-content {
-      padding: 20px;
-      border-radius: 5px;
-    }
+  
     .close-btn {
       color: #aaa;
       float: right;
@@ -301,10 +306,23 @@
             </nav>
           </div>
 
-          <!-- Notification -->
-          <div id="customNotification" class="custom-notification">
-            <p id="notificationMessage"></p>
+         <!-- Notification Modal -->
+         <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p id="notificationMessage"></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
           </div>
+        </div>
 
           <!-- Message Modal -->
           <div id="messageModal" class="modal fade" tabindex="-1" aria-hidden="true">
