@@ -161,33 +161,7 @@
       font-size: 14px;
       white-space: nowrap;
     }
-    .form-control-sm, .form-select-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.875rem;
-      height: calc(1.5em + 0.5rem + 2px);
-    }
-    .form-control.is-invalid {
-      border-color: #dc3545;
-    }
-    .form-control.is-invalid:focus {
-      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-    }
-    label {
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
-    }
-    .modal-body {
-      padding: 1rem;
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-    .btn-link {
-      font-size: 0.9rem;
-      padding: 0;
-    }
-    .collapse.show {
-      margin-top: 0.5rem;
-    }
+
     /* Ensure tab content is scrollable if too tall */
 .tab-content {
   max-height: 400px; /* Adjust as needed */
@@ -509,7 +483,7 @@
               </div>
             </div>
 
-    <!-- Create Patient Modal -->
+<!-- Create Patient Modal -->
 <div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -1401,42 +1375,6 @@ $("#dateOfBirth, #editDateOfBirth, #patientDob").on("change", function() {
   console.log(`Calculated age for ${this.id}:`, age);
   $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val(age >= 0 ? age : "");
 });
-$(document).ready(function() {
-  // Reset form and load doctors when modal opens
-  $('#createPatientModal').on('shown.bs.modal', function() {
-    $("#createPatientForm")[0].reset();
-    $("#createPatientForm .form-control").removeClass('is-invalid');
-    loadDoctorsForPatientModal();
-  });
-
-  // Age calculation
-  $("#patientDob").on("change", function() {
-    const dob = new Date(this.value);
-    const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
-      age--;
-    }
-    $("#patientAge").val(age >= 0 ? age : "");
-  });
-
-  // Save patient with validation
-  $('#savePatientBtn').on('click', function() {
-    savePatient();
-  });
-
-  // Initialize intl-tel-input for phone fields
-  ["#patientMobile", "#patientAltMobile", "#emergencyNumber"].forEach(selector => {
-    const input = document.querySelector(selector);
-    if (input) {
-      window.intlTelInput(input, {
-        initialCountry: "in",
-        preferredCountries: ["in", "us", "gb"],
-        separateDialCode: true
-      });
-    }
-  });
-});
 
 function savePatient() {
   const patientData = {
@@ -1451,63 +1389,57 @@ function savePatient() {
     email: $("#patientEmail").val().trim() || null,
     mobile_number: $("#patientMobile").val().trim(),
     alternate_mobile_number: $("#patientAltMobile").val().trim() || null,
+    aadhar_number: $("#patientAadhar").val().trim() || null,
     blood_group: $("#patientBloodGroup").val() || null,
     known_allergies: $("#patientAllergies").val().trim() || null,
     current_medications: $("#patientMedications").val().trim() || null,
     past_medical_history: $("#patientPastHistory").val().trim() || null,
+    specific_notes: $("#patientNotes").val().trim() || null,
+    primary_doctor: $("#patientPrimaryDoctor").val() || null,
     emergency_contact_name: $("#emergencyName").val().trim() || null,
     emergency_contact_relationship: $("#emergencyRelation").val().trim() || null,
     emergency_contact_number: $("#emergencyNumber").val().trim() || null,
     insurance_provider: $("#insuranceProvider").val().trim() || null,
     policy_number: $("#policyNumber").val().trim() || null,
-    payment_preference: $("#paymentPreference").val() || null
+    payment_preference: $("#paymentPreference").val() || null,
+    admission_type: $("#admissionType").val() // Added admission_type
   };
 
   // Validation
   const requiredFields = {
-    "patientFirstName": patientData.first_name,
-    "patientLastName": patientData.last_name,
-    "patientGender": patientData.gender,
-    "patientDob": patientData.date_of_birth,
-    "patientFatherName": patientData.father_name,
-    "patientMobile": patientData.mobile_number
+    "First Name": patientData.first_name,
+    "Last Name": patientData.last_name,
+    "Gender": patientData.gender,
+    "Date of Birth": patientData.date_of_birth,
+    "Father's Name": patientData.father_name,
+    "Mobile Number": patientData.mobile_number,
+    "Admission Type": patientData.admission_type // Added to required fields
   };
+  let missingFields = Object.keys(requiredFields).filter(key => !requiredFields[key]);
+  if (missingFields.length > 0) {
+    showNotification(`Please fill in: ${missingFields.join(", ")}`);
+    return;
+  }
 
-  let isValid = true;
-  Object.keys(requiredFields).forEach(id => {
-    if (!requiredFields[id]) {
-      $(`#${id}`).addClass('is-invalid');
-      isValid = false;
-    } else {
-      $(`#${id}`).removeClass('is-invalid');
-    }
-  });
-
-  if (!isValid) {
-    showNotification("Please fill all required fields.", "error");
-    console.log("Validation failed: Missing required fields", requiredFields);
+  if (patientData.aadhar_number && !/^\d{12}$/.test(patientData.aadhar_number)) {
+    showNotification("Aadhar number must be exactly 12 digits.");
     return;
   }
 
   if (!/^\d{10}$/.test(patientData.mobile_number)) {
-    $("#patientMobile").addClass('is-invalid');
-    showNotification("Mobile number must be 10 digits.", "error");
+    showNotification("Mobile number must be exactly 10 digits.");
     return;
   }
 
   if (patientData.alternate_mobile_number && !/^\d{10}$/.test(patientData.alternate_mobile_number)) {
-    $("#patientAltMobile").addClass('is-invalid');
-    showNotification("Alternate mobile number must be 10 digits.", "error");
+    showNotification("Alternate mobile number must be exactly 10 digits.");
     return;
   }
 
   if (patientData.emergency_contact_number && !/^\d{10}$/.test(patientData.emergency_contact_number)) {
-    $("#emergencyNumber").addClass('is-invalid');
-    showNotification("Emergency number must be 10 digits.", "error");
+    showNotification("Emergency contact number must be exactly 10 digits.");
     return;
   }
-
-  console.log("Submitting patient data:", patientData);
 
   $.ajax({
     url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/",
@@ -1516,34 +1448,17 @@ function savePatient() {
     data: JSON.stringify(patientData),
     contentType: "application/json",
     success: function(response) {
-      console.log("Patient created successfully:", response);
       showNotification("Patient created successfully!", "success");
       $("#createPatientModal").modal("hide");
+      $("#createPatientForm")[0].reset();
+
+      // Show the patient ID popup modal with the new patient ID
       $("#newPatientIdInput").val(response.patient.patient_id);
       $("#patientIdPopupModal").modal("show");
     },
     error: function(xhr) {
       const errorMsg = getErrorMessage(xhr, "Failed to create patient.");
-      console.error("Patient creation failed:", errorMsg);
       showNotification(errorMsg, "error");
-    }
-  });
-}
-
-function loadDoctorsForPatientModal() {
-  // Assuming this function exists elsewhere in your code
-  $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function(response) {
-      $("#patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
-      response.doctors.forEach(doctor => {
-        $("#patientPrimaryDoctor").append(`<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`);
-      });
-    },
-    error: function(xhr) {
-      showNotification("Failed to load doctors.", "error");
     }
   });
 }
