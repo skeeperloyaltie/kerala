@@ -28,6 +28,32 @@
   </script>
 
   <style>
+    #customNotification .modal-content {
+      border: none;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    #customNotification.success-message .modal-body {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    #customNotification.error-message .modal-body {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      20% { opacity: 1; transform: translateY(0); }
+      80% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+    
+    .modal-backdrop.show {
+      z-index: 1055; /* Ensure backdrop stays below notification modal */
+    }
     .patient-search-container {
       margin-bottom: 20px;
     }
@@ -992,7 +1018,19 @@
           </div>
         </div>
 
-
+<!-- Custom Notification Modal -->
+<div class="modal fade" id="customNotification" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center" id="notificationMessage">
+        <!-- Message will be injected here -->
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
         <!-- Footer -->
         <footer class="footer">
           <div class="d-sm-flex justify-content-center justify-content-sm-between">
