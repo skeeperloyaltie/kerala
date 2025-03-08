@@ -326,7 +326,6 @@
                     <li class="nav-item"><a class="nav-link active" id="waiting-tab" data-bs-toggle="tab" href="#waiting" role="tab">Waiting in Clinic</a></li>
                     <li class="nav-item"><a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">Scheduled</a></li>
                     <li class="nav-item"><a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending</a></li>
-                    <li class="nav-item"><a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active</a></li>
                     <li class="nav-item"><a class="nav-link" id="completed-tab" data-bs-toggle="tab" href="#completed" role="tab">Completed</a></li>
                     <li class="nav-item"><a class="nav-link" id="canceled-tab" data-bs-toggle="tab" href="#canceled" role="tab">Canceled</a></li>
                     <li class="nav-item"><a class="nav-link" id="rescheduled-tab" data-bs-toggle="tab" href="#rescheduled" role="tab">Rescheduled</a></li>
@@ -361,15 +360,7 @@
                         </table>
                       </div>
                     </div>
-                    <div class="tab-pane fade" id="active" role="tabpanel">
-                      <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
-                      <div class="table-responsive">
-                        <table class="table">
-                          <thead><tr></tr></thead>
-                          <tbody id="Active-tbody"></tbody>
-                        </table>
-                      </div>
-                    </div>
+                    
                     <div class="tab-pane fade" id="completed" role="tabpanel">
                       <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                       <div class="table-responsive">
@@ -811,7 +802,6 @@
                           <option value="Waiting">Waiting</option>
                           <option value="Scheduled">Scheduled</option>
                           <option value="Pending">Pending</option>
-                          <option value="Active">Active</option>
                           <option value="Completed">Completed</option>
                           <option value="Canceled">Canceled</option>
                           <option value="Rescheduled">Rescheduled</option>
