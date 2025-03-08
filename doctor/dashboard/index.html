@@ -22,6 +22,15 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
+  <script>
+     // Basic showNotification function (if not already defined)
+     function showNotification(message, type = 'info') {
+      const bgClass = type === 'error' ? 'bg-danger' : type === 'success' ? 'bg-success' : 'bg-info';
+      const notification = $(`<div class="alert ${bgClass} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
+      $('body').append(notification);
+      setTimeout(() => notification.alert('close'), 5000);
+    }
+  </script>
 
   <!-- Custom Styles -->
   <style>
@@ -626,7 +635,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="prevTabBtn" style="display: none;">Previous</button>
         <button type="button" class="btn btn-primary" id="nextTabBtn">Next</button>
-        <button type="button" class="btn btn-primary" id="savePatientBtn" style="display: none;">Save Patient</button>
+        <button type="button" class="btn btn-primary" id="savePatientBtn">Save Patient</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
@@ -1868,13 +1877,7 @@
       });
     }
     
-    // Basic showNotification function (if not already defined)
-    function showNotification(message, type = 'info') {
-      const bgClass = type === 'error' ? 'bg-danger' : type === 'success' ? 'bg-success' : 'bg-info';
-      const notification = $(`<div class="alert ${bgClass} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
-      $('body').append(notification);
-      setTimeout(() => notification.alert('close'), 5000);
-    }
+   
 
 $("#dateOfBirth, #editDateOfBirth, #patientDob").on("change", function() {
   const dob = new Date(this.value);
