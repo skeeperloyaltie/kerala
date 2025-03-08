@@ -97,7 +97,25 @@
   .modal {
     z-index: 1100; /* Default Bootstrap modal z-index is 1050, increase for stacking */
   }
-
+  .form-control-sm, .form-select-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  .form-control.is-invalid, .form-select.is-invalid {
+    border-color: #dc3545;
+  }
+  .form-control.is-invalid:focus, .form-select.is-invalid:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+  label {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+  }
+  .modal-body {
+    padding: 1rem;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
     /* Search Filter */
     .search-filter {
       margin-bottom: 15px;
@@ -482,8 +500,7 @@
                 </div>
               </div>
             </div>
-
-     <!-- Create Patient Modal -->
+<!-- Create Patient Modal -->
 <div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -513,77 +530,67 @@
           <div class="tab-content mt-3" id="patientFormTabContent">
             <!-- Basic Information Tab -->
             <div class="tab-pane fade show active" id="basic" role="tabpanel" aria-labelledby="basic-tab">
-              <div class="row">
-                <div class="col-md-6 mb-3">
+              <div class="row g-3">
+                <div class="col-md-6">
                   <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
-                  <input type="text" id="patientFirstName" class="form-control" required>
+                  <input type="text" id="patientFirstName" class="form-control form-control-sm" required>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-6">
                   <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
-                  <input type="text" id="patientLastName" class="form-control" required>
+                  <input type="text" id="patientLastName" class="form-control form-control-sm" required>
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-4">
                   <label for="patientGender">Gender <span class="text-danger">*</span></label>
-                  <select id="patientGender" class="form-control" required>
-                    <option value="" disabled selected>Select Gender</option>
+                  <select id="patientGender" class="form-select form-select-sm" required>
+                    <option value="" disabled selected>Select</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-4">
                   <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
-                  <input type="date" id="patientDob" class="form-control" required>
+                  <input type="date" id="patientDob" class="form-control form-control-sm" required>
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="patientAge">Age <span class="text-danger">*</span></label>
-                  <input type="number" id="patientAge" class="form-control" readonly>
+                <div class="col-md-4">
+                  <label for="patientAge">Age</label>
+                  <input type="number" id="patientAge" class="form-control form-control-sm" readonly>
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-6">
                   <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
-                  <input type="text" id="patientFatherName" class="form-control" required>
+                  <input type="text" id="patientFatherName" class="form-control form-control-sm" required>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-6">
                   <label for="patientAddress">Address</label>
-                  <input type="text" id="patientAddress" class="form-control">
+                  <input type="text" id="patientAddress" class="form-control form-control-sm">
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-4">
                   <label for="patientCity">City</label>
-                  <input type="text" id="patientCity" class="form-control">
+                  <input type="text" id="patientCity" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-4">
                   <label for="patientPincode">Pincode</label>
-                  <input type="number" id="patientPincode" class="form-control">
+                  <input type="number" id="patientPincode" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="patientEmail">Email Address</label>
-                  <input type="email" id="patientEmail" class="form-control">
+                <div class="col-md-4">
+                  <label for="patientEmail">Email</label>
+                  <input type="email" id="patientEmail" class="form-control form-control-sm">
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label for="patientMobile">Mobile Number <span class="text-danger">*</span></label>
-                  <input type="tel" id="patientMobile" class="form-control" required>
+                <div class="col-md-4">
+                  <label for="patientMobile">Mobile <span class="text-danger">*</span></label>
+                  <input type="tel" id="patientMobile" class="form-control form-control-sm" required>
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="patientAltMobile">Alternate Mobile Number</label>
-                  <input type="tel" id="patientAltMobile" class="form-control">
+                <div class="col-md-4">
+                  <label for="patientAltMobile">Alt Mobile</label>
+                  <input type="tel" id="patientAltMobile" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="patientAadhar">Aadhar Number</label>
-                  <input type="text" id="patientAadhar" class="form-control" maxlength="12" pattern="\d{12}">
+                <div class="col-md-4">
+                  <label for="patientAadhar">Aadhar</label>
+                  <input type="text" id="patientAadhar" class="form-control form-control-sm" maxlength="12">
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-4">
                   <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
-                  <select id="admissionType" class="form-control" required>
+                  <select id="admissionType" class="form-select form-select-sm" required>
                     <option value="OU" selected>Outpatient</option>
                     <option value="IN">Inpatient</option>
                   </select>
@@ -593,11 +600,11 @@
 
             <!-- Medical Information Tab -->
             <div class="tab-pane fade" id="medical" role="tabpanel" aria-labelledby="medical-tab">
-              <div class="row">
-                <div class="col-md-4 mb-3">
+              <div class="row g-3">
+                <div class="col-md-4">
                   <label for="patientBloodGroup">Blood Group</label>
-                  <select id="patientBloodGroup" class="form-control">
-                    <option value="">Select Blood Group</option>
+                  <select id="patientBloodGroup" class="form-select form-select-sm">
+                    <option value="">Select</option>
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
@@ -608,30 +615,26 @@
                     <option value="O-">O-</option>
                   </select>
                 </div>
-                <div class="col-md-8 mb-3">
-                  <label for="patientAllergies">Known Allergies</label>
-                  <textarea id="patientAllergies" class="form-control"></textarea>
+                <div class="col-md-8">
+                  <label for="patientAllergies">Allergies</label>
+                  <textarea id="patientAllergies" class="form-control form-control-sm" rows="2"></textarea>
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="patientMedications">Current Medications</label>
-                  <textarea id="patientMedications" class="form-control"></textarea>
+                <div class="col-md-6">
+                  <label for="patientMedications">Medications</label>
+                  <textarea id="patientMedications" class="form-control form-control-sm" rows="2"></textarea>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label for="patientPastHistory">Past Medical History</label>
-                  <textarea id="patientPastHistory" class="form-control"></textarea>
+                <div class="col-md-6">
+                  <label for="patientPastHistory">Past History</label>
+                  <textarea id="patientPastHistory" class="form-control form-control-sm" rows="2"></textarea>
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="patientNotes">Specific Notes</label>
-                  <textarea id="patientNotes" class="form-control"></textarea>
+                <div class="col-md-6">
+                  <label for="patientNotes">Notes</label>
+                  <textarea id="patientNotes" class="form-control form-control-sm" rows="2"></textarea>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label for="patientPrimaryDoctor">Primary Doctor Assigned</label>
-                  <select id="patientPrimaryDoctor" class="form-control">
-                    <option value="" disabled selected>Select a doctor</option>
+                <div class="col-md-6">
+                  <label for="patientPrimaryDoctor">Primary Doctor</label>
+                  <select id="patientPrimaryDoctor" class="form-select form-select-sm">
+                    <option value="" disabled selected>Select</option>
                   </select>
                 </div>
               </div>
@@ -639,37 +642,37 @@
 
             <!-- Emergency Contact Tab -->
             <div class="tab-pane fade" id="emergency" role="tabpanel" aria-labelledby="emergency-tab">
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label for="emergencyName">Emergency Contact Name</label>
-                  <input type="text" id="emergencyName" class="form-control">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="emergencyName">Name</label>
+                  <input type="text" id="emergencyName" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="emergencyRelation">Relationship to Patient</label>
-                  <input type="text" id="emergencyRelation" class="form-control">
+                <div class="col-md-4">
+                  <label for="emergencyRelation">Relationship</label>
+                  <input type="text" id="emergencyRelation" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="emergencyNumber">Emergency Contact Number</label>
-                  <input type="tel" id="emergencyNumber" class="form-control">
+                <div class="col-md-4">
+                  <label for="emergencyNumber">Number</label>
+                  <input type="tel" id="emergencyNumber" class="form-control form-control-sm">
                 </div>
               </div>
             </div>
 
             <!-- Insurance & Billing Details Tab -->
             <div class="tab-pane fade" id="insurance" role="tabpanel" aria-labelledby="insurance-tab">
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label for="insuranceProvider">Insurance Provider Name</label>
-                  <input type="text" id="insuranceProvider" class="form-control">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="insuranceProvider">Provider</label>
+                  <input type="text" id="insuranceProvider" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="policyNumber">Policy Number</label>
-                  <input type="text" id="policyNumber" class="form-control">
+                <div class="col-md-4">
+                  <label for="policyNumber">Policy No.</label>
+                  <input type="text" id="policyNumber" class="form-control form-control-sm">
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="paymentPreference">Payment Preferences</label>
-                  <select id="paymentPreference" class="form-control">
-                    <option value="">Select Preference</option>
+                <div class="col-md-4">
+                  <label for="paymentPreference">Payment</label>
+                  <select id="paymentPreference" class="form-select form-select-sm">
+                    <option value="">Select</option>
                     <option value="Cash">Cash</option>
                     <option value="Card">Card</option>
                     <option value="Insurance">Insurance</option>
@@ -1382,15 +1385,15 @@ function validateUserSession() {
     });
 
     // Enhanced notification function with type parameter
-function showNotification(message, type = "error", duration = 4000) {
-  $("#notificationMessage").text(message);
-  $("#customNotification")
-      .removeClass("success-message error-message")
-      .addClass(type === "success" ? "success-message" : "error-message")
-      .show()
-      .css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
-  setTimeout(() => $("#customNotification").hide(), duration);
-}
+//function showNotification(message, type = "error", duration = 4000) {
+ // $("#notificationMessage").text(message);
+ // $("#customNotification")
+      //.removeClass("success-message error-message")
+      //.addClass(type === "success" ? "success-message" : "error-message")
+      //.show()
+    //  .css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
+  //setTimeout(() => $("#customNotification").hide(), duration);
+//}
 
 
 
@@ -1419,6 +1422,110 @@ $("#dateOfBirth, #editDateOfBirth, #patientDob").on("change", function() {
   $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val(age >= 0 ? age : "");
 });
 
+$(document).ready(function() {
+  const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
+  let currentTabIndex = 0;
+
+  // Reset form and initialize modal
+  $('#createPatientModal').on('shown.bs.modal', function() {
+    $("#createPatientForm")[0].reset();
+    $("#createPatientForm .form-control, #createPatientForm .form-select").removeClass('is-invalid');
+    currentTabIndex = 0;
+    $('#basic-tab').tab('show');
+    updateTabButtons();
+    loadDoctorsForPatientModal(); // Assuming this function exists to populate doctors
+  });
+
+  // Age calculation
+  $("#patientDob").on("change", function() {
+    const dob = new Date(this.value);
+    if (isNaN(dob.getTime())) {
+      $("#patientAge").val("");
+      return;
+    }
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    $("#patientAge").val(age >= 0 ? age : "");
+  });
+
+  // Update button visibility
+  function updateTabButtons() {
+    $('#prevTabBtn').toggle(currentTabIndex > 0);
+    $('#nextTabBtn').toggle(currentTabIndex < tabs.length - 1);
+    $('#savePatientBtn').toggle(currentTabIndex === tabs.length - 1);
+  }
+
+  // Validate current tab
+  function validateTab(tabId) {
+    let isValid = true;
+    if (tabId === '#basic') {
+      const requiredFields = {
+        'patientFirstName': $('#patientFirstName').val().trim(),
+        'patientLastName': $('#patientLastName').val().trim(),
+        'patientGender': $('#patientGender').val(),
+        'patientDob': $('#patientDob').val(),
+        'patientFatherName': $('#patientFatherName').val().trim(),
+        'patientMobile': $('#patientMobile').val().trim(),
+        'admissionType': $('#admissionType').val()
+      };
+
+      Object.keys(requiredFields).forEach(id => {
+        if (!requiredFields[id]) {
+          $(`#${id}`).addClass('is-invalid');
+          isValid = false;
+        } else {
+          $(`#${id}`).removeClass('is-invalid');
+        }
+      });
+
+      const mobile = $('#patientMobile').val().trim();
+      if (mobile && !/^\d{10}$/.test(mobile)) {
+        $('#patientMobile').addClass('is-invalid');
+        isValid = false;
+      }
+    }
+    return isValid;
+  }
+
+  // Next button
+  $('#nextTabBtn').on('click', function() {
+    if (validateTab(tabs[currentTabIndex])) {
+      currentTabIndex++;
+      $(tabs[currentTabIndex]).tab('show');
+      updateTabButtons();
+    } else {
+      showNotification('Please fill all required fields correctly.', 'error');
+    }
+  });
+
+  // Previous button
+  $('#prevTabBtn').on('click', function() {
+    currentTabIndex--;
+    $(tabs[currentTabIndex]).tab('show');
+    updateTabButtons();
+  });
+
+  // Save button
+  $('#savePatientBtn').on('click', function() {
+    if (validateTab('#basic')) { // Only basic tab is required
+      savePatient();
+    } else {
+      showNotification('Please fill all required fields in Basic Information.', 'error');
+    }
+  });
+
+  // Allow tab navigation via clicking headers (optional)
+  $('#patientFormTabs .nav-link').on('click', function() {
+    const targetTab = $(this).attr('href');
+    currentTabIndex = tabs.indexOf(targetTab);
+    updateTabButtons();
+  });
+});
+
+// Save patient function
 function savePatient() {
   const patientData = {
     first_name: $("#patientFirstName").val().trim(),
@@ -1445,44 +1552,60 @@ function savePatient() {
     insurance_provider: $("#insuranceProvider").val().trim() || null,
     policy_number: $("#policyNumber").val().trim() || null,
     payment_preference: $("#paymentPreference").val() || null,
-    admission_type: $("#admissionType").val() // Added admission_type
+    admission_type: $("#admissionType").val()
   };
 
-  // Validation
+  // Additional validation
   const requiredFields = {
-    "First Name": patientData.first_name,
-    "Last Name": patientData.last_name,
-    "Gender": patientData.gender,
-    "Date of Birth": patientData.date_of_birth,
-    "Father's Name": patientData.father_name,
-    "Mobile Number": patientData.mobile_number,
-    "Admission Type": patientData.admission_type // Added to required fields
+    'patientFirstName': patientData.first_name,
+    'patientLastName': patientData.last_name,
+    'patientGender': patientData.gender,
+    'patientDob': patientData.date_of_birth,
+    'patientFatherName': patientData.father_name,
+    'patientMobile': patientData.mobile_number,
+    'admissionType': patientData.admission_type
   };
-  let missingFields = Object.keys(requiredFields).filter(key => !requiredFields[key]);
-  if (missingFields.length > 0) {
-    showNotification(`Please fill in: ${missingFields.join(", ")}`);
-    return;
-  }
 
-  if (patientData.aadhar_number && !/^\d{12}$/.test(patientData.aadhar_number)) {
-    showNotification("Aadhar number must be exactly 12 digits.");
-    return;
-  }
+  let isValid = true;
+  Object.keys(requiredFields).forEach(id => {
+    if (!requiredFields[id]) {
+      $(`#${id}`).addClass('is-invalid');
+      isValid = false;
+    } else {
+      $(`#${id}`).removeClass('is-invalid');
+    }
+  });
 
   if (!/^\d{10}$/.test(patientData.mobile_number)) {
-    showNotification("Mobile number must be exactly 10 digits.");
+    $("#patientMobile").addClass('is-invalid');
+    showNotification("Mobile number must be exactly 10 digits.", "error");
     return;
   }
 
   if (patientData.alternate_mobile_number && !/^\d{10}$/.test(patientData.alternate_mobile_number)) {
-    showNotification("Alternate mobile number must be exactly 10 digits.");
+    $("#patientAltMobile").addClass('is-invalid');
+    showNotification("Alternate mobile number must be exactly 10 digits.", "error");
     return;
   }
 
   if (patientData.emergency_contact_number && !/^\d{10}$/.test(patientData.emergency_contact_number)) {
-    showNotification("Emergency contact number must be exactly 10 digits.");
+    $("#emergencyNumber").addClass('is-invalid');
+    showNotification("Emergency contact number must be exactly 10 digits.", "error");
     return;
   }
+
+  if (patientData.aadhar_number && !/^\d{12}$/.test(patientData.aadhar_number)) {
+    $("#patientAadhar").addClass('is-invalid');
+    showNotification("Aadhar number must be exactly 12 digits.", "error");
+    return;
+  }
+
+  if (!isValid) {
+    showNotification("Please fill all required fields.", "error");
+    return;
+  }
+
+  console.log("Submitting patient data:", patientData);
 
   $.ajax({
     url: "http://smarthospitalmaintain.com:8000/appointments/patients/create/",
@@ -1493,9 +1616,6 @@ function savePatient() {
     success: function(response) {
       showNotification("Patient created successfully!", "success");
       $("#createPatientModal").modal("hide");
-      $("#createPatientForm")[0].reset();
-
-      // Show the patient ID popup modal with the new patient ID
       $("#newPatientIdInput").val(response.patient.patient_id);
       $("#patientIdPopupModal").modal("show");
     },
@@ -1506,131 +1626,31 @@ function savePatient() {
   });
 }
 
-
-// Tab Navigation for Create Patient Modal
-$(document).ready(function() {
-  const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
-  let currentTabIndex = 0;
-
-  // Age calculation function
-  function calculateAge(dob) {
-    const birthDate = new Date(dob);
-    const today = new Date('2025-03-08'); // Fixed date as per your context
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age >= 0 ? age : '';
-  }
-
-  function updateTabButtons() {
-    const $prevBtn = $('#prevTabBtn');
-    const $nextBtn = $('#nextTabBtn');
-    const $saveBtn = $('#savePatientBtn');
-
-    $prevBtn.toggle(currentTabIndex > 0);
-    $nextBtn.toggle(currentTabIndex < tabs.length - 1);
-    $saveBtn.toggle(currentTabIndex === tabs.length - 1);
-  }
-
-  function validateTab(tabId) {
-    const $tab = $(tabId);
-    let isValid = true;
-
-    if (tabId === '#basic') {
-      const requiredFields = {
-        'First Name': $('#patientFirstName').val().trim(),
-        'Last Name': $('#patientLastName').val().trim(),
-        'Gender': $('#patientGender').val(),
-        'Date of Birth': $('#patientDob').val(),
-        'Father\'s Name': $('#patientFatherName').val().trim(),
-        'Mobile Number': $('#patientMobile').val().trim(),
-        'Admission Type': $('#admissionType').val()
-      };
-
-      Object.keys(requiredFields).forEach(field => {
-        if (!requiredFields[field]) {
-          isValid = false;
-          $(`#${field.toLowerCase().replace(/'|\s/g, '')}`).addClass('is-invalid');
-        } else {
-          $(`#${field.toLowerCase().replace(/'|\s/g, '')}`).removeClass('is-invalid');
-        }
+// Assuming this function exists elsewhere to load doctors
+function loadDoctorsForPatientModal() {
+  $.ajax({
+    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function(response) {
+      $("#patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select</option>');
+      response.doctors.forEach(doctor => {
+        $("#patientPrimaryDoctor").append(`<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`);
       });
-
-      const mobile = $('#patientMobile').val().trim();
-      if (mobile && !/^\d{10}$/.test(mobile)) {
-        isValid = false;
-        $('#patientMobile').addClass('is-invalid');
-        showNotification('Mobile number must be exactly 10 digits.', 'error');
-      }
-    }
-
-    return isValid;
-  }
-
-  function activateBasicTab() {
-    // Ensure the Basic tab is active and visible
-    currentTabIndex = 0;
-    $('#patientFormTabs .nav-link').removeClass('active');
-    $('#patientFormTabContent .tab-pane').removeClass('show active');
-    $('#basic-tab').addClass('active');
-    $('#basic').addClass('show active');
-    updateTabButtons();
-  }
-
-  $('#nextTabBtn').on('click', function() {
-    const currentTab = tabs[currentTabIndex];
-    if (validateTab(currentTab)) {
-      currentTabIndex++;
-      $(tabs[currentTabIndex]).tab('show');
-      updateTabButtons();
-    } else {
-      showNotification('Please fill all required fields correctly.', 'error');
+    },
+    error: function() {
+      showNotification("Failed to load doctors.", "error");
     }
   });
+}
 
-  $('#prevTabBtn').on('click', function() {
-    currentTabIndex--;
-    $(tabs[currentTabIndex]).tab('show');
-    updateTabButtons();
-  });
-
-  $('#savePatientBtn').on('click', function() {
-    savePatient(); // Assumes savePatient function exists
-  });
-
-  // Reset tab state and ensure Basic tab is active when modal opens
-   // Reset tab state and ensure Basic tab is active when modal opens
-   $('#createPatientModal').on('shown.bs.modal', function() {
-    $("#createPatientForm")[0].reset();
-    $("#createPatientForm .form-control").removeClass('is-invalid');
-    activateBasicTab();
-    
-    // If DOB is pre-filled (e.g., from another source), trigger calculation
-    const dob = $("#patientDob").val();
-    if (dob) {
-      $("#patientDob").trigger("change");
-    }
-  });
-
-  // Use shown.bs.modal as a fallback to ensure visibility
-  $('#createPatientModal').on('shown.bs.modal', function() {
-    // Double-check that Basic tab is active after modal is fully rendered
-    if (currentTabIndex !== 0 || !$('#basic').hasClass('show active')) {
-      console.log('Fallback: Forcing Basic tab activation');
-      activateBasicTab();
-    }
-  });
-
-  // Allow clicking tab headers to navigate freely
-  $('#patientFormTabs .nav-link').on('click', function() {
-    const targetTab = $(this).attr('href');
-    currentTabIndex = tabs.indexOf(targetTab);
-    updateTabButtons();
-  });
-});
-
+// Basic showNotification function (if not already defined)
+function showNotification(message, type = 'info') {
+  const bgClass = type === 'error' ? 'bg-danger' : type === 'success' ? 'bg-success' : 'bg-info';
+  const notification = $(`<div class="alert ${bgClass} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
+  $('body').append(notification);
+  setTimeout(() => notification.alert('close'), 5000);
+}
 
 // Copy Patient ID to ClipboardAp
 $("#copyPatientIdBtn").on("click", function() {
