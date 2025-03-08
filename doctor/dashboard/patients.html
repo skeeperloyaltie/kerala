@@ -370,30 +370,25 @@
             }
 
             // Fetch Patients
-let allPatients = [];
-function fetchPatients() {
-    const headers = getAuthHeaders();
-    const userType = localStorage.getItem('user_type');
-    let url = 'http://smarthospitalmaintain.com:8000/patients/list/';
-    if (userType === 'Doctor') {
-        const doctorId = localStorage.getItem('doctor_id') || '';
-        url += `?primary_doctor=${doctorId}`; // Filter by primary_doctor for doctors
-    }
-    $.ajax({
-        url: url,
-        type: 'GET',
-        headers: headers,
-        success: function(response) {
-            console.log('✅ Patients fetched:', response);
-            allPatients = response.patients || []; // Extract the 'patients' array
-            fetchAppointmentsForPatients();
-        },
-        error: function(xhr) {
-            console.error('❌ Fetch patients error:', xhr.responseText);
-            Swal.fire('Error', 'Failed to fetch patients.', 'error');
-        }
-    });
-}
+            let allPatients = [];
+            function fetchPatients() {
+                const headers = getAuthHeaders();
+                const url = 'http://smarthospitalmaintain.com:8000/patients/list/'; // No filtering by primary_doctor
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    headers: headers,
+                    success: function(response) {
+                        console.log('✅ Patients fetched:', response);
+                        allPatients = response.patients || []; // Extract all patients
+                        fetchAppointmentsForPatients();
+                    },
+                    error: function(xhr) {
+                        console.error('❌ Fetch patients error:', xhr.responseText);
+                        Swal.fire('Error', 'Failed to fetch patients.', 'error');
+                    }
+                });
+            }
 
 // Fetch Appointments for Patients
 function fetchAppointmentsForPatients() {
@@ -417,7 +412,7 @@ function fetchAppointmentsForPatients() {
                 console.warn('No valid appointments array in response:', response);
                 allPatients = allPatients.map(p => ({ ...p, appointments: [] }));
             } else {
-                // Map appointments to patients
+                // Map all appointments to patients
                 allPatients = allPatients.map(patient => {
                     const patientAppointments = response.appointments.filter(appt => {
                         const apptPatientId = appt.patient?.patient_id || appt.patient_id;
@@ -432,15 +427,14 @@ function fetchAppointmentsForPatients() {
         error: function(xhr) {
             console.error('❌ Fetch appointments error:', xhr.responseText);
             Swal.fire('Error', 'Failed to fetch appointments.', 'error');
-            // Populate with patients even if appointments fail, but with empty appointments
             allPatients = allPatients.map(p => ({ ...p, appointments: [] }));
             populatePatientsTable(allPatients);
         }
     });
 }
 
-// Populate Patients Table
-function populatePatientsTable(patients) {
+  // Populate Patients Table
+  function populatePatientsTable(patients) {
     const tbody = $('#patientsList');
     tbody.empty();
     patients.forEach(patient => {
@@ -467,12 +461,11 @@ function populatePatientsTable(patients) {
         showPatientModal(patientId);
     });
 }
-
-// Show Patient Modal (unchanged except for debugging)
+// Show Patient Modal
 function showPatientModal(patientId) {
     const patient = allPatients.find(p => p.patient_id === patientId);
     if (!patient) return Swal.fire('Error', 'Patient not found.', 'error');
-    console.log('Showing modal for patient:', patient); // Debug patient data
+    console.log('Showing modal for patient:', patient);
 
     const userType = localStorage.getItem('user_type');
     const doctorId = localStorage.getItem('doctor_id');
@@ -552,7 +545,7 @@ function showPatientModal(patientId) {
     $('#patientModal').modal('show');
     showSection('personal-info', patientId);
 
-    // Fetch change history (unchanged)
+    // Fetch change history
     $.ajax({
         url: `http://smarthospitalmaintain.com:8000/appointments/patients/${patientId}/history/`,
         type: 'GET',
@@ -583,6 +576,7 @@ function showPatientModal(patientId) {
             $('#history-content').html('<p>Failed to load change history.</p>');
         }
     });
+}
     function formatChanges(changes) {
         if (!changes || !changes.length) return 'N/A';
         return changes.map(change => `${change.field}: ${change.old} → ${change.new}`).join(', ');
@@ -592,7 +586,7 @@ function showPatientModal(patientId) {
         $('.section').hide();
         $(`#${sectionId}`).show();
     }
-}
+
             // Filter Patients
             let filteredPatients = [];
 
@@ -767,16 +761,16 @@ $(document).ready(function() {
                 });
             }
 
-            // Event Listeners
-            $(document).ready(function() {
-                checkSessionOnLoad();
-                $('#logoutButton, #logoutButtonDropdown').on('click', logoutUser);
-                $('#patientFilter').on('input', filterPatients);
-                $('#patientsTable th[data-sort]').on('click', function() {
-                    const column = $(this).data('sort');
-                    sortTable(column);
-                });
+           // Event Listeners
+        $(document).ready(function() {
+            checkSessionOnLoad();
+            $('#logoutButton, #logoutButtonDropdown').on('click', logoutUser);
+            $('#patientFilter').on('input', filterPatients);
+            $('#patientsTable th[data-sort]').on('click', function() {
+                const column = $(this).data('sort');
+                sortTable(column);
             });
+        });
         </script>
     </body>
 </html>
