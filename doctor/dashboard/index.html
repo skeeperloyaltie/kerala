@@ -23,8 +23,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
 
+  <!-- Custom Styles -->
   <style>
-    /* Table Styles */
     .table-responsive {
       max-height: 400px;
       overflow-y: auto;
@@ -54,8 +54,6 @@
       padding: 5px 8px;
       margin: 2px;
     }
-
-    /* Search Filter */
     .search-filter {
       margin-bottom: 15px;
     }
@@ -63,15 +61,18 @@
       font-size: 14px;
       padding: 6px;
     }
-
-    /* Modal Styles */
     .modal-content {
       border-radius: 5px;
     }
     .success-message { color: green; }
     .error-message { color: red; }
-
-    /* Responsive Adjustments */
+    /* Ensure modals stack correctly */
+    .modal {
+      z-index: 1055; /* Default Bootstrap modal z-index is 1050, increase for stacking */
+    }
+    .modal-backdrop {
+      z-index: 1050; /* Ensure backdrop is below modal */
+    }
     @media (max-width: 768px) {
       .table th, .table td { font-size: 12px; padding: 6px; }
       .table .btn { font-size: 10px; padding: 4px 6px; }
@@ -91,10 +92,10 @@
         <div class="card-body card-body-padding d-flex align-items-center justify-content-between">
           <div class="ps-lg-3">
             <p class="mb-0 font-weight-medium me-3 buy-now-text">Free 24/7 customer support, updates</p>
-            <a href="" target="_blank" class="btn me-2 buy-now-btn border-0">Book Appointment</a>
+            <a href="#" target="_blank" class="btn me-2 buy-now-btn border-0">Book Appointment</a>
           </div>
           <div class="d-flex align-items-center">
-            <a href=""><i class="mdi mdi-home me-3 text-white"></i></a>
+            <a href="#"><i class="mdi mdi-home me-3 text-white"></i></a>
             <button id="bannerClose" class="btn border-0 p-0"><i class="mdi mdi-close text-white"></i></button>
           </div>
         </div>
@@ -254,29 +255,28 @@
                     <div>
                       <button class="btn btn-success btn-sm d-none me-2" id="cancelBtn" onclick="bulkCancel()">Cancel</button>
                       <button class="btn btn-warning btn-sm d-none" id="rescheduleBtn" onclick="bulkReschedule()">Reschedule</button>
-                     </div>
+                    </div>
                     <button class="btn btn-primary btn-sm"><a href="search.html" class="text-white text-decoration-none">Search Patient</a></button>
                   </div>
 
                   <!-- Search Filter -->
-                  <!-- Search Filter -->
-<div class="search-filter row g-2">
-  <div class="col-md-3">
-    <input type="text" class="form-control" id="searchPatientId" placeholder="Patient ID">
-  </div>
-  <div class="col-md-3">
-    <input type="text" class="form-control" id="searchName" placeholder="Patient Name">
-  </div>
-  <div class="col-md-2">
-    <input type="text" class="form-control" id="searchMobile" placeholder="Mobile Number">
-  </div>
-  <div class="col-md-2">
-    <input type="date" class="form-control" id="searchDob" placeholder="Date of Birth">
-  </div>
-  <div class="col-md-2">
-    <input type="date" class="form-control" id="searchDate" placeholder="Appointment Date">
-  </div>
-</div>
+                  <div class="search-filter row g-2">
+                    <div class="col-md-3">
+                      <input type="text" class="form-control" id="searchPatientId" placeholder="Patient ID">
+                    </div>
+                    <div class="col-md-3">
+                      <input type="text" class="form-control" id="searchName" placeholder="Patient Name">
+                    </div>
+                    <div class="col-md-2">
+                      <input type="text" class="form-control" id="searchMobile" placeholder="Mobile Number">
+                    </div>
+                    <div class="col-md-2">
+                      <input type="date" class="form-control" id="searchDob" placeholder="Date of Birth">
+                    </div>
+                    <div class="col-md-2">
+                      <input type="date" class="form-control" id="searchDate" placeholder="Appointment Date">
+                    </div>
+                  </div>
 
                   <!-- Tabs -->
                   <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
@@ -317,7 +317,6 @@
                         </table>
                       </div>
                     </div>
-                
                     <div class="tab-pane fade" id="completed" role="tabpanel">
                       <button class="btn btn-primary btn-sm mb-3" onclick="showAppointmentForm()">Add Appointment</button>
                       <div class="table-responsive">
@@ -350,254 +349,254 @@
               </div>
             </div>
           </div>
-     <!-- Create Patient Modal -->
-<div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="createPatientModalLabel">Create New Patient</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="createPatientForm">
-          <!-- Basic Information -->
-          <h6>Basic Information</h6>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
-              <input type="text" id="patientFirstName" class="form-control" required>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
-              <input type="text" id="patientLastName" class="form-control" required>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientGender">Gender <span class="text-danger">*</span></label>
-              <select id="patientGender" class="form-control" required>
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
-              <input type="date" id="patientDob" class="form-control" required>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientAge">Age <span class="text-danger">*</span></label>
-              <input type="number" id="patientAge" class="form-control" readonly>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
-              <input type="text" id="patientFatherName" class="form-control" required>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientAddress">Address</label>
-              <input type="text" id="patientAddress" class="form-control">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientCity">City</label>
-              <input type="text" id="patientCity" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientPincode">Pincode</label>
-              <input type="number" id="patientPincode" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientEmail">Email Address</label>
-              <input type="email" id="patientEmail" class="form-control">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientMobile">Mobile Number <span class="text-danger">*</span></label>
-              <input type="tel" id="patientMobile" class="form-control" required>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientAltMobile">Alternate Mobile Number</label>
-              <input type="tel" id="patientAltMobile" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="patientAadhar">Aadhar Number</label>
-              <input type="text" id="patientAadhar" class="form-control" maxlength="12" pattern="\d{12}">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
-              <select id="admissionType" class="form-control" required>
-                <option value="OU" selected>Outpatient</option>
-                <option value="IN">Inpatient</option>
-              </select>
+
+          <!-- Create Patient Modal -->
+          <div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="createPatientModalLabel">Create New Patient</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="createPatientForm">
+                    <!-- Basic Information -->
+                    <h6>Basic Information</h6>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
+                        <input type="text" id="patientFirstName" class="form-control" required>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" id="patientLastName" class="form-control" required>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="patientGender">Gender <span class="text-danger">*</span></label>
+                        <select id="patientGender" class="form-control" required>
+                          <option value="" disabled selected>Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
+                        <input type="date" id="patientDob" class="form-control" required>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="patientAge">Age <span class="text-danger">*</span></label>
+                        <input type="number" id="patientAge" class="form-control" readonly>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
+                        <input type="text" id="patientFatherName" class="form-control" required>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="patientAddress">Address</label>
+                        <input type="text" id="patientAddress" class="form-control">
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="patientCity">City</label>
+                        <input type="text" id="patientCity" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="patientPincode">Pincode</label>
+                        <input type="number" id="patientPincode" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="patientEmail">Email Address</label>
+                        <input type="email" id="patientEmail" class="form-control">
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="patientMobile">Mobile Number <span class="text-danger">*</span></label>
+                        <input type="tel" id="patientMobile" class="form-control" required>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="patientAltMobile">Alternate Mobile Number</label>
+                        <input type="tel" id="patientAltMobile" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="patientAadhar">Aadhar Number</label>
+                        <input type="text" id="patientAadhar" class="form-control" maxlength="12" pattern="\d{12}">
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
+                        <select id="admissionType" class="form-control" required>
+                          <option value="OU" selected>Outpatient</option>
+                          <option value="IN">Inpatient</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Medical Information -->
+                    <h6>Medical Information</h6>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="patientBloodGroup">Blood Group</label>
+                        <select id="patientBloodGroup" class="form-control">
+                          <option value="">Select Blood Group</option>
+                          <option value="A+">A+</option>
+                          <option value="A-">A-</option>
+                          <option value="B+">B+</option>
+                          <option value="B-">B-</option>
+                          <option value="AB+">AB+</option>
+                          <option value="AB-">AB-</option>
+                          <option value="O+">O+</option>
+                          <option value="O-">O-</option>
+                        </select>
+                      </div>
+                      <div class="col-md-8 mb-3">
+                        <label for="patientAllergies">Known Allergies</label>
+                        <textarea id="patientAllergies" class="form-control"></textarea>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="patientMedications">Current Medications</label>
+                        <textarea id="patientMedications" class="form-control"></textarea>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="patientPastHistory">Past Medical History</label>
+                        <textarea id="patientPastHistory" class="form-control"></textarea>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="patientNotes">Specific Notes</label>
+                        <textarea id="patientNotes" class="form-control"></textarea>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="patientPrimaryDoctor">Primary Doctor Assigned</label>
+                        <select id="patientPrimaryDoctor" class="form-control">
+                          <option value="" disabled selected>Select a doctor</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <h6>Emergency Contact</h6>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="emergencyName">Emergency Contact Name</label>
+                        <input type="text" id="emergencyName" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="emergencyRelation">Relationship to Patient</label>
+                        <input type="text" id="emergencyRelation" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="emergencyNumber">Emergency Contact Number</label>
+                        <input type="tel" id="emergencyNumber" class="form-control">
+                      </div>
+                    </div>
+
+                    <!-- Insurance & Billing Details -->
+                    <h6>Insurance & Billing Details</h6>
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="insuranceProvider">Insurance Provider Name</label>
+                        <input type="text" id="insuranceProvider" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="policyNumber">Policy Number</label>
+                        <input type="text" id="policyNumber" class="form-control">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="paymentPreference">Payment Preferences</label>
+                        <select id="paymentPreference" class="form-control">
+                          <option value="">Select Preference</option>
+                          <option value="Cash">Cash</option>
+                          <option value="Card">Card</option>
+                          <option value="Insurance">Insurance</option>
+                        </select>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" onclick="savePatient()">Save Patient</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Medical Information -->
-          <h6>Medical Information</h6>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="patientBloodGroup">Blood Group</label>
-              <select id="patientBloodGroup" class="form-control">
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-            </div>
-            <div class="col-md-8 mb-3">
-              <label for="patientAllergies">Known Allergies</label>
-              <textarea id="patientAllergies" class="form-control"></textarea>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientMedications">Current Medications</label>
-              <textarea id="patientMedications" class="form-control"></textarea>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientPastHistory">Past Medical History</label>
-              <textarea id="patientPastHistory" class="form-control"></textarea>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="patientNotes">Specific Notes</label>
-              <textarea id="patientNotes" class="form-control"></textarea>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="patientPrimaryDoctor">Primary Doctor Assigned</label>
-              <select id="patientPrimaryDoctor" class="form-control">
-                <option value="" disabled selected>Select a doctor</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Emergency Contact -->
-          <h6>Emergency Contact</h6>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="emergencyName">Emergency Contact Name</label>
-              <input type="text" id="emergencyName" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="emergencyRelation">Relationship to Patient</label>
-              <input type="text" id="emergencyRelation" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="emergencyNumber">Emergency Contact Number</label>
-              <input type="tel" id="emergencyNumber" class="form-control">
-            </div>
-          </div>
-
-          <!-- Insurance & Billing Details -->
-          <h6>Insurance & Billing Details</h6>
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="insuranceProvider">Insurance Provider Name</label>
-              <input type="text" id="insuranceProvider" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="policyNumber">Policy Number</label>
-              <input type="text" id="policyNumber" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="paymentPreference">Payment Preferences</label>
-              <select id="paymentPreference" class="form-control">
-                <option value="">Select Preference</option>
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="Insurance">Insurance</option>
-              </select>
+          <!-- Appointment Form -->
+          <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title m-0">Create New Appointment</h5>
+                <button type="button" class="btn btn-outline-primary" onclick="$('#createPatientModal').modal('show')">Add Patient</button>
+              </div>
+              <form id="appointmentForm">
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="patientID">Patient ID <span class="text-danger">*</span></label>
+                    <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" class="form-control" readonly>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="contactNumber">Contact Number</label>
+                    <input type="tel" id="contactNumber" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="date" id="dateOfBirth" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" class="form-control" readonly>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="appointmentDate">Appointment Date <span class="text-danger">*</span></label>
+                    <input type="datetime-local" id="appointmentDate" class="form-control" required>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="doctor">Doctor <span class="text-danger">*</span></label>
+                    <select id="doctor" class="form-control" required>
+                      <option value="" disabled selected>Select a doctor</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="notes">Notes</label>
+                    <input type="text" id="notes" class="form-control">
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="currentIllness">Current Illness</label>
+                    <input type="text" id="currentIllness" class="form-control">
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button type="button" class="btn btn-success" onclick="addAppointment()">Next</button>
+                  <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
+                </div>
+              </form>
             </div>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="savePatient()">Save Patient</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- Appointment Form -->
-<div id="appointmentFormContainer" class="card mt-3" style="display: none;">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="card-title m-0">Create New Appointment</h5>
-      <button type="button" class="btn btn-outline-primary" onclick="$('#createPatientModal').modal('show')">Add Patient</button>
-    </div>
-    <form id="appointmentForm">
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label for="patientID">Patient ID <span class="text-danger">*</span></label>
-          <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label for="firstName">First Name</label>
-          <input type="text" id="firstName" class="form-control" readonly>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label for="lastName">Last Name</label>
-          <input type="text" id="lastName" class="form-control" readonly>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label for="contactNumber">Contact Number</label>
-          <input type="tel" id="contactNumber" class="form-control" readonly>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label for="dateOfBirth">Date of Birth</label>
-          <input type="date" id="dateOfBirth" class="form-control" readonly>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label for="age">Age</label>
-          <input type="number" id="age" class="form-control" readonly>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label for="appointmentDate">Appointment Date <span class="text-danger">*</span></label>
-          <input type="datetime-local" id="appointmentDate" class="form-control" required>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label for="doctor">Doctor <span class="text-danger">*</span></label>
-          <select id="doctor" class="form-control" required>
-            <option value="" disabled selected>Select a doctor</option>
-          </select>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label for="notes">Notes</label>
-          <input type="text" id="notes" class="form-control">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label for="currentIllness">Current Illness</label>
-          <input type="text" id="currentIllness" class="form-control">
-        </div>
-      </div>
-      <div class="mt-3">
-        <button type="button" class="btn btn-success" onclick="addAppointment()">Next</button>
-        <button type="button" class="btn btn-danger" onclick="hideAppointmentForm()">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
 
           <!-- Vitals Modal -->
           <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
@@ -799,39 +798,36 @@
               </div>
             </div>
           </div>
+
+          <!-- Patient ID Popup Modal -->
+          <div class="modal fade" id="patientIdPopupModal" tabindex="-1" aria-labelledby="patientIdPopupModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="patientIdPopupModalLabel">Patient Created</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p>Patient has been successfully created!</p>
+                  <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="newPatientIdInput" readonly>
+                    <button class="btn btn-outline-secondary" type="button" id="copyPatientIdBtn">Copy</button>
+                  </div>
+                  <p class="text-success" id="copySuccessMsg" style="display: none;">Patient ID copied to clipboard!</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" id="makeAppointmentBtn">Make Appointment</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-
-        <!-- Patient ID Popup Modal -->
-<div class="modal fade" id="patientIdPopupModal" tabindex="-1" aria-labelledby="patientIdPopupModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="patientIdPopupModalLabel">Patient Created</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p>Patient has been successfully created!</p>
-        <div class="input-group mb-3">
-          <input type="text" class="form-control" id="newPatientIdInput" readonly>
-          <button class="btn btn-outline-secondary" type="button" id="copyPatientIdBtn">Copy</button>
-        </div>
-        <p class="text-success" id="copySuccessMsg" style="display: none;">Patient ID copied to clipboard!</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="makeAppointmentBtn">Make Appointment</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 
         <!-- Footer -->
         <footer class="footer">
           <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="" target="_blank">Kerala. All rights reserved.</a></span>
+            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2025 <a href="#" target="_blank">Kerala. All rights reserved.</a></span>
             <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Doctors Dashboard <i class="mdi mdi-heart text-danger"></i></span>
           </div>
         </footer>
@@ -841,68 +837,55 @@
 
   <!-- Scripts -->
   <script>
-
-
     $(document).ready(function() {
-      // Show appointment form
+      // Event handlers for buttons
       $(".btn-primary.btn-sm.mb-3").on("click", function() {
         if ($(this).text() === "Add Appointment") {
-          console.log("Add Appointment clicked");
+          console.log("Add Appointment button clicked");
           showAppointmentForm();
         }
       });
-    
-      // Show patient modal
+
       $("#addPatientBtn").on("click", function() {
-        console.log("Add Patient clicked");
+        console.log("Add Patient button clicked");
         $("#createPatientModal").modal("show");
+      });
+
+      // Copy Patient ID to Clipboard
+      $("#copyPatientIdBtn").on("click", function() {
+        const patientId = $("#newPatientIdInput").val();
+        navigator.clipboard.writeText(patientId).then(() => {
+          console.log("Patient ID copied to clipboard:", patientId);
+          $("#copySuccessMsg").show();
+          setTimeout(() => $("#copySuccessMsg").hide(), 2000);
+        }).catch(err => {
+          console.error("Failed to copy patient ID:", err);
+          showNotification("Failed to copy patient ID", "error");
+        });
       });
     });
 
-
-    // Copy Patient ID to Clipboard
-$("#copyPatientIdBtn").on("click", function() {
-  const patientId = $("#newPatientIdInput").val();
-  
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    // Modern Clipboard API
-    navigator.clipboard.writeText(patientId).then(() => {
-      $("#copySuccessMsg").show();
-      setTimeout(() => $("#copySuccessMsg").hide(), 2000);
-    }).catch(err => {
-      showNotification("Failed to copy patient ID: " + err, "error");
-    });
-  } else {
-    // Fallback to execCommand
-    try {
-      const input = $("#newPatientIdInput")[0]; // Get DOM element
-      input.select(); // Select the text
-      const success = document.execCommand("copy");
-      if (success) {
-        $("#copySuccessMsg").show();
-        setTimeout(() => $("#copySuccessMsg").hide(), 2000);
-      } else {
-        showNotification("Failed to copy patient ID using fallback method.", "error");
-      }
-    } catch (err) {
-      showNotification("Clipboard access failed: " + err, "error");
-    }
-  }
-});
     // Utility Functions
     function getAuthHeaders() {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const username = sessionStorage.getItem('username') || localStorage.getItem('username');
       const csrftoken = sessionStorage.getItem('csrftoken') || localStorage.getItem('csrftoken');
-      if (token && username && csrftoken) {
-        return { 'Authorization': 'Token ' + token, 'X-CSRFToken': csrftoken, 'Username': username };
+      if (!token || !username || !csrftoken) {
+        console.warn("Missing authentication details");
+        return {};
       }
-      console.warn('Missing authentication details.');
-      return {};
+      return {
+        'Authorization': 'Token ' + token,
+        'X-CSRFToken': csrftoken,
+        'Username': username
+      };
     }
 
     function showNotification(message, type = 'success') {
-      $("#notificationMessage").text(message).removeClass("success-message error-message").addClass(type === 'success' ? "success-message" : "error-message");
+      console.log(`Showing notification: ${message} (${type})`);
+      $("#notificationMessage").text(message)
+        .removeClass("success-message error-message")
+        .addClass(type === 'success' ? "success-message" : "error-message");
       $("#notificationModal").modal("show");
     }
 
@@ -914,62 +897,69 @@ $("#copyPatientIdBtn").on("click", function() {
       const birthDate = new Date(dob);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
-      if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age--;
+      if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
       return age;
     }
 
+    // Session Management
     function checkSessionOnLoad() {
       const token = localStorage.getItem('token');
       const username = localStorage.getItem('username');
       const userType = localStorage.getItem('user_type');
-      console.log("Session data:", { token, username, userType }); // Debug log
+      console.log("Checking session:", { token, username, userType });
       if (!token || !username || !userType) {
-        console.warn('🔴 Session data missing or invalid. Redirecting...');
+        console.warn("Session data missing. Redirecting to login...");
         window.location.href = 'http://smarthospitalmaintain.com';
         return;
       }
       validateUserSession();
     }
-    
-   // Update validateUserSession to load content after success
-function validateUserSession() {
-  const headers = getAuthHeaders();
-  if (!headers['Authorization']) {
-    window.location.href = 'http://smarthospitalmaintain.com';
-    return;
-  }
-  $.ajax({
-    url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
-    type: 'GET',
-    headers: headers,
-    success: function(response) {
-      if (response.message !== 'Cookie is valid.') {
-        showNotification('Invalid session. Logging out.', 'error');
-        attemptLogout();
-      } else {
-        $("#logged_in_user_name, #logged_in_user_name_breadcrumb").text(response.name);
-        $("#timeOfDay").text(getGreetingTime());
-        // Load content only after successful validation
-        const statuses = ["Waiting", "Scheduled", "Pending", "Completed", "Canceled", "Rescheduled"];
-        statuses.forEach(fetchAppointments);
-        loadDoctors();
+
+    function validateUserSession() {
+      const headers = getAuthHeaders();
+      if (!headers['Authorization']) {
+        console.warn("No authorization token found. Redirecting...");
+        window.location.href = 'http://smarthospitalmaintain.com';
+        return;
       }
-    },
-    error: function(xhr) {
-      console.error('❌ Error validating session:', xhr.responseText);
-      attemptLogout();
+      $.ajax({
+        url: 'http://smarthospitalmaintain.com:8000/cookie/check/',
+        type: 'GET',
+        headers: headers,
+        success: function(response) {
+          console.log("Session validation response:", response);
+          if (response.message !== 'Cookie is valid.') {
+            showNotification('Invalid session. Logging out.', 'error');
+            attemptLogout();
+          } else {
+            $("#logged_in_user_name, #logged_in_user_name_breadcrumb").text(response.name);
+            $("#timeOfDay").text(getGreetingTime());
+            const statuses = ["Waiting", "Scheduled", "Pending", "Completed", "Canceled", "Rescheduled"];
+            statuses.forEach(fetchAppointments);
+            loadDoctors();
+          }
+        },
+        error: function(xhr) {
+          console.error("Session validation failed:", xhr.status, xhr.responseText);
+          attemptLogout();
+        }
+      });
     }
-  });
-}
 
     function attemptLogout() {
+      console.log("Attempting logout...");
       logoutUser();
       setTimeout(() => {
-        if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) forceLogout();
+        if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) {
+          forceLogout();
+        }
       }, 3000);
     }
 
     function forceLogout() {
+      console.log("Forcing logout...");
       sessionStorage.clear();
       localStorage.clear();
       document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -979,6 +969,7 @@ function validateUserSession() {
     function logoutUser() {
       const headers = getAuthHeaders();
       if (!headers['Authorization']) {
+        console.warn("No authorization for logout. Redirecting...");
         window.location.href = 'http://smarthospitalmaintain.com/';
         return;
       }
@@ -987,12 +978,15 @@ function validateUserSession() {
         type: 'POST',
         headers: headers,
         success: function() {
+          console.log("Logout successful");
           sessionStorage.clear();
           localStorage.clear();
           document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
           window.location.href = 'http://smarthospitalmaintain.com/';
         },
-        error: function(xhr) { console.error('Logout error:', xhr.responseText); }
+        error: function(xhr) {
+          console.error("Logout failed:", xhr.status, xhr.responseText);
+        }
       });
     }
 
@@ -1001,35 +995,35 @@ function validateUserSession() {
       return hours < 12 ? "Morning" : hours < 18 ? "Afternoon" : "Evening";
     }
 
+    // Appointment Management
     function fetchAppointments(status) {
+      console.log(`Fetching appointments for status: ${status}`);
       $.ajax({
         url: `http://smarthospitalmaintain.com:8000/appointments/list/?status=${status}`,
         type: 'GET',
         headers: getAuthHeaders(),
         success: function(response) {
-          console.log(`Appointments for ${status}:`, response); // Debug log
+          console.log(`Appointments fetched for ${status}:`, response.appointments);
           populateAppointmentsTable(status, response.appointments);
         },
         error: function(xhr) {
-          console.error(`Error fetching ${status} appointments:`, xhr.status, xhr.responseText);
-          showNotification(`Error fetching ${status} appointments: ${xhr.statusText}`, 'error');
+          console.error(`Failed to fetch ${status} appointments:`, xhr.status, xhr.responseText);
+          showNotification(`Error fetching ${status} appointments`, 'error');
         }
       });
     }
-    
-    
 
     let filteredAppointments = [];
     function populateAppointmentsTable(status, appointments) {
-      let tbodyId = `${status}-tbody`;
-      let tbody = document.getElementById(tbodyId);
+      const tbodyId = `${status}-tbody`;
+      const tbody = document.getElementById(tbodyId);
       if (!tbody) return;
       tbody.innerHTML = "";
 
       filteredAppointments = appointments;
 
       if (!document.getElementById(`${status}-select-all`)) {
-        let thead = document.createElement("thead");
+        const thead = document.createElement("thead");
         thead.innerHTML = `
           <tr>
             <th><input type="checkbox" id="${status}-select-all" onclick="toggleAll('${status}')"></th>
@@ -1052,12 +1046,12 @@ function validateUserSession() {
       }
 
       appointments.forEach((appointment, index) => {
-        let patient = appointment.patient || {};
-        let doctor = appointment.doctor || {};
-        let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
-        let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
+        const patient = appointment.patient || {};
+        const doctor = appointment.doctor || {};
+        const doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
+        const appointmentTime = new Date(appointment.appointment_date).toLocaleString();
 
-        let row = document.createElement("tr");
+        const row = document.createElement("tr");
         row.innerHTML = `
           <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
           <td>${index + 1}</td>
@@ -1077,80 +1071,74 @@ function validateUserSession() {
         tbody.appendChild(row);
       });
 
-      filterTable(); // Apply filter after populating
+      filterTable();
     }
-// Function to toggle all checkboxes when "Select All" is clicked
-function toggleAll(status) {
-    let selectAllCheckbox = document.getElementById(`${status}-select-all`);
-    let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
-    let selectedIds = [];
-  
-    checkboxes.forEach((checkbox) => {
-        checkbox.checked = selectAllCheckbox.checked;
-        if (checkbox.checked) {
-            selectedIds.push(checkbox.value);
-        }
-    });
-  
-    updateBulkActions(status, selectedIds);
-  }
 
-  function bulkCancel() { // Remove status parameter
-    const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1).charAt(0).toUpperCase() + $("#appointmentTabs .nav-link.active").attr("href").substring(2);
-    let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-      .map(checkbox => checkbox.value);
-    console.log("bulkCancel selectedIds:", selectedIds); // Debug log
-    if (selectedIds.length === 0) {
-      showModal("No appointments selected for cancellation.");
-      return;
+    function toggleAll(status) {
+      const selectAllCheckbox = document.getElementById(`${status}-select-all`);
+      const checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+      const selectedIds = [];
+
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+        if (checkbox.checked) selectedIds.push(checkbox.value);
+      });
+
+      console.log(`Toggle all for ${status}:`, selectedIds);
+      updateBulkActions(status, selectedIds);
     }
-    cancelAppointment(selectedIds, null, status);
-  }
-  
-  // Function to update selection when individual checkboxes are clicked
-  function updateBulkSelection(status) {
-    let checkboxes = document.querySelectorAll(`.${status}-checkbox`);
-    let selectAllCheckbox = document.getElementById(`${status}-select-all`);
-  
-    let selectedIds = Array.from(checkboxes)
-        .filter(checkbox => checkbox.checked)
-        .map(checkbox => checkbox.value);
-  
-    selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
-  
-    updateBulkActions(status, selectedIds);
-  }
-  
-  function updateBulkActions(status, selectedIds) {
-    let cancelBtn = document.getElementById("cancelBtn");
-    let rescheduleBtn = document.getElementById("rescheduleBtn");
-  
-    if (!cancelBtn || !rescheduleBtn) {
-        console.warn("Bulk action buttons not found in the DOM.");
-        return; // Prevent errors if elements don't exist
+
+    function updateBulkSelection(status) {
+      const checkboxes = document.querySelectorAll(`.${status}-checkbox`);
+      const selectAllCheckbox = document.getElementById(`${status}-select-all`);
+      const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+
+      selectAllCheckbox.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
+      console.log(`Updated selection for ${status}:`, selectedIds);
+      updateBulkActions(status, selectedIds);
     }
-  
-    let shouldShow = selectedIds.length > 0;
-    cancelBtn.classList.toggle("d-none", !shouldShow);
-    rescheduleBtn.classList.toggle("d-none", !shouldShow);
-  }
-  function bulkReschedule() { // Remove status parameter
-    const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1).charAt(0).toUpperCase() + $("#appointmentTabs .nav-link.active").attr("href").substring(2);
-    let selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-      .map(checkbox => checkbox.value);
-    console.log("bulkReschedule selectedIds:", selectedIds); // Debug log
-    if (selectedIds.length === 0) {
-      showModal("No appointments selected for rescheduling.");
-      return;
+
+    function updateBulkActions(status, selectedIds) {
+      const cancelBtn = document.getElementById("cancelBtn");
+      const rescheduleBtn = document.getElementById("rescheduleBtn");
+
+      if (!cancelBtn || !rescheduleBtn) {
+        console.warn("Bulk action buttons not found");
+        return;
+      }
+
+      const shouldShow = selectedIds.length > 0;
+      cancelBtn.classList.toggle("d-none", !shouldShow);
+      rescheduleBtn.classList.toggle("d-none", !shouldShow);
     }
-    openRescheduleModal(selectedIds, null, status);
-  }
-  console.log(document.querySelectorAll(`.${status}-checkbox:checked`)); // Check if elements are found
-  console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("href"));
+
+    function bulkCancel() {
+      const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1).charAt(0).toUpperCase() + $("#appointmentTabs .nav-link.active").attr("href").substring(2);
+      const selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+      console.log("Bulk cancel selected IDs:", selectedIds);
+
+      if (selectedIds.length === 0) {
+        showNotification("No appointments selected for cancellation", "error");
+        return;
+      }
+      cancelAppointment(selectedIds, null, status);
+    }
+
+    function bulkReschedule() {
+      const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1).charAt(0).toUpperCase() + $("#appointmentTabs .nav-link.active").attr("href").substring(2);
+      const selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
+      console.log("Bulk reschedule selected IDs:", selectedIds);
+
+      if (selectedIds.length === 0) {
+        showNotification("No appointments selected for rescheduling", "error");
+        return;
+      }
+      openRescheduleModal(selectedIds, null, status);
+    }
 
     function getActionButton(status, appointment, rowIndex) {
       let buttons = "";
-      let appointmentData = encodeURIComponent(JSON.stringify(appointment));
+      const appointmentData = encodeURIComponent(JSON.stringify(appointment));
       switch (status) {
         case 'Waiting':
           buttons += `<button class="btn btn-primary btn-sm" onclick='openEditModal("${appointmentData}", ${rowIndex})'>Edit</button> `;
@@ -1184,61 +1172,50 @@ function toggleAll(status) {
       }
       return buttons;
     }
-    // With this:
-function showModal(message, type) {
-  $("#notificationMessage").text(message)
-    .removeClass("success-message error-message")
-    .addClass(type === 'success' ? "success-message" : "error-message");
-  $("#notificationModal").modal("show");
-}
 
     // Form Handling
-   // Modified appointment form visibility functions
-    // Event listener for "Make Appointment" button in patient ID popup modal
     $("#makeAppointmentBtn").on("click", function() {
-      const patientId = $("#newPatientIdInput").val().trim(); // Get the patient ID
+      const patientId = $("#newPatientIdInput").val().trim();
+      console.log("Make appointment with patient ID:", patientId);
       if (!patientId) {
-        showNotification("Patient ID is missing!", "error");
+        showNotification("Patient ID is missing", "error");
         return;
       }
-    
-      // Hide all open modals
       $(".modal").modal("hide");
-    
-      // Show appointment form with pre-filled patient ID
       showAppointmentForm(patientId);
-    
-      // Optionally fetch patient details immediately
       fetchPatientDetails(patientId);
     });
-    
-       // Modified appointment form visibility functions
-    // Modified showAppointmentForm to accept an optional patientId parameter
+
     function showAppointmentForm(patientId = null) {
+      console.log("Showing appointment form with patient ID:", patientId);
       $("#appointmentFormContainer").show();
-      $(".tab-pane").removeClass("show active"); // Hide all tab contents
-      $("#appointmentTabs .nav-link").removeClass("active"); // Remove active tab highlighting
-    
-      // Clear the form and reset validation
+      $(".tab-pane").removeClass("show active");
+      $("#appointmentTabs .nav-link").removeClass("active");
       $("#appointmentForm")[0].reset();
       $("#appointmentForm .form-control").removeClass("is-invalid");
-    
-      // Pre-fill patient ID if provided
       if (patientId) {
         $("#patientID").val(patientId);
-        // Trigger blur event to fetch patient details (if the logic is in place)
         $("#patientID").trigger("blur");
       }
     }
-    
-    // Function to fetch patient details (already in your code, included here for completeness)
+
+    function hideAppointmentForm() {
+      console.log("Hiding appointment form");
+      $("#appointmentFormContainer").hide();
+      $("#appointmentForm")[0].reset();
+      const activeTab = localStorage.getItem("activeTab") || "#waiting";
+      $(`#appointmentTabs a[href="${activeTab}"]`).tab("show");
+    }
+
     function fetchPatientDetails(patientId) {
+      console.log("Fetching patient details for ID:", patientId);
       if (patientId) {
         $.ajax({
           url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
           type: "GET",
           headers: getAuthHeaders(),
           success: function(response) {
+            console.log("Patient details fetched:", response);
             if (response.patient) {
               $("#firstName").val(response.patient.first_name || "");
               $("#lastName").val(response.patient.last_name || "");
@@ -1246,160 +1223,134 @@ function showModal(message, type) {
               $("#dateOfBirth").val(response.patient.date_of_birth || "");
               $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
             } else {
-              showNotification("Patient not found.", "error");
+              showNotification("Patient not found", "error");
               $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
             }
           },
           error: function(xhr) {
-            showNotification("Failed to fetch patient details.", "error");
+            console.error("Failed to fetch patient details:", xhr.status, xhr.responseText);
+            showNotification("Failed to fetch patient details", "error");
             $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
           }
         });
       }
     }
 
-function hideAppointmentForm() {
-  $("#appointmentFormContainer").hide();
-  $("#appointmentForm")[0].reset();
-  // Restore the previously active tab
-  var activeTab = localStorage.getItem("activeTab") || "#waiting";
-  $(`#appointmentTabs a[href="${activeTab}"]`).tab("show");
-}
-
-let doctorMap = {};
-function loadDoctors(selectedId = null) {
-  $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function(response) {
-      console.log("Doctors response:", response);
-      $("#doctor, #editDoctor, #patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
-      response.doctors.forEach(doctor => {
-        doctorMap[doctor.id] = doctor;
-        let option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
-        $("#doctor, #editDoctor, #patientPrimaryDoctor").append(option);
+    let doctorMap = {};
+    function loadDoctors(selectedId = null) {
+      console.log("Loading doctors...");
+      $.ajax({
+        url: "http://smarthospitalmaintain.com:8000/appointments/doctors/list/",
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function(response) {
+          console.log("Doctors loaded:", response.doctors);
+          $("#doctor, #editDoctor, #patientPrimaryDoctor").empty().append('<option value="" disabled selected>Select a doctor</option>');
+          response.doctors.forEach(doctor => {
+            doctorMap[doctor.id] = doctor;
+            const option = `<option value="${doctor.id}">Dr. ${doctor.first_name} ${doctor.last_name} - ${doctor.specialization}</option>`;
+            $("#doctor, #editDoctor, #patientPrimaryDoctor").append(option);
+          });
+          if (selectedId) $("#editDoctor").val(selectedId);
+        },
+        error: function(xhr) {
+          console.error("Failed to load doctors:", xhr.status, xhr.responseText);
+          showNotification("Failed to load doctors list", "error");
+        }
       });
-      if (selectedId) $("#editDoctor").val(selectedId);
-    },
-    error: function(xhr) {
-      console.error("❌ Error fetching doctors:", xhr.status, xhr.responseText);
-      showNotification("Failed to load doctors list.", 'error');
     }
-  });
-}
 
-function addAppointment() {
-  const patientId = $("#patientID").val().trim();
-  const doctorId = $("#doctor").val();
-  const appointmentDate = $("#appointmentDate").val();
-  const notes = $("#notes").val().trim();
-  const isEmergency = $("#isEmergency")?.is(":checked") || false;
+    function addAppointment() {
+      const patientId = $("#patientID").val().trim();
+      const doctorId = $("#doctor").val();
+      const appointmentDate = $("#appointmentDate").val();
+      const notes = $("#notes").val().trim();
+      const isEmergency = $("#isEmergency")?.is(":checked") || false;
 
-  // Clear previous validation states
-  $(".form-control").removeClass("is-invalid");
-  let missingFields = [];
-  if (!patientId) missingFields.push("Patient ID");
-  if (!doctorId) missingFields.push("Doctor");
-  if (!appointmentDate) missingFields.push("Appointment Date");
+      console.log("Adding appointment with data:", { patientId, doctorId, appointmentDate, notes, isEmergency });
 
-  if (missingFields.length > 0) {
-    missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
-    showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
-    return;
-  }
+      $(".form-control").removeClass("is-invalid");
+      let missingFields = [];
+      if (!patientId) missingFields.push("Patient ID");
+      if (!doctorId) missingFields.push("Doctor");
+      if (!appointmentDate) missingFields.push("Appointment Date");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (new Date(appointmentDate) < today) {
-    $("#appointmentDate").addClass("is-invalid");
-    showNotification("Appointment date cannot be in the past.", "error");
-    return;
-  }
-
-  const appointmentData = {
-    patient_id: patientId,
-    doctor_id: doctorId,
-    appointment_date: appointmentDate,
-    notes: notes,
-    is_emergency: isEmergency
-  };
-
-  $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-    type: "POST",
-    headers: getAuthHeaders(),
-    data: JSON.stringify(appointmentData),
-    contentType: "application/json",
-    success: function(response) {
-      const appointmentId = response.appointment?.id;
-      if (!appointmentId) {
-        showNotification("Error: Appointment ID missing from response.", "error");
+      if (missingFields.length > 0) {
+        missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
+        showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
         return;
       }
-      hideAppointmentForm();
-      fetchAppointments("Scheduled"); // Refresh the appointment list
-      $("#vitalsModal").modal("show").data("appointmentId", appointmentId); // Open vitals modal
-      showNotification("Appointment created successfully!");
-    },
-    error: function(xhr) {
-      const errorMsg = xhr.responseJSON?.error || "Failed to create appointment.";
-      showNotification(errorMsg, "error");
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (new Date(appointmentDate) < today) {
+        $("#appointmentDate").addClass("is-invalid");
+        showNotification("Appointment date cannot be in the past", "error");
+        return;
+      }
+
+      const appointmentData = {
+        patient_id: patientId,
+        doctor_id: doctorId,
+        appointment_date: appointmentDate,
+        notes: notes,
+        is_emergency: isEmergency
+      };
+
+      $.ajax({
+        url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+        type: "POST",
+        headers: getAuthHeaders(),
+        data: JSON.stringify(appointmentData),
+        contentType: "application/json",
+        success: function(response) {
+          console.log("Appointment created:", response);
+          const appointmentId = response.appointment?.id;
+          if (!appointmentId) {
+            showNotification("Error: Appointment ID missing from response", "error");
+            return;
+          }
+          hideAppointmentForm();
+          fetchAppointments("Scheduled");
+          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          showNotification("Appointment created successfully");
+        },
+        error: function(xhr) {
+          console.error("Failed to create appointment:", xhr.status, xhr.responseText);
+          const errorMsg = xhr.responseJSON?.error || "Failed to create appointment";
+          showNotification(errorMsg, "error");
+        }
+      });
     }
-  });
-}
 
-// Helper function to calculate age (unchanged)
-function calculateAge(dob) {
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-}
-    let currentAppointment = null; // Global variable to store the current appointment
+    let currentAppointment = null;
+    function openEditModal(appointmentData, rowIndex) {
+      currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
+      console.log("Opening edit modal for appointment:", currentAppointment);
 
-// Updated openEditModal with age calculation
-function openEditModal(appointmentData, rowIndex) {
-  currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
-  
-  $("#editFirstName").val(currentAppointment.patient?.first_name || "");
-  $("#editLastName").val(currentAppointment.patient?.last_name || "");
-  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-  $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-  
-  // Calculate and update age
-  const dob = currentAppointment.patient?.date_of_birth;
-  if (dob) {
-      const calculatedAge = calculateAge(dob);
-      $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
-  } else {
-      $("#editAge").val("");
-  }
-  
-  $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-  $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
-  $("#editAppointmentStatus").val(currentAppointment.status || "");
-  $("#editNotes").val(currentAppointment.notes || "");
-  $("#editAppointmentID").val(currentAppointment.id);
-  $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
+      $("#editFirstName").val(currentAppointment.patient?.first_name || "");
+      $("#editLastName").val(currentAppointment.patient?.last_name || "");
+      $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
+      $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
+      $("#editAge").val(currentAppointment.patient?.date_of_birth ? calculateAge(currentAppointment.patient.date_of_birth) : "");
+      $("#editCurrentIllness").val(currentAppointment.current_medications || "");
+      $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
+      $("#editAppointmentStatus").val(currentAppointment.status || "");
+      $("#editNotes").val(currentAppointment.notes || "");
+      $("#editAppointmentID").val(currentAppointment.id);
+      $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
 
-  // Make fields read-only
-  $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
-  $("#editAge").prop("readonly", true); // Age should also be readonly since it's calculated
-  $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+      $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth, #editAge").prop("readonly", true);
+      $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
-  let previousDoctorId = currentAppointment.doctor?.id || "";
-  loadDoctors(previousDoctorId);
+      const previousDoctorId = currentAppointment.doctor?.id || "";
+      loadDoctors(previousDoctorId);
 
-  $("#editAppointmentModal").modal("show");
-}
+      $("#editAppointmentModal").modal("show");
+    }
 
     function updateAppointment() {
-      let updatedAppointment = {
+      const updatedAppointment = {
         id: $("#editAppointmentID").val(),
         patient_id: $("#editPatientID").val(),
         date_of_birth: $("#editDateOfBirth").val(),
@@ -1407,171 +1358,149 @@ function openEditModal(appointmentData, rowIndex) {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: $("#editAppointmentDate").val() // Add the appointment date
+        appointment_date: $("#editAppointmentDate").val()
       };
-    
-      // Log the data being sent to the backend
-      console.log("Data being sent to backend:", JSON.stringify(updatedAppointment, null, 2));
-    
+
+      console.log("Updating appointment with data:", updatedAppointment);
+
       fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(updatedAppointment)
       })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log("Response from backend:", data); // Log the response
-        showNotification("Appointment updated successfully!");
-        $("#editAppointmentModal").modal("hide");
-        location.reload();
-      })
-      .catch(error => {
-        console.error("Error updating appointment:", error); // Log any errors
-        showNotification("Failed to update appointment: " + (error.detail || "Server error"), 'error');
-      });
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to update");
+          return response.json();
+        })
+        .then(data => {
+          console.log("Appointment updated:", data);
+          showNotification("Appointment updated successfully");
+          $("#editAppointmentModal").modal("hide");
+          location.reload();
+        })
+        .catch(error => {
+          console.error("Update appointment failed:", error);
+          showNotification("Failed to update appointment", "error");
+        });
     }
 
- // Bulk Cancel Action
-function cancelAppointments() {
-  const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
-  const selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
-  if (selectedIds.length === 0) {
-    showNotification("No appointments selected.", 'error');
-    return;
-  }
-  cancelAppointment(null, null, status, selectedIds); // Pass selectedIds explicitly
-}
+    function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
+      const selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds];
+      console.log("Canceling appointments:", selectedIds);
 
-  // Cancel Appointment (Updated to accept selectedIds)
-// Cancel Appointment (Updated to accept selectedIds)
-function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
-  let selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds]; // Handle single or bulk IDs
-
-  if (selectedIds.length === 0 || !selectedIds[0]) {
-    showModal("No appointments selected.");
-    return;
-  }
-
-  if (!confirm(`Are you sure you want to cancel ${selectedIds.length} appointment(s)?`)) return;
-
-  fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify({ appointment_ids: selectedIds, status: "Canceled" })
-  })
-    .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-    .then(data => {
-      showModal(`Successfully canceled ${selectedIds.length} appointment(s).`);
-      location.reload();
-      fetchAppointments(status || "Canceled");
-    })
-    .catch(error => showModal("Failed to cancel: " + (error.detail || "Server Fetch Error")));
-}
-
-   // Bulk Reschedule Action
-function rescheduleAppointments() {
-  const status = $("#appointmentTabs .nav-link.active").attr("href").substring(1);
-  const selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`)).map(cb => cb.value);
-  if (selectedIds.length === 0) {
-    showNotification("No appointments selected.", 'error');
-    return;
-  }
-  openRescheduleModal(null, status, selectedIds); // Pass selectedIds explicitly
-}
-
-   // Open Reschedule Modal (Updated to accept selectedIds)
-   function openRescheduleModal(appointmentIds = null, date = null, status = null) {
-    let selectedIds = [];
-  
-    if (Array.isArray(appointmentIds)) {
-      selectedIds = appointmentIds; // Use passed IDs for bulk case
-    } else if (appointmentIds) {
-      selectedIds = [appointmentIds]; // Single appointment case
-    } else if (status) {
-      // Fallback to collecting IDs if none provided (for backward compatibility)
-      selectedIds = Array.from(document.querySelectorAll(`.${status}-checkbox:checked`))
-        .map(cb => cb.value);
-    }
-  
-    if (selectedIds.length === 0) {
-      showModal("No appointments selected.");
-      return;
-    }
-  
-    $("#rescheduleAppointmentID").val(selectedIds.join(","));
-    $("#newAppointmentDate").val(date || "");
-    $("#rescheduleAppointmentModal").modal("show");
-  }
-
-    // Reschedule Appointment (No change needed here, but included for completeness)
-    function rescheduleAppointment() {
-      let appointmentIds = $("#rescheduleAppointmentID").val().split(",");
-      let newDate = $("#newAppointmentDate").val().trim();
-      if (!newDate) {
-        showModal("Please select a new date and time.");
+      if (selectedIds.length === 0 || !selectedIds[0]) {
+        showNotification("No appointments selected", "error");
         return;
       }
-    
+
+      if (!confirm(`Are you sure you want to cancel ${selectedIds.length} appointment(s)?`)) return;
+
+      fetch("http://smarthospitalmaintain.com:8000/appointments/cancel/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ appointment_ids: selectedIds, status: "Canceled" })
+      })
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to cancel");
+          return response.json();
+        })
+        .then(data => {
+          console.log("Appointments canceled:", data);
+          showNotification(`Successfully canceled ${selectedIds.length} appointment(s)`);
+          location.reload();
+          fetchAppointments(status || "Canceled");
+        })
+        .catch(error => {
+          console.error("Cancel failed:", error);
+          showNotification("Failed to cancel appointments", "error");
+        });
+    }
+
+    function openRescheduleModal(appointmentIds = null, date = null, status = null) {
+      const selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds];
+      console.log("Opening reschedule modal for IDs:", selectedIds);
+
+      if (selectedIds.length === 0) {
+        showNotification("No appointments selected", "error");
+        return;
+      }
+
+      $("#rescheduleAppointmentID").val(selectedIds.join(","));
+      $("#newAppointmentDate").val(date || "");
+      $("#rescheduleAppointmentModal").modal("show");
+    }
+
+    function rescheduleAppointment() {
+      const appointmentIds = $("#rescheduleAppointmentID").val().split(",");
+      const newDate = $("#newAppointmentDate").val().trim();
+      console.log("Rescheduling appointments:", { appointmentIds, newDate });
+
+      if (!newDate) {
+        showNotification("Please select a new date and time", "error");
+        return;
+      }
+
       fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
       })
-        .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to reschedule");
+          return response.json();
+        })
         .then(data => {
-          showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`);
+          console.log("Appointments rescheduled:", data);
+          showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s)`);
           $("#rescheduleAppointmentModal").modal("hide");
           fetchAppointments("Rescheduled");
-          location.reload()
+          location.reload();
         })
-        .catch(error => showModal("Failed to reschedule: " + (error.detail || "Server Fetch Error")));
+        .catch(error => {
+          console.error("Reschedule failed:", error);
+          showNotification("Failed to reschedule appointments", "error");
+        });
     }
 
-  
+    // Search Filter Logic
+    function filterTable() {
+      const patientId = $("#searchPatientId").val().toLowerCase().trim();
+      const name = $("#searchName").val().toLowerCase().trim();
+      const mobile = $("#searchMobile").val().trim();
+      const dob = $("#searchDob").val();
+      const date = $("#searchDate").val();
 
-  // Search Filter Logic
-function filterTable() {
-  const patientId = $("#searchPatientId").val().toLowerCase().trim();
-  const name = $("#searchName").val().toLowerCase().trim();
-  const mobile = $("#searchMobile").val().trim();
-  const dob = $("#searchDob").val();
-  const date = $("#searchDate").val();
+      console.log("Filtering table with criteria:", { patientId, name, mobile, dob, date });
 
-  $(".tab-pane tbody tr").each(function() {
-    const row = $(this);
-    const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase().trim();
-    const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
-    const rowMobile = row.find("td:nth-child(6)").text().trim(); // Mobile number is in column 6
-    const rowDob = row.find("td:nth-child(5)")?.text() || ""; // Assuming DOB might not be displayed; adjust if present
-    const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim(); // Extract date part (e.g., "3/7/2025")
+      $(".tab-pane tbody tr").each(function() {
+        const row = $(this);
+        const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase().trim();
+        const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
+        const rowMobile = row.find("td:nth-child(6)").text().trim();
+        const rowDob = row.find("td:nth-child(5)")?.text() || "";
+        const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim();
 
-    // Convert rowDate to YYYY-MM-DD format for comparison
-    let formattedRowDate = "";
-    if (rowDate) {
-      const dateParts = rowDate.split("/");
-      if (dateParts.length === 3) {
-        formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
-      }
+        let formattedRowDate = "";
+        if (rowDate) {
+          const dateParts = rowDate.split("/");
+          if (dateParts.length === 3) {
+            formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
+          }
+        }
+
+        const matches = (!patientId || rowPatientId.includes(patientId)) &&
+                       (!name || rowName.includes(name)) &&
+                       (!mobile || rowMobile.includes(mobile)) &&
+                       (!dob || rowDob.includes(dob)) &&
+                       (!date || formattedRowDate === date);
+
+        row.toggle(matches);
+      });
     }
 
-    const matches = (!patientId || rowPatientId.includes(patientId)) &&
-                   (!name || rowName.includes(name)) &&
-                   (!mobile || rowMobile.includes(mobile)) &&
-                   (!dob || rowDob.includes(dob)) &&
-                   (!date || formattedRowDate === date);
+    $("#searchPatientId, #searchName, #searchMobile, #searchDob, #searchDate").on("input change", filterTable);
 
-    row.toggle(matches);
-  });
-}
-
-// Attach event listeners to search inputs
-$("#searchPatientId, #searchName, #searchMobile, #searchDob, #searchDate").on("input change", filterTable);
-
+    // Initialization
     document.addEventListener("DOMContentLoaded", function() {
       ["#contactNumber", "#editContactNumber"].forEach(selector => {
         const input = document.querySelector(selector);
@@ -1581,70 +1510,60 @@ $("#searchPatientId, #searchName, #searchMobile, #searchDob, #searchDate").on("i
             preferredCountries: ["in", "us", "gb", "ke", "ng"],
             separateDialCode: true
           });
-          input.addEventListener("blur", () => console.log(`Full Phone Number (${selector}):`, iti.getNumber()));
+          input.addEventListener("blur", () => console.log(`Phone number (${selector}):`, iti.getNumber()));
         }
       });
-    
+
       $("#dateOfBirth").attr("max", new Date().toISOString().split("T")[0]);
-      let now = new Date();
-      let formattedNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const now = new Date();
+      const formattedNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       $("#appointmentDate").attr("min", formattedNow);
-    
+
       $("#dateOfBirth, #editDateOfBirth").on("change", function() {
-        const dob = new Date(this.value);
-        const today = new Date();
-        let age = today.getFullYear() - dob.getFullYear();
-        if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+        const age = calculateAge(this.value);
         $(this.id === "dateOfBirth" ? "#age" : "#editAge").val(age >= 0 ? age : "");
       });
-    
+
       $("#appointmentTabs a").on("shown.bs.tab", function(e) {
         localStorage.setItem("activeTab", $(e.target).attr("href"));
       });
-      var activeTab = localStorage.getItem("activeTab");
+      const activeTab = localStorage.getItem("activeTab");
       if (activeTab) $("#appointmentTabs a[href='" + activeTab + "']").tab("show");
-    
+
       $("#logoutButton, #logoutDropdown").on("click", function(e) {
         e.preventDefault();
         logoutUser();
       });
-    
-      // Move fetchAppointments and loadDoctors to validateUserSession success callback
+
       checkSessionOnLoad();
     });
 
-  
-// Age calculation for patient modal
-$("#patientDob").on("change", function() {
-  const dob = new Date(this.value);
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
-  $("#patientAge").val(age >= 0 ? age : "");
-});
+    // Patient Management
+    $("#patientDob").on("change", function() {
+      const age = calculateAge(this.value);
+      $("#patientAge").val(age >= 0 ? age : "");
+    });
 
-
-// Save patient
-function savePatient() {
-  const patientData = {
-    first_name: $("#patientFirstName").val().trim(),
-    last_name: $("#patientLastName").val().trim(),
-    gender: $("#patientGender").val(),
-    date_of_birth: $("#patientDob").val(),
-    father_name: $("#patientFatherName").val().trim(),
-    address: $("#patientAddress").val().trim() || null,
-    city: $("#patientCity").val().trim() || null,
-    pincode: $("#patientPincode").val() || null,
-    email: $("#patientEmail").val().trim() || null,
-    mobile_number: $("#patientMobile").val().trim(),
-    alternate_mobile_number: $("#patientAltMobile").val().trim() || null,
-    aadhar_number: $("#patientAadhar").val().trim() || null,
-    blood_group: $("#patientBloodGroup").val() || null,
-    known_allergies: $("#patientAllergies").val().trim() || null,
-    current_medications: $("#patientMedications").val().trim() || null,
-    past_medical_history: $("#patientPastHistory").val().trim() || null,
-    specific_notes: $("#patientNotes").val().trim() || null,
-    primary_doctor: $("#patientPrimaryDoctor").val() || null,
+    function savePatient() {
+      const patientData = {
+        first_name: $("#patientFirstName").val().trim(),
+        last_name: $("#patientLastName").val().trim(),
+        gender: $("#patientGender").val(),
+        date_of_birth: $("#patientDob").val(),
+        father_name: $("#patientFatherName").val().trim(),
+        address: $("#patientAddress").val().trim() || null,
+        city: $("#patientCity").val().trim() || null,
+        pincode: $("#patientPincode").val() || null,
+        email: $("#patientEmail").val().trim() || null,
+        mobile_number: $("#patientMobile").val().trim(),
+        alternate_mobile_number: $("#patientAltMobile").val().trim() || null,
+        aadhar_number: $("#patientAadhar").val().trim() || null,
+        blood_group: $("#patientBloodGroup").val() || null,
+        known_allergies: $("#patientAllergies").val().trim() || null,
+        current_medications: $("#patientMedications").val().trim() || null,
+        past_medical_history: $("#patientPastHistory").val().trim() || null,
+        specific_notes: $("#patientNotes").val().trim() || null,
+        primary_doctor: $("#patientPrimaryDoctor").val() || null,
     emergency_contact_name: $("#emergencyName").val().trim() || null,
     emergency_contact_relationship: $("#emergencyRelation").val().trim() || null,
     emergency_contact_number: $("#emergencyNumber").val().trim() || null,

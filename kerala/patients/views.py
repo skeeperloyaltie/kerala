@@ -1,5 +1,8 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q  # Imported for Q objects used in filtering
 from appointments.models import Patient
 from .serializers import PatientSerializer
 import logging
@@ -33,8 +36,8 @@ class PatientListView(generics.ListAPIView):
         if hasattr(user, 'doctor'):  # Doctor role
             # Patients where this doctor is the primary doctor OR has appointments with them
             queryset = base_qs.filter(
-                models.Q(primary_doctor=user.doctor) |  # Primary doctor
-                models.Q(appointments__doctor=user.doctor)  # Doctor in appointments
+                Q(primary_doctor=user.doctor) |  # Primary doctor
+                Q(appointments__doctor=user.doctor)  # Doctor in appointments
             ).distinct()  # Avoid duplicates
             logger.info(f"Doctor {user.username} fetched {queryset.count()} patients.")
             return queryset
