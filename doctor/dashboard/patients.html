@@ -583,6 +583,15 @@ function showPatientModal(patientId) {
             $('#history-content').html('<p>Failed to load change history.</p>');
         }
     });
+    function formatChanges(changes) {
+        if (!changes || !changes.length) return 'N/A';
+        return changes.map(change => `${change.field}: ${change.old} → ${change.new}`).join(', ');
+    }
+    
+    function showSection(sectionId, patientId) {
+        $('.section').hide();
+        $(`#${sectionId}`).show();
+    }
 }
             // Filter Patients
             let filteredPatients = [];

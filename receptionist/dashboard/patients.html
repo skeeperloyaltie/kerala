@@ -686,6 +686,15 @@ $(document).ready(function() {
                 $('#editModal').modal('show');
             }
 
+            function formatChanges(changes) {
+                if (!changes || !changes.length) return 'N/A';
+                return changes.map(change => `${change.field}: ${change.old} → ${change.new}`).join(', ');
+            }
+            
+            function showSection(sectionId, patientId) {
+                $('.section').hide();
+                $(`#${sectionId}`).show();
+            }
             // Cancel Appointment
             function cancelAppointment(id) {
                 Swal.fire({
