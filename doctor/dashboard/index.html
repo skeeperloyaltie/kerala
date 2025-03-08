@@ -512,7 +512,7 @@
                 </div>
                 <div class="col-md-4 mb-3">
                   <label for="patientAltMobile">Alternate Mobile Number</label>
-                  <input type="tel" id="patientAltMobile" class="form-control">
+                  <input type="tel" id="patientAltMobile" class="form-control" maxlength="10" pattern="\d{10}">
                 </div>
                 <div class="col-md-4 mb-3">
                   <label for="patientAadhar">Aadhar Number</label>
@@ -948,7 +948,7 @@
       modal.style.display = "block";
     }
 
-    closeBtn.onclick = () => modal.style.display = "none";
+    //closeBtn.onclick = () => modal.style.display = "none";
     window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
     $(document).ready(function() {
       // Event handlers for buttons
@@ -1652,10 +1652,10 @@
     });
 
     // Patient Management
-    $("#patientDob").on("change", function() {
-      const age = calculateAge(this.value);
-      $("#patientAge").val(age >= 0 ? age : "");
-    });
+    //$("#patientDob").on("change", function() {
+      //const age = calculateAge(this.value);
+      //$("#patientAge").val(age >= 0 ? age : "");
+    //});
 
     function savePatient() {
       const patientData = {
@@ -1698,27 +1698,27 @@
       };
       let missingFields = Object.keys(requiredFields).filter(key => !requiredFields[key]);
       if (missingFields.length > 0) {
-        showModal(`Please fill in: ${missingFields.join(", ")}`);
+        showNotification(`Please fill in: ${missingFields.join(", ")}`);
         return;
       }
     
       if (patientData.aadhar_number && !/^\d{12}$/.test(patientData.aadhar_number)) {
-        showModal("Aadhar number must be exactly 12 digits.");
+        showNotification("Aadhar number must be exactly 12 digits.");
         return;
       }
     
       if (!/^\d{10}$/.test(patientData.mobile_number)) {
-        showModal("Mobile number must be exactly 10 digits.");
+        showNotification("Mobile number must be exactly 10 digits.");
         return;
       }
     
       if (patientData.alternate_mobile_number && !/^\d{10}$/.test(patientData.alternate_mobile_number)) {
-        showModal("Alternate mobile number must be exactly 10 digits.");
+        showNotification("Alternate mobile number must be exactly 10 digits.");
         return;
       }
     
       if (patientData.emergency_contact_number && !/^\d{10}$/.test(patientData.emergency_contact_number)) {
-        showModal("Emergency contact number must be exactly 10 digits.");
+        showNotification("Emergency contact number must be exactly 10 digits.");
         return;
       }
     
@@ -1747,6 +1747,18 @@
 $(document).ready(function() {
   const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
   let currentTabIndex = 0;
+
+  // Age calculation function
+  function calculateAge(dob) {
+    const birthDate = new Date(dob);
+    const today = new Date('2025-03-08'); // Fixed date as per your context
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : '';
+  }
 
   function updateTabButtons() {
     const $prevBtn = $('#prevTabBtn');
@@ -1790,7 +1802,6 @@ $(document).ready(function() {
       }
     }
 
-    // Add validation for other tabs if required fields are added later
     return isValid;
   }
 
@@ -1812,16 +1823,22 @@ $(document).ready(function() {
   });
 
   $('#savePatientBtn').on('click', function() {
-    savePatient(); // Call the existing savePatient function
+    savePatient(); // Assumes savePatient function exists
   });
 
-  // Reset tab state when modal opens
+  // Reset tab state and attach age calculation when modal opens
   $('#createPatientModal').on('show.bs.modal', function() {
     currentTabIndex = 0;
     $('#basic-tab').tab('show');
     updateTabButtons();
     $('#createPatientForm')[0].reset();
     $('#createPatientForm .form-control').removeClass('is-invalid');
+
+    // Attach or re-attach the age calculation event listener
+    $("#patientDob").off('change').on('change', function() {
+      const age = calculateAge(this.value);
+      $("#patientAge").val(age);
+    });
   });
 
   // Allow clicking tab headers to navigate freely
@@ -1829,12 +1846,6 @@ $(document).ready(function() {
     const targetTab = $(this).attr('href');
     currentTabIndex = tabs.indexOf(targetTab);
     updateTabButtons();
-  });
-
-  // Existing age calculation
-  $("#patientDob").on("change", function() {
-    const age = calculateAge(this.value);
-    $("#patientAge").val(age >= 0 ? age : "");
   });
 });
 $("#patientID").on("blur", function() {
