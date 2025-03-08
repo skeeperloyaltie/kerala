@@ -24,12 +24,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
   <script>
      // Basic showNotification function (if not already defined)
-     function showNotification(message, type = 'info') {
-      const bgClass = type === 'error' ? 'bg-danger' : type === 'success' ? 'bg-success' : 'bg-info';
-      const notification = $(`<div class="alert ${bgClass} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
-      $('body').append(notification);
-      setTimeout(() => notification.alert('close'), 5000);
-    }
+       // Enhanced notification function with type parameter
+function showNotification(message, type = "error", duration = 4000) {
+  $("#notificationMessage").text(message);
+  $("#customNotification")
+      .removeClass("success-message error-message")
+      .addClass(type === "success" ? "success-message" : "error-message")
+      .show()
+      .css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
+  setTimeout(() => $("#customNotification").hide(), duration);
+}
   </script>
 
   <!-- Custom Styles -->
