@@ -689,6 +689,10 @@ class SearchView(generics.ListAPIView):
                 patients = Patient.objects.filter(first_name__iexact=first_name)
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
                 appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
+            elif contact_number:
+                patients = Patient.objects.filter(mobile_number__icontains=contact_number)
+                patient_ids_from_patients = patients.values_list('patient_id', flat=True)
+                appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
             elif date_of_birth:
                 try:
                     dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
@@ -743,6 +747,41 @@ class SearchView(generics.ListAPIView):
                     doctor=user.doctor,
                     patient__patient_id__in=patient_ids_from_patients
                 ).prefetch_related('vitals')
+            elif contact_number:
+                patients = Patient.objects.filter(
+                    Q(appointments__doctor=user.doctor) & Q(mobile_number__icontains=contact_number)
+                ).distinct()
+                patient_ids_from_patients = patients.values_list('patient_id', flat=True)
+                appointments = Appointment.objects.filter(
+                    doctor=user.doctor,
+                    patient__patient_id__in=patient_ids_from_patients
+                ).prefetch_related('vitals')
+            elif date_of_birth:
+                try:
+                    dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+                    patients = Patient.objects.filter(
+                        Q(appointments__doctor=user.doctor) & Q(date_of_birth=dob)
+                    ).distinct()
+                    patient_ids_from_patients = patients.values_list('patient_id', flat=True)
+                    appointments = Appointment.objects.filter(
+                        doctor=user.doctor,
+                        patient__patient_id__in=patient_ids_from_patients
+                    ).prefetch_related('vitals')
+                except ValueError:
+                    logger.error(f"Invalid date_of_birth format: {date_of_birth}")
+                    return {"patients": [], "appointments": []}
+            elif appointment_date:
+                try:
+                    apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+                    appointments = Appointment.objects.filter(
+                        doctor=user.doctor,
+                        appointment_date__date=apt_date
+                    ).prefetch_related('vitals')
+                    patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
+                    patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
+                except ValueError:
+                    logger.error(f"Invalid appointment_date format: {appointment_date}")
+                    return {"patients": [], "appointments": []}
 
         # Compile results
         results = {
