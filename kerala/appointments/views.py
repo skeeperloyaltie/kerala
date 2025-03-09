@@ -364,7 +364,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-
 @method_decorator(csrf_exempt, name='dispatch')
 class EditAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -386,6 +385,9 @@ class EditAppointmentView(APIView):
             logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
             return Response({"error": "You can only edit your own appointments."}, status=status.HTTP_403_FORBIDDEN)
 
+        # Store original appointment_date for comparison
+        original_appointment_date = appointment.appointment_date
+
         # Process patient_id if provided
         if "patient_id" in data:
             patient = get_object_or_404(Patient, patient_id=data["patient_id"])
@@ -394,7 +396,7 @@ class EditAppointmentView(APIView):
 
         # Update patient fields if provided
         if "current_illness" in data:
-            appointment.patient.current_medications = data["current_illness"]  # Assuming current_medications, not current_illness
+            appointment.patient.current_medications = data["current_illness"]
             appointment.patient.save(update_fields=["current_medications"])
 
         # Handle appointment_date only if provided
@@ -410,8 +412,14 @@ class EditAppointmentView(APIView):
                     logger.warning(f"Attempt to set appointment {appointment_id} date in the past: {appointment_date}")
                     return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
                 
-                appointment.appointment_date = appointment_date
-                logger.info(f"Updated appointment_date for {appointment_id} to {appointment_date}")
+                # Check if the date has changed
+                if appointment_date != original_appointment_date:
+                    appointment.appointment_date = appointment_date
+                    appointment.status = "Rescheduled"  # Set status to Rescheduled if date changes
+                    logger.info(f"Updated appointment_date for {appointment_id} to {appointment_date} and status to Rescheduled")
+                else:
+                    appointment.appointment_date = appointment_date  # Update date even if unchanged, but no status change
+                    logger.info(f"appointment_date for {appointment_id} updated to {appointment_date}, no status change needed")
             except ValueError as e:
                 logger.error(f"Invalid appointment date format: {e}")
                 return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
@@ -424,9 +432,9 @@ class EditAppointmentView(APIView):
         appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user
 
-        # Handle status update
+        # Handle status update from request (only if provided and date didn’t change)
         allowed_statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"]
-        if "status" in data:
+        if "status" in data and "appointment_date" not in data:  # Only override status if date isn’t changed
             if data["status"] in allowed_statuses:
                 appointment.status = data["status"]
             else:
@@ -444,7 +452,6 @@ class EditAppointmentView(APIView):
         except Exception as e:
             logger.error(f"Error updating appointment {appointment_id}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 from django.utils.decorators import method_decorator
