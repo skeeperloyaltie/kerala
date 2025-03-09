@@ -90,8 +90,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
     doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor")
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
-    appointment_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S%z")
-    vitals = VitalsSerializer(read_only=True)  # Nested Vitals
+    appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")  # Preserve timezone info
+    vitals = VitalsSerializer(read_only=True)
 
     class Meta:
         model = Appointment
@@ -106,25 +106,19 @@ class AppointmentSerializer(serializers.ModelSerializer):
         if "appointment_date" in data:
             try:
                 appointment_date_str = data["appointment_date"]
-                if "Z" in appointment_date_str or "+" in appointment_date_str or "-" in appointment_date_str:
-                    appointment_date = datetime.fromisoformat(appointment_date_str)
-                else:
-                    appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%dT%H:%M")
-                    appointment_date = KOLKATA_TZ.localize(appointment_date)
-                data["appointment_date"] = appointment_date.astimezone(KOLKATA_TZ)
+                appointment_date = datetime.fromisoformat(appointment_date_str.replace("Z", "+00:00"))
+                # Localize only if not timezone-aware, otherwise keep as is
+                data["appointment_date"] = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date
             except ValueError:
-                raise serializers.ValidationError({"appointment_date": "Invalid format. Use 'YYYY-MM-DDTHH:MM'."})
+                raise serializers.ValidationError({"appointment_date": "Invalid format. Use 'YYYY-MM-DDTHH:MM:SS'."})
         return super().to_internal_value(data)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        # Add Illness (current_medications) from patient
         representation['illness'] = instance.patient.current_medications if instance.patient.current_medications else "None"
-        # Placeholder for Visited Time and Completion Status
-        representation['visited_time'] = None  # To be implemented later
-        representation['completion_status'] = None  # To be implemented later
+        representation['visited_time'] = None  # Placeholder
+        representation['completion_status'] = None  # Placeholder
         return representation
-
 
 
         

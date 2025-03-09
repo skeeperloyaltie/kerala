@@ -35,6 +35,21 @@ class CreatePatientView(APIView):
         logger.error(f"Patient creation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from .models import Appointment, Patient, Doctor
+from .serializers import AppointmentSerializer
+from datetime import datetime
+import pytz
+import logging
+
+logger = logging.getLogger(__name__)
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -78,6 +93,14 @@ class CreateAppointmentView(APIView):
             logger.warning(f"Duplicate appointment for {patient.patient_id} on {appointment_date}")
             return Response({"error": "An appointment for this patient at this date and time already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Update patient's current_medications if current_illness is provided
+        current_illness = data.get("current_illness", "").strip()
+        if current_illness:
+            patient.current_medications = current_illness
+            patient.save(update_fields=["current_medications"])
+            logger.info(f"Updated patient {patient.patient_id} current_medications to: {current_illness}")
+
+        # Create the appointment
         appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor,
@@ -372,14 +395,15 @@ class EditAppointmentView(APIView):
 
         # Update patient fields if provided
         if "current_illness" in data:
-            appointment.patient.current_illness = data["current_illness"]
-            appointment.patient.save()
+            appointment.patient.current_medications = data["current_illness"]  # Assuming current_medications, not current_illness
+            appointment.patient.save(update_fields=["current_medications"])
 
-        # Handle appointment_date
+        # Handle appointment_date only if provided
         if "appointment_date" in data:
             try:
                 appointment_date_str = data["appointment_date"]
                 appointment_date = datetime.fromisoformat(appointment_date_str.replace("Z", "+00:00"))
+                # Localize to Kolkata timezone only if not already timezone-aware
                 appointment_date = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date.astimezone(KOLKATA_TZ)
                 
                 now_kolkata = datetime.now(KOLKATA_TZ)
@@ -388,6 +412,7 @@ class EditAppointmentView(APIView):
                     return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
                 
                 appointment.appointment_date = appointment_date
+                logger.info(f"Updated appointment_date for {appointment_id} to {appointment_date}")
             except ValueError as e:
                 logger.error(f"Invalid appointment date format: {e}")
                 return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
@@ -473,7 +498,7 @@ class CancelAppointmentView(APIView):
             return Response({"error": "Appointment ID or list of IDs required."}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_count = 0
-        now_kolkata = datetime.now(KOLKATA_TZ)  # Use for logging or future checks if needed
+        now_kolkata = datetime.now(KOLKATA_TZ)  # Used only for logging
         for appointment in appointments:
             if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} tried to cancel an appointment they don't own.")
@@ -481,6 +506,7 @@ class CancelAppointmentView(APIView):
 
             appointment.status = data.get("status", "Canceled")
             appointment.updated_by = user
+            # No change to appointment_date; it remains as stored
             appointment.save()
             updated_count += 1
 
@@ -509,19 +535,14 @@ KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RescheduleAppointmentView(APIView):
-    """
-    Allows doctors and receptionists to reschedule single or multiple appointments.
-    Ensures the new appointment date is in the future (Kolkata timezone).
-    Invalidates search cache for affected patients.
-    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
-        new_date_str = data.get("appointment_date")  # Expecting ISO format: "YYYY-MM-DDTHH:MM:SS"
-        appointment_ids = data.get("appointment_ids")  # List of appointment IDs for bulk reschedule
-        patient_id = data.get("patient_id")  # If rescheduling all appointments of a patient
+        new_date_str = data.get("appointment_date")  # Expecting ISO format
+        appointment_ids = data.get("appointment_ids")
+        patient_id = data.get("patient_id")
 
         logger.info(f"User {user.username} attempting to reschedule appointments.")
 
@@ -533,7 +554,7 @@ class RescheduleAppointmentView(APIView):
             logger.error("Reschedule request is missing the new date.")
             return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Parse and validate appointment_date in Kolkata timezone
+        # Parse and validate new appointment_date
         try:
             new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00"))
             new_date = KOLKATA_TZ.localize(new_date) if not new_date.tzinfo else new_date.astimezone(KOLKATA_TZ)
@@ -541,7 +562,6 @@ class RescheduleAppointmentView(APIView):
             logger.error(f"Invalid date format: {new_date_str}")
             return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ensure the date is in the future
         now_kolkata = datetime.now(KOLKATA_TZ)
         if new_date <= now_kolkata:
             logger.warning(f"Attempt to reschedule to past date: {new_date}")
@@ -561,7 +581,7 @@ class RescheduleAppointmentView(APIView):
         if not appointments:
             return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Process appointment updates and collect affected patient IDs
+        # Process appointment updates
         updated_count = 0
         affected_patient_ids = set()
         for appointment in appointments:
@@ -569,6 +589,7 @@ class RescheduleAppointmentView(APIView):
                 logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
                 continue
 
+            # Update only the appointment_date to the new_date, preserving its original timezone
             appointment.appointment_date = new_date
             appointment.status = data.get("status", "Rescheduled")
             appointment.updated_by = user
@@ -579,19 +600,15 @@ class RescheduleAppointmentView(APIView):
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Invalidate cache for affected patients (workaround for LocMemCache)
+        # Invalidate cache (unchanged)
         for patient_id in affected_patient_ids:
-            # Since LocMemCache doesn't support keys(), we'll delete a known pattern
             cache_key_base = f"search_*_{patient_id}_*"
-            # For LocMemCache, we can only delete specific keys we know exist.
-            # Assuming SearchView uses a predictable cache_key pattern, delete known variations
             possible_keys = [
-                f"search_{user.id}_{patient_id}_",  # Base key without additional params
-                f"search_{user.id}_{patient_id}_{new_date.strftime('%Y-%m-%d')}",  # With date
-                # Add more patterns if SearchView uses specific suffixes
+                f"search_{user.id}_{patient_id}_",
+                f"search_{user.id}_{patient_id}_{new_date.strftime('%Y-%m-%d')}",
             ]
             for key in possible_keys:
-                if cache.get(key) is not None:  # Check if key exists before deleting
+                if cache.get(key) is not None:
                     cache.delete(key)
                     logger.info(f"Invalidated cache key: {key}")
 

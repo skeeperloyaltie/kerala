@@ -1351,7 +1351,7 @@ function validateUserSession() {
       success: function(response) {
           if (response.message !== 'Cookie is valid.') {
               console.error("Invalid session response:", response);
-              showModal("Invalid session. Logging out.", "error");
+              showNotification("Invalid session. Logging out.", "error");
               attemptLogout();
           } else {
               console.log("Session validated successfully:", response);
@@ -1873,7 +1873,7 @@ function bulkCancel() { // Remove status parameter
     .map(checkbox => checkbox.value);
   console.log("bulkCancel selectedIds:", selectedIds); // Debug log
   if (selectedIds.length === 0) {
-    showModal("No appointments selected for cancellation.");
+    showNotification("No appointments selected for cancellation.");
     return;
   }
   cancelAppointment(selectedIds, null, status);
@@ -1913,7 +1913,7 @@ function bulkReschedule() { // Remove status parameter
     .map(checkbox => checkbox.value);
   console.log("bulkReschedule selectedIds:", selectedIds); // Debug log
   if (selectedIds.length === 0) {
-    showModal("No appointments selected for rescheduling.");
+    showNotification("No appointments selected for rescheduling.");
     return;
   }
   openRescheduleModal(selectedIds, null, status);
@@ -2011,6 +2011,7 @@ function addAppointment() {
   const appointmentDate = $("#appointmentDate").val();
   const notes = $("#notes").val().trim();
   const isEmergency = $("#isEmergency")?.is(":checked") || false;
+  const currentIllness = $("#currentIllness").val().trim(); // Already captured
 
   // Clear previous validation states
   $(".form-control").removeClass("is-invalid");
@@ -2038,7 +2039,8 @@ function addAppointment() {
     doctor_id: doctorId,
     appointment_date: appointmentDate,
     notes: notes,
-    is_emergency: isEmergency
+    is_emergency: isEmergency,
+    current_illness: currentIllness // Add current_illness to the payload
   };
 
   $.ajax({
@@ -2352,7 +2354,7 @@ function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
 
   if (selectedIds.length === 0 || !selectedIds[0]) {
       console.warn("No appointments selected for cancellation");
-      showModal("No appointments selected.");
+      showNotification("No appointments selected.");
       return;
   }
 
@@ -2381,13 +2383,13 @@ function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
   })
   .then(data => {
       console.log(`Successfully canceled ${selectedIds.length} appointments:`, data);
-      showModal(`Successfully canceled ${selectedIds.length} appointment(s).`, "success");
+      showNotification(`Successfully canceled ${selectedIds.length} appointment(s).`, "success");
       fetchAppointments(status || "Canceled");
       location.reload();
   })
   .catch(error => {
       const errorMsg = getErrorMessage(error, "Failed to cancel appointments.");
-      showModal(errorMsg, "error");
+      showNotification(errorMsg, "error");
   });
 }
 
@@ -2405,7 +2407,7 @@ function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
       }
     
       if (selectedIds.length === 0) {
-        showModal("No appointments selected.");
+        showNotification("No appointments selected.");
         return;
       }
     
@@ -2420,7 +2422,7 @@ function rescheduleAppointment() {
   let newDate = $("#newAppointmentDate").val().trim();
   if (!newDate) {
       console.warn("No new date provided for rescheduling");
-      showModal("Please select a new date and time.");
+      showNotifca("Please select a new date and time.");
       return;
   }
 
@@ -2447,14 +2449,14 @@ function rescheduleAppointment() {
   })
   .then(data => {
       console.log(`Successfully rescheduled ${appointmentIds.length} appointments:`, data);
-      showModal(`Successfully rescheduled ${appointmentIds.length} appointment(s).`, "success");
+      showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s).`, "success");
       $("#rescheduleAppointmentModal").modal("hide");
       fetchAppointments("Rescheduled");
       location.reload();
   })
   .catch(error => {
       const errorMsg = getErrorMessage(error, "Failed to reschedule appointments.");
-      showModal(errorMsg, "error");
+      showNotification(errorMsg, "error");
   });
 }
 
