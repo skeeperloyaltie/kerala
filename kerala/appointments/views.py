@@ -502,7 +502,7 @@ import logging
 from .models import Appointment
 from datetime import datetime
 import pytz
-from django.core.cache import cache  # Import cache
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
@@ -554,7 +554,7 @@ class RescheduleAppointmentView(APIView):
         elif appointment_ids:
             appointments = list(Appointment.objects.filter(id__in=appointment_ids))
         elif patient_id:
-            appointments = list(Appointment.objects.filter(patient__id=patient_id))
+            appointments = list(Appointment.objects.filter(patient__patient_id=patient_id))
         else:
             return Response({"error": "Provide an appointment ID, list of IDs, or patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -579,13 +579,21 @@ class RescheduleAppointmentView(APIView):
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Invalidate cache for affected patients
+        # Invalidate cache for affected patients (workaround for LocMemCache)
         for patient_id in affected_patient_ids:
-            cache_pattern = f"search_*_{patient_id}_*"
-            cache_keys = cache.keys(cache_pattern)  # Get all matching cache keys
-            if cache_keys:
-                cache.delete_many(cache_keys)
-                logger.info(f"Invalidated cache keys for patient {patient_id}: {cache_keys}")
+            # Since LocMemCache doesn't support keys(), we'll delete a known pattern
+            cache_key_base = f"search_*_{patient_id}_*"
+            # For LocMemCache, we can only delete specific keys we know exist.
+            # Assuming SearchView uses a predictable cache_key pattern, delete known variations
+            possible_keys = [
+                f"search_{user.id}_{patient_id}_",  # Base key without additional params
+                f"search_{user.id}_{patient_id}_{new_date.strftime('%Y-%m-%d')}",  # With date
+                # Add more patterns if SearchView uses specific suffixes
+            ]
+            for key in possible_keys:
+                if cache.get(key) is not None:  # Check if key exists before deleting
+                    cache.delete(key)
+                    logger.info(f"Invalidated cache key: {key}")
 
         logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
         return Response({"message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time)."}, status=status.HTTP_200_OK)

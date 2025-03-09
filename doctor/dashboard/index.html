@@ -1695,16 +1695,17 @@ function showNotification(message, type = "error", duration = 4000) {
       //const age = calculateAge(this.value);
       //$("#patientAge").val(age >= 0 ? age : "");
     //});
-
     $(document).ready(function() {
       const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
       let currentTabIndex = 0;
     
-      // Reset form and initialize modal
+      // Reset form and initialize modal when shown
       $('#createPatientModal').on('shown.bs.modal', function() {
         $("#createPatientForm")[0].reset();
         $("#createPatientForm .form-control, #createPatientForm .form-select").removeClass('is-invalid');
-        currentTabIndex = 0;
+        currentTabIndex = 0; // Start at the first tab (Basic Information)
+        
+        // Explicitly show the Basic Information tab
         $('#basic-tab').tab('show');
         updateTabButtons();
         loadDoctorsForPatientModal(); // Assuming this function exists to populate doctors
@@ -1764,21 +1765,25 @@ function showNotification(message, type = "error", duration = 4000) {
         return isValid;
       }
     
-      // Next button
+      // Next button logic
       $('#nextTabBtn').on('click', function() {
+        console.log('Next button clicked, currentTabIndex:', currentTabIndex);
         if (validateTab(tabs[currentTabIndex])) {
           currentTabIndex++;
-          $(tabs[currentTabIndex]).tab('show');
+          const nextTabLink = $(`#patientFormTabs a[href="${tabs[currentTabIndex]}"]`);
+          nextTabLink.tab('show'); // Use Bootstrap's tab show method
           updateTabButtons();
         } else {
           showNotification('Please fill all required fields correctly.', 'error');
         }
       });
     
-      // Previous button
+      // Previous button logic
       $('#prevTabBtn').on('click', function() {
+        console.log('Previous button clicked, currentTabIndex:', currentTabIndex);
         currentTabIndex--;
-        $(tabs[currentTabIndex]).tab('show');
+        const prevTabLink = $(`#patientFormTabs a[href="${tabs[currentTabIndex]}"]`);
+        prevTabLink.tab('show'); // Use Bootstrap's tab show method
         updateTabButtons();
       });
     
@@ -1791,7 +1796,7 @@ function showNotification(message, type = "error", duration = 4000) {
         }
       });
     
-      // Allow tab navigation via clicking headers (optional)
+      // Allow tab navigation via clicking headers
       $('#patientFormTabs .nav-link').on('click', function() {
         const targetTab = $(this).attr('href');
         currentTabIndex = tabs.indexOf(targetTab);
