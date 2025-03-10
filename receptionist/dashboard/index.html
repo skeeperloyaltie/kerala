@@ -2089,98 +2089,238 @@ function calculateAge(dob) {
       if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age--;
       return age;
     }
-// Add this at the top of your script to store original values and units
+
+
+
+// Store original values and units
 const originalVitals = {};
 
-// Initialize original values when the modal opens
+// Initialize vitals modal
 $("#vitalsModal").on("show.bs.modal", function() {
-  ["modalBloodPressure", "modalTemperature", "modalHeartRate", "modalRespiratoryRate", 
-   "modalOxygenSaturation", "modalWeight", "modalHeight"].forEach(id => {
+  $("#vitalsForm")[0].reset();
+  $("#vitalsForm .form-control").removeClass("is-invalid");
+  $(".invalid-feedback").text("");
+
+  // Initialize original values and units
+  const vitalFields = [
+    "modalBloodPressure", "modalHeartRate", "modalTemperature", "modalRespiratoryRate",
+    "modalOxygenSaturation", "modalWeight", "modalHeight"
+  ];
+  vitalFields.forEach(id => {
     const input = document.getElementById(id);
     const select = document.querySelector(`.unit-select[data-input="${id}"]`);
     originalVitals[id] = {
-      value: input.value || "", // Store original input (e.g., "120/80" for BP)
-      unit: select ? (select.getAttribute("data-prev-unit") || select.options[0].value) : null // Default to first option if unset
+      value: input.value || "",
+      unit: select ? select.options[0].value : null // Default to first option
     };
+    if (select) select.setAttribute("data-prev-unit", originalVitals[id].unit);
   });
 });
 
-// Handle unit change without immediate conversion
-document.addEventListener("DOMContentLoaded", function() {
-  $(".unit-select").on("change", function() {
-    let inputId = this.dataset.input;
-    let select = this;
-    let toUnit = select.value;
+// Unit selection (no immediate conversion)
+$(".unit-select").on("change", function() {
+  const inputId = this.dataset.input;
+  const toUnit = this.value;
+  this.setAttribute("data-prev-unit", toUnit); // Track selected unit
+  console.log(`Unit for ${inputId} changed to ${toUnit}`);
+});
 
-    // Update the previous unit without converting the value
-    select.setAttribute("data-prev-unit", toUnit);
-    // Log the change for debugging
-    console.log(`Unit for ${inputId} changed to ${toUnit}`);
-  });
-
-  // Handle explicit conversion when "Convert" button is clicked
-  $(".convert-btn").on("click", function() {
-    let inputId = this.dataset.input;
-    convertMeasurement(inputId);
-  });
+// Conversion logic
+$(".convert-btn").on("click", function() {
+  const inputId = this.dataset.input;
+  convertMeasurement(inputId);
 });
 
 function convertMeasurement(inputId) {
-  let inputField = document.getElementById(inputId);
-  let select = document.querySelector(`.unit-select[data-input="${inputId}"]`);
-  let toUnit = select.value;
-  let fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
-  let currentValue = inputField.value.trim();
+  const inputField = document.getElementById(inputId);
+  const select = document.querySelector(`.unit-select[data-input="${inputId}"]`);
+  const toUnit = select.value;
+  const fromUnit = select.getAttribute("data-prev-unit") || select.options[0].value;
+  const currentValue = inputField.value.trim();
 
-  // If no value entered yet, do nothing
   if (!currentValue) {
-    console.log(`No value to convert for ${inputId}`);
+    showNotification(`Enter a value for ${inputId} before converting.`, "error");
     return;
   }
 
   let newValue;
   if (inputId === "modalBloodPressure") {
-    // Handle blood pressure (systolic/diastolic)
     const [systolic, diastolic] = currentValue.split("/").map(v => parseFloat(v.trim()));
     if (isNaN(systolic) || isNaN(diastolic)) {
       showNotification("Invalid blood pressure format. Use 'systolic/diastolic'.", "error");
+      inputField.classList.add("is-invalid");
+      document.getElementById(`${inputId}Feedback`).textContent = "Use format 'systolic/diastolic' (e.g., 120/80).";
       return;
     }
-    const convertedSystolic = convertValue(systolic, fromUnit, toUnit);
-    const convertedDiastolic = convertValue(diastolic, fromUnit, toUnit);
-    newValue = `${convertedSystolic.toFixed(2)}/${convertedDiastolic.toFixed(2)}`;
+    const convertedSystolic = convertValue(systolic, fromUnit, toUnit, inputId);
+    const convertedDiastolic = convertValue(diastolic, fromUnit, toUnit, inputId);
+    newValue = `${convertedSystolic}/${convertedDiastolic}`;
   } else {
-    // Handle single-value inputs (e.g., temperature, weight)
     const numericValue = parseFloat(currentValue);
     if (isNaN(numericValue)) {
       showNotification(`Invalid value for ${inputId}. Enter a number.`, "error");
+      inputField.classList.add("is-invalid");
+      document.getElementById(`${inputId}Feedback`).textContent = "Enter a valid number.";
       return;
     }
-    newValue = convertValue(numericValue, fromUnit, toUnit).toFixed(2);
+    newValue = convertValue(numericValue, fromUnit, toUnit, inputId);
   }
 
   inputField.value = newValue;
-  // Update the previous unit to the new unit after conversion
   select.setAttribute("data-prev-unit", toUnit);
-  console.log(`Converted ${inputId} from ${fromUnit} to ${toUnit}: ${newValue}`);
+  inputField.classList.remove("is-invalid");
+  document.getElementById(`${inputId}Feedback`).textContent = "";
 }
 
-function convertValue(value, fromUnit, toUnit) {
+function convertValue(value, fromUnit, toUnit, inputId) {
   if (fromUnit === toUnit) return value;
 
   const conversions = {
-    "cm": { "in": v => v / 2.54 },
-    "in": { "cm": v => v * 2.54 },
-    "kg": { "lbs": v => v * 2.20462 },
-    "lbs": { "kg": v => v / 2.20462 },
+    "mmHg": { "kPa": v => v * 0.1333223684 },
+    "kPa": { "mmHg": v => v / 0.1333223684 },
     "°C": { "°F": v => (v * 9/5) + 32 },
     "°F": { "°C": v => (v - 32) * 5/9 },
-    "mmHg": { "kPa": v => v * 0.133322 },
-    "kPa": { "mmHg": v => v / 0.133322 }
+    "kg": { "lbs": v => v * 2.2046226218 },
+    "lbs": { "kg": v => v / 2.2046226218 },
+    "cm": { "in": v => v / 2.54 },
+    "in": { "cm": v => v * 2.54 }
   };
 
   const conversionFunc = conversions[fromUnit]?.[toUnit];
-  return conversionFunc ? conversionFunc(value) : value;
+  if (!conversionFunc) return value;
+
+  const result = conversionFunc(value);
+  // Avoid unnecessary rounding for blood pressure to preserve precision
+  return inputId === "modalBloodPressure" ? result.toFixed(2) : result.toFixed(2);
+}
+
+// Validation function
+function validateVitals() {
+  const validations = {
+    "modalBloodPressure": {
+      validate: val => {
+        if (!val) return true; // Optional
+        const [systolic, diastolic] = val.split("/").map(v => parseFloat(v));
+        return !isNaN(systolic) && !isNaN(diastolic) && systolic >= 50 && systolic <= 250 && diastolic >= 30 && diastolic <= 150 && systolic > diastolic;
+      },
+      message: "Blood Pressure must be in 'systolic/diastolic' format (e.g., 120/80), with systolic 50-250 and diastolic 30-150 mmHg."
+    },
+    "modalHeartRate": {
+      validate: val => !val || (!isNaN(val) && val >= 30 && val <= 200),
+      message: "Heart Rate must be between 30-200 bpm."
+    },
+    "modalTemperature": {
+      validate: val => {
+        if (!val) return true; // Optional
+        const temp = parseFloat(val);
+        const unit = document.querySelector(`.unit-select[data-input="modalTemperature"]`).value;
+        return !isNaN(temp) && (
+          (unit === "°C" && temp >= 35 && temp <= 42) ||
+          (unit === "°F" && temp >= 95 && temp <= 107.6)
+        );
+      },
+      message: "Temperature must be 35-42°C or 95-107.6°F."
+    },
+    "modalRespiratoryRate": {
+      validate: val => !val || (!isNaN(val) && val >= 8 && val <= 40),
+      message: "Respiratory Rate must be between 8-40 breaths/min."
+    },
+    "modalOxygenSaturation": {
+      validate: val => !val || (!isNaN(val) && val >= 70 && val <= 100),
+      message: "Oxygen Saturation must be between 70-100%."
+    },
+    "modalWeight": {
+      validate: val => {
+        if (!val) return true; // Optional
+        const weight = parseFloat(val);
+        const unit = document.querySelector(`.unit-select[data-input="modalWeight"]`).value;
+        return !isNaN(weight) && (
+          (unit === "kg" && weight >= 2 && weight <= 300) ||
+          (unit === "lbs" && weight >= 4.4 && weight <= 661)
+        );
+      },
+      message: "Weight must be 2-300 kg or 4.4-661 lbs."
+    },
+    "modalHeight": {
+      validate: val => {
+        if (!val) return true; // Optional
+        const height = parseFloat(val);
+        const unit = document.querySelector(`.unit-select[data-input="modalHeight"]`).value;
+        return !isNaN(height) && (
+          (unit === "cm" && height >= 20 && height <= 250) ||
+          (unit === "in" && height >= 7.9 && height <= 98.4)
+        );
+      },
+      message: "Height must be 20-250 cm or 7.9-98.4 in."
+    }
+  };
+
+  let isValid = true;
+  Object.keys(validations).forEach(id => {
+    const input = document.getElementById(id);
+    const value = input.value.trim();
+    const feedback = document.getElementById(`${id}Feedback`);
+    if (!validations[id].validate(value)) {
+      input.classList.add("is-invalid");
+      feedback.textContent = validations[id].message;
+      isValid = false;
+    } else {
+      input.classList.remove("is-invalid");
+      feedback.textContent = "";
+    }
+  });
+  return isValid;
+}
+
+// Save vitals with validation
+function saveVitals() {
+  if (!validateVitals()) {
+    showNotification("Please correct the invalid fields.", "error");
+    return;
+  }
+
+  const appointmentId = $("#vitalsModal").data("appointmentId");
+  if (!appointmentId) {
+    showNotification("Appointment ID is missing.", "error");
+    return;
+  }
+
+  const vitalsData = {
+    appointment: appointmentId,
+    blood_pressure: $("#modalBloodPressure").val().trim() || null,
+    heart_rate: $("#modalHeartRate").val().trim() || null,
+    temperature: $("#modalTemperature").val().trim() || null,
+    respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
+    oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
+    weight: $("#modalWeight").val().trim() || null,
+    height: $("#modalHeight").val().trim() || null,
+    blood_pressure_unit: document.querySelector(`.unit-select[data-input="modalBloodPressure"]`).value,
+    temperature_unit: document.querySelector(`.unit-select[data-input="modalTemperature"]`).value,
+    weight_unit: document.querySelector(`.unit-select[data-input="modalWeight"]`).value,
+    height_unit: document.querySelector(`.unit-select[data-input="modalHeight"]`).value
+  };
+
+  // Remove null values
+  Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
+
+  console.log("Saving vitals with data:", vitalsData);
+
+  $.ajax({
+    url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
+    type: "POST",
+    headers: getAuthHeaders(),
+    data: JSON.stringify(vitalsData),
+    contentType: "application/json",
+    success: function(response) {
+      $("#vitalsModal").modal("hide");
+      showNotification("Vitals saved successfully!", "success");
+      location.reload();
+    },
+    error: function(xhr) {
+      const errorMsg = getErrorMessage(xhr, "Failed to save vitals.");
+      showNotification(errorMsg, "error");
+    }
+  });
 }
 
 
@@ -2203,63 +2343,14 @@ function loadDoctorsForPatientModal() {
   });
 }
 
+
 // Call this when the patient modal opens
 $("#createPatientModal").on("show.bs.modal", function() {
   loadDoctorsForPatientModal();
 });
 
 
-// Modified saveVitals with detailed logging and error handling
-function saveVitals() {
-  const appointmentId = $("#vitalsModal").data("appointmentId");
-  if (!appointmentId) {
-      console.error("Missing appointment ID for vitals");
-      showNotification("Appointment ID is missing.", "error");
-      return;
-  }
 
-  let vitalsData = {
-      appointment: appointmentId,
-      blood_pressure: $("#modalBloodPressure").val().trim() || null,
-      heart_rate: $("#modalHeartRate").val().trim() || null,
-      temperature: $("#modalTemperature").val().trim() || null,
-      respiratory_rate: $("#modalRespiratoryRate").val().trim() || null,
-      oxygen_saturation: $("#modalOxygenSaturation").val().trim() || null,
-      weight: $("#modalWeight").val().trim() || null,
-      height: $("#modalHeight").val().trim() || null,
-      blood_pressure_unit: document.querySelector(`.unit-select[data-input="modalBloodPressure"]`)?.value || "mmHg",
-      temperature_unit: document.querySelector(`.unit-select[data-input="modalTemperature"]`)?.value || "°C",
-      weight_unit: document.querySelector(`.unit-select[data-input="modalWeight"]`)?.value || "kg",
-      height_unit: document.querySelector(`.unit-select[data-input="modalHeight"]`)?.value || "cm"
-  };
-
-  Object.keys(vitalsData).forEach(key => { if (vitalsData[key] === null) delete vitalsData[key]; });
-
-  console.log("Saving vitals with data:", vitalsData);
-
-  $.ajax({
-      url: `http://smarthospitalmaintain.com:8000/appointments/vitals/${appointmentId}/`,
-      type: "POST",
-      headers: getAuthHeaders(),
-      data: JSON.stringify(vitalsData),
-      contentType: "application/json",
-      success: function(response) {
-          console.log("Vitals saved successfully:", response);
-          $("#vitalsModal").modal("hide");
-          showNotification("Vitals saved successfully!", "success");
-          location.reload();
-      },
-      error: function(xhr) {
-          console.error("Failed to save vitals:", {
-              status: xhr.status,
-              statusText: xhr.statusText,
-              response: xhr.responseJSON
-          });
-          const errorMsg = getErrorMessage(xhr, "Failed to save vitals.");
-          showNotification(errorMsg, "error");
-      }
-  });
-}
 
 // Updated openEditModal with age calculation and non-editable fields
 let currentAppointment = null; // Global variable to store the current appointment
