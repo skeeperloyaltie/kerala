@@ -1698,16 +1698,18 @@ function showNotification(message, type = "error", duration = 4000) {
       const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
       let currentTabIndex = 0;
     
-      // Reset form and initialize modal when shown
       $('#createPatientModal').on('shown.bs.modal', function() {
         $("#createPatientForm")[0].reset();
         $("#createPatientForm .form-control, #createPatientForm .form-select").removeClass('is-invalid');
         currentTabIndex = 0; // Start at the first tab (Basic Information)
-        
-        // Explicitly show the Basic Information tab
-        $('#basic-tab').tab('show');
+      
+        // Explicitly activate the "Basic Information" tab
+        $('#basic-tab').tab('show'); // This triggers Bootstrap's tab show method
+        $('#basic').addClass('show active'); // Ensure the content is visible
+        $('.tab-pane').not('#basic').removeClass('show active'); // Hide other tabs
+      
         updateTabButtons();
-        loadDoctorsForPatientModal(); // Assuming this function exists to populate doctors
+        loadDoctorsForPatientModal(); // Assuming this function exists
       });
     
       // Age calculation
