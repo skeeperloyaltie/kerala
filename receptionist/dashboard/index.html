@@ -15,7 +15,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.min.css">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="shortcut icon" href="assets/images/favicon.png">
-
+  <!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <!-- JavaScript -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -24,10 +27,101 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
   <script>
     // Basic showNotification function (if not already defined)
-
+    $(document).ready(function() {
+      // Initialize Flatpickr for all custom-datetime-picker inputs
+      function initializeDatePickers() {
+        $(".custom-datetime-picker").each(function() {
+          const $input = $(this);
+          const isDateOnly = $input.attr("id") === "searchDob" || $input.attr("id") === "searchDate" || $input.attr("id") === "patientDob" || $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth";
+          const config = {
+            altInput: true,
+            altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
+            dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i", // Backend format
+            enableTime: !isDateOnly,
+            time_24hr: false,
+            minDate: $input.attr("id") === "appointmentDate" || $input.attr("id") === "editAppointmentDate" || $input.attr("id") === "newAppointmentDate" ? "today" : null,
+            maxDate: $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth" || $input.attr("id") === "patientDob" ? "today" : null,
+            static: true, // Keep picker in place relative to input
+            appendTo: document.body, // Ensure it works with modals
+            // Add custom "OK" button
+            onReady: function(selectedDates, dateStr, instance) {
+              const confirmButton = document.createElement("button");
+              confirmButton.innerText = "OK";
+              confirmButton.className = "flatpickr-confirm";
+              confirmButton.onclick = function() {
+                if (selectedDates.length > 0) {
+                  instance.close();
+                  $input.removeClass("is-invalid");
+                } else {
+                  showNotification("Please select a date" + (isDateOnly ? "" : " and time") + ".", "error");
+                  $input.addClass("is-invalid");
+                }
+              };
+              instance.calendarContainer.appendChild(confirmButton);
+            },
+            onClose: function(selectedDates, dateStr, instance) {
+              if (selectedDates.length === 0) {
+                $input.val(""); // Clear if no selection confirmed
+              }
+            }
+          };
+    
+          flatpickr($input[0], config);
+    
+          // Maintain readonly state if applicable
+          if ($input.attr("readonly")) {
+            $input.next(".flatpickr-input").prop("readonly", true);
+          }
+        });
+      }
+    
+      // Call initialization on page load
+      initializeDatePickers();
+    
+      // Re-initialize when modals are shown to ensure pickers work inside modals
+      $("#createPatientModal, #appointmentFormContainer, #editAppointmentModal, #rescheduleAppointmentModal").on("shown.bs.modal", function() {
+        initializeDatePickers();
+      });
+    
+      // Existing code...
+      checkSessionOnLoad();
+      $("#logoutButton, #logoutDropdown").on("click", logoutUser);
+    });
   </script>
 
   <style>
+    .custom-datetime-picker {
+      position: relative;
+      width: 100%;
+    }
+    
+    /* Style the Flatpickr calendar */
+    .flatpickr-calendar {
+      z-index: 1200; /* Ensure it appears above modals */
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .flatpickr-day.selected {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    /* Custom OK button styling */
+    .flatpickr-confirm {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin: 5px auto;
+      display: block;
+    }
+    
+    .flatpickr-confirm:hover {
+      background-color: #0056b3;
+    }
     #customNotification .modal-content {
       border: none;
       border-radius: 0.5rem;
@@ -429,11 +523,11 @@
                     </div>
                     <div class="col-md-2 d-flex align-items-center">
                       <label for="searchDob" class="me-2">DOB:</label>
-                      <input type="date" class="form-control" id="searchDob">
+                      <input type="text" class="form-control custom-datetime-picker" id="searchDob">
                     </div>
                     <div class="col-md-2 d-flex align-items-center">
                       <label for="searchDate" class="me-2">Appt. Date:</label>
-                      <input type="date" class="form-control" id="searchDate">
+                      <input type="text" class="form-control custom-datetime-picker" id="searchDate">
                     </div>
                   </div>
 
@@ -569,7 +663,7 @@
                       </div>
                       <div class="col-md-4">
                         <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
-                        <input type="date" id="patientDob" class="form-control form-control-sm" required>
+                        <input type="text" id="patientDob" class="form-control form-control-sm custom-datetime-picker" required>
                       </div>
                       <div class="col-md-4">
                         <label for="patientAge">Age</label>
@@ -768,7 +862,7 @@
         </div>
         <div class="col-md-4 mb-3">
           <label for="dateOfBirth">Date of Birth</label>
-          <input type="date" id="dateOfBirth" class="form-control" readonly>
+          <input type="text" id="dateOfBirth" class="form-control custom-datetime-picker" readonly>
         </div>
         <div class="col-md-4 mb-3">
           <label for="age">Age</label>
@@ -778,7 +872,7 @@
       <div class="row">
         <div class="col-md-4 mb-3">
           <label for="appointmentDate">Appointment Date <span class="text-danger">*</span></label>
-          <input type="datetime-local" id="appointmentDate" class="form-control" required>
+          <input type="text" id="appointmentDate" class="form-control custom-datetime-picker" required>
         </div>
         <div class="col-md-4 mb-3">
           <label for="doctor">Doctor <span class="text-danger">*</span></label>
@@ -927,7 +1021,7 @@
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="editDateOfBirth">Date of Birth</label>
-                        <input type="date" id="editDateOfBirth" class="form-control" required>
+                        <input type="text" id="editDateOfBirth" class="form-control custom-datetime-picker" required>
                       </div>
                     </div>
                     <div class="row">
@@ -943,7 +1037,7 @@
                     <div class="row">
                       <div class="col-md-6 mb-3">
                         <label for="editAppointmentDate">Appointment Date</label>
-                        <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
+                        <input type="text" id="editAppointmentDate" class="form-control custom-datetime-picker" required>
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="editDoctor">Doctor</label>
@@ -998,7 +1092,7 @@
                     <input type="hidden" id="rescheduleAppointmentID">
                     <div class="mb-3">
                       <label for="newAppointmentDate">New Date & Time</label>
-                      <input type="datetime-local" class="form-control" id="newAppointmentDate" required>
+                      <input type="text" class="form-control custom-datetime-picker" id="newAppointmentDate" required>
                     </div>
                   </form>
                 </div>
@@ -1218,6 +1312,21 @@ function fetchPatientDetails(patientId) {
   }
 }
 
+$("#patientDob, #dateOfBirth, #editDateOfBirth").on("change", function() {
+  const dob = new Date(this.value); // Flatpickr uses altInput value
+  if (isNaN(dob.getTime())) {
+    $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val("");
+    return;
+  }
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val(age >= 0 ? age : "");
+});
+
+
 function hideAppointmentForm() {
   $("#appointmentFormContainer").hide();
   $("#appointmentForm")[0].reset();
@@ -1243,39 +1352,39 @@ function hideAppointmentForm() {
     });
 
      // Search Filter Logic
-function filterTable() {
-  const patientId = $("#searchPatientId").val().toLowerCase().trim();
-  const name = $("#searchName").val().toLowerCase().trim();
-  const mobile = $("#searchMobile").val().trim();
-  const dob = $("#searchDob").val();
-  const date = $("#searchDate").val();
-
-  $(".tab-pane tbody tr").each(function() {
-    const row = $(this);
-    const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase().trim();
-    const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
-    const rowMobile = row.find("td:nth-child(6)").text().trim(); // Mobile number is in column 6
-    const rowDob = row.find("td:nth-child(5)")?.text() || ""; // Assuming DOB might not be displayed; adjust if present
-    const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim(); // Extract date part (e.g., "3/7/2025")
-
-    // Convert rowDate to YYYY-MM-DD format for comparison
-    let formattedRowDate = "";
-    if (rowDate) {
-      const dateParts = rowDate.split("/");
-      if (dateParts.length === 3) {
-        formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
-      }
+     function filterTable() {
+      const patientId = $("#searchPatientId").val().toLowerCase().trim();
+      const name = $("#searchName").val().toLowerCase().trim();
+      const mobile = $("#searchMobile").val().trim();
+      const dob = $("#searchDob").val(); // Now in Y-m-d format
+      const date = $("#searchDate").val(); // Now in Y-m-d format
+    
+      $(".tab-pane tbody tr").each(function() {
+        const row = $(this);
+        const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase().trim();
+        const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
+        const rowMobile = row.find("td:nth-child(6)").text().trim();
+        const rowDob = row.find("td:nth-child(5)")?.text() || ""; // Adjust if DOB is displayed
+        const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim(); // e.g., "3/7/2025"
+    
+        // Convert rowDate to Y-m-d format for comparison
+        let formattedRowDate = "";
+        if (rowDate) {
+          const dateParts = rowDate.split("/");
+          if (dateParts.length === 3) {
+            formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
+          }
+        }
+    
+        const matches = (!patientId || rowPatientId.includes(patientId)) &&
+                       (!name || rowName.includes(name)) &&
+                       (!mobile || rowMobile.includes(mobile)) &&
+                       (!dob || rowDob.includes(dob)) &&
+                       (!date || formattedRowDate === date);
+    
+        row.toggle(matches);
+      });
     }
-
-    const matches = (!patientId || rowPatientId.includes(patientId)) &&
-                   (!name || rowName.includes(name)) &&
-                   (!mobile || rowMobile.includes(mobile)) &&
-                   (!dob || rowDob.includes(dob)) &&
-                   (!date || formattedRowDate === date);
-
-    row.toggle(matches);
-  });
-}
 
 // Attach event listeners to search inputs
 $("#searchPatientId, #searchName, #searchMobile, #searchDob, #searchDate").on("input change", filterTable);
@@ -1986,6 +2095,8 @@ function addAppointment() {
   const patientId = $("#patientID").val().trim();
   const doctorId = $("#doctor").val();
   const appointmentDate = $("#appointmentDate").val();
+  const formattedDate = appointmentDate + ":00"; // Append seconds for ISO
+
   const notes = $("#notes").val().trim();
   const isEmergency = $("#isEmergency")?.is(":checked") || false;
   const currentIllness = $("#currentIllness").val().trim(); // Already captured
@@ -2014,7 +2125,7 @@ function addAppointment() {
   const appointmentData = {
     patient_id: patientId,
     doctor_id: doctorId,
-    appointment_date: appointmentDate,
+    appointment_date: formattedDate,
     notes: notes,
     is_emergency: isEmergency,
     current_illness: currentIllness // Add current_illness to the payload
@@ -2375,8 +2486,8 @@ function updateAppointment() {
       doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
       status: $("#editAppointmentStatus").val(),
       notes: $("#editNotes").val(),
-      appointment_date: $("#editAppointmentDate").val()
-  };
+      appointment_date: $("#editAppointmentDate").val() + ":00" // Y-m-d H:i:00
+    };
 
   console.log("Updating appointment with data:", updatedAppointment);
 
@@ -2494,7 +2605,7 @@ function rescheduleAppointment() {
       return;
   }
 
-  const payload = { appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() };
+  const payload = { appointment_ids: appointmentIds, appointment_date: new Date(newDate + ":00").toISOString() };
   console.log("Rescheduling appointments with payload:", payload);
 
   fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
