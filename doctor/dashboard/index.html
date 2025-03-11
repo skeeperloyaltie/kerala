@@ -1715,21 +1715,13 @@ function showNotification(message, type = "error", duration = 4000) {
       //$("#patientAge").val(age >= 0 ? age : "");
     //});
     $(document).ready(function() {
-      const tabs = ['#basic', '#medical', '#emergency', '#insurance'];
-      let currentTabIndex = 0;
-    
       $('#createPatientModal').on('shown.bs.modal', function() {
         $("#createPatientForm")[0].reset();
         $("#createPatientForm .form-control, #createPatientForm .form-select").removeClass('is-invalid');
-        currentTabIndex = 0; // Start at the first tab (Basic Information)
-      
-        // Explicitly activate the "Basic Information" tab
-        $('#basic-tab').tab('show'); // This triggers Bootstrap's tab show method
-        $('#basic').addClass('show active'); // Ensure the content is visible
-        $('.tab-pane').not('#basic').removeClass('show active'); // Hide other tabs
-      
-        updateTabButtons();
-        loadDoctorsForPatientModal(); // Assuming this function exists
+        // Ensure Basic Information is expanded
+        $('#collapseBasic').addClass('show');
+        $('#collapseMedical, #collapseEmergency, #collapseInsurance').removeClass('show');
+        loadDoctorsForPatientModal();
       });
     
       // Age calculation
@@ -1747,83 +1739,47 @@ function showNotification(message, type = "error", duration = 4000) {
         $("#patientAge").val(age >= 0 ? age : "");
       });
     
-      // Update button visibility
-      function updateTabButtons() {
-        $('#prevTabBtn').toggle(currentTabIndex > 0);
-        $('#nextTabBtn').toggle(currentTabIndex < tabs.length - 1);
-        $('#savePatientBtn').toggle(currentTabIndex === tabs.length - 1);
-      }
-    
-      // Validate current tab
-      function validateTab(tabId) {
-        let isValid = true;
-        if (tabId === '#basic') {
-          const requiredFields = {
-            'patientFirstName': $('#patientFirstName').val().trim(),
-            'patientLastName': $('#patientLastName').val().trim(),
-            'patientGender': $('#patientGender').val(),
-            'patientDob': $('#patientDob').val(),
-            'patientFatherName': $('#patientFatherName').val().trim(),
-            'patientMobile': $('#patientMobile').val().trim(),
-            'admissionType': $('#admissionType').val()
-          };
-    
-          Object.keys(requiredFields).forEach(id => {
-            if (!requiredFields[id]) {
-              $(`#${id}`).addClass('is-invalid');
-              isValid = false;
-            } else {
-              $(`#${id}`).removeClass('is-invalid');
-            }
-          });
-    
-          const mobile = $('#patientMobile').val().trim();
-          if (mobile && !/^\d{10}$/.test(mobile)) {
-            $('#patientMobile').addClass('is-invalid');
-            isValid = false;
-          }
-        }
-        return isValid;
-      }
-    
-      // Next button logic
-      $('#nextTabBtn').on('click', function() {
-        console.log('Next button clicked, currentTabIndex:', currentTabIndex);
-        if (validateTab(tabs[currentTabIndex])) {
-          currentTabIndex++;
-          const nextTabLink = $(`#patientFormTabs a[href="${tabs[currentTabIndex]}"]`);
-          nextTabLink.tab('show'); // Use Bootstrap's tab show method
-          updateTabButtons();
-        } else {
-          showNotification('Please fill all required fields correctly.', 'error');
-        }
-      });
-    
-      // Previous button logic
-      $('#prevTabBtn').on('click', function() {
-        console.log('Previous button clicked, currentTabIndex:', currentTabIndex);
-        currentTabIndex--;
-        const prevTabLink = $(`#patientFormTabs a[href="${tabs[currentTabIndex]}"]`);
-        prevTabLink.tab('show'); // Use Bootstrap's tab show method
-        updateTabButtons();
-      });
-    
       // Save button
       $('#savePatientBtn').on('click', function() {
-        if (validateTab('#basic')) { // Only basic tab is required
+        if (validateBasicInfo()) {
           savePatient();
         } else {
-          showNotification('Please fill all required fields in Basic Information.', 'error');
+          showNotification('Please fill all required fields in Basic Information correctly.', 'error');
         }
       });
     
-      // Allow tab navigation via clicking headers
-      $('#patientFormTabs .nav-link').on('click', function() {
-        const targetTab = $(this).attr('href');
-        currentTabIndex = tabs.indexOf(targetTab);
-        updateTabButtons();
-      });
+      // Validate Basic Information section
+      function validateBasicInfo() {
+        let isValid = true;
+        const requiredFields = {
+          'patientFirstName': $('#patientFirstName').val().trim(),
+          'patientLastName': $('#patientLastName').val().trim(),
+          'patientGender': $('#patientGender').val(),
+          'patientDob': $('#patientDob').val(),
+          'patientFatherName': $('#patientFatherName').val().trim(),
+          'patientMobile': $('#patientMobile').val().trim(),
+          'admissionType': $('#admissionType').val()
+        };
+    
+        Object.keys(requiredFields).forEach(id => {
+          if (!requiredFields[id]) {
+            $(`#${id}`).addClass('is-invalid');
+            isValid = false;
+          } else {
+            $(`#${id}`).removeClass('is-invalid');
+          }
+        });
+    
+        const mobile = $('#patientMobile').val().trim();
+        if (mobile && !/^\d{10}$/.test(mobile)) {
+          $('#patientMobile').addClass('is-invalid');
+          isValid = false;
+        }
+    
+        return isValid;
+      }
     });
+ 
     
     // Save patient function
     function savePatient() {
@@ -2098,7 +2054,6 @@ $(document).ready(function() {
     }
   });
 });
-
 // Store original values and units
 const originalVitals = {};
 
@@ -2329,6 +2284,7 @@ function saveVitals() {
     }
   });
 }
+
   </script>
 
   <!-- Vendor Scripts -->
