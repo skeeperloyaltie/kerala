@@ -500,173 +500,193 @@ function showNotification(message, type = "error", duration = 4000) {
       </div>
       <div class="modal-body">
         <form id="createPatientForm">
-          <!-- Tab Navigation -->
-          <ul class="nav nav-tabs" id="patientFormTabs" role="tablist">
-            <li class="nav-item">
-              <a class="nav-link active" id="basic-tab" data-bs-toggle="tab" href="#basic" role="tab" aria-controls="basic" aria-selected="true">Basic Information</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="medical-tab" data-bs-toggle="tab" href="#medical" role="tab" aria-controls="medical" aria-selected="false">Medical Information</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="emergency-tab" data-bs-toggle="tab" href="#emergency" role="tab" aria-controls="emergency" aria-selected="false">Emergency Contact</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="insurance-tab" data-bs-toggle="tab" href="#insurance" role="tab" aria-controls="insurance" aria-selected="false">Insurance & Billing</a>
-            </li>
-          </ul>
-
-          <!-- Tab Content -->
-          <div class="tab-content mt-3" id="patientFormTabContent">
-            <!-- Basic Information Tab -->
-            <div class="tab-pane fade show active" id="basic" role="tabpanel" aria-labelledby="basic-tab">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
-                  <input type="text" id="patientFirstName" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
-                  <input type="text" id="patientLastName" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-md-4">
-                  <label for="patientGender">Gender <span class="text-danger">*</span></label>
-                  <select id="patientGender" class="form-select form-select-sm" required>
-                    <option value="" disabled selected>Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
-                  <input type="date" id="patientDob" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-md-4">
-                  <label for="patientAge">Age</label>
-                  <input type="number" id="patientAge" class="form-control form-control-sm" readonly>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
-                  <input type="text" id="patientFatherName" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientAddress">Address</label>
-                  <input type="text" id="patientAddress" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="patientCity">City</label>
-                  <input type="text" id="patientCity" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="patientPincode">Pincode</label>
-                  <input type="number" id="patientPincode" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="patientEmail">Email</label>
-                  <input type="email" id="patientEmail" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="patientMobile">Mobile <span class="text-danger">*</span></label>
-                  <input type="tel" id="patientMobile" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-md-4">
-                  <label for="patientAltMobile">Alt Mobile</label>
-                  <input type="tel" id="patientAltMobile" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="patientAadhar">Aadhar</label>
-                  <input type="text" id="patientAadhar" class="form-control form-control-sm" maxlength="12">
-                </div>
-                <div class="col-md-4">
-                  <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
-                  <select id="admissionType" class="form-select form-select-sm" required>
-                    <option value="OU" selected>Outpatient</option>
-                    <option value="IN">Inpatient</option>
-                  </select>
+          <!-- Accordion Sections -->
+          <div class="accordion" id="patientFormAccordion">
+            <!-- Basic Information Section (Expanded by Default) -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingBasic">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBasic" aria-expanded="true" aria-controls="collapseBasic">
+                  Basic Information
+                </button>
+              </h2>
+              <div id="collapseBasic" class="accordion-collapse collapse show" aria-labelledby="headingBasic" data-bs-parent="#patientFormAccordion">
+                <div class="accordion-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="patientFirstName">First Name <span class="text-danger">*</span></label>
+                      <input type="text" id="patientFirstName" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientLastName">Last Name <span class="text-danger">*</span></label>
+                      <input type="text" id="patientLastName" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientGender">Gender <span class="text-danger">*</span></label>
+                      <select id="patientGender" class="form-select form-select-sm" required>
+                        <option value="" disabled selected>Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
+                      <input type="date" id="patientDob" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientAge">Age</label>
+                      <input type="number" id="patientAge" class="form-control form-control-sm" readonly>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientFatherName">Father's Name <span class="text-danger">*</span></label>
+                      <input type="text" id="patientFatherName" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientAddress">Address</label>
+                      <input type="text" id="patientAddress" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientCity">City</label>
+                      <input type="text" id="patientCity" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientPincode">Pincode</label>
+                      <input type="number" id="patientPincode" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientEmail">Email</label>
+                      <input type="email" id="patientEmail" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientMobile">Mobile <span class="text-danger">*</span></label>
+                      <input type="tel" id="patientMobile" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientAltMobile">Alt Mobile</label>
+                      <input type="tel" id="patientAltMobile" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="patientAadhar">Aadhar</label>
+                      <input type="text" id="patientAadhar" class="form-control form-control-sm" maxlength="12">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="admissionType">Admission Type <span class="text-danger">*</span></label>
+                      <select id="admissionType" class="form-select form-select-sm" required>
+                        <option value="OU" selected>Outpatient</option>
+                        <option value="IN">Inpatient</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Medical Information Tab -->
-            <div class="tab-pane fade" id="medical" role="tabpanel" aria-labelledby="medical-tab">
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label for="patientBloodGroup">Blood Group</label>
-                  <select id="patientBloodGroup" class="form-select form-select-sm">
-                    <option value="">Select</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                  </select>
-                </div>
-                <div class="col-md-8">
-                  <label for="patientAllergies">Allergies</label>
-                  <textarea id="patientAllergies" class="form-control form-control-sm" rows="2"></textarea>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientMedications">Medications</label>
-                  <textarea id="patientMedications" class="form-control form-control-sm" rows="2"></textarea>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientPastHistory">Past History</label>
-                  <textarea id="patientPastHistory" class="form-control form-control-sm" rows="2"></textarea>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientNotes">Notes</label>
-                  <textarea id="patientNotes" class="form-control form-control-sm" rows="2"></textarea>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientPrimaryDoctor">Primary Doctor</label>
-                  <select id="patientPrimaryDoctor" class="form-select form-select-sm">
-                    <option value="" disabled selected>Select</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Emergency Contact Tab -->
-            <div class="tab-pane fade" id="emergency" role="tabpanel" aria-labelledby="emergency-tab">
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label for="emergencyName">Name</label>
-                  <input type="text" id="emergencyName" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="emergencyRelation">Relationship</label>
-                  <input type="text" id="emergencyRelation" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="emergencyNumber">Number</label>
-                  <input type="tel" id="emergencyNumber" class="form-control form-control-sm">
+            <!-- Medical Information Section (Collapsed by Default) -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingMedical">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMedical" aria-expanded="false" aria-controls="collapseMedical">
+                  Medical Information
+                </button>
+              </h2>
+              <div id="collapseMedical" class="accordion-collapse collapse" aria-labelledby="headingMedical" data-bs-parent="#patientFormAccordion">
+                <div class="accordion-body">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="patientBloodGroup">Blood Group</label>
+                      <select id="patientBloodGroup" class="form-select form-select-sm">
+                        <option value="">Select</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
+                    <div class="col-md-8">
+                      <label for="patientAllergies">Allergies</label>
+                      <textarea id="patientAllergies" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientMedications">Medications</label>
+                      <textarea id="patientMedications" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientPastHistory">Past History</label>
+                      <textarea id="patientPastHistory" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientNotes">Notes</label>
+                      <textarea id="patientNotes" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="patientPrimaryDoctor">Primary Doctor</label>
+                      <select id="patientPrimaryDoctor" class="form-select form-select-sm">
+                        <option value="" disabled selected>Select</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Insurance & Billing Details Tab -->
-            <div class="tab-pane fade" id="insurance" role="tabpanel" aria-labelledby="insurance-tab">
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label for="insuranceProvider">Provider</label>
-                  <input type="text" id="insuranceProvider" class="form-control form-control-sm">
+            <!-- Emergency Contact Section (Collapsed by Default) -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingEmergency">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEmergency" aria-expanded="false" aria-controls="collapseEmergency">
+                  Emergency Contact
+                </button>
+              </h2>
+              <div id="collapseEmergency" class="accordion-collapse collapse" aria-labelledby="headingEmergency" data-bs-parent="#patientFormAccordion">
+                <div class="accordion-body">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="emergencyName">Name</label>
+                      <input type="text" id="emergencyName" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="emergencyRelation">Relationship</label>
+                      <input type="text" id="emergencyRelation" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="emergencyNumber">Number</label>
+                      <input type="tel" id="emergencyNumber" class="form-control form-control-sm">
+                    </div>
+                  </div>
                 </div>
-                <div class="col-md-4">
-                  <label for="policyNumber">Policy No.</label>
-                  <input type="text" id="policyNumber" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-4">
-                  <label for="paymentPreference">Payment</label>
-                  <select id="paymentPreference" class="form-select form-select-sm">
-                    <option value="">Select</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="Insurance">Insurance</option>
-                  </select>
+              </div>
+            </div>
+
+            <!-- Insurance & Billing Section (Collapsed by Default) -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingInsurance">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInsurance" aria-expanded="false" aria-controls="collapseInsurance">
+                  Insurance & Billing
+                </button>
+              </h2>
+              <div id="collapseInsurance" class="accordion-collapse collapse" aria-labelledby="headingInsurance" data-bs-parent="#patientFormAccordion">
+                <div class="accordion-body">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="insuranceProvider">Provider</label>
+                      <input type="text" id="insuranceProvider" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="policyNumber">Policy No.</label>
+                      <input type="text" id="policyNumber" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="paymentPreference">Payment</label>
+                      <select id="paymentPreference" class="form-select form-select-sm">
+                        <option value="">Select</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="Insurance">Insurance</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -674,14 +694,14 @@ function showNotification(message, type = "error", duration = 4000) {
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="prevTabBtn" style="display: none;">Previous</button>
-        <button type="button" class="btn btn-primary" id="nextTabBtn">Next</button>
         <button type="button" class="btn btn-primary" id="savePatientBtn">Save Patient</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
+        
+
           <!-- Appointment Form -->
           <div id="appointmentFormContainer" class="card mt-3" style="display: none;">
             <div class="card-body">
