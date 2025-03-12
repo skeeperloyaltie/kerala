@@ -1732,7 +1732,7 @@ $(document).ready(function() {
       $("#editAppointmentModal").modal("show");
   }
 
-  
+
   function updateAppointment() {
     const editAppointmentDateInput = document.querySelector("#editAppointmentDate");
     const flatpickrInstance = editAppointmentDateInput._flatpickr;
@@ -1760,7 +1760,7 @@ $(document).ready(function() {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: formattedAppointmentDate // ISO 8601 without timezone suffix
+        appointment_date: formattedAppointmentDate // ISO 8601 without timezone suffixget
     };
 
     console.log("Updating appointment with data:", updatedAppointment);
@@ -2149,34 +2149,56 @@ $(document).ready(function() {
 
 
 
-$("#patientID").on("blur", function() {
-  let patientId = $(this).val().trim();
-  if (patientId) {
-    $.ajax({
-      url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function(response) {
-        if (response.patient) {
-          $("#firstName").val(response.patient.first_name || "");
-          $("#lastName").val(response.patient.last_name || "");
-          $("#contactNumber").val(response.patient.mobile_number || "");
-          $("#dateOfBirth").val(response.patient.date_of_birth || "");
-          $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
-        } else {
-          showNotification("Patient not found.", "error");
-          $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-        }
-      },
-      error: function(xhr) {
-        showNotification("Failed to fetch patient details.", "error");
+    $("#patientID").on("blur", function() {
+      let patientId = $(this).val().trim();
+      if (patientId) {
+        $.ajax({
+          url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+          type: "GET",
+          headers: getAuthHeaders(),
+          success: function(response) {
+            if (response.patient) {
+              $("#firstName").val(response.patient.first_name || "");
+              $("#lastName").val(response.patient.last_name || "");
+              $("#contactNumber").val(response.patient.mobile_number || "");
+    
+              // Set date_of_birth in Flatpickr
+              const dateOfBirthStr = response.patient.date_of_birth || ""; // e.g., "1990-05-15"
+              const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+              if (dateOfBirthStr) {
+                const dob = new Date(dateOfBirthStr); // Parse "YYYY-MM-DD"
+                if (!isNaN(dob.getTime())) {
+                  flatpickrInstance.setDate(dob, true, "Y-m-d"); // Set as "1990-05-15"
+                  // Displays as "May 15, 1990" via altFormat: "F j, Y"
+                  $("#age").val(calculateAge(dateOfBirthStr));
+                } else {
+                  flatpickrInstance.clear();
+                  $("#age").val("");
+                }
+              } else {
+                flatpickrInstance.clear();
+                $("#age").val("");
+              }
+            } else {
+              showNotification("Patient not found.", "error");
+              $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+              const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+              flatpickrInstance.clear();
+            }
+          },
+          error: function(xhr) {
+            showNotification("Failed to fetch patient details.", "error");
+            $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+            const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+            flatpickrInstance.clear();
+          }
+        });
+      } else {
         $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+        const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+        flatpickrInstance.clear();
       }
     });
-  } else {
-    $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-  }
-});
 
 // Ensure intl-tel-input works for patient mobile numbers
 $(document).ready(function() {
