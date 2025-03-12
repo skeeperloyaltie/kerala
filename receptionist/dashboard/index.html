@@ -41,9 +41,41 @@
             time_24hr: false,
             minDate: $input.attr("id") === "appointmentDate" || $input.attr("id") === "editAppointmentDate" || $input.attr("id") === "newAppointmentDate" ? "today" : null,
             maxDate: $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth" || $input.attr("id") === "patientDob" ? "today" : null,
-            static: true, // Keep picker in place relative to input
             appendTo: document.body, // Ensure it works with modals
-            // Add custom "OK" and "Clear" buttons
+            position: "auto", // Dynamically adjust position (above/below/left/right)
+            // Remove static: true to allow dynamic positioning
+            onOpen: function(selectedDates, dateStr, instance) {
+              // Adjust calendar position to stay within viewport
+              const calendar = instance.calendarContainer;
+              const inputRect = $input[0].getBoundingClientRect();
+              const calendarRect = calendar.getBoundingClientRect();
+              const viewportHeight = window.innerHeight;
+              const viewportWidth = window.innerWidth;
+    
+              // Reset any previous adjustments
+              calendar.style.top = "";
+              calendar.style.left = "";
+              calendar.style.bottom = "";
+              calendar.style.right = "";
+    
+              // Check if calendar overflows bottom
+              if (inputRect.bottom + calendarRect.height > viewportHeight) {
+                calendar.style.top = "auto";
+                calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
+              } else {
+                calendar.style.top = inputRect.bottom + "px";
+                calendar.style.bottom = "auto";
+              }
+    
+              // Check if calendar overflows right
+              if (inputRect.left + calendarRect.width > viewportWidth) {
+                calendar.style.left = "auto";
+                calendar.style.right = (viewportWidth - inputRect.right) + "px";
+              } else {
+                calendar.style.left = inputRect.left + "px";
+                calendar.style.right = "auto";
+              }
+            },
             onReady: function(selectedDates, dateStr, instance) {
               const buttonContainer = document.createElement("div");
               buttonContainer.style.display = "flex";
