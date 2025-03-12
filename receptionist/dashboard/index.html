@@ -1997,8 +1997,8 @@ function fetchAppointments(status) {
         let patient = appointment.patient || {};
         let doctor = appointment.doctor || {};
         let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
-        let appointmentTime = formatDateTimeForTable(appointment.appointment_date); // Use string directly
-    
+        let appointmentTime = formatDateTimeForTable(appointment.appointment_date);
+        console.log("populateAppointmentsTable - appointment_date:", appointment.appointment_date, "Formatted:", appointmentTime);    
         let row = document.createElement("tr");
         row.innerHTML = `
           <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
@@ -2574,11 +2574,14 @@ function openEditModal(appointmentData, rowIndex) {
   $("#editCurrentIllness").val(currentAppointment.current_medications || "");
 
   // Set appointment_date directly from the API string
-  const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
+  const appointmentDateStr = currentAppointment.appointment_date;
+const appointmentDate = new Date(appointmentDateStr);
+console.log("openEditModal - appointment_date:", appointmentDateStr, "Parsed:", appointmentDate);
+flatpickrInstance.setDate(appointmentDate, true, "Y-m-d H:i");
+console.log("openEditModal - Flatpickr set to:", flatpickrInstance.selectedDates[0]);
   const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
 
   // Parse the ISO string and set it in Flatpickr without additional adjustments
-  const appointmentDate = new Date(appointmentDateStr);
   if (isNaN(appointmentDate.getTime())) {
       console.error("Invalid appointment_date:", appointmentDateStr);
       showNotification("Invalid appointment date received.", "error");
@@ -2611,14 +2614,15 @@ function updateAppointment() {
 
   // Get the selected date from Flatpickr
   let appointmentDate = flatpickrInstance.selectedDates[0];
-  if (!appointmentDate || isNaN(appointmentDate.getTime())) {
+  console.log("updateAppointment - Flatpickr date:", appointmentDate);  if (!appointmentDate || isNaN(appointmentDate.getTime())) {
       showNotification("Please select a valid appointment date and time", "error");
       $("#editAppointmentDate").addClass("is-invalid");
       return;
   }
 
   // Format as ISO 8601 with IST offset (+05:30), matching the API format
-  const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30"; // e.g., "2025-03-20T17:52:00+05:30"
+  const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30";
+  console.log("updateAppointment - Sent to API:", formattedAppointmentDate);
 
   const updatedAppointment = {
       id: $("#editAppointmentID").val(),
