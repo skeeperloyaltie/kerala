@@ -22,6 +22,10 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
+  <!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
      // Basic showNotification function (if not already defined)
        // Enhanced notification function with type parameter
@@ -34,10 +38,133 @@ function showNotification(message, type = "error", duration = 4000) {
       .css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
   setTimeout(() => $("#customNotification").hide(), duration);
 }
+
+
+$(document).ready(function() {
+  // Initialize Flatpickr for all custom-datetime-picker inputs
+  function initializeDatePickers() {
+    $(".custom-datetime-picker").each(function() {
+      const $input = $(this);
+      const isDateOnly = $input.attr("id") === "searchDob" || $input.attr("id") === "searchDate" || $input.attr("id") === "patientDob" || $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth";
+      const config = {
+        altInput: true,
+        altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
+        dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i", // Backend format
+        enableTime: !isDateOnly,
+        time_24hr: false,
+        minDate: $input.attr("id") === "appointmentDate" || $input.attr("id") === "editAppointmentDate" || $input.attr("id") === "newAppointmentDate" ? "today" : null,
+        maxDate: $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth" || $input.attr("id") === "patientDob" ? "today" : null,
+        static: true, // Keep picker in place relative to input
+        appendTo: document.body, // Ensure it works with modals
+        // Add custom "OK" and "Clear" buttons
+        onReady: function(selectedDates, dateStr, instance) {
+          const buttonContainer = document.createElement("div");
+          buttonContainer.style.display = "flex";
+          buttonContainer.style.justifyContent = "center";
+          buttonContainer.style.gap = "10px"; // Space between buttons
+          buttonContainer.style.padding = "5px";
+
+          // OK Button
+          const confirmButton = document.createElement("button");
+          confirmButton.innerText = "OK";
+          confirmButton.className = "flatpickr-confirm";
+          confirmButton.onclick = function() {
+            if (selectedDates.length > 0) {
+              instance.close();
+              $input.removeClass("is-invalid");
+            } else {
+              showNotification("Please select a date" + (isDateOnly ? "" : " and time") + ".", "error");
+              $input.addClass("is-invalid");
+            }
+          };
+
+          // Clear Button
+          const clearButton = document.createElement("button");
+          clearButton.innerText = "Clear";
+          clearButton.className = "flatpickr-clear";
+          clearButton.onclick = function() {
+            instance.clear(); // Clear the selected date
+            $input.val(""); // Clear the input value
+            $input.removeClass("is-invalid");
+            instance.close(); // Close the picker
+          };
+
+          // Append buttons to container
+          buttonContainer.appendChild(confirmButton);
+          buttonContainer.appendChild(clearButton);
+          instance.calendarContainer.appendChild(buttonContainer);
+        },
+        onClose: function(selectedDates, dateStr, instance) {
+          if (selectedDates.length === 0) {
+            $input.val(""); // Clear if no selection confirmed
+          }
+        }
+      };
+
+      flatpickr($input[0], config);
+
+      // Maintain readonly state if applicable
+      if ($input.attr("readonly")) {
+        $input.next(".flatpickr-input").prop("readonly", true);
+      }
+    });
+  }
+
+  // Call initialization on page load
+  initializeDatePickers();
+
+  // Re-initialize when modals are shown to ensure pickers work inside modals
+  $("#createPatientModal, #appointmentFormContainer, #editAppointmentModal, #rescheduleAppointmentModal").on("shown.bs.modal", function() {
+    initializeDatePickers();
+  });
+
+  // Existing code...
+  checkSessionOnLoad();
+  $("#logoutButton, #logoutDropdown").on("click", logoutUser);
+});
   </script>
 
   <!-- Custom Styles -->
   <style>
+    /* Style the Flatpickr calendar */
+.flatpickr-calendar {
+  z-index: 1200; /* Ensure it appears above modals */
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.flatpickr-day.selected {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Custom OK button styling */
+.flatpickr-confirm {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Custom Clear button styling */
+.flatpickr-clear {
+  background-color: #dc3545; /* Red for clear, matches Bootstrap danger */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.flatpickr-confirm:hover {
+  background-color: #0056b3;
+}
+
+.flatpickr-clear:hover {
+  background-color: #c82333;
+}
     #customNotification .modal-content {
       border: none;
       border-radius: 0.5rem;
@@ -392,11 +519,11 @@ function showNotification(message, type = "error", duration = 4000) {
                     </div>
                     <div class="col-md-2 d-flex align-items-center">
                       <label for="searchDob" class="me-2">DOB:</label>
-                      <input type="date" class="form-control" id="searchDob">
+                      <input type="text" class="form-control custom-datetime-picker" id="searchDob">
                     </div>
                     <div class="col-md-2 d-flex align-items-center">
                       <label for="searchDate" class="me-2">Appt. Date:</label>
-                      <input type="date" class="form-control" id="searchDate">
+                      <input type="text" class="form-control custom-datetime-picker" id="searchDate">
                     </div>
                   </div>
 
@@ -531,7 +658,7 @@ function showNotification(message, type = "error", duration = 4000) {
                     </div>
                     <div class="col-md-4">
                       <label for="patientDob">Date of Birth <span class="text-danger">*</span></label>
-                      <input type="date" id="patientDob" class="form-control form-control-sm" required>
+                      <input type="text" id="patientDob" class="form-control form-control-sm custom-datetime-picker" required>
                     </div>
                     <div class="col-md-4">
                       <label for="patientAge">Age</label>
@@ -731,7 +858,7 @@ function showNotification(message, type = "error", duration = 4000) {
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="dateOfBirth">Date of Birth</label>
-                    <input type="date" id="dateOfBirth" class="form-control" readonly>
+                    <input type="text" id="dateOfBirth" class="form-control custom-datetime-picker" readonly>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="age">Age</label>
@@ -741,7 +868,7 @@ function showNotification(message, type = "error", duration = 4000) {
                 <div class="row">
                   <div class="col-md-4 mb-3">
                     <label for="appointmentDate">Appointment Date <span class="text-danger">*</span></label>
-                    <input type="datetime-local" id="appointmentDate" class="form-control" required>
+                    <input type="text" id="appointmentDate" class="form-control custom-datetime-picker" required>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="doctor">Doctor <span class="text-danger">*</span></label>
@@ -886,7 +1013,7 @@ function showNotification(message, type = "error", duration = 4000) {
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="editDateOfBirth">Date of Birth</label>
-                        <input type="date" id="editDateOfBirth" class="form-control" required>
+                        <input type="text" id="editDateOfBirth" class="form-control custom-datetime-picker" required>
                       </div>
                     </div>
                     <div class="row">
@@ -902,7 +1029,7 @@ function showNotification(message, type = "error", duration = 4000) {
                     <div class="row">
                       <div class="col-md-6 mb-3">
                         <label for="editAppointmentDate">Appointment Date</label>
-                        <input type="datetime-local" id="editAppointmentDate" class="form-control" required>
+                        <input type="text" id="editAppointmentDate" class="form-control custom-datetime-picker" required>
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="editDoctor">Doctor</label>
@@ -957,7 +1084,7 @@ function showNotification(message, type = "error", duration = 4000) {
                     <input type="hidden" id="rescheduleAppointmentID">
                     <div class="mb-3">
                       <label for="newAppointmentDate">New Date & Time</label>
-                      <input type="datetime-local" class="form-control" id="newAppointmentDate" required>
+                      <input type="text" class="form-control custom-datetime-picker" id="newAppointmentDate" required>
                     </div>
                   </form>
                 </div>
@@ -1436,6 +1563,7 @@ function showNotification(message, type = "error", duration = 4000) {
       const patientId = $("#patientID").val().trim();
       const doctorId = $("#doctor").val();
       const appointmentDate = $("#appointmentDate").val();
+      const formattedDate = appointmentDate + ":00";
       const notes = $("#notes").val().trim();
       const isEmergency = $("#isEmergency")?.is(":checked") || false;
       const currentIllness = $("#currentIllness").val().trim(); // Already captured
@@ -1464,7 +1592,7 @@ function showNotification(message, type = "error", duration = 4000) {
       const appointmentData = {
         patient_id: patientId,
         doctor_id: doctorId,
-        appointment_date: appointmentDate,
+        appointment_date: formattedDate,
         notes: notes,
         is_emergency: isEmergency,
         current_illness: currentIllness // Add current_illness to the payload
@@ -1529,8 +1657,7 @@ function showNotification(message, type = "error", duration = 4000) {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: $("#editAppointmentDate").val()
-      };
+        appointment_date: $("#editAppointmentDate").val() + ":00"      };
 
       console.log("Updating appointment with data:", updatedAppointment);
 
@@ -1614,7 +1741,7 @@ function showNotification(message, type = "error", duration = 4000) {
       fetch("http://smarthospitalmaintain.com:8000/appointments/reschedule/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate).toISOString() })
+        body: JSON.stringify({ appointment_ids: appointmentIds, appointment_date: new Date(newDate + ":00").toISOString() })
       })
         .then(response => {
           if (!response.ok) throw new Error("Failed to reschedule");
@@ -1638,19 +1765,18 @@ function showNotification(message, type = "error", duration = 4000) {
       const patientId = $("#searchPatientId").val().toLowerCase().trim();
       const name = $("#searchName").val().toLowerCase().trim();
       const mobile = $("#searchMobile").val().trim();
-      const dob = $("#searchDob").val();
-      const date = $("#searchDate").val();
-
-      console.log("Filtering table with criteria:", { patientId, name, mobile, dob, date });
-
+      const dob = $("#searchDob").val(); // Now in Y-m-d format
+      const date = $("#searchDate").val(); // Now in Y-m-d format
+    
       $(".tab-pane tbody tr").each(function() {
         const row = $(this);
         const rowPatientId = row.find("td:nth-child(3)").text().toLowerCase().trim();
         const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
         const rowMobile = row.find("td:nth-child(6)").text().trim();
-        const rowDob = row.find("td:nth-child(5)")?.text() || "";
-        const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim();
-
+        const rowDob = row.find("td:nth-child(5)")?.text() || ""; // Adjust if DOB is displayed
+        const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim(); // e.g., "3/7/2025"
+    
+        // Convert rowDate to Y-m-d format for comparison
         let formattedRowDate = "";
         if (rowDate) {
           const dateParts = rowDate.split("/");
@@ -1658,13 +1784,13 @@ function showNotification(message, type = "error", duration = 4000) {
             formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
           }
         }
-
+    
         const matches = (!patientId || rowPatientId.includes(patientId)) &&
                        (!name || rowName.includes(name)) &&
                        (!mobile || rowMobile.includes(mobile)) &&
                        (!dob || rowDob.includes(dob)) &&
                        (!date || formattedRowDate === date);
-
+    
         row.toggle(matches);
       });
     }
@@ -1902,21 +2028,19 @@ function showNotification(message, type = "error", duration = 4000) {
     
    
 
-$("#dateOfBirth, #editDateOfBirth, #patientDob").on("change", function() {
-  const dob = new Date(this.value);
-  if (isNaN(dob.getTime())) {
-    console.warn("Invalid date of birth:", this.value);
-    $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val("");
-    return;
-  }
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
-    age--;
-  }
-  console.log(`Calculated age for ${this.id}:`, age);
-  $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val(age >= 0 ? age : "");
-});
+    $("#patientDob, #dateOfBirth, #editDateOfBirth").on("change", function() {
+      const dob = new Date(this.value); // Flatpickr uses altInput value
+      if (isNaN(dob.getTime())) {
+        $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val("");
+        return;
+      }
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      $(this.id === "dateOfBirth" ? "#age" : this.id === "editDateOfBirth" ? "#editAge" : "#patientAge").val(age >= 0 ? age : "");
+    });
 
 
 

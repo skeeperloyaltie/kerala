@@ -43,8 +43,15 @@
             maxDate: $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth" || $input.attr("id") === "patientDob" ? "today" : null,
             static: true, // Keep picker in place relative to input
             appendTo: document.body, // Ensure it works with modals
-            // Add custom "OK" button
+            // Add custom "OK" and "Clear" buttons
             onReady: function(selectedDates, dateStr, instance) {
+              const buttonContainer = document.createElement("div");
+              buttonContainer.style.display = "flex";
+              buttonContainer.style.justifyContent = "center";
+              buttonContainer.style.gap = "10px"; // Space between buttons
+              buttonContainer.style.padding = "5px";
+    
+              // OK Button
               const confirmButton = document.createElement("button");
               confirmButton.innerText = "OK";
               confirmButton.className = "flatpickr-confirm";
@@ -57,7 +64,22 @@
                   $input.addClass("is-invalid");
                 }
               };
-              instance.calendarContainer.appendChild(confirmButton);
+    
+              // Clear Button
+              const clearButton = document.createElement("button");
+              clearButton.innerText = "Clear";
+              clearButton.className = "flatpickr-clear";
+              clearButton.onclick = function() {
+                instance.clear(); // Clear the selected date
+                $input.val(""); // Clear the input value
+                $input.removeClass("is-invalid");
+                instance.close(); // Close the picker
+              };
+    
+              // Append buttons to container
+              buttonContainer.appendChild(confirmButton);
+              buttonContainer.appendChild(clearButton);
+              instance.calendarContainer.appendChild(buttonContainer);
             },
             onClose: function(selectedDates, dateStr, instance) {
               if (selectedDates.length === 0) {
@@ -90,38 +112,45 @@
   </script>
 
   <style>
-    .custom-datetime-picker {
-      position: relative;
-      width: 100%;
-    }
-    
-    /* Style the Flatpickr calendar */
-    .flatpickr-calendar {
-      z-index: 1200; /* Ensure it appears above modals */
-      border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    
-    .flatpickr-day.selected {
-      background-color: #007bff;
-      color: white;
-    }
-    
-    /* Custom OK button styling */
-    .flatpickr-confirm {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 3px;
-      cursor: pointer;
-      margin: 5px auto;
-      display: block;
-    }
-    
-    .flatpickr-confirm:hover {
-      background-color: #0056b3;
-    }
+   /* Style the Flatpickr calendar */
+.flatpickr-calendar {
+  z-index: 1200; /* Ensure it appears above modals */
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.flatpickr-day.selected {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Custom OK button styling */
+.flatpickr-confirm {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Custom Clear button styling */
+.flatpickr-clear {
+  background-color: #dc3545; /* Red for clear, matches Bootstrap danger */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.flatpickr-confirm:hover {
+  background-color: #0056b3;
+}
+
+.flatpickr-clear:hover {
+  background-color: #c82333;
+}
     #customNotification .modal-content {
       border: none;
       border-radius: 0.5rem;
