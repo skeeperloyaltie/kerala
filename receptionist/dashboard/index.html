@@ -92,8 +92,10 @@
                   instance.close();
                   $input.removeClass("is-invalid");
                 } else {
-                  showNotification("Please select a date" + (isDateOnly ? "" : " and time") + ".", "error");
+                  
                   $input.addClass("is-invalid");
+                  instance.close(); // Close the picker
+
                 }
               };
     
