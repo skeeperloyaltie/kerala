@@ -1405,33 +1405,38 @@ $(document).ready(function() {
     }
     
     // Helper function to format date/time like Flatpickr's altFormat
-    function formatDateTimeForTable(dateStr) {
-      const date = new Date(dateStr); // dateStr is "2025-03-20T17:52:00+05:30" from API
-      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      let month = months[date.getUTCMonth()];
-      let day = date.getUTCDate();
-      let year = date.getUTCFullYear();
-      let hours = date.getUTCHours();
-      let minutes = date.getUTCMinutes();
-    
-      // Adjust to IST (UTC+5:30) manually
-      hours += 5;
-      minutes += 30;
-      if (minutes >= 60) {
-        minutes -= 60;
-        hours += 1;
+    function formatDateTimeForTable(date, includeTime = true) {
+      const dateObj = (typeof date === 'string') ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) {
+          console.error("Invalid date provided:", date);
+          return "Invalid Date";
       }
-      if (hours >= 24) {
-        hours -= 24;
-        day += 1; // Note: This oversimplifies; use a library like Luxon for robust handling
+  
+      // Force IST
+      const istOffset = 5.5 * 60; // 330 minutes
+      const utcDate = new Date(dateObj.getTime() - (dateObj.getTimezoneOffset() * 60000));
+      const istDate = new Date(utcDate.getTime() + (istOffset * 60000));
+  
+      const months = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+      ];
+      let month = months[istDate.getMonth()];
+      let day = istDate.getDate();
+      let year = istDate.getFullYear();
+  
+      if (!includeTime) {
+          return `${month} ${day}, ${year}`;
       }
-    
+  
+      let hours = istDate.getHours();
+      let minutes = istDate.getMinutes();
       let period = hours >= 12 ? "PM" : "AM";
       hours = hours % 12 || 12;
       minutes = minutes < 10 ? `0${minutes}` : minutes;
-    
+  
       return `${month} ${day}, ${year}, ${hours}:${minutes} ${period}`;
-    }
+  }
 
     function toggleAll(status) {
       const selectAllCheckbox = document.getElementById(`${status}-select-all`);
@@ -1691,7 +1696,6 @@ $(document).ready(function() {
       $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
       $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
   
-      // Calculate and update age
       const dob = currentAppointment.patient?.date_of_birth;
       if (dob) {
           const calculatedAge = calculateAge(dob);
@@ -1702,7 +1706,7 @@ $(document).ready(function() {
   
       $("#editCurrentIllness").val(currentAppointment.current_medications || "");
   
-      // Get the Flatpickr instance first
+      // Get the Flatpickr instance
       const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
       if (!flatpickrInstance) {
           console.error("Flatpickr instance not found for #editAppointmentDate. Ensure Flatpickr is initialized.");
@@ -1710,8 +1714,8 @@ $(document).ready(function() {
           return;
       }
   
-      // Set appointment_date directly from the API string
-      const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
+      // Set appointment_date from API string
+      const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
       const appointmentDate = new Date(appointmentDateStr);
       if (isNaN(appointmentDate.getTime())) {
           console.error("Invalid appointment_date:", appointmentDateStr);
@@ -1719,8 +1723,12 @@ $(document).ready(function() {
           return;
       }
   
-      // Set the date in Flatpickr without additional adjustments
-      flatpickrInstance.setDate(appointmentDate, true, "Y-m-d H:i"); // Sets "2025-03-20 17:52"
+      // Adjust to IST explicitly (undo local timezone offset and apply IST)
+      const istOffset = 5.5 * 60; // IST is UTC+05:30 in minutes
+      const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // To UTC
+      const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // To IST
+  
+      flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Sets "2025-03-21 01:52"
       console.log("openEditModal - appointment_date:", appointmentDateStr, "Flatpickr set to:", flatpickrInstance.selectedDates[0]);
   
       $("#editAppointmentStatus").val(currentAppointment.status || "");
@@ -1728,7 +1736,6 @@ $(document).ready(function() {
       $("#editAppointmentID").val(currentAppointment.id);
       $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
   
-      // Make fields read-only
       $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
       $("#editAge").prop("readonly", true);
       $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
@@ -1741,25 +1748,19 @@ $(document).ready(function() {
 
 
   function updateAppointment() {
-    const editAppointmentDateInput = document.querySelector("#editAppointmentDate");
-    const flatpickrInstance = editAppointmentDateInput._flatpickr;
-
-    // Get the selected date from Flatpickr
+    const flatpickrInstance = document.querySelector("#editAppointmentDate")._flatpickr;
     let appointmentDate = flatpickrInstance.selectedDates[0];
-    console.log("updateAppointment - Flatpickr date:", appointmentDate);    
     if (!appointmentDate || isNaN(appointmentDate.getTime())) {
         showNotification("Please select a valid appointment date and time", "error");
-        $("#editAppointmentDate").addClass("is-invalid");
+        $("#现状").addClass("is-invalid");
         return;
     }
 
-    // Adjust to IST (UTC+5:30)
-    const istOffset = 5.5 * 60; // IST offset in minutes
-    const localOffset = appointmentDate.getTimezoneOffset(); // Client's offset in minutes
-    const utcDate = new Date(appointmentDate.getTime() - (localOffset * 60000)); // Convert to UTC
-    const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // Convert to IST
-    const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30";
-    console.log("updateAppointment - Sent to API:", formattedAppointmentDate);
+    // Convert to IST
+    const istOffset = 5.5 * 60; // 330 minutes
+    const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000));
+    const istDate = new Date(utcDate.getTime() + (istOffset * 60000));
+    const formattedAppointmentDate = istDate.toISOString().slice(0, 19) + "+05:30";
 
     const updatedAppointment = {
         id: $("#editAppointmentID").val(),
@@ -1769,30 +1770,30 @@ $(document).ready(function() {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: formattedAppointmentDate // ISO 8601 without timezone suffixget
+        appointment_date: formattedAppointmentDate
     };
 
-    console.log("Updating appointment with data:", updatedAppointment);
+    console.log("updateAppointment - Sending to API:", updatedAppointment);
 
     fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(updatedAppointment)
     })
-        .then(response => {
-            if (!response.ok) throw new Error("Failed to update");
-            return response.json();
-        })
-        .then(data => {
-            console.log("Appointment updated:", data);
-            showNotification("Appointment updated successfully", "success");
-            $("#editAppointmentModal").modal("hide");
-            fetchAppointments(updatedAppointment.status);
-        })
-        .catch(error => {
-            console.error("Update appointment failed:", error);
-            showNotification("Failed to update appointment", "error");
-        });
+    .then(response => {
+        if (!response.ok) throw new Error("Failed to update");
+        return response.json();
+    })
+    .then(data => {
+        console.log("Appointment updated:", data);
+        showNotification("Appointment updated successfully", "success");
+        $("#editAppointmentModal").modal("hide");
+        fetchAppointments(updatedAppointment.status);
+    })
+    .catch(error => {
+        console.error("Update failed:", error);
+        showNotification("Failed to update appointment", "error");
+    });
 }
 
     function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
