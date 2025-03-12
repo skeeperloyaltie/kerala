@@ -1417,8 +1417,8 @@ function hideAppointmentForm() {
       const patientId = $("#searchPatientId").val().toLowerCase().trim();
       const name = $("#searchName").val().toLowerCase().trim();
       const mobile = $("#searchMobile").val().trim();
-      const dob = $("#searchDob").val(); // Now in Y-m-d format
-      const date = $("#searchDate").val(); // Now in Y-m-d format
+      const dob = $("#searchDob").val(); // Y-m-d format
+      const date = $("#searchDate").val(); // Y-m-d format
     
       $(".tab-pane tbody tr").each(function() {
         const row = $(this);
@@ -1426,14 +1426,15 @@ function hideAppointmentForm() {
         const rowName = row.find("td:nth-child(4)").text().toLowerCase().trim();
         const rowMobile = row.find("td:nth-child(6)").text().trim();
         const rowDob = row.find("td:nth-child(5)")?.text() || ""; // Adjust if DOB is displayed
-        const rowDate = row.find("td:nth-child(9)").text().split(",")[0].trim(); // e.g., "3/7/2025"
+        const rowDateTime = row.find("td:nth-child(9)").text().trim(); // e.g., "March 12, 2025, 3:30 PM"
     
-        // Convert rowDate to Y-m-d format for comparison
+        // Parse "March 12, 2025" from "March 12, 2025, 3:30 PM" and convert to Y-m-d
         let formattedRowDate = "";
-        if (rowDate) {
-          const dateParts = rowDate.split("/");
-          if (dateParts.length === 3) {
-            formattedRowDate = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
+        if (rowDateTime) {
+          const datePart = rowDateTime.split(", ").slice(0, 2).join(", "); // "March 12, 2025"
+          const dateObj = new Date(datePart);
+          if (!isNaN(dateObj.getTime())) {
+            formattedRowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
           }
         }
     
@@ -1943,9 +1944,9 @@ function fetchAppointments(status) {
       let tbody = document.getElementById(tbodyId);
       if (!tbody) return;
       tbody.innerHTML = "";
-
+    
       filteredAppointments = appointments;
-
+    
       if (!document.getElementById(`${status}-select-all`)) {
         let thead = document.createElement("thead");
         thead.innerHTML = `
@@ -1968,12 +1969,15 @@ function fetchAppointments(status) {
         `;
         tbody.parentElement.insertBefore(thead, tbody);
       }
-
+    
       appointments.forEach((appointment, index) => {
         let patient = appointment.patient || {};
         let doctor = appointment.doctor || {};
         let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
-        let appointmentTime = new Date(appointment.appointment_date).toLocaleString();
+        
+        // Format appointment time to match Flatpickr's altFormat
+        let appointmentDate = new Date(appointment.appointment_date);
+        let appointmentTime = formatDateTimeForTable(appointmentDate); // Includes time by default
 
         let row = document.createElement("tr");
         row.innerHTML = `
@@ -1994,8 +1998,31 @@ function fetchAppointments(status) {
         `;
         tbody.appendChild(row);
       });
-
+    
       filterTable(); // Apply filter after populating
+    }
+    
+    // Helper function to format date/time like Flatpickr's altFormat
+    function formatDateTimeForTable(date, includeTime = true) {
+      const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      let month = months[date.getMonth()];
+      let day = date.getDate();
+      let year = date.getFullYear();
+    
+      if (!includeTime) {
+        return `${month} ${day}, ${year}`; // e.g., "March 12, 2025"
+      }
+    
+      let hours = date.getHours();
+      let minutes = date.getMinutes();
+      let period = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      minutes = minutes < 10 ? `0${minutes}` : minutes;
+    
+      return `${month} ${day}, ${year}, ${hours}:${minutes} ${period}`; // e.g., "March 12, 2025, 3:30 PM"
     }
 
     // Function to toggle all checkboxes when "Select All" is clicked
