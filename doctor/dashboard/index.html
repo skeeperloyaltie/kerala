@@ -1703,6 +1703,9 @@ $(document).ready(function() {
       $("#editCurrentIllness").val(currentAppointment.current_medications || "");
       
       let appointmentDate = flatpickrInstance.selectedDates[0];
+       // Set appointment_date directly from the API string
+  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
+
 console.log("updateAppointment - Flatpickr date:", appointmentDate);
 const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30";
 console.log("updateAppointment - Sent to API:", formattedAppointmentDate);
