@@ -2573,13 +2573,15 @@ function openEditModal(appointmentData, rowIndex) {
 
   $("#editCurrentIllness").val(currentAppointment.current_medications || "");
 
+
   // Set appointment_date directly from the API string
   const appointmentDateStr = currentAppointment.appointment_date;
+  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
+
 const appointmentDate = new Date(appointmentDateStr);
 console.log("openEditModal - appointment_date:", appointmentDateStr, "Parsed:", appointmentDate);
 flatpickrInstance.setDate(appointmentDate, true, "Y-m-d H:i");
 console.log("openEditModal - Flatpickr set to:", flatpickrInstance.selectedDates[0]);
-  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
 
   // Parse the ISO string and set it in Flatpickr without additional adjustments
   if (isNaN(appointmentDate.getTime())) {
