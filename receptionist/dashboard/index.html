@@ -2572,19 +2572,21 @@ function openEditModal(appointmentData, rowIndex) {
   }
 
   $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-  
-  // Set appointment_date in IST for Flatpickr
+
+  // Set appointment_date directly from the API string
   const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
-  const appointmentDate = new Date(appointmentDateStr); // Parse ISO string
   const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
 
-  // Adjust to IST explicitly (ensure no local timezone interference)
-  const istOffset = 5.5 * 60; // IST is UTC+5:30 in minutes
-  const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // Convert to UTC
-  const istDate = new Date(utcDate.getTime()); // Already in IST from API, no further adjustment needed
-  
-  flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Set as "2025-03-20 17:52"
-  // Note: Flatpickr will display "March 20, 2025, 11:22 PM" via altFormat
+  // Parse the ISO string and set it in Flatpickr without additional adjustments
+  const appointmentDate = new Date(appointmentDateStr);
+  if (isNaN(appointmentDate.getTime())) {
+      console.error("Invalid appointment_date:", appointmentDateStr);
+      showNotification("Invalid appointment date received.", "error");
+      return;
+  }
+
+  // Set the exact date and time as received, preserving the original value
+  flatpickrInstance.setDate(appointmentDate, true, "Y-m-d H:i"); // e.g., "2025-03-20 17:52"
 
   $("#editAppointmentStatus").val(currentAppointment.status || "");
   $("#editNotes").val(currentAppointment.notes || "");
@@ -2604,56 +2606,52 @@ function openEditModal(appointmentData, rowIndex) {
 
 // Modified updateAppointment with detailed logging and error handling
 function updateAppointment() {
-  // Get the Flatpickr instance for #editAppointmentDate
   const editAppointmentDateInput = document.querySelector("#editAppointmentDate");
   const flatpickrInstance = editAppointmentDateInput._flatpickr;
 
-  // Get the selected date from Flatpickr (if available) or parse the input value
-  let appointmentDate;
-  if (flatpickrInstance && flatpickrInstance.selectedDates.length > 0) {
-    // Use Flatpickr's selected date to ensure accuracy
-    appointmentDate = flatpickrInstance.selectedDates[0];
-  } else {
-    // Fallback: Parse the input value (Y-m-d H:i format)
-    appointmentDate = new Date($("#editAppointmentDate").val());
+  // Get the selected date from Flatpickr
+  let appointmentDate = flatpickrInstance.selectedDates[0];
+  if (!appointmentDate || isNaN(appointmentDate.getTime())) {
+      showNotification("Please select a valid appointment date and time", "error");
+      $("#editAppointmentDate").addClass("is-invalid");
+      return;
   }
 
-  // Format as ISO 8601 (e.g., "2025-03-12T15:30:00")
-  const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 16) + ":00";
+  // Format as ISO 8601 with IST offset (+05:30), matching the API format
+  const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30"; // e.g., "2025-03-20T17:52:00+05:30"
 
   const updatedAppointment = {
-    id: $("#editAppointmentID").val(),
-    patient_id: $("#editPatientID").val(),
-    date_of_birth: $("#editDateOfBirth").val(),
-    current_illness: $("#editCurrentIllness").val(),
-    doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
-    status: $("#editAppointmentStatus").val(),
-    notes: $("#editNotes").val(),
-    appointment_date: formattedAppointmentDate // Use ISO 8601 format for API
+      id: $("#editAppointmentID").val(),
+      patient_id: $("#editPatientID").val(),
+      date_of_birth: $("#editDateOfBirth").val(),
+      current_illness: $("#editCurrentIllness").val(),
+      doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
+      status: $("#editAppointmentStatus").val(),
+      notes: $("#editNotes").val(),
+      appointment_date: formattedAppointmentDate
   };
 
   console.log("Updating appointment with data:", updatedAppointment);
 
   fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(updatedAppointment)
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(updatedAppointment)
   })
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to update");
-      return response.json();
-    })
-    .then(data => {
-      console.log("Appointment updated:", data);
-      showNotification("Appointment updated successfully", "success");
-      $("#editAppointmentModal").modal("hide");
-      // Update the table without full reload if desired
-      fetchAppointments(updatedAppointment.status); // Refresh only the relevant status tab
-    })
-    .catch(error => {
-      console.error("Update appointment failed:", error);
-      showNotification("Failed to update appointment", "error");
-    });
+      .then(response => {
+          if (!response.ok) throw new Error("Failed to update");
+          return response.json();
+      })
+      .then(data => {
+          console.log("Appointment updated:", data);
+          showNotification("Appointment updated successfully", "success");
+          $("#editAppointmentModal").modal("hide");
+          fetchAppointments(updatedAppointment.status);
+      })
+      .catch(error => {
+          console.error("Update appointment failed:", error);
+          showNotification("Failed to update appointment", "error");
+      });
 }
 
     // Cancel and Reschedule (unchanged)

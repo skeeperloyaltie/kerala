@@ -1701,19 +1701,21 @@ $(document).ready(function() {
       }
   
       $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-      
-      // Set appointment_date in IST for Flatpickr
+  
+      // Set appointment_date directly from the API string
       const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
-      const appointmentDate = new Date(appointmentDateStr); // Parse ISO string
       const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
   
-      // Adjust to IST explicitly (ensure no local timezone interference)
-      const istOffset = 5.5 * 60; // IST is UTC+5:30 in minutes
-      const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // Convert to UTC
-      const istDate = new Date(utcDate.getTime()); // Already in IST from API, no further adjustment needed
-      
-      flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Set as "2025-03-20 17:52"
-      // Note: Flatpickr will display "March 20, 2025, 11:22 PM" via altFormat
+      // Parse the ISO string and set it in Flatpickr without additional adjustments
+      const appointmentDate = new Date(appointmentDateStr);
+      if (isNaN(appointmentDate.getTime())) {
+          console.error("Invalid appointment_date:", appointmentDateStr);
+          showNotification("Invalid appointment date received.", "error");
+          return;
+      }
+  
+      // Set the exact date and time as received, preserving the original value
+      flatpickrInstance.setDate(appointmentDate, true, "Y-m-d H:i"); // e.g., "2025-03-20 17:52"
   
       $("#editAppointmentStatus").val(currentAppointment.status || "");
       $("#editNotes").val(currentAppointment.notes || "");
@@ -1744,12 +1746,8 @@ $(document).ready(function() {
         return;
     }
 
-    // Adjust to IST (UTC+5:30)
-    const istOffset = 5.5 * 60; // IST offset in minutes
-    const localOffset = appointmentDate.getTimezoneOffset(); // Client's offset in minutes
-    const utcDate = new Date(appointmentDate.getTime() - (localOffset * 60000)); // Convert to UTC
-    const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // Convert to IST
-    const formattedAppointmentDate = istDate.toISOString().slice(0, 19); // "2025-03-20T17:52:00"
+    // Format as ISO 8601 with IST offset (+05:30), matching the API format
+    const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30"; // e.g., "2025-03-20T17:52:00+05:30"
 
     const updatedAppointment = {
         id: $("#editAppointmentID").val(),
@@ -1759,7 +1757,7 @@ $(document).ready(function() {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: formattedAppointmentDate // ISO 8601 without timezone suffixget
+        appointment_date: formattedAppointmentDate
     };
 
     console.log("Updating appointment with data:", updatedAppointment);
