@@ -1707,6 +1707,23 @@ $(document).ready(function() {
     }
 
     function updateAppointment() {
+      // Get the Flatpickr instance for #editAppointmentDate
+      const editAppointmentDateInput = document.querySelector("#editAppointmentDate");
+      const flatpickrInstance = editAppointmentDateInput._flatpickr;
+    
+      // Get the selected date from Flatpickr (if available) or parse the input value
+      let appointmentDate;
+      if (flatpickrInstance && flatpickrInstance.selectedDates.length > 0) {
+        // Use Flatpickr's selected date to ensure accuracy
+        appointmentDate = flatpickrInstance.selectedDates[0];
+      } else {
+        // Fallback: Parse the input value (Y-m-d H:i format)
+        appointmentDate = new Date($("#editAppointmentDate").val());
+      }
+    
+      // Format as ISO 8601 (e.g., "2025-03-12T15:30:00")
+      const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 16) + ":00";
+    
       const updatedAppointment = {
         id: $("#editAppointmentID").val(),
         patient_id: $("#editPatientID").val(),
@@ -1715,10 +1732,11 @@ $(document).ready(function() {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: $("#editAppointmentDate").val() + ":00"      };
-
+        appointment_date: formattedAppointmentDate // Use ISO 8601 format for API
+      };
+    
       console.log("Updating appointment with data:", updatedAppointment);
-
+    
       fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
@@ -1730,9 +1748,10 @@ $(document).ready(function() {
         })
         .then(data => {
           console.log("Appointment updated:", data);
-          showNotification("Appointment updated successfully");
+          showNotification("Appointment updated successfully", "success");
           $("#editAppointmentModal").modal("hide");
-          location.reload();
+          // Update the table without full reload if desired
+          fetchAppointments(updatedAppointment.status); // Refresh only the relevant status tab
         })
         .catch(error => {
           console.error("Update appointment failed:", error);
