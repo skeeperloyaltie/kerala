@@ -1701,22 +1701,27 @@ $(document).ready(function() {
       }
   
       $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-      
-      let appointmentDate = flatpickrInstance.selectedDates[0];
-       // Set appointment_date directly from the API string
-  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
-
-console.log("updateAppointment - Flatpickr date:", appointmentDate);
-const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 19) + "+05:30";
-console.log("updateAppointment - Sent to API:", formattedAppointmentDate);
   
-      // Adjust to IST explicitly (ensure no local timezone interference)
-      const istOffset = 5.5 * 60; // IST is UTC+5:30 in minutes
-      const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // Convert to UTC
-      const istDate = new Date(utcDate.getTime()); // Already in IST from API, no further adjustment needed
-      
-      flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Set as "2025-03-20 17:52"
-      // Note: Flatpickr will display "March 20, 2025, 11:22 PM" via altFormat
+      // Get the Flatpickr instance first
+      const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
+      if (!flatpickrInstance) {
+          console.error("Flatpickr instance not found for #editAppointmentDate. Ensure Flatpickr is initialized.");
+          showNotification("Date picker not initialized.", "error");
+          return;
+      }
+  
+      // Set appointment_date directly from the API string
+      const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
+      const appointmentDate = new Date(appointmentDateStr);
+      if (isNaN(appointmentDate.getTime())) {
+          console.error("Invalid appointment_date:", appointmentDateStr);
+          showNotification("Invalid appointment date received.", "error");
+          return;
+      }
+  
+      // Set the date in Flatpickr without additional adjustments
+      flatpickrInstance.setDate(appointmentDate, true, "Y-m-d H:i"); // Sets "2025-03-20 17:52"
+      console.log("openEditModal - appointment_date:", appointmentDateStr, "Flatpickr set to:", flatpickrInstance.selectedDates[0]);
   
       $("#editAppointmentStatus").val(currentAppointment.status || "");
       $("#editNotes").val(currentAppointment.notes || "");
