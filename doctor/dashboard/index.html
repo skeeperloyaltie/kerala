@@ -1380,10 +1380,7 @@ $(document).ready(function() {
         let patient = appointment.patient || {};
         let doctor = appointment.doctor || {};
         let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
-        
-        // Format appointment time to match Flatpickr's altFormat
-        let appointmentDate = new Date(appointment.appointment_date);
-        let appointmentTime = formatDateTimeForTable(appointmentDate);
+        let appointmentTime = formatDateTimeForTable(appointment.appointment_date); // Use string directly
     
         let row = document.createElement("tr");
         row.innerHTML = `
@@ -1409,26 +1406,32 @@ $(document).ready(function() {
     }
     
     // Helper function to format date/time like Flatpickr's altFormat
-    function formatDateTimeForTable(date, includeTime = true) {
-      const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ];
-      let month = months[date.getMonth()];
-      let day = date.getDate();
-      let year = date.getFullYear();
+    function formatDateTimeForTable(dateStr) {
+      const date = new Date(dateStr); // dateStr is "2025-03-20T17:52:00+05:30" from API
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      let month = months[date.getUTCMonth()];
+      let day = date.getUTCDate();
+      let year = date.getUTCFullYear();
+      let hours = date.getUTCHours();
+      let minutes = date.getUTCMinutes();
     
-      if (!includeTime) {
-        return `${month} ${day}, ${year}`; // e.g., "March 12, 2025"
+      // Adjust to IST (UTC+5:30) manually
+      hours += 5;
+      minutes += 30;
+      if (minutes >= 60) {
+        minutes -= 60;
+        hours += 1;
+      }
+      if (hours >= 24) {
+        hours -= 24;
+        day += 1; // Note: This oversimplifies; use a library like Luxon for robust handling
       }
     
-      let hours = date.getHours();
-      let minutes = date.getMinutes();
       let period = hours >= 12 ? "PM" : "AM";
       hours = hours % 12 || 12;
       minutes = minutes < 10 ? `0${minutes}` : minutes;
     
-      return `${month} ${day}, ${year}, ${hours}:${minutes} ${period}`; // e.g., "March 12, 2025, 3:30 PM"
+      return `${month} ${day}, ${year}, ${hours}:${minutes} ${period}`;
     }
 
     function toggleAll(status) {
@@ -1683,48 +1686,73 @@ $(document).ready(function() {
     let currentAppointment = null;
     function openEditModal(appointmentData, rowIndex) {
       currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
-      console.log("Opening edit modal for appointment:", currentAppointment);
-
+  
       $("#editFirstName").val(currentAppointment.patient?.first_name || "");
       $("#editLastName").val(currentAppointment.patient?.last_name || "");
       $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
       $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-      $("#editAge").val(currentAppointment.patient?.date_of_birth ? calculateAge(currentAppointment.patient.date_of_birth) : "");
+  
+      // Calculate and update age
+      const dob = currentAppointment.patient?.date_of_birth;
+      if (dob) {
+          const calculatedAge = calculateAge(dob);
+          $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
+      } else {
+          $("#editAge").val("");
+      }
+  
       $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-      $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
+      
+      // Set appointment_date in IST for Flatpickr
+      const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
+      const appointmentDate = new Date(appointmentDateStr); // Parse ISO string
+      const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
+  
+      // Adjust to IST explicitly (ensure no local timezone interference)
+      const istOffset = 5.5 * 60; // IST is UTC+5:30 in minutes
+      const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // Convert to UTC
+      const istDate = new Date(utcDate.getTime()); // Already in IST from API, no further adjustment needed
+      
+      flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Set as "2025-03-20 17:52"
+      // Note: Flatpickr will display "March 20, 2025, 11:22 PM" via altFormat
+  
       $("#editAppointmentStatus").val(currentAppointment.status || "");
       $("#editNotes").val(currentAppointment.notes || "");
       $("#editAppointmentID").val(currentAppointment.id);
       $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
-
-      $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth, #editAge").prop("readonly", true);
+  
+      // Make fields read-only
+      $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
+      $("#editAge").prop("readonly", true);
       $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
-
-      const previousDoctorId = currentAppointment.doctor?.id || "";
+  
+      let previousDoctorId = currentAppointment.doctor?.id || "";
       loadDoctors(previousDoctorId);
-
+  
       $("#editAppointmentModal").modal("show");
+  }
+
+  
+  function updateAppointment() {
+    const editAppointmentDateInput = document.querySelector("#editAppointmentDate");
+    const flatpickrInstance = editAppointmentDateInput._flatpickr;
+
+    // Get the selected date from Flatpickr
+    let appointmentDate = flatpickrInstance.selectedDates[0];
+    if (!appointmentDate || isNaN(appointmentDate.getTime())) {
+        showNotification("Please select a valid appointment date and time", "error");
+        $("#editAppointmentDate").addClass("is-invalid");
+        return;
     }
 
-    function updateAppointment() {
-      // Get the Flatpickr instance for #editAppointmentDate
-      const editAppointmentDateInput = document.querySelector("#editAppointmentDate");
-      const flatpickrInstance = editAppointmentDateInput._flatpickr;
-    
-      // Get the selected date from Flatpickr (if available) or parse the input value
-      let appointmentDate;
-      if (flatpickrInstance && flatpickrInstance.selectedDates.length > 0) {
-        // Use Flatpickr's selected date to ensure accuracy
-        appointmentDate = flatpickrInstance.selectedDates[0];
-      } else {
-        // Fallback: Parse the input value (Y-m-d H:i format)
-        appointmentDate = new Date($("#editAppointmentDate").val());
-      }
-    
-      // Format as ISO 8601 (e.g., "2025-03-12T15:30:00")
-      const formattedAppointmentDate = appointmentDate.toISOString().slice(0, 16) + ":00";
-    
-      const updatedAppointment = {
+    // Adjust to IST (UTC+5:30)
+    const istOffset = 5.5 * 60; // IST offset in minutes
+    const localOffset = appointmentDate.getTimezoneOffset(); // Client's offset in minutes
+    const utcDate = new Date(appointmentDate.getTime() - (localOffset * 60000)); // Convert to UTC
+    const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // Convert to IST
+    const formattedAppointmentDate = istDate.toISOString().slice(0, 19); // "2025-03-20T17:52:00"
+
+    const updatedAppointment = {
         id: $("#editAppointmentID").val(),
         patient_id: $("#editPatientID").val(),
         date_of_birth: $("#editDateOfBirth").val(),
@@ -1732,32 +1760,31 @@ $(document).ready(function() {
         doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
         status: $("#editAppointmentStatus").val(),
         notes: $("#editNotes").val(),
-        appointment_date: formattedAppointmentDate // Use ISO 8601 format for API
-      };
-    
-      console.log("Updating appointment with data:", updatedAppointment);
-    
-      fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
+        appointment_date: formattedAppointmentDate // ISO 8601 without timezone suffix
+    };
+
+    console.log("Updating appointment with data:", updatedAppointment);
+
+    fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(updatedAppointment)
-      })
+    })
         .then(response => {
-          if (!response.ok) throw new Error("Failed to update");
-          return response.json();
+            if (!response.ok) throw new Error("Failed to update");
+            return response.json();
         })
         .then(data => {
-          console.log("Appointment updated:", data);
-          showNotification("Appointment updated successfully", "success");
-          $("#editAppointmentModal").modal("hide");
-          // Update the table without full reload if desired
-          fetchAppointments(updatedAppointment.status); // Refresh only the relevant status tab
+            console.log("Appointment updated:", data);
+            showNotification("Appointment updated successfully", "success");
+            $("#editAppointmentModal").modal("hide");
+            fetchAppointments(updatedAppointment.status);
         })
         .catch(error => {
-          console.error("Update appointment failed:", error);
-          showNotification("Failed to update appointment", "error");
+            console.error("Update appointment failed:", error);
+            showNotification("Failed to update appointment", "error");
         });
-    }
+}
 
     function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
       const selectedIds = Array.isArray(appointmentIds) ? appointmentIds : [appointmentIds];

@@ -1974,11 +1974,8 @@ function fetchAppointments(status) {
         let patient = appointment.patient || {};
         let doctor = appointment.doctor || {};
         let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
-        
-        // Format appointment time to match Flatpickr's altFormat
-        let appointmentDate = new Date(appointment.appointment_date);
-        let appointmentTime = formatDateTimeForTable(appointmentDate); // Includes time by default
-
+        let appointmentTime = formatDateTimeForTable(appointment.appointment_date); // Use string directly
+    
         let row = document.createElement("tr");
         row.innerHTML = `
           <td><input type="checkbox" class="${status}-checkbox" value="${appointment.id}" onclick="updateBulkSelection('${status}')"></td>
@@ -2528,40 +2525,52 @@ $("#createPatientModal").on("show.bs.modal", function() {
 
 // Updated openEditModal with age calculation and non-editable fields
 let currentAppointment = null; // Global variable to store the current appointment
-
 function openEditModal(appointmentData, rowIndex) {
-    currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
-    
-    $("#editFirstName").val(currentAppointment.patient?.first_name || "");
-    $("#editLastName").val(currentAppointment.patient?.last_name || "");
-    $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-    $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-    
-    // Calculate and update age
-    const dob = currentAppointment.patient?.date_of_birth;
-    if (dob) {
-        const calculatedAge = calculateAge(dob);
-        $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
-    } else {
-        $("#editAge").val("");
-    }
-    
-    $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-    $("#editAppointmentDate").val(formatDateTime(currentAppointment.appointment_date));
-    $("#editAppointmentStatus").val(currentAppointment.status || "");
-    $("#editNotes").val(currentAppointment.notes || "");
-    $("#editAppointmentID").val(currentAppointment.id);
-    $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
+  currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
 
-    // Make fields read-only
-    $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
-    $("#editAge").prop("readonly", true); // Age should also be readonly since it's calculated
-    $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+  $("#editFirstName").val(currentAppointment.patient?.first_name || "");
+  $("#editLastName").val(currentAppointment.patient?.last_name || "");
+  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
+  $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
 
-    let previousDoctorId = currentAppointment.doctor?.id || "";
-    loadDoctors(previousDoctorId);
+  // Calculate and update age
+  const dob = currentAppointment.patient?.date_of_birth;
+  if (dob) {
+      const calculatedAge = calculateAge(dob);
+      $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
+  } else {
+      $("#editAge").val("");
+  }
 
-    $("#editAppointmentModal").modal("show");
+  $("#editCurrentIllness").val(currentAppointment.current_medications || "");
+  
+  // Set appointment_date in IST for Flatpickr
+  const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-20T17:52:00+05:30"
+  const appointmentDate = new Date(appointmentDateStr); // Parse ISO string
+  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
+
+  // Adjust to IST explicitly (ensure no local timezone interference)
+  const istOffset = 5.5 * 60; // IST is UTC+5:30 in minutes
+  const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // Convert to UTC
+  const istDate = new Date(utcDate.getTime()); // Already in IST from API, no further adjustment needed
+  
+  flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Set as "2025-03-20 17:52"
+  // Note: Flatpickr will display "March 20, 2025, 11:22 PM" via altFormat
+
+  $("#editAppointmentStatus").val(currentAppointment.status || "");
+  $("#editNotes").val(currentAppointment.notes || "");
+  $("#editAppointmentID").val(currentAppointment.id);
+  $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
+
+  // Make fields read-only
+  $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
+  $("#editAge").prop("readonly", true);
+  $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+
+  let previousDoctorId = currentAppointment.doctor?.id || "";
+  loadDoctors(previousDoctorId);
+
+  $("#editAppointmentModal").modal("show");
 }
 
 // Modified updateAppointment with detailed logging and error handling

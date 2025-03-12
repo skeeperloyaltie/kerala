@@ -101,6 +101,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "updated_at", "vitals"
         ]
         read_only_fields = ["id", "created_by", "created_by_username", "updated_by", "updated_by_username"]
+        
+        depth = 1  # Ensures nested patient/doctor data
+
+
 
     def to_internal_value(self, data):
         if "appointment_date" in data:
