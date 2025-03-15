@@ -1622,7 +1622,7 @@ function showNotification(message, type = "error", duration = 4000) {
       .removeClass("success-message error-message")
       .addClass(type === "success" ? "success-message" : "error-message")
       .show()
-      .css("animation", `fadeInOut ${duration / 1000}s ease-in-out`);
+      .css("animation", `fadeInOut ${duration / 100}s ease-in-out`);
   setTimeout(() => $("#customNotification").hide(), duration);
 }
 
