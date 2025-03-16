@@ -61,33 +61,33 @@ $(document).ready(function() {
   function initializeDatePickers() {
     $(".custom-datetime-picker").each(function() {
       const $input = $(this);
-      const isDateOnly = $input.attr("id") === "searchDob" || $input.attr("id") === "searchDate" || $input.attr("id") === "patientDob" || $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth";
-      const config = {
+      const inputId = $input.attr("id");
+      const isDateOnly = inputId === "searchDob" || inputId === "searchDate" || inputId === "patientDob" || inputId === "dateOfBirth" || inputId === "editDateOfBirth";
+      const isEditDob = inputId === "editDateOfBirth";
+  
+      // Base configuration
+      let config = {
         altInput: true,
         altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
-        dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i", // Backend format
+        dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i",     // Backend format
         enableTime: !isDateOnly,
         time_24hr: false,
-        minDate: $input.attr("id") === "appointmentDate" || $input.attr("id") === "editAppointmentDate" || $input.attr("id") === "newAppointmentDate" ? "today" : null,
-        maxDate: $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth" || $input.attr("id") === "patientDob" ? "today" : null,
-        appendTo: document.body, // Ensure it works with modals
-        position: "auto", // Dynamically adjust position (above/below/left/right)
-        // Remove static: true to allow dynamic positioning
+        minDate: inputId === "appointmentDate" || inputId === "editAppointmentDate" || inputId === "newAppointmentDate" ? "today" : null,
+        maxDate: inputId === "dateOfBirth" || inputId === "editDateOfBirth" || inputId === "patientDob" ? "today" : null,
+        appendTo: document.body,
+        position: "auto",
         onOpen: function(selectedDates, dateStr, instance) {
-          // Adjust calendar position to stay within viewport
           const calendar = instance.calendarContainer;
           const inputRect = $input[0].getBoundingClientRect();
           const calendarRect = calendar.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
           const viewportWidth = window.innerWidth;
-
-          // Reset any previous adjustments
+  
           calendar.style.top = "";
           calendar.style.left = "";
           calendar.style.bottom = "";
           calendar.style.right = "";
-
-          // Check if calendar overflows bottom
+  
           if (inputRect.bottom + calendarRect.height > viewportHeight) {
             calendar.style.top = "auto";
             calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
@@ -95,8 +95,7 @@ $(document).ready(function() {
             calendar.style.top = inputRect.bottom + "px";
             calendar.style.bottom = "auto";
           }
-
-          // Check if calendar overflows right
+  
           if (inputRect.left + calendarRect.width > viewportWidth) {
             calendar.style.left = "auto";
             calendar.style.right = (viewportWidth - inputRect.right) + "px";
@@ -106,13 +105,15 @@ $(document).ready(function() {
           }
         },
         onReady: function(selectedDates, dateStr, instance) {
+          // Skip custom buttons for editDateOfBirth since it’s not editable
+          if (isEditDob) return;
+  
           const buttonContainer = document.createElement("div");
           buttonContainer.style.display = "flex";
           buttonContainer.style.justifyContent = "center";
-          buttonContainer.style.gap = "10px"; // Space between buttons
+          buttonContainer.style.gap = "10px";
           buttonContainer.style.padding = "5px";
-
-          // OK Button
+  
           const confirmButton = document.createElement("button");
           confirmButton.innerText = "OK";
           confirmButton.className = "flatpickr-confirm";
@@ -121,36 +122,52 @@ $(document).ready(function() {
               instance.close();
               $input.removeClass("is-invalid");
             } else {
-              instance.close(); // Close the picker
+              instance.close();
             }
           };
-
-          // Clear Button
+  
           const clearButton = document.createElement("button");
           clearButton.innerText = "Clear";
           clearButton.className = "flatpickr-clear";
           clearButton.onclick = function() {
-            instance.clear(); // Clear the selected date
-            $input.val(""); // Clear the input value
+            instance.clear();
+            $input.val("");
             $input.removeClass("is-invalid");
-            instance.close(); // Close the picker
+            instance.close();
           };
-
-          // Append buttons to container
+  
           buttonContainer.appendChild(confirmButton);
           buttonContainer.appendChild(clearButton);
           instance.calendarContainer.appendChild(buttonContainer);
         },
         onClose: function(selectedDates, dateStr, instance) {
-          if (selectedDates.length === 0) {
-            $input.val(""); // Clear if no selection confirmed
+          if (!isEditDob && selectedDates.length === 0) {
+            $input.val("");
           }
         }
       };
-
+  
+      // Special configuration for #editDateOfBirth: Display only, no interaction
+      if (isEditDob) {
+        config = {
+          ...config,
+          noCalendar: true,        // Disable calendar
+          enableTime: false,       // Disable time picker
+          clickOpens: false,       // Prevent opening on click
+          allowInput: false,       // Prevent manual input
+          static: true             // Keep it as a static display
+        };
+      }
+  
+      // Destroy existing instance if it exists to avoid duplicates
+      if ($input[0]._flatpickr) {
+        $input[0]._flatpickr.destroy();
+      }
+  
+      // Initialize Flatpickr with the appropriate config
       flatpickr($input[0], config);
-
-      // Maintain readonly state if applicable
+  
+      // Ensure readonly state is respected
       if ($input.attr("readonly")) {
         $input.next(".flatpickr-input").prop("readonly", true);
       }
@@ -1723,63 +1740,62 @@ $(document).ready(function() {
     }
 
     let currentAppointment = null;
+   
     function openEditModal(appointmentData, rowIndex) {
       currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
-  
+    
       $("#editFirstName").val(currentAppointment.patient?.first_name || "");
       $("#editLastName").val(currentAppointment.patient?.last_name || "");
       $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-      $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
-  
-      const dob = currentAppointment.patient?.date_of_birth;
-      if (dob) {
-          const calculatedAge = calculateAge(dob);
-          $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
-      } else {
+    
+      // Set Date of Birth
+      const dobStr = currentAppointment.patient?.date_of_birth || ""; // e.g., "1990-05-15"
+      const flatpickrInstance = $("#editDateOfBirth")[0]._flatpickr;
+      if (dobStr) {
+        const dob = new Date(dobStr);
+        if (!isNaN(dob.getTime())) {
+          flatpickrInstance.setDate(dob, true, "Y-m-d"); // Sets "1990-05-15", displays as "May 15, 1990"
+          $("#editAge").val(calculateAge(dobStr));
+        } else {
+          flatpickrInstance.clear();
           $("#editAge").val("");
+        }
+      } else {
+        flatpickrInstance.clear();
+        $("#editAge").val("");
       }
-  
+    
       $("#editCurrentIllness").val(currentAppointment.current_medications || "");
-  
-      // Get the Flatpickr instance
-      const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
-      if (!flatpickrInstance) {
-          console.error("Flatpickr instance not found for #editAppointmentDate. Ensure Flatpickr is initialized.");
-          displayAlert("Date picker not initialized.", "error");
-          return;
-      }
-  
-      // Set appointment_date from API string
+    
+      // Set Appointment Date (editable)
       const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
-      const appointmentDate = new Date(appointmentDateStr);
-      if (isNaN(appointmentDate.getTime())) {
-          console.error("Invalid appointment_date:", appointmentDateStr);
-          displayAlert("Invalid appointment date received.", "error");
-          return;
+      const appointmentFlatpickr = $("#editAppointmentDate")[0]._flatpickr;
+      if (appointmentDateStr) {
+        const appointmentDate = new Date(appointmentDateStr);
+        if (!isNaN(appointmentDate.getTime())) {
+          const istOffset = 5.5 * 60; // IST offset in minutes
+          const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000));
+          const istDate = new Date(utcDate.getTime() + (istOffset * 60000));
+          appointmentFlatpickr.setDate(istDate, true, "Y-m-d H:i");
+        } else {
+          appointmentFlatpickr.clear();
+        }
       }
-  
-      // Adjust to IST explicitly (undo local timezone offset and apply IST)
-      const istOffset = 5.5 * 60; // IST is UTC+05:30 in minutes
-      const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // To UTC
-      const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // To IST
-  
-      flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Sets "2025-03-21 01:52"
-      console.log("openEditModal - appointment_date:", appointmentDateStr, "Flatpickr set to:", flatpickrInstance.selectedDates[0]);
-  
+    
       $("#editAppointmentStatus").val(currentAppointment.status || "");
       $("#editNotes").val(currentAppointment.notes || "");
       $("#editAppointmentID").val(currentAppointment.id);
       $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
-  
+    
       $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
       $("#editAge").prop("readonly", true);
       $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
-  
+    
       let previousDoctorId = currentAppointment.doctor?.id || "";
       loadDoctors(previousDoctorId);
-  
+    
       $("#editAppointmentModal").modal("show");
-  }
+    }
 
 
   function updateAppointment() {
