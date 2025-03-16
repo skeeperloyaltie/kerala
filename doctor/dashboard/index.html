@@ -516,8 +516,19 @@ $(document).ready(function() {
             </nav>
           </div>
               
-          <div id="alertContainer" class="mb-3"></div> <!-- Alert container -->
-                <!-- Rest of your content -->
+<!-- Alert Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body" id="alertContainer">
+        <!-- Alerts will be injected here -->
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>                <!-- Rest of your content -->
           <!-- Notification Modal -->
           <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
