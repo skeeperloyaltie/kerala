@@ -27,17 +27,33 @@
 <!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-     // Basic showNotification function (if not already defined)
+     // Basic displayAlert function (if not already defined)
        // Enhanced notification function with type parameter
-function showNotification(message, type = "error", duration = 4000) {
-  $("#notificationMessage").text(message);
-  $("#customNotification")
-      .removeClass("success-message error-message")
-      .addClass(type === "success" ? "success-message" : "error-message")
-      .show()
-      .css("animation", `fadeInOut ${duration / 100}s ease-in-out`);
-  setTimeout(() => $("#customNotification").hide(), duration);
-}
+       function displayAlert(message, type = "danger", duration = 4000) {
+        const alertId = `alert-${Date.now()}`;
+        const alertHtml = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert" id="${alertId}">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        `;
+        $("#alertContainer").prepend(alertHtml);
+        
+        // Auto-dismiss after duration
+        if (duration > 0) {
+          setTimeout(() => $(`#${alertId}`).alert("close"), duration);
+        }
+      
+        // Log to console
+        console.log(`[${type.toUpperCase()}] ${message}`);
+      }
+      
+      // Helper to extract error messages from AJAX responses
+      function getErrorMessage(xhr, defaultMsg) {
+        const errorMsg = xhr.responseJSON?.error || xhr.responseText || defaultMsg;
+        console.error(`AJAX Error: ${xhr.status} - ${errorMsg}`, xhr);
+        return errorMsg;
+      }
 
 
 $(document).ready(function() {
@@ -231,6 +247,10 @@ $(document).ready(function() {
   color: #6c757d;
   pointer-events: none;
   background-color: #e9ecef;
+}
+#alertContainer .alert {
+  margin-bottom: 10px;
+  animation: fadeInOut 0.5s ease-in-out;
 }
     .table-responsive {
       max-height: 400px;
@@ -495,7 +515,14 @@ $(document).ready(function() {
               </ul>
             </nav>
           </div>
-
+          <div class="container-fluid page-body-wrapper">
+            <div class="main-panel">
+              <div class="content-wrapper">
+                <div id="alertContainer" class="mb-3"></div> <!-- Alert container -->
+                <!-- Rest of your content -->
+              </div>
+            </div>
+          </div>
           <!-- Notification Modal -->
           <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -872,6 +899,7 @@ $(document).ready(function() {
                   <div class="col-md-4 mb-3">
                     <label for="patientID">Patient ID <span class="text-danger">*</span></label>
                     <input type="text" id="patientID" class="form-control" placeholder="Enter Patient ID" required>
+                    <div class="invalid-feedback" id="patientIDFeedback"></div>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="firstName">First Name</label>
@@ -900,12 +928,14 @@ $(document).ready(function() {
                   <div class="col-md-4 mb-3">
                     <label for="appointmentDate">Appointment Date <span class="text-danger">*</span></label>
                     <input type="text" id="appointmentDate" class="form-control custom-datetime-picker" required>
+                    <div class="invalid-feedback" id="appointmentDateFeedback"></div>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="doctor">Doctor <span class="text-danger">*</span></label>
                     <select id="doctor" class="form-control" required>
                       <option value="" disabled selected>Select a doctor</option>
                     </select>
+                    <div class="invalid-feedback" id="doctorFeedback"></div>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="notes">Notes</label>
@@ -1190,7 +1220,7 @@ $(document).ready(function() {
           setTimeout(() => $("#copySuccessMsg").hide(), 2000);
         }).catch(err => {
           console.error("Failed to copy patient ID:", err);
-          showNotification("Failed to copy patient ID", "error");
+          displayAlert("Failed to copy patient ID", "error");
         });
       });
     });
@@ -1211,7 +1241,7 @@ $(document).ready(function() {
       };
     }
 
-   // function showNotification(message, type = 'success') {
+   // function displayAlert(message, type = 'success') {
    //   console.log(`Showing notification: ${message} (${type})`);
  //     $("#notificationMessage").text(message)
    //     .removeClass("success-message error-message")
@@ -1261,7 +1291,7 @@ $(document).ready(function() {
         success: function(response) {
           console.log("Session validation response:", response);
           if (response.message !== 'Cookie is valid.') {
-            showNotification('Invalid session. Logging out.', 'error');
+            displayAlert('Invalid session. Logging out.', 'error');
             attemptLogout();
           } else {
             $("#logged_in_user_name, #logged_in_user_name_breadcrumb").text(response.name);
@@ -1338,7 +1368,7 @@ $(document).ready(function() {
         },
         error: function(xhr) {
           console.error(`Failed to fetch ${status} appointments:`, xhr.status, xhr.responseText);
-          showNotification(`Error fetching ${status} appointments`, 'error');
+          displayAlert(`Error fetching ${status} appointments`, 'error');
         }
       });
     }
@@ -1482,7 +1512,7 @@ $(document).ready(function() {
       console.log("Bulk cancel selected IDs:", selectedIds);
 
       if (selectedIds.length === 0) {
-        showNotification("No appointments selected for cancellation", "error");
+        displayAlert("No appointments selected for cancellation", "error");
         return;
       }
       cancelAppointment(selectedIds, null, status);
@@ -1494,7 +1524,7 @@ $(document).ready(function() {
       console.log("Bulk reschedule selected IDs:", selectedIds);
 
       if (selectedIds.length === 0) {
-        showNotification("No appointments selected for rescheduling", "error");
+        displayAlert("No appointments selected for rescheduling", "error");
         return;
       }
       openRescheduleModal(selectedIds, null, status);
@@ -1542,7 +1572,7 @@ $(document).ready(function() {
       const patientId = $("#newPatientIdInput").val().trim();
       console.log("Make appointment with patient ID:", patientId);
       if (!patientId) {
-        showNotification("Patient ID is missing", "error");
+        displayAlert("Patient ID is missing", "error");
         return;
       }
       $(".modal").modal("hide");
@@ -1587,13 +1617,13 @@ $(document).ready(function() {
               $("#dateOfBirth").val(response.patient.date_of_birth || "");
               $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
             } else {
-              showNotification("Patient not found", "error");
+              displayAlert("Patient not found", "error");
               $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
             }
           },
           error: function(xhr) {
             console.error("Failed to fetch patient details:", xhr.status, xhr.responseText);
-            showNotification("Failed to fetch patient details", "error");
+            displayAlert("Failed to fetch patient details", "error");
             $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
           }
         });
@@ -1619,7 +1649,7 @@ $(document).ready(function() {
         },
         error: function(xhr) {
           console.error("Failed to load doctors:", xhr.status, xhr.responseText);
-          showNotification("Failed to load doctors list", "error");
+          displayAlert("Failed to load doctors list", "error");
         }
       });
     }
@@ -1630,27 +1660,39 @@ $(document).ready(function() {
       const appointmentDate = $("#appointmentDate").val();
       const formattedDate = appointmentDate + ":00";
       const notes = $("#notes").val().trim();
-      const isEmergency = $("#isEmergency")?.is(":checked") || false;
-      const currentIllness = $("#currentIllness").val().trim(); // Already captured
+      const currentIllness = $("#currentIllness").val().trim();
     
-      // Clear previous validation states
+      // Clear previous validation
       $(".form-control").removeClass("is-invalid");
-      let missingFields = [];
-      if (!patientId) missingFields.push("Patient ID");
-      if (!doctorId) missingFields.push("Doctor");
-      if (!appointmentDate) missingFields.push("Appointment Date");
+      $(".invalid-feedback").text("");
     
-      if (missingFields.length > 0) {
-        missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
-        showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
-        return;
+      let isValid = true;
+      if (!patientId) {
+        $("#patientID").addClass("is-invalid");
+        $("#patientIDFeedback").text("Patient ID is required.");
+        isValid = false;
+      }
+      if (!doctorId) {
+        $("#doctor").addClass("is-invalid");
+        $("#doctorFeedback").text("Doctor selection is required.");
+        isValid = false;
+      }
+      if (!appointmentDate) {
+        $("#appointmentDate").addClass("is-invalid");
+        $("#appointmentDateFeedback").text("Appointment date is required.");
+        isValid = false;
+      } else {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(appointmentDate) < today) {
+          $("#appointmentDate").addClass("is-invalid");
+          $("#appointmentDateFeedback").text("Appointment date cannot be in the past.");
+          isValid = false;
+        }
       }
     
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (new Date(appointmentDate) < today) {
-        $("#appointmentDate").addClass("is-invalid");
-        showNotification("Appointment date cannot be in the past.", "error");
+      if (!isValid) {
+        displayAlert("Please correct the form errors.", "danger");
         return;
       }
     
@@ -1659,8 +1701,7 @@ $(document).ready(function() {
         doctor_id: doctorId,
         appointment_date: formattedDate,
         notes: notes,
-        is_emergency: isEmergency,
-        current_illness: currentIllness // Add current_illness to the payload
+        current_illness: currentIllness
       };
     
       $.ajax({
@@ -1672,17 +1713,16 @@ $(document).ready(function() {
         success: function(response) {
           const appointmentId = response.appointment?.id;
           if (!appointmentId) {
-            showNotification("Error: Appointment ID missing from response.", "error");
+            displayAlert("Error: Appointment ID missing from response.", "danger");
             return;
           }
           hideAppointmentForm();
-          fetchAppointments("Scheduled"); // Refresh the appointment list
-          $("#vitalsModal").modal("show").data("appointmentId", appointmentId); // Open vitals modal
-          showNotification("Appointment created successfully!");
+          fetchAppointments("Scheduled");
+          $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+          displayAlert("Appointment created successfully!", "success");
         },
         error: function(xhr) {
-          const errorMsg = xhr.responseJSON?.error || "Failed to create appointment.";
-          showNotification(errorMsg, "error");
+          displayAlert(getErrorMessage(xhr, "Failed to create appointment."), "danger");
         }
       });
     }
@@ -1710,7 +1750,7 @@ $(document).ready(function() {
       const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
       if (!flatpickrInstance) {
           console.error("Flatpickr instance not found for #editAppointmentDate. Ensure Flatpickr is initialized.");
-          showNotification("Date picker not initialized.", "error");
+          displayAlert("Date picker not initialized.", "error");
           return;
       }
   
@@ -1719,7 +1759,7 @@ $(document).ready(function() {
       const appointmentDate = new Date(appointmentDateStr);
       if (isNaN(appointmentDate.getTime())) {
           console.error("Invalid appointment_date:", appointmentDateStr);
-          showNotification("Invalid appointment date received.", "error");
+          displayAlert("Invalid appointment date received.", "error");
           return;
       }
   
@@ -1751,7 +1791,7 @@ $(document).ready(function() {
     const flatpickrInstance = document.querySelector("#editAppointmentDate")._flatpickr;
     let appointmentDate = flatpickrInstance.selectedDates[0];
     if (!appointmentDate || isNaN(appointmentDate.getTime())) {
-        showNotification("Please select a valid appointment date and time", "error");
+        displayAlert("Please select a valid appointment date and time", "error");
         $("#现状").addClass("is-invalid");
         return;
     }
@@ -1786,13 +1826,13 @@ $(document).ready(function() {
     })
     .then(data => {
         console.log("Appointment updated:", data);
-        showNotification("Appointment updated successfully", "success");
+        displayAlert("Appointment updated successfully", "success");
         $("#editAppointmentModal").modal("hide");
         fetchAppointments(updatedAppointment.status);
     })
     .catch(error => {
         console.error("Update failed:", error);
-        showNotification("Failed to update appointment", "error");
+        displayAlert("Failed to update appointment", "error");
     });
 }
 
@@ -1801,7 +1841,7 @@ $(document).ready(function() {
       console.log("Canceling appointments:", selectedIds);
 
       if (selectedIds.length === 0 || !selectedIds[0]) {
-        showNotification("No appointments selected", "error");
+        displayAlert("No appointments selected", "error");
         return;
       }
 
@@ -1818,13 +1858,13 @@ $(document).ready(function() {
         })
         .then(data => {
           console.log("Appointments canceled:", data);
-          showNotification(`Successfully canceled ${selectedIds.length} appointment(s)`);
+          displayAlert(`Successfully canceled ${selectedIds.length} appointment(s)`);
           location.reload();
           fetchAppointments(status || "Canceled");
         })
         .catch(error => {
           console.error("Cancel failed:", error);
-          showNotification("Failed to cancel appointments", "error");
+          displayAlert("Failed to cancel appointments", "error");
         });
     }
 
@@ -1833,7 +1873,7 @@ $(document).ready(function() {
       console.log("Opening reschedule modal for IDs:", selectedIds);
 
       if (selectedIds.length === 0) {
-        showNotification("No appointments selected", "error");
+        displayAlert("No appointments selected", "error");
         return;
       }
 
@@ -1848,7 +1888,7 @@ $(document).ready(function() {
       console.log("Rescheduling appointments:", { appointmentIds, newDate });
 
       if (!newDate) {
-        showNotification("Please select a new date and time", "error");
+        displayAlert("Please select a new date and time", "error");
         return;
       }
 
@@ -1863,14 +1903,14 @@ $(document).ready(function() {
         })
         .then(data => {
           console.log("Appointments rescheduled:", data);
-          showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s)`);
+          displayAlert(`Successfully rescheduled ${appointmentIds.length} appointment(s)`);
           $("#rescheduleAppointmentModal").modal("hide");
           fetchAppointments("Rescheduled");
           location.reload();
         })
         .catch(error => {
           console.error("Reschedule failed:", error);
-          showNotification("Try with a later date than today", "error");
+          displayAlert("Try with a later date than today", "error");
         });
     }
 
@@ -1985,7 +2025,7 @@ $(document).ready(function() {
         if (validateBasicInfo()) {
           savePatient();
         } else {
-          showNotification('Please fill all required fields in Basic Information correctly.', 'error');
+          displayAlert('Please fill all required fields in Basic Information correctly.', 'error');
         }
       });
     
@@ -1993,32 +2033,46 @@ $(document).ready(function() {
       function validateBasicInfo() {
         let isValid = true;
         const requiredFields = {
-          'patientFirstName': $('#patientFirstName').val().trim(),
-          'patientLastName': $('#patientLastName').val().trim(),
-          'patientGender': $('#patientGender').val(),
-          'patientDob': $('#patientDob').val(),
-          'patientFatherName': $('#patientFatherName').val().trim(),
-          'patientMobile': $('#patientMobile').val().trim(),
-          'admissionType': $('#admissionType').val()
+          'patientFirstName': { value: $('#patientFirstName').val().trim(), message: "First name is required." },
+          'patientLastName': { value: $('#patientLastName').val().trim(), message: "Last name is required." },
+          'patientGender': { value: $('#patientGender').val(), message: "Gender is required." },
+          'patientDob': { value: $('#patientDob').val(), message: "Date of birth is required." },
+          'patientFatherName': { value: $('#patientFatherName').val().trim(), message: "Father's name is required." },
+          'patientMobile': { value: $('#patientMobile').val().trim(), message: "Mobile number is required." },
+          'admissionType': { value: $('#admissionType').val(), message: "Admission type is required." }
         };
-    
-        Object.keys(requiredFields).forEach(id => {
-          if (!requiredFields[id]) {
-            $(`#${id}`).addClass('is-invalid');
+      
+        Object.entries(requiredFields).forEach(([id, { value, message }]) => {
+          const $input = $(`#${id}`);
+          const $feedback = $(`#${id}Feedback`);
+          if (!value) {
+            $input.addClass('is-invalid');
+            $feedback.text(message);
             isValid = false;
           } else {
-            $(`#${id}`).removeClass('is-invalid');
+            $input.removeClass('is-invalid');
+            $feedback.text('');
           }
         });
-    
-        const mobile = $('#patientMobile').val().trim();
+      
+        const mobile = requiredFields.patientMobile.value;
         if (mobile && !/^\d{10}$/.test(mobile)) {
           $('#patientMobile').addClass('is-invalid');
+          $('#patientMobileFeedback').text("Mobile number must be exactly 10 digits.");
           isValid = false;
         }
-    
+      
         return isValid;
       }
+      
+      // In savePatient
+      $('#savePatientBtn').on('click', function() {
+        if (!validateBasicInfo()) {
+          displayAlert("Please fill all required fields correctly.", "danger");
+          return;
+        }
+        savePatient();
+      });
     });
  
     
@@ -2075,30 +2129,30 @@ $(document).ready(function() {
     
       if (!/^\d{10}$/.test(patientData.mobile_number)) {
         $("#patientMobile").addClass('is-invalid');
-        showNotification("Mobile number must be exactly 10 digits.", "error");
+        displayAlert("Mobile number must be exactly 10 digits.", "error");
         return;
       }
     
       if (patientData.alternate_mobile_number && !/^\d{10}$/.test(patientData.alternate_mobile_number)) {
         $("#patientAltMobile").addClass('is-invalid');
-        showNotification("Alternate mobile number must be exactly 10 digits.", "error");
+        displayAlert("Alternate mobile number must be exactly 10 digits.", "error");
         return;
       }
     
       if (patientData.emergency_contact_number && !/^\d{10}$/.test(patientData.emergency_contact_number)) {
         $("#emergencyNumber").addClass('is-invalid');
-        showNotification("Emergency contact number must be exactly 10 digits.", "error");
+        displayAlert("Emergency contact number must be exactly 10 digits.", "error");
         return;
       }
     
       if (patientData.aadhar_number && !/^\d{12}$/.test(patientData.aadhar_number)) {
         $("#patientAadhar").addClass('is-invalid');
-        showNotification("Aadhar number must be exactly 12 digits.", "error");
+        displayAlert("Aadhar number must be exactly 12 digits.", "error");
         return;
       }
     
       if (!isValid) {
-        showNotification("Please fill all required fields.", "error");
+        displayAlert("Please fill all required fields.", "error");
         return;
       }
     
@@ -2111,14 +2165,19 @@ $(document).ready(function() {
         data: JSON.stringify(patientData),
         contentType: "application/json",
         success: function(response) {
-          showNotification("Patient created successfully!", "success");
+          displayAlert("Patient created successfully!", "success");
           $("#createPatientModal").modal("hide");
           $("#newPatientIdInput").val(response.patient.patient_id);
           $("#patientIdPopupModal").modal("show");
         },
         error: function(xhr) {
           const errorMsg = getErrorMessage(xhr, "Failed to create patient.");
-          showNotification(errorMsg, "error");
+          displayAlert(errorMsg, "danger");
+          console.error("Patient creation failed:", {
+            status: xhr.status,
+            response: xhr.responseJSON || xhr.responseText,
+            dataSent: patientData
+          });
         }
       });
     }
@@ -2136,7 +2195,7 @@ $(document).ready(function() {
           });
         },
         error: function() {
-          showNotification("Failed to load doctors.", "error");
+          displayAlert("Failed to load doctors.", "error");
         }
       });
     }
@@ -2190,14 +2249,14 @@ $(document).ready(function() {
                 $("#age").val("");
               }
             } else {
-              showNotification("Patient not found.", "error");
+              displayAlert("Patient not found.", "error");
               $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
               const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
               flatpickrInstance.clear();
             }
           },
           error: function(xhr) {
-            showNotification("Failed to fetch patient details.", "error");
+            displayAlert("Failed to fetch patient details.", "error");
             $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
             const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
             flatpickrInstance.clear();
@@ -2260,14 +2319,14 @@ function searchPatients(query) {
     error: function(xhr) {
       console.error('❌ Patient search error:', xhr.responseText);
       $('#patientSearchResults').hide().empty();
-      showNotification('Failed to search patients.', 'error');
+      displayAlert('Failed to search patients.', 'error');
     }
   });
 }
 function showPatientDetails(patientId) {
   const patient = allPatients.find(p => p.patient_id === patientId);
   if (!patient) {
-    showNotification('Patient not found.', 'error');
+    displayAlert('Patient not found.', 'error');
     return;
   }
 
@@ -2362,7 +2421,7 @@ function convertMeasurement(inputId) {
   const currentValue = inputField.value.trim();
 
   if (!currentValue) {
-    showNotification(`Enter a value for ${inputId} before converting.`, "error");
+    displayAlert(`Enter a value for ${inputId} before converting.`, "error");
     return;
   }
 
@@ -2370,7 +2429,7 @@ function convertMeasurement(inputId) {
   if (inputId === "modalBloodPressure") {
     const [systolic, diastolic] = currentValue.split("/").map(v => parseFloat(v.trim()));
     if (isNaN(systolic) || isNaN(diastolic)) {
-      showNotification("Invalid blood pressure format. Use 'systolic/diastolic'.", "error");
+      displayAlert("Invalid blood pressure format. Use 'systolic/diastolic'.", "error");
       inputField.classList.add("is-invalid");
       document.getElementById(`${inputId}Feedback`).textContent = "Use format 'systolic/diastolic' (e.g., 120/80).";
       return;
@@ -2381,7 +2440,7 @@ function convertMeasurement(inputId) {
   } else {
     const numericValue = parseFloat(currentValue);
     if (isNaN(numericValue)) {
-      showNotification(`Invalid value for ${inputId}. Enter a number.`, "error");
+      displayAlert(`Invalid value for ${inputId}. Enter a number.`, "error");
       inputField.classList.add("is-invalid");
       document.getElementById(`${inputId}Feedback`).textContent = "Enter a valid number.";
       return;
@@ -2498,13 +2557,13 @@ function validateVitals() {
 // Save vitals with validation
 function saveVitals() {
   if (!validateVitals()) {
-    showNotification("Please correct the invalid fields.", "error");
+    displayAlert("Please correct the invalid fields.", "error");
     return;
   }
 
   const appointmentId = $("#vitalsModal").data("appointmentId");
   if (!appointmentId) {
-    showNotification("Appointment ID is missing.", "error");
+    displayAlert("Appointment ID is missing.", "error");
     return;
   }
 
@@ -2536,12 +2595,12 @@ function saveVitals() {
     contentType: "application/json",
     success: function(response) {
       $("#vitalsModal").modal("hide");
-      showNotification("Vitals saved successfully!", "success");
+      displayAlert("Vitals saved successfully!", "success");
       location.reload();
     },
     error: function(xhr) {
       const errorMsg = getErrorMessage(xhr, "Failed to save vitals.");
-      showNotification(errorMsg, "error");
+      displayAlert(errorMsg, "error");
     }
   });
 }
