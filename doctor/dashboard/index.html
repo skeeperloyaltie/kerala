@@ -105,8 +105,7 @@ $(document).ready(function() {
           }
         },
         onReady: function(selectedDates, dateStr, instance) {
-          // Skip custom buttons for editDateOfBirth since it’s not editable
-          if (isEditDob) return;
+          if (isEditDob) return; // Skip buttons for readonly editDateOfBirth
   
           const buttonContainer = document.createElement("div");
           buttonContainer.style.display = "flex";
@@ -151,20 +150,20 @@ $(document).ready(function() {
       if (isEditDob) {
         config = {
           ...config,
-          noCalendar: true,        // Disable calendar
-          enableTime: false,       // Disable time picker
-          clickOpens: false,       // Prevent opening on click
-          allowInput: false,       // Prevent manual input
-          static: true             // Keep it as a static display
+          noCalendar: true,
+          enableTime: false,
+          clickOpens: false,
+          allowInput: false,
+          static: true
         };
       }
   
-      // Destroy existing instance if it exists to avoid duplicates
+      // Destroy existing instance if it exists
       if ($input[0]._flatpickr) {
         $input[0]._flatpickr.destroy();
       }
   
-      // Initialize Flatpickr with the appropriate config
+      // Initialize Flatpickr
       flatpickr($input[0], config);
   
       // Ensure readonly state is respected
@@ -1740,10 +1739,29 @@ $(document).ready(function() {
         }
       });
     }
+    $(document).ready(function() {
+      // Call initialization on page load
+      initializeDatePickers();
+    
+      // Re-initialize for other modals when shown
+      $("#createPatientModal, #appointmentFormContainer, #rescheduleAppointmentModal").on("shown.bs.modal", function() {
+        initializeDatePickers();
+      });
+    
+      // For edit modal, rely on openEditModal's initialization
+      $("#editAppointmentModal").on("shown.bs.modal", function() {
+        // Optional: Add any additional modal-specific logic here
+      });
+    
+      checkSessionOnLoad();
+      $("#logoutButton, #logoutDropdown").on("click", logoutUser);
+    });
 
     let currentAppointment = null;
    
     function openEditModal(appointmentData, rowIndex) {
+      if (!$("#editDateOfBirth").length) console.error("#editDateOfBirth not found in DOM");
+if (!$("#editAppointmentDate").length) console.error("#editAppointmentDate not found in DOM");
       currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
     
       $("#editFirstName").val(currentAppointment.patient?.first_name || "");
@@ -1753,6 +1771,8 @@ $(document).ready(function() {
       // Set Date of Birth
       const dobStr = currentAppointment.patient?.date_of_birth || ""; // e.g., "1990-05-15"
       const dobFlatpickr = $("#editDateOfBirth")[0]._flatpickr;
+
+      console.log("DOB Flatpickr Instance:", dobFlatpickr);
       if (dobStr) {
         const dob = new Date(dobStr);
         if (!isNaN(dob.getTime())) {
@@ -1775,6 +1795,9 @@ $(document).ready(function() {
       // Set Appointment Date (editable)
       const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
       const appointmentFlatpickr = $("#editAppointmentDate")[0]._flatpickr;
+
+      console.log("Appointment Flatpickr Instance:", appointmentFlatpickr);
+
       if (appointmentDateStr) {
         const appointmentDate = new Date(appointmentDateStr);
         if (!isNaN(appointmentDate.getTime())) {
