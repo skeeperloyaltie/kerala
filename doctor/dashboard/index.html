@@ -54,124 +54,124 @@
         console.error(`AJAX Error: ${xhr.status} - ${errorMsg}`, xhr);
         return errorMsg;
       }
-
+      function initializeDatePickers() {
+        $(".custom-datetime-picker").each(function() {
+          const $input = $(this);
+          const inputId = $input.attr("id");
+          const isDateOnly = inputId === "searchDob" || inputId === "searchDate" || inputId === "patientDob" || inputId === "dateOfBirth" || inputId === "editDateOfBirth";
+          const isEditDob = inputId === "editDateOfBirth";
+      
+          // Base configuration
+          let config = {
+            altInput: true,
+            altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
+            dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i",     // Backend format
+            enableTime: !isDateOnly,
+            time_24hr: false,
+            minDate: inputId === "appointmentDate" || inputId === "editAppointmentDate" || inputId === "newAppointmentDate" ? "today" : null,
+            maxDate: inputId === "dateOfBirth" || inputId === "editDateOfBirth" || inputId === "patientDob" ? "today" : null,
+            appendTo: document.body,
+            position: "auto",
+            onOpen: function(selectedDates, dateStr, instance) {
+              const calendar = instance.calendarContainer;
+              const inputRect = $input[0].getBoundingClientRect();
+              const calendarRect = calendar.getBoundingClientRect();
+              const viewportHeight = window.innerHeight;
+              const viewportWidth = window.innerWidth;
+      
+              calendar.style.top = "";
+              calendar.style.left = "";
+              calendar.style.bottom = "";
+              calendar.style.right = "";
+      
+              if (inputRect.bottom + calendarRect.height > viewportHeight) {
+                calendar.style.top = "auto";
+                calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
+              } else {
+                calendar.style.top = inputRect.bottom + "px";
+                calendar.style.bottom = "auto";
+              }
+      
+              if (inputRect.left + calendarRect.width > viewportWidth) {
+                calendar.style.left = "auto";
+                calendar.style.right = (viewportWidth - inputRect.right) + "px";
+              } else {
+                calendar.style.left = inputRect.left + "px";
+                calendar.style.right = "auto";
+              }
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+              if (isEditDob) return; // Skip buttons for readonly editDateOfBirth
+      
+              const buttonContainer = document.createElement("div");
+              buttonContainer.style.display = "flex";
+              buttonContainer.style.justifyContent = "center";
+              buttonContainer.style.gap = "10px";
+              buttonContainer.style.padding = "5px";
+      
+              const confirmButton = document.createElement("button");
+              confirmButton.innerText = "OK";
+              confirmButton.className = "flatpickr-confirm";
+              confirmButton.onclick = function() {
+                if (selectedDates.length > 0) {
+                  instance.close();
+                  $input.removeClass("is-invalid");
+                } else {
+                  instance.close();
+                }
+              };
+      
+              const clearButton = document.createElement("button");
+              clearButton.innerText = "Clear";
+              clearButton.className = "flatpickr-clear";
+              clearButton.onclick = function() {
+                instance.clear();
+                $input.val("");
+                $input.removeClass("is-invalid");
+                instance.close();
+              };
+      
+              buttonContainer.appendChild(confirmButton);
+              buttonContainer.appendChild(clearButton);
+              instance.calendarContainer.appendChild(buttonContainer);
+            },
+            onClose: function(selectedDates, dateStr, instance) {
+              if (!isEditDob && selectedDates.length === 0) {
+                $input.val("");
+              }
+            }
+          };
+      
+          // Special configuration for #editDateOfBirth: Display only, no interaction
+          if (isEditDob) {
+            config = {
+              ...config,
+              noCalendar: true,
+              enableTime: false,
+              clickOpens: false,
+              allowInput: false,
+              static: true
+            };
+          }
+      
+          // Destroy existing instance if it exists
+          if ($input[0]._flatpickr) {
+            $input[0]._flatpickr.destroy();
+          }
+      
+          // Initialize Flatpickr
+          flatpickr($input[0], config);
+      
+          // Ensure readonly state is respected
+          if ($input.attr("readonly")) {
+            $input.next(".flatpickr-input").prop("readonly", true);
+          }
+        });
+      }
 
 $(document).ready(function() {
   // Initialize Flatpickr for all custom-datetime-picker inputs
-  function initializeDatePickers() {
-    $(".custom-datetime-picker").each(function() {
-      const $input = $(this);
-      const inputId = $input.attr("id");
-      const isDateOnly = inputId === "searchDob" || inputId === "searchDate" || inputId === "patientDob" || inputId === "dateOfBirth" || inputId === "editDateOfBirth";
-      const isEditDob = inputId === "editDateOfBirth";
   
-      // Base configuration
-      let config = {
-        altInput: true,
-        altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
-        dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i",     // Backend format
-        enableTime: !isDateOnly,
-        time_24hr: false,
-        minDate: inputId === "appointmentDate" || inputId === "editAppointmentDate" || inputId === "newAppointmentDate" ? "today" : null,
-        maxDate: inputId === "dateOfBirth" || inputId === "editDateOfBirth" || inputId === "patientDob" ? "today" : null,
-        appendTo: document.body,
-        position: "auto",
-        onOpen: function(selectedDates, dateStr, instance) {
-          const calendar = instance.calendarContainer;
-          const inputRect = $input[0].getBoundingClientRect();
-          const calendarRect = calendar.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          const viewportWidth = window.innerWidth;
-  
-          calendar.style.top = "";
-          calendar.style.left = "";
-          calendar.style.bottom = "";
-          calendar.style.right = "";
-  
-          if (inputRect.bottom + calendarRect.height > viewportHeight) {
-            calendar.style.top = "auto";
-            calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
-          } else {
-            calendar.style.top = inputRect.bottom + "px";
-            calendar.style.bottom = "auto";
-          }
-  
-          if (inputRect.left + calendarRect.width > viewportWidth) {
-            calendar.style.left = "auto";
-            calendar.style.right = (viewportWidth - inputRect.right) + "px";
-          } else {
-            calendar.style.left = inputRect.left + "px";
-            calendar.style.right = "auto";
-          }
-        },
-        onReady: function(selectedDates, dateStr, instance) {
-          if (isEditDob) return; // Skip buttons for readonly editDateOfBirth
-  
-          const buttonContainer = document.createElement("div");
-          buttonContainer.style.display = "flex";
-          buttonContainer.style.justifyContent = "center";
-          buttonContainer.style.gap = "10px";
-          buttonContainer.style.padding = "5px";
-  
-          const confirmButton = document.createElement("button");
-          confirmButton.innerText = "OK";
-          confirmButton.className = "flatpickr-confirm";
-          confirmButton.onclick = function() {
-            if (selectedDates.length > 0) {
-              instance.close();
-              $input.removeClass("is-invalid");
-            } else {
-              instance.close();
-            }
-          };
-  
-          const clearButton = document.createElement("button");
-          clearButton.innerText = "Clear";
-          clearButton.className = "flatpickr-clear";
-          clearButton.onclick = function() {
-            instance.clear();
-            $input.val("");
-            $input.removeClass("is-invalid");
-            instance.close();
-          };
-  
-          buttonContainer.appendChild(confirmButton);
-          buttonContainer.appendChild(clearButton);
-          instance.calendarContainer.appendChild(buttonContainer);
-        },
-        onClose: function(selectedDates, dateStr, instance) {
-          if (!isEditDob && selectedDates.length === 0) {
-            $input.val("");
-          }
-        }
-      };
-  
-      // Special configuration for #editDateOfBirth: Display only, no interaction
-      if (isEditDob) {
-        config = {
-          ...config,
-          noCalendar: true,
-          enableTime: false,
-          clickOpens: false,
-          allowInput: false,
-          static: true
-        };
-      }
-  
-      // Destroy existing instance if it exists
-      if ($input[0]._flatpickr) {
-        $input[0]._flatpickr.destroy();
-      }
-  
-      // Initialize Flatpickr
-      flatpickr($input[0], config);
-  
-      // Ensure readonly state is respected
-      if ($input.attr("readonly")) {
-        $input.next(".flatpickr-input").prop("readonly", true);
-      }
-    });
-  }
 
   // Call initialization on page load
   initializeDatePickers();
