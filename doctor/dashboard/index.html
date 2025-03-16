@@ -1423,7 +1423,7 @@ $(document).ready(function() {
         let doctor = appointment.doctor || {};
         let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
         let appointmentTime = formatDateTimeForTable(appointment.appointment_date);
-        let currentIllness = patient.current_illness || patient.current_medications || "N/A";
+        let currentIllness = patient.current_medications || "N/A";
     
         let row = document.createElement("tr");
         row.innerHTML = `
@@ -1769,7 +1769,7 @@ $(document).ready(function() {
       }
     
       // Set Current Illness (check both possible keys)
-      const currentIllness = currentAppointment.current_illness || currentAppointment.current_medications || "";
+      const currentIllness = currentAppointment.current_medications || "";
       $("#editCurrentIllness").val(currentIllness);
     
       // Set Appointment Date (editable)
