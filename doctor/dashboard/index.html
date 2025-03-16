@@ -1760,9 +1760,10 @@ $(document).ready(function() {
     let currentAppointment = null;
    
     function openEditModal(appointmentData, rowIndex) {
-      if (!$("#editDateOfBirth").length) console.error("#editDateOfBirth not found in DOM");
-if (!$("#editAppointmentDate").length) console.error("#editAppointmentDate not found in DOM");
       currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
+    
+      // Initialize Flatpickr instances first
+      initializeDatePickers();
     
       $("#editFirstName").val(currentAppointment.patient?.first_name || "");
       $("#editLastName").val(currentAppointment.patient?.last_name || "");
@@ -1771,8 +1772,6 @@ if (!$("#editAppointmentDate").length) console.error("#editAppointmentDate not f
       // Set Date of Birth
       const dobStr = currentAppointment.patient?.date_of_birth || ""; // e.g., "1990-05-15"
       const dobFlatpickr = $("#editDateOfBirth")[0]._flatpickr;
-
-      console.log("DOB Flatpickr Instance:", dobFlatpickr);
       if (dobStr) {
         const dob = new Date(dobStr);
         if (!isNaN(dob.getTime())) {
@@ -1788,20 +1787,17 @@ if (!$("#editAppointmentDate").length) console.error("#editAppointmentDate not f
         $("#editAge").val("");
       }
     
-      // Set Current Illness (check both possible keys)
-      const currentIllness = currentAppointment.current_medications || "";
+      // Set Current Illness
+      const currentIllness = currentAppointment.current_illness || currentAppointment.current_medications || "";
       $("#editCurrentIllness").val(currentIllness);
     
-      // Set Appointment Date (editable)
+      // Set Appointment Date
       const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
       const appointmentFlatpickr = $("#editAppointmentDate")[0]._flatpickr;
-
-      console.log("Appointment Flatpickr Instance:", appointmentFlatpickr);
-
       if (appointmentDateStr) {
         const appointmentDate = new Date(appointmentDateStr);
         if (!isNaN(appointmentDate.getTime())) {
-          const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds (5.5 hours)
+          const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
           const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60 * 1000));
           const istDate = new Date(utcDate.getTime() + istOffset);
           console.log("Setting appointment date:", {
@@ -1832,8 +1828,6 @@ if (!$("#editAppointmentDate").length) console.error("#editAppointmentDate not f
       let previousDoctorId = currentAppointment.doctor?.id || "";
       loadDoctors(previousDoctorId);
     
-      // Ensure Flatpickr is initialized
-      initializeDatePickers();
       $("#editAppointmentModal").modal("show");
     }
 
