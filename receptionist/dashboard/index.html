@@ -26,123 +26,167 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
   <script>
-    // Basic showNotification function (if not already defined)
-    $(document).ready(function() {
-      // Initialize Flatpickr for all custom-datetime-picker inputs
-      function initializeDatePickers() {
-        $(".custom-datetime-picker").each(function() {
-          const $input = $(this);
-          const isDateOnly = $input.attr("id") === "searchDob" || $input.attr("id") === "searchDate" || $input.attr("id") === "patientDob" || $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth";
-          const config = {
-            altInput: true,
-            altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
-            dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i", // Backend format
-            enableTime: !isDateOnly,
-            time_24hr: false,
-            minDate: $input.attr("id") === "appointmentDate" || $input.attr("id") === "editAppointmentDate" || $input.attr("id") === "newAppointmentDate" ? "today" : null,
-            maxDate: $input.attr("id") === "dateOfBirth" || $input.attr("id") === "editDateOfBirth" || $input.attr("id") === "patientDob" ? "today" : null,
-            appendTo: document.body, // Ensure it works with modals
-            position: "auto", // Dynamically adjust position (above/below/left/right)
-            // Remove static: true to allow dynamic positioning
-            onOpen: function(selectedDates, dateStr, instance) {
-              // Adjust calendar position to stay within viewport
-              const calendar = instance.calendarContainer;
-              const inputRect = $input[0].getBoundingClientRect();
-              const calendarRect = calendar.getBoundingClientRect();
-              const viewportHeight = window.innerHeight;
-              const viewportWidth = window.innerWidth;
-    
-              // Reset any previous adjustments
-              calendar.style.top = "";
-              calendar.style.left = "";
-              calendar.style.bottom = "";
-              calendar.style.right = "";
-    
-              // Check if calendar overflows bottom
-              if (inputRect.bottom + calendarRect.height > viewportHeight) {
-                calendar.style.top = "auto";
-                calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
-              } else {
-                calendar.style.top = inputRect.bottom + "px";
-                calendar.style.bottom = "auto";
-              }
-    
-              // Check if calendar overflows right
-              if (inputRect.left + calendarRect.width > viewportWidth) {
-                calendar.style.left = "auto";
-                calendar.style.right = (viewportWidth - inputRect.right) + "px";
-              } else {
-                calendar.style.left = inputRect.left + "px";
-                calendar.style.right = "auto";
-              }
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-              const buttonContainer = document.createElement("div");
-              buttonContainer.style.display = "flex";
-              buttonContainer.style.justifyContent = "center";
-              buttonContainer.style.gap = "10px"; // Space between buttons
-              buttonContainer.style.padding = "5px";
-    
-              // OK Button
-              const confirmButton = document.createElement("button");
-              confirmButton.innerText = "OK";
-              confirmButton.className = "flatpickr-confirm";
-              confirmButton.onclick = function() {
-                if (selectedDates.length > 0) {
-                  instance.close();
-                  $input.removeClass("is-invalid");
-                } else {
-                  
-                  $input.addClass("is-invalid");
-                  instance.close(); // Close the picker
+   // Ensure this is defined globally before any function that uses it
+function initializeDatePickers() {
+  $(".custom-datetime-picker").each(function() {
+    const $input = $(this);
+    if (!$input.length) return; // Prevent initializing on non-existing elements
 
-                }
-              };
-    
-              // Clear Button
-              const clearButton = document.createElement("button");
-              clearButton.innerText = "Clear";
-              clearButton.className = "flatpickr-clear";
-              clearButton.onclick = function() {
-                instance.clear(); // Clear the selected date
-                $input.val(""); // Clear the input value
-                $input.removeClass("is-invalid");
-                instance.close(); // Close the picker
-              };
-    
-              // Append buttons to container
-              buttonContainer.appendChild(confirmButton);
-              buttonContainer.appendChild(clearButton);
-              instance.calendarContainer.appendChild(buttonContainer);
-            },
-            onClose: function(selectedDates, dateStr, instance) {
-              if (selectedDates.length === 0) {
-                $input.val(""); // Clear if no selection confirmed
-              }
-            }
-          };
-    
-          flatpickr($input[0], config);
-    
-          // Maintain readonly state if applicable
-          if ($input.attr("readonly")) {
-            $input.next(".flatpickr-input").prop("readonly", true);
+    const inputId = $input.attr("id");
+    const isDateOnly = inputId === "searchDob" || inputId === "searchDate" || inputId === "patientDob" || inputId === "dateOfBirth" || inputId === "editDateOfBirth";
+    const isEditDob = inputId === "editDateOfBirth";
+
+    // Base configuration
+    let config = {
+      altInput: true,
+      altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
+      dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i",     // Backend format
+      enableTime: !isDateOnly,
+      time_24hr: false,
+      minDate: inputId === "appointmentDate" || inputId === "editAppointmentDate" || inputId === "newAppointmentDate" ? "today" : null,
+      maxDate: inputId === "dateOfBirth" || inputId === "editDateOfBirth" || inputId === "patientDob" ? "today" : null,
+      appendTo: document.body,
+      position: "auto",
+      onOpen: function(selectedDates, dateStr, instance) {
+        const calendar = instance.calendarContainer;
+        const inputRect = $input[0].getBoundingClientRect();
+        const calendarRect = calendar.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        calendar.style.top = "";
+        calendar.style.left = "";
+        calendar.style.bottom = "";
+        calendar.style.right = "";
+
+        if (inputRect.bottom + calendarRect.height > viewportHeight) {
+          calendar.style.top = "auto";
+          calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
+        } else {
+          calendar.style.top = inputRect.bottom + "px";
+          calendar.style.bottom = "auto";
+        }
+
+        if (inputRect.left + calendarRect.width > viewportWidth) {
+          calendar.style.left = "auto";
+          calendar.style.right = (viewportWidth - inputRect.right) + "px";
+        } else {
+          calendar.style.left = inputRect.left + "px";
+          calendar.style.right = "auto";
+        }
+      },
+      onReady: function(selectedDates, dateStr, instance) {
+        if (isEditDob) return; // Skip buttons for readonly editDateOfBirth
+
+        // Add confirm and clear buttons
+        const buttonContainer = document.createElement("div");
+        buttonContainer.style.display = "flex";
+        buttonContainer.style.justifyContent = "center";
+        buttonContainer.style.gap = "10px";
+        buttonContainer.style.padding = "5px";
+
+        const confirmButton = document.createElement("button");
+        confirmButton.innerText = "OK";
+        confirmButton.className = "flatpickr-confirm";
+        confirmButton.onclick = function() {
+          if (selectedDates.length > 0) {
+            instance.close();
+            $input.removeClass("is-invalid");
+          } else {
+            instance.close();
           }
-        });
+        };
+
+        const clearButton = document.createElement("button");
+        clearButton.innerText = "Clear";
+        clearButton.className = "flatpickr-clear";
+        clearButton.onclick = function() {
+          instance.clear();
+          $input.val("");
+          $input.removeClass("is-invalid");
+          instance.close();
+        };
+
+        buttonContainer.appendChild(confirmButton);
+        buttonContainer.appendChild(clearButton);
+        instance.calendarContainer.appendChild(buttonContainer);
+
+        // Add months dropdown
+        if (!instance.monthsDropdownContainer) {
+          instance.monthsDropdownContainer = document.createElement("div");
+          instance.monthsDropdownContainer.className = "flatpickr-months";
+          instance.innerContainer.insertBefore(
+            instance.monthsDropdownContainer,
+            instance.daysContainer
+          );
+        }
+      },
+      onClose: function(selectedDates, dateStr, instance) {
+        if (!isEditDob && selectedDates.length === 0) {
+          $input.val("");
+        }
       }
-    
-      // Call initialization on page load
-      initializeDatePickers();
-    
-      // Re-initialize when modals are shown to ensure pickers work inside modals
-      $("#createPatientModal, #appointmentFormContainer, #editAppointmentModal, #rescheduleAppointmentModal").on("shown.bs.modal", function() {
-        initializeDatePickers();
+    };
+
+    if (isEditDob) {
+      const dobFlatpickr = flatpickr($input[0], {
+          noCalendar: true,
+          enableTime: false,
+          clickOpens: false,
+          allowInput: false,
+          static: true
       });
-    
-      // Existing code...
-      checkSessionOnLoad();
-      $("#logoutButton, #logoutDropdown").on("click", logoutUser);
-    });
+  
+      // Function to set the date manually
+      function setEditDob(dateStr) {
+          if (dateStr) {
+              // Format the date using Flatpickr's format function
+              const formattedDate = flatpickr.formatDate(new Date(dateStr), "F j, Y");
+              $input.val(formattedDate); // Set the value manually
+          }
+      }
+  return; // Stop further execution for readonly fields
+  }
+  
+
+    // Destroy existing instance if it exists
+    if ($input[0]._flatpickr) return;
+
+    // Initialize Flatpickr with the updated config
+    flatpickr($input[0], config);
+
+    // Ensure readonly state is respected
+    if ($input.attr("readonly")) {
+      $input.next(".flatpickr-input").prop("readonly", true);
+    }
+  });
+}
+
+
+// Basic displayAlert function
+function displayAlert(message, type = "danger", duration = 4000) {
+const alertId = `alert-${Date.now()}`;
+const alertHtml = `
+  <div class="alert alert-${type} alert-dismissible fade show" role="alert" id="${alertId}">
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+`;
+$("#alertContainer").prepend(alertHtml);
+
+if (duration > 0) {
+  setTimeout(() => $(`#${alertId}`).alert("close"), duration);
+}
+
+console.log(`[${type.toUpperCase()}] ${message}`);
+}
+
+// Helper to extract error messages from AJAX responses
+function getErrorMessage(xhr, defaultMsg) {
+  const errorMsg = xhr.responseJSON?.error || xhr.responseText || defaultMsg;
+  console.error(`AJAX Error: ${xhr.status} - ${errorMsg}`, xhr);
+  return errorMsg;
+}
   </script>
 
   <style>
@@ -521,6 +565,9 @@
               </ul>
             </nav>
           </div>
+
+          <div id="alertContainer" class="mb-3"></div> <!-- Alert container -->
+
 
          <!-- Notification Modal -->
          <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
@@ -1225,7 +1272,7 @@
 $("#makeAppointmentBtn").on("click", function() {
   const patientId = $("#newPatientIdInput").val().trim(); // Get the patient ID
   if (!patientId) {
-    showNotification("Patient ID is missing!", "error");
+    displayAlert("Patient ID is missing!", "error");
     return;
   }
 
@@ -1292,14 +1339,14 @@ function searchPatients(query) {
     error: function(xhr) {
       console.error('❌ Patient search error:', xhr.responseText);
       $('#patientSearchResults').hide().empty();
-      showNotification('Failed to search patients.', 'error');
+      displayAlert('Failed to search patients.', 'error');
     }
   });
 }
 function showPatientDetails(patientId) {
   const patient = allPatients.find(p => p.patient_id === patientId);
   if (!patient) {
-    showNotification('Patient not found.', 'error');
+    displayAlert('Patient not found.', 'error');
     return;
   }
 
@@ -1363,12 +1410,12 @@ function fetchPatientDetails(patientId) {
           $("#dateOfBirth").val(response.patient.date_of_birth || "");
           $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
         } else {
-          showNotification("Patient not found.", "error");
+          displayAlert("Patient not found.", "error");
           $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
         }
       },
       error: function(xhr) {
-        showNotification("Failed to fetch patient details.", "error");
+        displayAlert("Failed to fetch patient details.", "error");
         $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
       }
     });
@@ -1542,7 +1589,7 @@ function validateUserSession() {
       success: function(response) {
           if (response.message !== 'Cookie is valid.') {
               console.error("Invalid session response:", response);
-              showNotification("Invalid session. Logging out.", "error");
+              displayAlert("Invalid session. Logging out.", "error");
               attemptLogout();
           } else {
               console.log("Session validated successfully:", response);
@@ -1560,7 +1607,7 @@ function validateUserSession() {
               response: xhr.responseJSON
           });
           const errorMsg = getErrorMessage(xhr, "Failed to validate session.");
-          showNotification(errorMsg, "error");
+          displayAlert(errorMsg, "error");
           attemptLogout();
       }
   });
@@ -1616,15 +1663,7 @@ function validateUserSession() {
     });
 
     // Enhanced notification function with type parameter
-function showNotification(message, type = "error", duration = 4000) {
-  $("#notificationMessage").text(message);
-  $("#customNotification")
-      .removeClass("success-message error-message")
-      .addClass(type === "success" ? "success-message" : "error-message")
-      .show()
-      .css("animation", `fadeInOut ${duration / 100}s ease-in-out`);
-  setTimeout(() => $("#customNotification").hide(), duration);
-}
+
 
 
 // Age calculation for patient modal
@@ -1682,7 +1721,7 @@ $(document).ready(function() {
     if (validateBasicInfo()) {
       savePatient();
     } else {
-      showNotification('Please fill all required fields in Basic Information correctly.', 'error');
+      displayAlert('Please fill all required fields in Basic Information correctly.', 'error');
     }
   });
 
@@ -1773,30 +1812,30 @@ function savePatient() {
 
   if (!/^\d{10}$/.test(patientData.mobile_number)) {
     $("#patientMobile").addClass('is-invalid');
-    showNotification("Mobile number must be exactly 10 digits.", "error");
+    displayAlert("Mobile number must be exactly 10 digits.", "error");
     return;
   }
 
   if (patientData.alternate_mobile_number && !/^\d{10}$/.test(patientData.alternate_mobile_number)) {
     $("#patientAltMobile").addClass('is-invalid');
-    showNotification("Alternate mobile number must be exactly 10 digits.", "error");
+    displayAlert("Alternate mobile number must be exactly 10 digits.", "error");
     return;
   }
 
   if (patientData.emergency_contact_number && !/^\d{10}$/.test(patientData.emergency_contact_number)) {
     $("#emergencyNumber").addClass('is-invalid');
-    showNotification("Emergency contact number must be exactly 10 digits.", "error");
+    displayAlert("Emergency contact number must be exactly 10 digits.", "error");
     return;
   }
 
   if (patientData.aadhar_number && !/^\d{12}$/.test(patientData.aadhar_number)) {
     $("#patientAadhar").addClass('is-invalid');
-    showNotification("Aadhar number must be exactly 12 digits.", "error");
+    displayAlert("Aadhar number must be exactly 12 digits.", "error");
     return;
   }
 
   if (!isValid) {
-    showNotification("Please fill all required fields.", "error");
+    displayAlert("Please fill all required fields.", "error");
     return;
   }
 
@@ -1809,14 +1848,14 @@ function savePatient() {
     data: JSON.stringify(patientData),
     contentType: "application/json",
     success: function(response) {
-      showNotification("Patient created successfully!", "success");
+      displayAlert("Patient created successfully!", "success");
       $("#createPatientModal").modal("hide");
       $("#newPatientIdInput").val(response.patient.patient_id);
       $("#patientIdPopupModal").modal("show");
     },
     error: function(xhr) {
       const errorMsg = getErrorMessage(xhr, "Failed to create patient.");
-      showNotification(errorMsg, "error");
+      displayAlert(errorMsg, "error");
     }
   });
 }
@@ -1834,7 +1873,7 @@ function loadDoctorsForPatientModal() {
       });
     },
     error: function() {
-      showNotification("Failed to load doctors.", "error");
+      displayAlert("Failed to load doctors.", "error");
     }
   });
 }
@@ -1851,7 +1890,7 @@ $("#copyPatientIdBtn").on("click", function() {
       $("#copySuccessMsg").show();
       setTimeout(() => $("#copySuccessMsg").hide(), 2000);
     }).catch(err => {
-      showNotification("Failed to copy patient ID: " + err, "error");
+      displayAlert("Failed to copy patient ID: " + err, "error");
     });
   } else {
     // Fallback to execCommand
@@ -1863,10 +1902,10 @@ $("#copyPatientIdBtn").on("click", function() {
         $("#copySuccessMsg").show();
         setTimeout(() => $("#copySuccessMsg").hide(), 2000);
       } else {
-        showNotification("Failed to copy patient ID using fallback method.", "error");
+        displayAlert("Failed to copy patient ID using fallback method.", "error");
       }
     } catch (err) {
-      showNotification("Clipboard access failed: " + err, "error");
+      displayAlert("Clipboard access failed: " + err, "error");
     }
   }
 });
@@ -1902,14 +1941,14 @@ $("#patientID").on("blur", function() {
             $("#age").val("");
           }
         } else {
-          showNotification("Patient not found.", "error");
+          displayAlert("Patient not found.", "error");
           $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
           const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
           flatpickrInstance.clear();
         }
       },
       error: function(xhr) {
-        showNotification("Failed to fetch patient details.", "error");
+        displayAlert("Failed to fetch patient details.", "error");
         $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
         const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
         flatpickrInstance.clear();
@@ -1956,7 +1995,7 @@ function fetchAppointments(status) {
               response: xhr.responseJSON
           });
           const errorMsg = getErrorMessage(xhr, `Failed to fetch ${status} appointments.`);
-          showNotification(errorMsg, "error");
+          displayAlert(errorMsg, "error");
       }
   });
 }
@@ -2078,7 +2117,7 @@ function bulkCancel() { // Remove status parameter
     .map(checkbox => checkbox.value);
   console.log("bulkCancel selectedIds:", selectedIds); // Debug log
   if (selectedIds.length === 0) {
-    showNotification("No appointments selected for cancellation.");
+    displayAlert("No appointments selected for cancellation.");
     return;
   }
   cancelAppointment(selectedIds, null, status);
@@ -2118,7 +2157,7 @@ function bulkReschedule() { // Remove status parameter
     .map(checkbox => checkbox.value);
   console.log("bulkReschedule selectedIds:", selectedIds); // Debug log
   if (selectedIds.length === 0) {
-    showNotification("No appointments selected for rescheduling.");
+    displayAlert("No appointments selected for rescheduling.");
     return;
   }
   openRescheduleModal(selectedIds, null, status);
@@ -2197,7 +2236,7 @@ console.log("Active tab status:", $("#appointmentTabs .nav-link.active").attr("h
             response: xhr.responseJSON
           });
           const errorMsg = getErrorMessage(xhr, "Failed to load doctors list.");
-          showNotification(errorMsg, "error");
+          displayAlert(errorMsg, "error");
         }
       });
     }
@@ -2229,7 +2268,7 @@ function addAppointment() {
 
   if (missingFields.length > 0) {
     missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
-    showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
+    displayAlert(`Please fill in: ${missingFields.join(", ")}`, "error");
     return;
   }
 
@@ -2237,7 +2276,7 @@ function addAppointment() {
   today.setHours(0, 0, 0, 0);
   if (new Date(appointmentDate) < today) {
     $("#appointmentDate").addClass("is-invalid");
-    showNotification("Appointment date cannot be in the past.", "error");
+    displayAlert("Appointment date cannot be in the past.", "error");
     return;
   }
 
@@ -2259,17 +2298,17 @@ function addAppointment() {
     success: function(response) {
       const appointmentId = response.appointment?.id;
       if (!appointmentId) {
-        showNotification("Error: Appointment ID missing from response.", "error");
+        displayAlert("Error: Appointment ID missing from response.", "error");
         return;
       }
       hideAppointmentForm();
       fetchAppointments("Scheduled"); // Refresh the appointment list
       $("#vitalsModal").modal("show").data("appointmentId", appointmentId); // Open vitals modal
-      showNotification("Appointment created successfully!");
+      displayAlert("Appointment created successfully!");
     },
     error: function(xhr) {
       const errorMsg = xhr.responseJSON?.error || "Failed to create appointment.";
-      showNotification(errorMsg, "error");
+      displayAlert(errorMsg, "error");
     }
   });
 }
@@ -2344,7 +2383,7 @@ function convertMeasurement(inputId) {
   const currentValue = inputField.value.trim();
 
   if (!currentValue) {
-    showNotification(`Enter a value for ${inputId} before converting.`, "error");
+    displayAlert(`Enter a value for ${inputId} before converting.`, "error");
     return;
   }
 
@@ -2352,7 +2391,7 @@ function convertMeasurement(inputId) {
   if (inputId === "modalBloodPressure") {
     const [systolic, diastolic] = currentValue.split("/").map(v => parseFloat(v.trim()));
     if (isNaN(systolic) || isNaN(diastolic)) {
-      showNotification("Invalid blood pressure format. Use 'systolic/diastolic'.", "error");
+      displayAlert("Invalid blood pressure format. Use 'systolic/diastolic'.", "error");
       inputField.classList.add("is-invalid");
       document.getElementById(`${inputId}Feedback`).textContent = "Use format 'systolic/diastolic' (e.g., 120/80).";
       return;
@@ -2363,7 +2402,7 @@ function convertMeasurement(inputId) {
   } else {
     const numericValue = parseFloat(currentValue);
     if (isNaN(numericValue)) {
-      showNotification(`Invalid value for ${inputId}. Enter a number.`, "error");
+      displayAlert(`Invalid value for ${inputId}. Enter a number.`, "error");
       inputField.classList.add("is-invalid");
       document.getElementById(`${inputId}Feedback`).textContent = "Enter a valid number.";
       return;
@@ -2480,13 +2519,13 @@ function validateVitals() {
 // Save vitals with validation
 function saveVitals() {
   if (!validateVitals()) {
-    showNotification("Please correct the invalid fields.", "error");
+    displayAlert("Please correct the invalid fields.", "error");
     return;
   }
 
   const appointmentId = $("#vitalsModal").data("appointmentId");
   if (!appointmentId) {
-    showNotification("Appointment ID is missing.", "error");
+    displayAlert("Appointment ID is missing.", "error");
     return;
   }
 
@@ -2518,12 +2557,12 @@ function saveVitals() {
     contentType: "application/json",
     success: function(response) {
       $("#vitalsModal").modal("hide");
-      showNotification("Vitals saved successfully!", "success");
+      displayAlert("Vitals saved successfully!", "success");
       location.reload();
     },
     error: function(xhr) {
       const errorMsg = getErrorMessage(xhr, "Failed to save vitals.");
-      showNotification(errorMsg, "error");
+      displayAlert(errorMsg, "error");
     }
   });
 }
@@ -2543,7 +2582,7 @@ function loadDoctorsForPatientModal() {
       });
     },
     error: function(xhr) {
-      showNotification("Failed to load doctors.", "error");
+      displayAlert("Failed to load doctors.", "error");
     }
   });
 }
@@ -2557,115 +2596,166 @@ $("#createPatientModal").on("show.bs.modal", function() {
 
 
 
-// Updated openEditModal with age calculation and non-editable fields
-let currentAppointment = null; // Global variable to store the current appointment
+$(document).ready(function() {
+  initializeDatePickers();
+});
+
+let currentAppointment = null;
 function openEditModal(appointmentData, rowIndex) {
-  currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
+    currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
 
-  $("#editFirstName").val(currentAppointment.patient?.first_name || "");
-  $("#editLastName").val(currentAppointment.patient?.last_name || "");
-  $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-  $("#editDateOfBirth").val(currentAppointment.patient?.date_of_birth || "");
+    // Log the appointment data for debugging
+    console.log("Current Appointment Data:", currentAppointment);
 
-  const dob = currentAppointment.patient?.date_of_birth;
-  if (dob) {
-      const calculatedAge = calculateAge(dob);
-      $("#editAge").val(calculatedAge >= 0 ? calculatedAge : "");
-  } else {
-      $("#editAge").val("");
-  }
+    // Check for required DOM elements
+    if (!$("#editDateOfBirth").length || !$("#editAppointmentDate").length) {
+        console.error("Required DOM elements not found: #editDateOfBirth or #editAppointmentDate");
+        displayAlert("Error: Modal elements missing", "error");
+        return;
+    }
 
-  $("#editCurrentIllness").val(currentAppointment.current_medications || "");
+    // Populate static fields
+    $("#editFirstName").val(currentAppointment.patient?.first_name || "");
+    $("#editLastName").val(currentAppointment.patient?.last_name || "");
+    $("#editContactNumber").val(currentAppointment.patient?.mobile_number || "");
+    $("#editCurrentIllness").val(currentAppointment.patient?.current_medications || "No Current Illness");
+    $("#editAppointmentStatus").val(currentAppointment.status || "");
+    $("#editNotes").val(currentAppointment.notes || "");
+    $("#editAppointmentID").val(currentAppointment.id);
+    $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
 
-  // Get the Flatpickr instance
-  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
-  if (!flatpickrInstance) {
-      console.error("Flatpickr instance not found for #editAppointmentDate. Ensure Flatpickr is initialized.");
-      showNotification("Date picker not initialized.", "error");
-      return;
-  }
+    $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
+    $("#editAge").prop("readonly", true);
+    $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
 
-  // Set appointment_date from API string
-  const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
-  const appointmentDate = new Date(appointmentDateStr);
-  if (isNaN(appointmentDate.getTime())) {
-      console.error("Invalid appointment_date:", appointmentDateStr);
-      showNotification("Invalid appointment date received.", "error");
-      return;
-  }
+    let previousDoctorId = currentAppointment.doctor?.id || "";
+    loadDoctors(previousDoctorId);
 
-  // Adjust to IST explicitly (undo local timezone offset and apply IST)
-  const istOffset = 5.5 * 60; // IST is UTC+05:30 in minutes
-  const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // To UTC
-  const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // To IST
+    // Show the modal and initialize date pickers once fully rendered
+    $("#editAppointmentModal")
+        .off("shown.bs.modal") // Remove existing handlers to prevent duplicates
+        .on("shown.bs.modal", function () {
+            const $dobInput = $("#editDateOfBirth");
+            const $appointmentInput = $("#editAppointmentDate");
 
-  flatpickrInstance.setDate(istDate, true, "Y-m-d H:i"); // Sets "2025-03-21 01:52"
-  console.log("openEditModal - appointment_date:", appointmentDateStr, "Flatpickr set to:", flatpickrInstance.selectedDates[0]);
+            // Reset and initialize Flatpickr for Date of Birth (readonly)
+            if ($dobInput[0]._flatpickr) {
+                $dobInput[0]._flatpickr.destroy();
+            }
+            flatpickr($dobInput[0], {
+                noCalendar: true,
+                enableTime: false,
+                clickOpens: false,
+                allowInput: false,
+                static: true
+            });
+            const dobStr = currentAppointment.patient?.date_of_birth || "";
+            if (dobStr) {
+                const formattedDob = flatpickr.formatDate(new Date(dobStr), "F j, Y");
+                $dobInput.val(formattedDob);
+                $("#editAge").val(calculateAge(dobStr));
+            } else {
+                $dobInput.val("");
+                $("#editAge").val("");
+            }
 
-  $("#editAppointmentStatus").val(currentAppointment.status || "");
-  $("#editNotes").val(currentAppointment.notes || "");
-  $("#editAppointmentID").val(currentAppointment.id);
-  $("#editPatientID").val(currentAppointment.patient?.patient_id || "");
+            // Reset and initialize Flatpickr for Appointment Date
+            if ($appointmentInput[0]._flatpickr) {
+                $appointmentInput[0]._flatpickr.destroy();
+                console.log("Destroyed existing Flatpickr instance for #editAppointmentDate");
+            }
+            const appointmentFlatpickr = flatpickr($appointmentInput[0], {
+                altInput: true,
+                altFormat: "F j, Y, h:i K",
+                dateFormat: "Y-m-d H:i",
+                enableTime: true,
+                time_24hr: false,
+                minDate: "today",
+                appendTo: document.body,
+                position: "auto"
+            });
 
-  $("#editFirstName, #editLastName, #editContactNumber, #editPatientID, #editDateOfBirth").prop("readonly", true);
-  $("#editAge").prop("readonly", true);
-  $("#editCurrentIllness, #editNotes, #editAppointmentDate, #editAppointmentStatus").prop("readonly", false);
+            // Set the appointment date
+            const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
+            console.log("Raw appointment_date from API:", appointmentDateStr);
+            if (appointmentDateStr) {
+                const appointmentDate = new Date(appointmentDateStr);
+                if (!isNaN(appointmentDate.getTime())) {
+                    // Adjust to IST explicitly
+                    const istOffset = 5.5 * 60 * 60000; // IST is UTC+05:30 in milliseconds
+                    const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000));
+                    const istDate = new Date(utcDate.getTime() + istOffset);
+                    console.log("IST Adjusted Date:", istDate);
 
-  let previousDoctorId = currentAppointment.doctor?.id || "";
-  loadDoctors(previousDoctorId);
-
-  $("#editAppointmentModal").modal("show");
+                    try {
+                        appointmentFlatpickr.setDate(istDate, true);
+                        console.log("Appointment Date Set in Flatpickr:", istDate);
+                        console.log("Formatted Display Value:", $appointmentInput.val());
+                        console.log("Visible altInput Value:", $appointmentInput.next(".flatpickr-input").val());
+                    } catch (e) {
+                        console.error("Failed to set appointment date:", e);
+                        appointmentFlatpickr.clear();
+                    }
+                } else {
+                    console.warn("Invalid appointment date:", appointmentDateStr);
+                    appointmentFlatpickr.clear();
+                }
+            } else {
+                console.log("No appointment date provided, clearing picker.");
+                appointmentFlatpickr.clear();
+            }
+        })
+        .modal("show");
 }
 
 // Modified updateAppointment with detailed logging and error handling
 function updateAppointment() {
-  const flatpickrInstance = document.querySelector("#editAppointmentDate")._flatpickr;
+  const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
   let appointmentDate = flatpickrInstance.selectedDates[0];
   if (!appointmentDate || isNaN(appointmentDate.getTime())) {
-      showNotification("Please select a valid appointment date and time", "error");
-      $("#现状").addClass("is-invalid");
-      return;
+    displayAlert("Please select a valid appointment date and time", "error");
+    $("#editAppointmentDate").addClass("is-invalid");
+    return;
   }
 
-  // Convert to IST
-  const istOffset = 5.5 * 60; // 330 minutes
-  const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000));
-  const istDate = new Date(utcDate.getTime() + (istOffset * 60000));
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60 * 1000));
+  const istDate = new Date(utcDate.getTime() + istOffset);
   const formattedAppointmentDate = istDate.toISOString().slice(0, 19) + "+05:30";
 
   const updatedAppointment = {
-      id: $("#editAppointmentID").val(),
-      patient_id: $("#editPatientID").val(),
-      date_of_birth: $("#editDateOfBirth").val(),
-      current_illness: $("#editCurrentIllness").val(),
-      doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
-      status: $("#editAppointmentStatus").val(),
-      notes: $("#editNotes").val(),
-      appointment_date: formattedAppointmentDate
+    id: $("#editAppointmentID").val(),
+    patient_id: $("#editPatientID").val(),
+    date_of_birth: $("#editDateOfBirth").val(),
+    current_illness: $("#editCurrentIllness").val(),
+    doctor_id: $("#editDoctor").val() || currentAppointment.doctor?.id || "",
+    status: $("#editAppointmentStatus").val(),
+    notes: $("#editNotes").val(),
+    appointment_date: formattedAppointmentDate
   };
 
   console.log("updateAppointment - Sending to API:", updatedAppointment);
 
   fetch(`http://smarthospitalmaintain.com:8000/appointments/edit/${updatedAppointment.id}/`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify(updatedAppointment)
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(updatedAppointment)
   })
-  .then(response => {
+    .then(response => {
       if (!response.ok) throw new Error("Failed to update");
       return response.json();
-  })
-  .then(data => {
+    })
+    .then(data => {
       console.log("Appointment updated:", data);
-      showNotification("Appointment updated successfully", "success");
+      displayAlert("Appointment updated successfully", "success");
       $("#editAppointmentModal").modal("hide");
       fetchAppointments(updatedAppointment.status);
-  })
-  .catch(error => {
+    })
+    .catch(error => {
       console.error("Update failed:", error);
-      showNotification("Failed to update appointment", "error");
-  });
-}    
+      displayAlert("Failed to update appointment", "error");
+    });
+}  
 
     // Cancel and Reschedule (unchanged)
     function cancelAppointments() {
@@ -2679,7 +2769,7 @@ function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
 
   if (selectedIds.length === 0 || !selectedIds[0]) {
       console.warn("No appointments selected for cancellation");
-      showNotification("No appointments selected.");
+      displayAlert("No appointments selected.");
       return;
   }
 
@@ -2708,13 +2798,13 @@ function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
   })
   .then(data => {
       console.log(`Successfully canceled ${selectedIds.length} appointments:`, data);
-      showNotification(`Successfully canceled ${selectedIds.length} appointment(s).`, "success");
+      displayAlert(`Successfully canceled ${selectedIds.length} appointment(s).`, "success");
       fetchAppointments(status || "Canceled");
       location.reload();
   })
   .catch(error => {
       const errorMsg = getErrorMessage(error, "Failed to cancel appointments.");
-      showNotification(errorMsg, "error");
+      displayAlert(errorMsg, "error");
   });
 }
 
@@ -2732,7 +2822,7 @@ function cancelAppointment(appointmentIds, rowIndex = null, status = null) {
       }
     
       if (selectedIds.length === 0) {
-        showNotification("No appointments selected.");
+        displayAlert("No appointments selected.");
         return;
       }
     
@@ -2774,14 +2864,14 @@ function rescheduleAppointment() {
   })
   .then(data => {
       console.log(`Successfully rescheduled ${appointmentIds.length} appointments:`, data);
-      showNotification(`Successfully rescheduled ${appointmentIds.length} appointment(s).`, "success");
+      displayAlert(`Successfully rescheduled ${appointmentIds.length} appointment(s).`, "success");
       $("#rescheduleAppointmentModal").modal("hide");
       fetchAppointments("Rescheduled");
       location.reload();
   })
   .catch(error => {
       const errorMsg = getErrorMessage(error, "Failed to reschedule appointments.");
-      showNotification(errorMsg, "error");
+      displayAlert(errorMsg, "error");
   });
 }
 
