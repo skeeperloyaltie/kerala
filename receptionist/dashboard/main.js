@@ -352,7 +352,7 @@ function populateAppointmentsTable(status, appointments) {
     let doctor = appointment.doctor || {};
     let doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}` || "Unknown Doctor";
     let appointmentTime = formatDateTimeForTable(appointment.appointment_date);
-    let currentIllness = patient.current_medications || "N/A";
+    let currentIllness = patient.current_medications || "No Current Illness";
 
     let row = document.createElement("tr");
     row.innerHTML = `
