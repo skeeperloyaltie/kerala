@@ -545,60 +545,114 @@ function hideAppointmentForm() {
 }
 
 function fetchPatientDetails(patientId) {
-    console.log("Fetching patient details for ID:", patientId);
-    if (patientId) {
-        $.ajax({
-            url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
-            type: "GET",
-            headers: getAuthHeaders(),
-            success: function(response) {
-                console.log("Patient details fetched:", response);
-                if (response.patient) {
-                    $("#firstName").val(response.patient.first_name || "");
-                    $("#lastName").val(response.patient.last_name || "");
-                    $("#contactNumber").val(response.patient.mobile_number || "");
+    console.log("Starting fetchPatientDetails with patientId:", patientId);
 
-                    const dateOfBirthStr = response.patient.date_of_birth || "";
-                    const $dobInput = $("#dateOfBirth");
-                    const flatpickrInstance = $dobInput[0]._flatpickr;
+    if (!patientId) {
+        console.log("No patientId provided, clearing form fields.");
+        $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+        const flatpickrInstance = $("#dateOfBirth")[0]?._flatpickr;
+        if (flatpickrInstance) {
+            console.log("Clearing Flatpickr instance due to no patientId.");
+            flatpickrInstance.clear();
+        } else {
+            console.warn("No Flatpickr instance found for #dateOfBirth when clearing.");
+        }
+        return;
+    }
 
-                    if (dateOfBirthStr) {
-                        const dob = new Date(dateOfBirthStr);
-                        if (!isNaN(dob.getTime())) {
-                            // Format the date using Flatpickr's format function for consistency
-                            const formattedDob = flatpickr.formatDate(dob, "F j, Y");
-                            $dobInput.val(formattedDob); // Set the formatted value directly
+    console.log("Making AJAX request to fetch patient details for ID:", patientId);
+    $.ajax({
+        url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function(response) {
+            console.log("AJAX success - Raw response:", response);
+
+            if (response.patient) {
+                console.log("Patient data received:", response.patient);
+
+                $("#firstName").val(response.patient.first_name || "");
+                $("#lastName").val(response.patient.last_name || "");
+                $("#contactNumber").val(response.patient.mobile_number || "");
+                console.log("Set basic fields - firstName:", response.patient.first_name, 
+                           "lastName:", response.patient.last_name, 
+                           "contactNumber:", response.patient.mobile_number);
+
+                const dateOfBirthStr = response.patient.date_of_birth || "";
+                console.log("Raw dateOfBirth from response:", dateOfBirthStr);
+
+                const $dobInput = $("#dateOfBirth");
+                const flatpickrInstance = $dobInput[0]?._flatpickr;
+                console.log("Flatpickr instance exists:", !!flatpickrInstance);
+
+                if (!flatpickrInstance) {
+                    console.error("Flatpickr instance not initialized for #dateOfBirth. Ensure initializeDatePickers() was called.");
+                }
+
+                if (dateOfBirthStr) {
+                    const dob = new Date(dateOfBirthStr);
+                    console.log("Parsed DOB as Date object:", dob);
+
+                    if (!isNaN(dob.getTime())) {
+                        // Format the date using Flatpickr's format function
+                        const formattedDob = flatpickr.formatDate(dob, "F j, Y");
+                        console.log("Formatted DOB for display (F j, Y):", formattedDob);
+
+                        $dobInput.val(formattedDob); // Set the formatted value directly
+                        console.log("Set #dateOfBirth input value to:", $dobInput.val());
+
+                        if (flatpickrInstance) {
                             flatpickrInstance.setDate(dob, true); // Update Flatpickr's internal state
-                            $("#age").val(calculateAge(dateOfBirthStr));
+                            console.log("Flatpickr setDate called with:", dob);
+                            console.log("Flatpickr altInput value after setDate:", $dobInput.next(".flatpickr-input").val());
                         } else {
-                            console.warn("Invalid date of birth:", dateOfBirthStr);
-                            flatpickrInstance.clear();
-                            $("#age").val("");
+                            console.warn("Cannot set Flatpickr date - instance missing.");
                         }
+
+                        const age = calculateAge(dateOfBirthStr);
+                        $("#age").val(age);
+                        console.log("Calculated and set age:", age);
                     } else {
-                        flatpickrInstance.clear();
+                        console.warn("Invalid date of birth detected:", dateOfBirthStr);
+                        if (flatpickrInstance) {
+                            flatpickrInstance.clear();
+                            console.log("Cleared Flatpickr due to invalid DOB.");
+                        }
                         $("#age").val("");
+                        console.log("Cleared age field due to invalid DOB.");
                     }
                 } else {
-                    displayAlert("Patient not found.", "error");
-                    $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-                    const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
-                    flatpickrInstance.clear();
+                    console.log("No dateOfBirth provided in response, clearing DOB and age.");
+                    if (flatpickrInstance) {
+                        flatpickrInstance.clear();
+                        console.log("Cleared Flatpickr due to no DOB.");
+                    }
+                    $("#age").val("");
+                    console.log("Cleared age field.");
                 }
-            },
-            error: function(xhr) {
-                console.error("Patient Not Found:", xhr.status, xhr.responseText);
-                displayAlert("Failed to fetch patient details.", "error");
+            } else {
+                console.warn("No patient data in response:", response);
+                displayAlert("Patient not found.", "error");
                 $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-                const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
-                flatpickrInstance.clear();
+                const flatpickrInstance = $("#dateOfBirth")[0]?._flatpickr;
+                if (flatpickrInstance) {
+                    flatpickrInstance.clear();
+                    console.log("Cleared Flatpickr due to no patient data.");
+                }
             }
-        });
-    } else {
-        $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-        const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
-        flatpickrInstance.clear();
-    }
+        },
+        error: function(xhr) {
+            console.error("AJAX error fetching patient details - Status:", xhr.status, 
+                         "Response:", xhr.responseText);
+            displayAlert("Failed to fetch patient details.", "error");
+            $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+            const flatpickrInstance = $("#dateOfBirth")[0]?._flatpickr;
+            if (flatpickrInstance) {
+                flatpickrInstance.clear();
+                console.log("Cleared Flatpickr due to AJAX error.");
+            }
+        }
+    });
 }
 
 let doctorMap = {};
