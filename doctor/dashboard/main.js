@@ -682,118 +682,68 @@ function loadDoctors(selectedId = null) {
 function addAppointment() {
     const patientId = $("#patientID").val().trim();
     const doctorId = $("#doctor").val();
-    const $appointmentDateInput = $("#appointmentDate");
-    const flatpickrInstance = $appointmentDateInput[0]?._flatpickr;
-    const appointmentDateObj = flatpickrInstance?.selectedDates[0]; // Get the Date object from Flatpickr
-    const appointmentDate = appointmentDateObj ? flatpickr.formatDate(appointmentDateObj, "Y-m-d H:i") : $appointmentDateInput.val();
-    const formattedDate = appointmentDate ? `${appointmentDate}:00` : null; // Add seconds for full timestamp
+    const appointmentDate = $("#appointmentDate").val();
+    const formattedDate = appointmentDate + ":00"; // Append seconds for ISO
+  
     const notes = $("#notes").val().trim();
-    const currentIllness = $("#currentIllness").val().trim();
-
-    // Detailed logging for debugging
-    console.log("addAppointment - patientId:", patientId);
-    console.log("addAppointment - doctorId:", doctorId);
-    console.log("addAppointment - Raw input value from #appointmentDate:", $appointmentDateInput.val());
-    console.log("addAppointment - Flatpickr instance exists:", !!flatpickrInstance);
-    console.log("addAppointment - Flatpickr selectedDates:", flatpickrInstance?.selectedDates);
-    console.log("addAppointment - appointmentDateObj:", appointmentDateObj);
-    console.log("addAppointment - Formatted appointmentDate (Y-m-d H:i):", appointmentDate);
-    console.log("addAppointment - Final formattedDate (with seconds):", formattedDate);
-
-    // Clear previous validation
+    const isEmergency = $("#isEmergency")?.is(":checked") || false;
+    const currentIllness = $("#currentIllness").val().trim(); // Already captured
+  
+    // Clear previous validation states
     $(".form-control").removeClass("is-invalid");
-    $(".invalid-feedback").text("");
-
-    let isValid = true;
-    let errorMessages = [];
-
-    // Validation checks
-    if (!patientId) {
-        $("#patientID").addClass("is-invalid");
-        $("#patientIDFeedback").text("Patient ID is required.");
-        errorMessages.push("Patient ID is required.");
-        isValid = false;
+    let missingFields = [];
+    if (!patientId) missingFields.push("Patient ID");
+    if (!doctorId) missingFields.push("Doctor");
+    if (!appointmentDate) missingFields.push("Appointment Date");
+  
+    if (missingFields.length > 0) {
+      missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
+      showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
+      return;
     }
-
-    if (!doctorId) {
-        $("#doctor").addClass("is-invalid");
-        $("#doctorFeedback").text("Doctor selection is required.");
-        errorMessages.push("Doctor selection is required.");
-        isValid = false;
+  
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(appointmentDate) < today) {
+      $("#appointmentDate").addClass("is-invalid");
+      showNotification("Appointment date cannot be in the past.", "error");
+      return;
     }
-
-    if (!appointmentDate || !appointmentDateObj) {
-        $("#appointmentDate").addClass("is-invalid");
-        $("#appointmentDateFeedback").text("Appointment date is required.");
-        errorMessages.push("Appointment date is required.");
-        isValid = false;
-        console.warn("No valid appointment date detected. Check Flatpickr initialization or input sync.");
-    } else {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const apptDate = new Date(appointmentDateObj || appointmentDate);
-        if (isNaN(apptDate.getTime())) {
-            $("#appointmentDate").addClass("is-invalid");
-            $("#appointmentDateFeedback").text("Invalid date format.");
-            errorMessages.push("Invalid appointment date format.");
-            isValid = false;
-            console.error("Invalid date parsed from appointmentDate:", appointmentDate);
-        } else if (apptDate < today) {
-            $("#appointmentDate").addClass("is-invalid");
-            $("#appointmentDateFeedback").text("Appointment date cannot be in the past.");
-            errorMessages.push("Appointment date cannot be in the past.");
-            isValid = false;
-            console.log("Appointment date is in the past:", apptDate);
-        }
-    }
-
-    if (!isValid) {
-        const errorMessage = "Please correct the following errors:\n- " + errorMessages.join("\n- ");
-        displayAlert(errorMessage, "danger");
-        console.log("Validation errors:", errorMessages);
-        return;
-    }
-
+  
     const appointmentData = {
-        patient_id: patientId,
-        doctor_id: doctorId,
-        appointment_date: formattedDate,
-        notes: notes,
-        current_illness: currentIllness
+      patient_id: patientId,
+      doctor_id: doctorId,
+      appointment_date: formattedDate,
+      notes: notes,
+      is_emergency: isEmergency,
+      current_illness: currentIllness // Add current_illness to the payload
     };
-
-    console.log("Sending appointment data to server:", appointmentData);
-
+  
     $.ajax({
-        url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-        type: "POST",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(appointmentData),
-        contentType: "application/json",
-        success: function(response) {
-            const appointmentId = response.appointment?.id;
-            if (!appointmentId) {
-                displayAlert("Error: Appointment ID missing from response.", "danger");
-                console.error("Response missing appointment ID:", response);
-                return;
-            }
-            hideAppointmentForm();
-            fetchAppointments("Scheduled");
-            $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-            displayAlert("Appointment created successfully!", "success");
-            console.log("Appointment created with ID:", appointmentId);
-        },
-        error: function(xhr) {
-            const serverError = getErrorMessage(xhr, "Failed to create appointment.");
-            displayAlert(serverError, "danger");
-            console.error("AJAX Error Details:", {
-                status: xhr.status,
-                response: xhr.responseJSON || xhr.responseText,
-                dataSent: appointmentData
-            });
+      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(appointmentData),
+      contentType: "application/json",
+      success: function(response) {
+        const appointmentId = response.appointment?.id;
+        if (!appointmentId) {
+          showNotification("Error: Appointment ID missing from response.", "error");
+          return;
         }
+        hideAppointmentForm();
+        fetchAppointments("Scheduled"); // Refresh the appointment list
+        $("#vitalsModal").modal("show").data("appointmentId", appointmentId); // Open vitals modal
+        showNotification("Appointment created successfully!");
+      },
+      error: function(xhr) {
+        const errorMsg = xhr.responseJSON?.error || "Failed to create appointment.";
+        showNotification(errorMsg, "error");
+      }
     });
-}
+  }
+
+  
 $(document).ready(function() {
     initializeDatePickers();
   });
