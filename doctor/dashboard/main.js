@@ -654,9 +654,6 @@ let currentAppointment = null;
 function openEditModal(appointmentData, rowIndex) {
   currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
 
-  // Ensure date pickers are initialized
-  initializeDatePickers();
-
   // Verify elements exist before proceeding
   if (!$("#editDateOfBirth").length || !$("#editAppointmentDate").length) {
     console.error("Required DOM elements not found: #editDateOfBirth or #editAppointmentDate");
@@ -664,67 +661,11 @@ function openEditModal(appointmentData, rowIndex) {
     return;
   }
 
+  // Populate static fields immediately
   $("#editFirstName").val(currentAppointment.patient?.first_name || "");
   $("#editLastName").val(currentAppointment.patient?.last_name || "");
   $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
-
-  // Set Date of Birth
-  const dobStr = currentAppointment.patient?.date_of_birth || "";
-  const dobFlatpickr = $("#editDateOfBirth")[0]._flatpickr;
-  if (!dobFlatpickr) {
-    console.error("Flatpickr instance not initialized for #editDateOfBirth");
-    displayAlert("Error initializing date picker", "error");
-    return;
-  }
-  if (dobStr) {
-    const dob = new Date(dobStr);
-    if (!isNaN(dob.getTime())) {
-      dobFlatpickr.setDate(dob, true, "Y-m-d");
-      $("#editAge").val(calculateAge(dobStr));
-    } else {
-      console.warn("Invalid DOB:", dobStr);
-      dobFlatpickr.clear();
-      $("#editAge").val("");
-    }
-  } else {
-    dobFlatpickr.clear();
-    $("#editAge").val("");
-  }
-
-  // Set Current Illness
-  const currentIllness = currentAppointment.current_illness || currentAppointment.current_medications || "";
-  $("#editCurrentIllness").val(currentIllness);
-
-  // Set Appointment Date
-  const appointmentDateStr = currentAppointment.appointment_date;
-  const appointmentFlatpickr = $("#editAppointmentDate")[0]._flatpickr;
-  if (!appointmentFlatpickr) {
-    console.error("Flatpickr instance not initialized for #editAppointmentDate");
-    displayAlert("Error initializing date picker", "error");
-    return;
-  }
-  if (appointmentDateStr) {
-    const appointmentDate = new Date(appointmentDateStr);
-    if (!isNaN(appointmentDate.getTime())) {
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60 * 1000));
-      const istDate = new Date(utcDate.getTime() + istOffset);
-      console.log("Setting appointment date:", {
-        original: appointmentDateStr,
-        parsed: appointmentDate,
-        istDate: istDate,
-        formatted: istDate.toISOString()
-      });
-      appointmentFlatpickr.setDate(istDate, true, "Y-m-d H:i");
-    } else {
-      console.warn("Invalid appointment date:", appointmentDateStr);
-      appointmentFlatpickr.clear();
-    }
-  } else {
-    console.warn("No appointment date provided");
-    appointmentFlatpickr.clear();
-  }
-
+  $("#editCurrentIllness").val(currentAppointment.current_illness || currentAppointment.current_medications || "");
   $("#editAppointmentStatus").val(currentAppointment.status || "");
   $("#editNotes").val(currentAppointment.notes || "");
   $("#editAppointmentID").val(currentAppointment.id);
@@ -737,7 +678,78 @@ function openEditModal(appointmentData, rowIndex) {
   let previousDoctorId = currentAppointment.doctor?.id || "";
   loadDoctors(previousDoctorId);
 
-  $("#editAppointmentModal").modal("show");
+  // Show the modal and handle date pickers once fully rendered
+  $("#editAppointmentModal")
+    .off("shown.bs.modal") // Remove any existing handlers to avoid duplicates
+    .on("shown.bs.modal", function() {
+      // Ensure date pickers are initialized
+      initializeDatePickers();
+
+      // Set Date of Birth
+      const dobStr = currentAppointment.patient?.date_of_birth || "";
+      const dobFlatpickr = $("#editDateOfBirth")[0]._flatpickr;
+      if (!dobFlatpickr) {
+        console.error("Flatpickr instance not initialized for #editDateOfBirth after modal shown");
+        displayAlert("Error initializing date picker", "error");
+        return;
+      }
+      if (dobStr) {
+        const dob = new Date(dobStr);
+        if (!isNaN(dob.getTime())) {
+          try {
+            dobFlatpickr.setDate(dob, true, "Y-m-d");
+            $("#editAge").val(calculateAge(dobStr));
+          } catch (e) {
+            console.error("Failed to set DOB:", e);
+            dobFlatpickr.clear();
+            $("#editAge").val("");
+          }
+        } else {
+          console.warn("Invalid DOB:", dobStr);
+          dobFlatpickr.clear();
+          $("#editAge").val("");
+        }
+      } else {
+        dobFlatpickr.clear();
+        $("#editAge").val("");
+      }
+
+      // Set Appointment Date
+      const appointmentDateStr = currentAppointment.appointment_date;
+      const appointmentFlatpickr = $("#editAppointmentDate")[0]._flatpickr;
+      if (!appointmentFlatpickr) {
+        console.error("Flatpickr instance not initialized for #editAppointmentDate after modal shown");
+        displayAlert("Error initializing date picker", "error");
+        return;
+      }
+      if (appointmentDateStr) {
+        const appointmentDate = new Date(appointmentDateStr);
+        if (!isNaN(appointmentDate.getTime())) {
+          const istOffset = 5.5 * 60 * 60 * 1000;
+          const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60 * 1000));
+          const istDate = new Date(utcDate.getTime() + istOffset);
+          console.log("Setting appointment date:", {
+            original: appointmentDateStr,
+            parsed: appointmentDate,
+            istDate: istDate,
+            formatted: istDate.toISOString()
+          });
+          try {
+            appointmentFlatpickr.setDate(istDate, true, "Y-m-d H:i");
+          } catch (e) {
+            console.error("Failed to set appointment date:", e);
+            appointmentFlatpickr.clear();
+          }
+        } else {
+          console.warn("Invalid appointment date:", appointmentDateStr);
+          appointmentFlatpickr.clear();
+        }
+      } else {
+        console.warn("No appointment date provided");
+        appointmentFlatpickr.clear();
+      }
+    })
+    .modal("show");
 }
 
 function updateAppointment() {
