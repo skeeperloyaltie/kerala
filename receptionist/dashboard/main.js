@@ -545,32 +545,60 @@ function hideAppointmentForm() {
 }
 
 function fetchPatientDetails(patientId) {
-  console.log("Fetching patient details for ID:", patientId);
-  if (patientId) {
-    $.ajax({
-      url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function(response) {
-        console.log("Patient details fetched:", response);
-        if (response.patient) {
-          $("#firstName").val(response.patient.first_name || "");
-          $("#lastName").val(response.patient.last_name || "");
-          $("#contactNumber").val(response.patient.mobile_number || "");
-          $("#dateOfBirth").val(response.patient.date_of_birth || "");
-          $("#age").val(response.patient.date_of_birth ? calculateAge(response.patient.date_of_birth) : "");
-        } else {
-          displayAlert("Patient not found", "error");
-          $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-        }
-      },
-      error: function(xhr) {
-        console.error("Failed to fetch patient details:", xhr.status, xhr.responseText);
-        displayAlert("Failed to fetch patient details", "error");
+    console.log("Fetching patient details for ID:", patientId);
+    if (patientId) {
+        $.ajax({
+            url: `http://smarthospitalmaintain.com:8000/appointments/get-patient-details/${patientId}/`,
+            type: "GET",
+            headers: getAuthHeaders(),
+            success: function(response) {
+                console.log("Patient details fetched:", response);
+                if (response.patient) {
+                    $("#firstName").val(response.patient.first_name || "");
+                    $("#lastName").val(response.patient.last_name || "");
+                    $("#contactNumber").val(response.patient.mobile_number || "");
+
+                    const dateOfBirthStr = response.patient.date_of_birth || "";
+                    const $dobInput = $("#dateOfBirth");
+                    const flatpickrInstance = $dobInput[0]._flatpickr;
+
+                    if (dateOfBirthStr) {
+                        const dob = new Date(dateOfBirthStr);
+                        if (!isNaN(dob.getTime())) {
+                            // Format the date using Flatpickr's format function for consistency
+                            const formattedDob = flatpickr.formatDate(dob, "F j, Y");
+                            $dobInput.val(formattedDob); // Set the formatted value directly
+                            flatpickrInstance.setDate(dob, true); // Update Flatpickr's internal state
+                            $("#age").val(calculateAge(dateOfBirthStr));
+                        } else {
+                            console.warn("Invalid date of birth:", dateOfBirthStr);
+                            flatpickrInstance.clear();
+                            $("#age").val("");
+                        }
+                    } else {
+                        flatpickrInstance.clear();
+                        $("#age").val("");
+                    }
+                } else {
+                    displayAlert("Patient not found.", "error");
+                    $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+                    const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+                    flatpickrInstance.clear();
+                }
+            },
+            error: function(xhr) {
+                console.error("Patient Not Found:", xhr.status, xhr.responseText);
+                displayAlert("Failed to fetch patient details.", "error");
+                $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
+                const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+                flatpickrInstance.clear();
+            }
+        });
+    } else {
         $("#firstName, #lastName, #contactNumber, #dateOfBirth, #age").val("");
-      }
-    });
-  }
+        const flatpickrInstance = $("#dateOfBirth")[0]._flatpickr;
+        flatpickrInstance.clear();
+    }
 }
 
 let doctorMap = {};
