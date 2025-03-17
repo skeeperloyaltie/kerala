@@ -625,77 +625,102 @@ function loadDoctors(selectedId = null) {
 }
 
 function addAppointment() {
-  const patientId = $("#patientID").val().trim();
-  const doctorId = $("#doctor").val();
-  const appointmentDate = $("#appointmentDate").val();
-  const formattedDate = appointmentDate + ":00";
-  const notes = $("#notes").val().trim();
-  const currentIllness = $("#currentIllness").val().trim();
-
-  // Clear previous validation
-  $(".form-control").removeClass("is-invalid");
-  $(".invalid-feedback").text("");
-
-  let isValid = true;
-  if (!patientId) {
-    $("#patientID").addClass("is-invalid");
-    $("#patientIDFeedback").text("Patient ID is required.");
-    isValid = false;
-  }
-  if (!doctorId) {
-    $("#doctor").addClass("is-invalid");
-    $("#doctorFeedback").text("Doctor selection is required.");
-    isValid = false;
-  }
-  if (!appointmentDate) {
-    $("#appointmentDate").addClass("is-invalid");
-    $("#appointmentDateFeedback").text("Appointment date is required.");
-    isValid = false;
-  } else {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (new Date(appointmentDate) < today) {
-      $("#appointmentDate").addClass("is-invalid");
-      $("#appointmentDateFeedback").text("Appointment date cannot be in the past.");
+    const patientId = $("#patientID").val().trim();
+    const doctorId = $("#doctor").val();
+    const appointmentDate = $("#appointmentDate").val();
+    const formattedDate = appointmentDate + ":00";
+    const notes = $("#notes").val().trim();
+    const currentIllness = $("#currentIllness").val().trim();
+  
+    // Clear previous validation
+    $(".form-control").removeClass("is-invalid");
+    $(".invalid-feedback").text("");
+  
+    let isValid = true;
+    let errorMessages = [];
+  
+    // Validation checks
+    if (!patientId) {
+      $("#patientID").addClass("is-invalid");
+      $("#patientIDFeedback").text("Patient ID is required.");
+      errorMessages.push("Patient ID is required.");
       isValid = false;
     }
-  }
-
-  if (!isValid) {
-    displayAlert("Please correct the form errors.", "danger");
-    return;
-  }
-
-  const appointmentData = {
-    patient_id: patientId,
-    doctor_id: doctorId,
-    appointment_date: formattedDate,
-    notes: notes,
-    current_illness: currentIllness
-  };
-
-  $.ajax({
-    url: "http://smarthospitalmaintain.com:8000/appointments/create/",
-    type: "POST",
-    headers: getAuthHeaders(),
-    data: JSON.stringify(appointmentData),
-    contentType: "application/json",
-    success: function(response) {
-      const appointmentId = response.appointment?.id;
-      if (!appointmentId) {
-        displayAlert("Error: Appointment ID missing from response.", "danger");
-        return;
-      }
-      hideAppointmentForm();
-      fetchAppointments("Scheduled");
-      $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
-      displayAlert("Appointment created successfully!", "success");
-    },
-    error: function(xhr) {
-      displayAlert(getErrorMessage(xhr, "Failed to create appointment."), "danger");
+  
+    if (!doctorId) {
+      $("#doctor").addClass("is-invalid");
+      $("#doctorFeedback").text("Doctor selection is required.");
+      errorMessages.push("Doctor selection is required.");
+      isValid = false;
     }
-  });
-}
+  
+    if (!appointmentDate) {
+      $("#appointmentDate").addClass("is-invalid");
+      $("#appointmentDateFeedback").text("Appointment date is required.");
+      errorMessages.push("Appointment date is required.");
+      isValid = false;
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const apptDate = new Date(appointmentDate);
+      if (apptDate < today) {
+        $("#appointmentDate").addClass("is-invalid");
+        $("#appointmentDateFeedback").text("Appointment date cannot be in the past.");
+        errorMessages.push("Appointment date cannot be in the past.");
+        isValid = false;
+      } else if (isNaN(apptDate.getTime())) {
+        $("#appointmentDate").addClass("is-invalid");
+        $("#appointmentDateFeedback").text("Invalid date format.");
+        errorMessages.push("Invalid appointment date format.");
+        isValid = false;
+      }
+    }
+  
+    if (!isValid) {
+      // Construct detailed error message
+      const errorMessage = "Please correct the following errors:\n- " + errorMessages.join("\n- ");
+      displayAlert(errorMessage, "danger");
+      console.log("Validation errors:", errorMessages); // Log for debugging
+      return;
+    }
+  
+    const appointmentData = {
+      patient_id: patientId,
+      doctor_id: doctorId,
+      appointment_date: formattedDate,
+      notes: notes,
+      current_illness: currentIllness
+    };
+  
+    $.ajax({
+      url: "http://smarthospitalmaintain.com:8000/appointments/create/",
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(appointmentData),
+      contentType: "application/json",
+      success: function(response) {
+        const appointmentId = response.appointment?.id;
+        if (!appointmentId) {
+          displayAlert("Error: Appointment ID missing from response.", "danger");
+          return;
+        }
+        hideAppointmentForm();
+        fetchAppointments("Scheduled");
+        $("#vitalsModal").modal("show").data("appointmentId", appointmentId);
+        displayAlert("Appointment created successfully!", "success");
+      },
+      error: function(xhr) {
+        // Enhance error reporting from server response
+        const serverError = getErrorMessage(xhr, "Failed to create appointment.");
+        displayAlert(serverError, "danger");
+        console.error("AJAX Error Details:", {
+          status: xhr.status,
+          response: xhr.responseJSON || xhr.responseText,
+          dataSent: appointmentData
+        });
+      }
+    });
+  }
 $(document).ready(function() {
     initializeDatePickers();
   });
