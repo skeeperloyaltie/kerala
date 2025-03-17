@@ -673,8 +673,7 @@ $(document).ready(function() {
     initializeDatePickers();
   });
 
-  
-let currentAppointment = null;
+  let currentAppointment = null;
 function openEditModal(appointmentData, rowIndex) {
     currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
 
@@ -692,7 +691,7 @@ function openEditModal(appointmentData, rowIndex) {
     $("#editFirstName").val(currentAppointment.patient?.first_name || "");
     $("#editLastName").val(currentAppointment.patient?.last_name || "");
     $("#editContactNumber").val(currentAppointment.patient?.mobile_number || "");
-    $("#editCurrentIllness").val(currentAppointment.patient?.current_medications || ""); // Check patient object too
+    $("#editCurrentIllness").val(currentAppointment.patient?.current_medications || "No Current Illness"); // Check patient object too
     $("#editAppointmentStatus").val(currentAppointment.status || "");
     $("#editNotes").val(currentAppointment.notes || "");
     $("#editAppointmentID").val(currentAppointment.id);
@@ -750,39 +749,40 @@ function openEditModal(appointmentData, rowIndex) {
                     dateFormat: "Y-m-d H:i",
                     enableTime: true,
                     time_24hr: false,
-                    minDate: "today", // Ensures future edits can't be in the past
+                    minDate: "today",
                     appendTo: document.body,
-                    position: "auto",
-                    defaultDate: currentAppointment.appointment_date || null // Set the default date
+                    position: "auto"
                 });
-            } else {
-                // If already initialized, just set the date
-                const appointmentFlatpickr = $appointmentInput[0]._flatpickr;
-                const appointmentDateStr = currentAppointment.appointment_date;
-                if (appointmentDateStr) {
-                    const appointmentDate = new Date(appointmentDateStr);
-                    if (!isNaN(appointmentDate.getTime())) {
-                        try {
-                            appointmentFlatpickr.setDate(appointmentDate, true, "Y-m-d H:i");
-                            console.log("Appointment Date Set:", appointmentDate);
-                        } catch (e) {
-                            console.error("Failed to set appointment date:", e);
-                            appointmentFlatpickr.clear();
-                        }
-                    } else {
-                        console.warn("Invalid appointment date:", appointmentDateStr);
+            }
+
+            // Set appointment_date from API string (adjusted to IST)
+            const appointmentFlatpickr = $appointmentInput[0]._flatpickr;
+            const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
+            if (appointmentDateStr) {
+                const appointmentDate = new Date(appointmentDateStr);
+                if (!isNaN(appointmentDate.getTime())) {
+                    // Adjust to IST explicitly (undo local timezone offset and apply IST)
+                    const istOffset = 5.5 * 60; // IST is UTC+05:30 in minutes
+                    const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // To UTC
+                    const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // To IST
+                    try {
+                        appointmentFlatpickr.setDate(istDate, true, "Y-m-d H:i");
+                        console.log("Appointment Date Set:", istDate);
+                    } catch (e) {
+                        console.error("Failed to set appointment date:", e);
                         appointmentFlatpickr.clear();
                     }
                 } else {
+                    console.warn("Invalid appointment date:", appointmentDateStr);
                     appointmentFlatpickr.clear();
-                    console.log("No appointment date provided, clearing picker.");
                 }
+            } else {
+                appointmentFlatpickr.clear();
+                console.log("No appointment date provided, clearing picker.");
             }
         })
         .modal("show");
 }
-
-
 function updateAppointment() {
   const flatpickrInstance = $("#editAppointmentDate")[0]._flatpickr;
   let appointmentDate = flatpickrInstance.selectedDates[0];
