@@ -756,18 +756,22 @@ function openEditModal(appointmentData, rowIndex) {
             }
 
             // Set appointment_date from API string (adjusted to IST)
-            const appointmentFlatpickr = $appointmentInput[0]._flatpickr;
+            // Set the appointment date
             const appointmentDateStr = currentAppointment.appointment_date; // e.g., "2025-03-21T01:52:00+05:30"
+            console.log("Raw appointment_date from API:", appointmentDateStr);
             if (appointmentDateStr) {
                 const appointmentDate = new Date(appointmentDateStr);
                 if (!isNaN(appointmentDate.getTime())) {
-                    // Adjust to IST explicitly (undo local timezone offset and apply IST)
-                    const istOffset = 5.5 * 60; // IST is UTC+05:30 in minutes
-                    const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000)); // To UTC
-                    const istDate = new Date(utcDate.getTime() + (istOffset * 60000)); // To IST
+                    // Adjust to IST explicitly
+                    const istOffset = 5.5 * 60 * 60000; // IST is UTC+05:30 in milliseconds
+                    const utcDate = new Date(appointmentDate.getTime() - (appointmentDate.getTimezoneOffset() * 60000));
+                    const istDate = new Date(utcDate.getTime() + istOffset);
+                    console.log("IST Adjusted Date:", istDate);
+
                     try {
-                        appointmentFlatpickr.setDate(istDate, true, "Y-m-d H:i");
-                        console.log("Appointment Date Set:", istDate);
+                        appointmentFlatpickr.setDate(istDate, true);
+                        console.log("Appointment Date Set in Flatpickr:", istDate);
+                        console.log("Formatted Display Value:", $appointmentInput.val());
                     } catch (e) {
                         console.error("Failed to set appointment date:", e);
                         appointmentFlatpickr.clear();
@@ -777,8 +781,8 @@ function openEditModal(appointmentData, rowIndex) {
                     appointmentFlatpickr.clear();
                 }
             } else {
-                appointmentFlatpickr.clear();
                 console.log("No appointment date provided, clearing picker.");
+                appointmentFlatpickr.clear();
             }
         })
         .modal("show");
