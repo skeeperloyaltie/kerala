@@ -2,6 +2,8 @@
 function initializeDatePickers() {
   $(".custom-datetime-picker").each(function() {
     const $input = $(this);
+    if (!$input.length) return; // Prevent initializing on non-existing elements
+
     const inputId = $input.attr("id");
     const isDateOnly = inputId === "searchDob" || inputId === "searchDate" || inputId === "patientDob" || inputId === "dateOfBirth" || inputId === "editDateOfBirth";
     const isEditDob = inputId === "editDateOfBirth";
@@ -89,20 +91,20 @@ function initializeDatePickers() {
 
     // Special configuration for #editDateOfBirth: Display only, no interaction
     if (isEditDob) {
-      config = {
-        ...config,
-        noCalendar: true,
-        enableTime: false,
-        clickOpens: false,
-        allowInput: false,
-        static: true
-      };
-    }
+        flatpickr($input[0], {
+          noCalendar: true,
+          enableTime: false,
+          clickOpens: false,
+          allowInput: false,
+          static: true
+        });
+        return; // Stop further execution for readonly fields
+      }
+      
 
     // Destroy existing instance if it exists
-    if ($input[0]._flatpickr) {
-      $input[0]._flatpickr.destroy();
-    }
+    if ($input[0]._flatpickr) return;
+
 
     // Initialize Flatpickr
     flatpickr($input[0], config);
@@ -648,7 +650,11 @@ function addAppointment() {
     }
   });
 }
+$(document).ready(function() {
+    initializeDatePickers();
+  });
 
+  
 let currentAppointment = null;
 
 function openEditModal(appointmentData, rowIndex) {
@@ -750,6 +756,9 @@ function openEditModal(appointmentData, rowIndex) {
       }
     })
     .modal("show");
+    setTimeout(() => {
+        initializeDatePickers(); // Reinitialize to attach Flatpickr to dynamically loaded elements
+      }, 100);
 }
 
 function updateAppointment() {
