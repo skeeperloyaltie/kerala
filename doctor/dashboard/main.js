@@ -679,6 +679,7 @@ let currentAppointment = null;
 function openEditModal(appointmentData, rowIndex) {
     currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
 
+    // Check for required DOM elements
     if (!$("#editDateOfBirth").length || !$("#editAppointmentDate").length) {
         console.error("Required DOM elements not found: #editDateOfBirth or #editAppointmentDate");
         displayAlert("Error: Modal elements missing", "error");
@@ -688,7 +689,7 @@ function openEditModal(appointmentData, rowIndex) {
     // Populate static fields
     $("#editFirstName").val(currentAppointment.patient?.first_name || "");
     $("#editLastName").val(currentAppointment.patient?.last_name || "");
-    $("#editContactNumber").val(currentAppointment.patient?.contact_number || "");
+    $("#editContactNumber").val(currentAppointment.patient?.mobile_number || ""); // Fixed contact_number to mobile_number
     $("#editCurrentIllness").val(currentAppointment.current_illness || currentAppointment.current_medications || "");
     $("#editAppointmentStatus").val(currentAppointment.status || "");
     $("#editNotes").val(currentAppointment.notes || "");
@@ -702,14 +703,18 @@ function openEditModal(appointmentData, rowIndex) {
     let previousDoctorId = currentAppointment.doctor?.id || "";
     loadDoctors(previousDoctorId);
 
-    // Show the modal and handle date pickers once fully rendered
+    // Show the modal and initialize date pickers once fully rendered
     $("#editAppointmentModal")
-        .off("shown.bs.modal") // Remove existing handlers
+        .off("shown.bs.modal") // Remove existing handlers to prevent duplicates
         .on("shown.bs.modal", function () {
-            initializeDatePickers(); // Ensure Flatpickr is initialized
+            // Initialize date pickers
+            initializeDatePickers();
 
-            // Initialize Flatpickr for Date of Birth (readonly)
+            // Ensure Flatpickr instances are ready before proceeding
             const $dobInput = $("#editDateOfBirth");
+            const $appointmentInput = $("#editAppointmentDate");
+
+            // Initialize Flatpickr for Date of Birth (readonly) if not already initialized
             if (!$dobInput[0]._flatpickr) {
                 flatpickr($dobInput[0], {
                     noCalendar: true,
@@ -724,31 +729,34 @@ function openEditModal(appointmentData, rowIndex) {
             function setEditDob(dateStr) {
                 if (dateStr) {
                     const formattedDate = flatpickr.formatDate(new Date(dateStr), "F j, Y");
-                    $dobInput.val(formattedDate); // Set the value manually
+                    $dobInput.val(formattedDate);
                 } else {
-                    $dobInput.val(""); // Clear if no DOB
+                    $dobInput.val("");
                 }
             }
 
             // Set Date of Birth
             const dobStr = currentAppointment.patient?.date_of_birth || "";
-            setEditDob(dobStr); // Use the manual function
+            setEditDob(dobStr);
+            $("#editAge").val(dobStr ? calculateAge(dobStr) : "");
 
-            // Set Age
-            if (dobStr) {
-                $("#editAge").val(calculateAge(dobStr));
-            } else {
-                $("#editAge").val("");
+            // Ensure Flatpickr is initialized for Appointment Date
+            if (!$appointmentInput[0]._flatpickr) {
+                flatpickr($appointmentInput[0], {
+                    altInput: true,
+                    altFormat: "F j, Y, h:i K",
+                    dateFormat: "Y-m-d H:i",
+                    enableTime: true,
+                    time_24hr: false,
+                    minDate: "today",
+                    appendTo: document.body,
+                    position: "auto"
+                });
             }
 
             // Set Appointment Date
             const appointmentDateStr = currentAppointment.appointment_date;
-            const appointmentFlatpickr = $("#editAppointmentDate")[0]._flatpickr;
-            if (!appointmentFlatpickr) {
-                console.error("Flatpickr instance not initialized for #editAppointmentDate after modal shown");
-                displayAlert("Error initializing date picker", "error");
-                return;
-            }
+            const appointmentFlatpickr = $appointmentInput[0]._flatpickr;
             if (appointmentDateStr) {
                 const appointmentDate = new Date(appointmentDateStr);
                 if (!isNaN(appointmentDate.getTime())) {
@@ -767,10 +775,6 @@ function openEditModal(appointmentData, rowIndex) {
             }
         })
         .modal("show");
-
-    setTimeout(() => {
-        initializeDatePickers(); // Reinitialize to attach Flatpickr to dynamically loaded elements
-    }, 100);
 }
 
 
