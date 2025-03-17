@@ -675,9 +675,11 @@ $(document).ready(function() {
 
   
 let currentAppointment = null;
-
 function openEditModal(appointmentData, rowIndex) {
     currentAppointment = JSON.parse(decodeURIComponent(appointmentData));
+
+    // Log the appointment data for debugging
+    console.log("Current Appointment Data:", currentAppointment);
 
     // Check for required DOM elements
     if (!$("#editDateOfBirth").length || !$("#editAppointmentDate").length) {
@@ -689,8 +691,8 @@ function openEditModal(appointmentData, rowIndex) {
     // Populate static fields
     $("#editFirstName").val(currentAppointment.patient?.first_name || "");
     $("#editLastName").val(currentAppointment.patient?.last_name || "");
-    $("#editContactNumber").val(currentAppointment.patient?.mobile_number || ""); // Fixed contact_number to mobile_number
-    $("#editCurrentIllness").val(currentAppointment.current_illness || currentAppointment.current_medications || "");
+    $("#editContactNumber").val(currentAppointment.patient?.mobile_number || "");
+    $("#editCurrentIllness").val(currentAppointment.patient?.current_medications || ""); // Check patient object too
     $("#editAppointmentStatus").val(currentAppointment.status || "");
     $("#editNotes").val(currentAppointment.notes || "");
     $("#editAppointmentID").val(currentAppointment.id);
@@ -748,30 +750,33 @@ function openEditModal(appointmentData, rowIndex) {
                     dateFormat: "Y-m-d H:i",
                     enableTime: true,
                     time_24hr: false,
-                    minDate: "today",
+                    minDate: "today", // Ensures future edits can't be in the past
                     appendTo: document.body,
-                    position: "auto"
+                    position: "auto",
+                    defaultDate: currentAppointment.appointment_date || null // Set the default date
                 });
-            }
-
-            // Set Appointment Date
-            const appointmentDateStr = currentAppointment.appointment_date;
-            const appointmentFlatpickr = $appointmentInput[0]._flatpickr;
-            if (appointmentDateStr) {
-                const appointmentDate = new Date(appointmentDateStr);
-                if (!isNaN(appointmentDate.getTime())) {
-                    try {
-                        appointmentFlatpickr.setDate(appointmentDate, true, "Y-m-d H:i");
-                    } catch (e) {
-                        console.error("Failed to set appointment date:", e);
+            } else {
+                // If already initialized, just set the date
+                const appointmentFlatpickr = $appointmentInput[0]._flatpickr;
+                const appointmentDateStr = currentAppointment.appointment_date;
+                if (appointmentDateStr) {
+                    const appointmentDate = new Date(appointmentDateStr);
+                    if (!isNaN(appointmentDate.getTime())) {
+                        try {
+                            appointmentFlatpickr.setDate(appointmentDate, true, "Y-m-d H:i");
+                            console.log("Appointment Date Set:", appointmentDate);
+                        } catch (e) {
+                            console.error("Failed to set appointment date:", e);
+                            appointmentFlatpickr.clear();
+                        }
+                    } else {
+                        console.warn("Invalid appointment date:", appointmentDateStr);
                         appointmentFlatpickr.clear();
                     }
                 } else {
-                    console.warn("Invalid appointment date:", appointmentDateStr);
                     appointmentFlatpickr.clear();
+                    console.log("No appointment date provided, clearing picker.");
                 }
-            } else {
-                appointmentFlatpickr.clear();
             }
         })
         .modal("show");
