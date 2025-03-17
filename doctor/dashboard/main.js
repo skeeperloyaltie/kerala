@@ -698,7 +698,7 @@ function addAppointment() {
   
     if (missingFields.length > 0) {
       missingFields.forEach(field => $(`#${field.toLowerCase().replace(" ", "")}`).addClass("is-invalid"));
-      showNotification(`Please fill in: ${missingFields.join(", ")}`, "error");
+      displayAlert(`Please fill in: ${missingFields.join(", ")}`, "error");
       return;
     }
   
@@ -706,7 +706,7 @@ function addAppointment() {
     today.setHours(0, 0, 0, 0);
     if (new Date(appointmentDate) < today) {
       $("#appointmentDate").addClass("is-invalid");
-      showNotification("Appointment date cannot be in the past.", "error");
+      displayAlert("Appointment date cannot be in the past.", "error");
       return;
     }
   
@@ -728,22 +728,22 @@ function addAppointment() {
       success: function(response) {
         const appointmentId = response.appointment?.id;
         if (!appointmentId) {
-          showNotification("Error: Appointment ID missing from response.", "error");
+          displayAlert("Error: Appointment ID missing from response.", "error");
           return;
         }
         hideAppointmentForm();
         fetchAppointments("Scheduled"); // Refresh the appointment list
         $("#vitalsModal").modal("show").data("appointmentId", appointmentId); // Open vitals modal
-        showNotification("Appointment created successfully!");
+        displayAlert("Appointment created successfully!");
       },
       error: function(xhr) {
         const errorMsg = xhr.responseJSON?.error || "Failed to create appointment.";
-        showNotification(errorMsg, "error");
+        displayAlert(errorMsg, "error");
       }
     });
   }
 
-  
+
 $(document).ready(function() {
     initializeDatePickers();
   });
