@@ -8,6 +8,9 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
   
+  <!-- Flatpickr CSS (for date picker) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
   <!-- Custom Styles -->
   <style>
     body {
@@ -46,6 +49,57 @@
     .navbar-brand img {
       max-height: 40px;
     }
+    /* Custom Navbar Styling to Match Screenshot */
+    .navbar-custom {
+      background-color: #1a2a6c; /* Dark blue background */
+      padding: 10px 20px;
+    }
+    .navbar-custom .nav-link {
+      color: #fff;
+      font-weight: 500;
+      margin-right: 15px;
+    }
+    .navbar-custom .nav-link:hover {
+      color: #d1d5db;
+    }
+    .navbar-custom .nav-link.active {
+      color: #fff;
+      border-bottom: 2px solid #fff;
+    }
+    .navbar-custom .btn {
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+    .navbar-custom .btn-primary {
+      background-color: #3b82f6;
+      border-color: #3b82f6;
+    }
+    .navbar-custom .btn-outline-light {
+      border-color: #fff;
+      color: #fff;
+    }
+    .navbar-custom .btn-outline-light:hover {
+      background-color: #fff;
+      color: #1a2a6c;
+    }
+    .navbar-custom .flatpickr-input {
+      background-color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      width: 150px;
+      font-size: 14px;
+    }
+    .navbar-custom .status-text {
+      color: #fff;
+      font-size: 14px;
+      margin-right: 20px;
+    }
+    .navbar-custom .doctor-code {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+    }
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-250px);
@@ -55,6 +109,12 @@
       }
       .main-content {
         margin-left: 0;
+      }
+      .navbar-custom .status-text {
+        display: none;
+      }
+      .navbar-custom .flatpickr-input {
+        width: 120px;
       }
     }
   </style>
@@ -100,23 +160,50 @@
 
   <!-- Main Content -->
   <div class="main-content" id="mainContent">
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
       <div class="container-fluid">
+        <!-- Sidebar Toggle for Mobile -->
         <button class="navbar-toggler" type="button" id="sidebarToggle">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="navbar-brand d-flex align-items-center">
-          <span>Welcome, <span id="userName"></span></span>
-        </div>
-        <div class="ms-auto">
-          <span class="navbar-text">Good <span id="timeOfDay"></span></span>
+
+        <!-- Date Picker -->
+        <input type="text" class="flatpickr-input me-3" id="datePicker" readonly>
+
+        <!-- Navigation Tabs -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link active" href="#" data-section="appointments">Appointments</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section="teleconsult">Teleconsult</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section="refer-earn">Refer & Earn</a>
+            </li>
+          </ul>
+
+          <!-- Status Text -->
+          <span class="status-text">Total: 0, Pending: 0, Complete: 0</span>
+
+          <!-- Right-Side Actions -->
+          <div class="d-flex align-items-center">
+            <button class="btn btn-primary me-2" id="newBtn">New</button>
+            <button class="btn btn-outline-light me-2" id="searchPatientBtn">Search Patient</button>
+            <button class="btn btn-outline-light me-2" id="supportBtn">Support</button>
+            <button class="btn btn-outline-light me-2" id="uploadPatientListBtn">Upload Patient List</button>
+            <button class="btn btn-outline-light me-2" id="viewReportsBtn">View Reports</button>
+            <span class="doctor-code">Doctor Code: HPEZ662</span>
+          </div>
         </div>
       </div>
     </nav>
 
     <!-- Content Sections -->
-    <div class="container-fluid">
-      <div id="dashboardSection" class="section active">
+    <div class="container-fluid mt-4">
+      <div id="dashboardSection" class="section d-none">
         <h2>Dashboard</h2>
         <p>This is the dashboard overview. Content will be added here.</p>
       </div>
@@ -124,9 +211,17 @@
         <h2>Patients</h2>
         <p>Manage patients here.</p>
       </div>
-      <div id="appointmentsSection" class="section d-none">
+      <div id="appointmentsSection" class="section active">
         <h2>Appointments</h2>
         <p>View and manage appointments.</p>
+      </div>
+      <div id="teleconsultSection" class="section d-none">
+        <h2>Teleconsult</h2>
+        <p>Manage teleconsultations.</p>
+      </div>
+      <div id="refer-earnSection" class="section d-none">
+        <h2>Refer & Earn</h2>
+        <p>Refer and earn rewards.</p>
       </div>
       <div id="recordsSection" class="section d-none">
         <h2>Medical Records</h2>
@@ -155,7 +250,184 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
   
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
   <!-- Custom JS -->
   <script src="main.js"></script>
+  <script>
+    // main.js
+$(document).ready(function () {
+    const API_BASE_URL = "http://localhost:8000/api"; // Adjust to your Django API
+  
+    // Utility Functions
+    function getTimeOfDay() {
+      const hour = new Date().getHours();
+      return hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : "Evening";
+    }
+  
+    // Initialize Flatpickr for Date Picker
+    flatpickr("#datePicker", {
+      dateFormat: "d M Y",
+      defaultDate: new Date("2025-03-19"), // Set to match screenshot date
+      onChange: function (selectedDates, dateStr) {
+        console.log("Selected date:", dateStr);
+        // Add logic to filter appointments or content based on date
+      }
+    });
+  
+    // Authentication Check
+    function checkAuthentication() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "../profiling/login.html";
+        return;
+      }
+      $.ajax({
+        url: `${API_BASE_URL}/users/profile/`,
+        headers: { "Authorization": `Token ${token}` },
+        success: function (data) {
+          const user = data;
+          adjustUIForRole(user.role);
+          // Update doctor code if available
+          if (user.doctor_code) {
+            $(".doctor-code").text(`Doctor Code: ${user.doctor_code}`);
+          }
+        },
+        error: function () {
+          localStorage.removeItem("token");
+          window.location.href = "../profiling/login.html";
+        }
+      });
+    }
+  
+    // Role-Based UI Adjustments
+    function adjustUIForRole(role) {
+      const navItems = $(".sidebar .nav-item");
+      const topNavItems = $(".navbar-custom .nav-item");
+      navItems.show();
+      topNavItems.show();
+  
+      switch (role) {
+        case "patient":
+          navItems.filter(":contains('Patients'), :contains('Records'), :contains('Prescriptions'), :contains('Reports'), :contains('Lab Tests')").hide();
+          topNavItems.filter(":contains('Teleconsult')").hide();
+          $("#newBtn, #uploadPatientListBtn, #viewReportsBtn").hide();
+          break;
+        case "doctor":
+          navItems.filter(":contains('Reports')").hide();
+          break;
+        case "nurse":
+          navItems.filter(":contains('Reports'), :contains('Settings')").hide();
+          topNavItems.filter(":contains('Refer & Earn')").hide();
+          $("#uploadPatientListBtn, #viewReportsBtn").hide();
+          break;
+        case "admin":
+          // Admin sees all
+          break;
+        case "receptionist":
+          navItems.filter(":contains('Records'), :contains('Prescriptions'), :contains('Reports'), :contains('Lab Tests')").hide();
+          topNavItems.filter(":contains('Teleconsult'), :contains('Refer & Earn')").hide();
+          $("#viewReportsBtn").hide();
+          break;
+        default:
+          console.warn("Unknown role:", role);
+      }
+    }
+  
+    // Sidebar Toggle for Mobile
+    $("#sidebarToggle").click(function () {
+      $("#sidebar").toggleClass("sidebar-active");
+      $("#mainContent").toggleClass("main-content-full");
+    });
+  
+    // Sidebar Navigation Handling
+    $(".sidebar .nav-link").click(function (e) {
+      e.preventDefault();
+      const section = $(this).data("section");
+      if (section === "logout") {
+        localStorage.removeItem("token");
+        window.location.href = "../profiling/login.html";
+        return;
+      }
+  
+      $(".sidebar .nav-link").removeClass("active");
+      $(this).addClass("active");
+  
+      $(".section").addClass("d-none").removeClass("active");
+      $(`#${section}Section`).removeClass("d-none").addClass("active");
+  
+      // Hide sidebar on mobile after selection
+      if ($(window).width() <= 768) {
+        $("#sidebar").removeClass("sidebar-active");
+        $("#mainContent").removeClass("main-content-full");
+      }
+    });
+  
+    $("#logoutBtn").click(function (e) {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "../profiling/login.html";
+    });
+  
+    // Top Navigation Handling
+    $(".navbar-custom .nav-link").click(function (e) {
+      e.preventDefault();
+      const section = $(this).data("section");
+  
+      $(".navbar-custom .nav-link").removeClass("active");
+      $(this).addClass("active");
+  
+      $(".section").addClass("d-none").removeClass("active");
+      $(`#${section}Section`).removeClass("d-none").addClass("active");
+  
+      // Update sidebar active state to match top nav
+      $(".sidebar .nav-link").removeClass("active");
+      $(`.sidebar .nav-link[data-section="${section}"]`).addClass("active");
+    });
+  
+    // Button Actions
+    $("#newBtn").click(function () {
+      console.log("New button clicked");
+      // Add logic to open a modal for creating a new appointment or patient
+    });
+  
+    $("#searchPatientBtn").click(function () {
+      console.log("Search Patient button clicked");
+      // Add logic to open a search modal or redirect to a search page
+    });
+  
+    $("#supportBtn").click(function () {
+      console.log("Support button clicked");
+      // Add logic to open a support modal or redirect to support page
+    });
+  
+    $("#uploadPatientListBtn").click(function () {
+      console.log("Upload Patient List button clicked");
+      // Add logic to handle file upload
+    });
+  
+    $("#viewReportsBtn").click(function () {
+      console.log("View Reports button clicked");
+      // Add logic to redirect to reports section or open reports modal
+      $(".section").addClass("d-none").removeClass("active");
+      $("#reportsSection").removeClass("d-none").addClass("active");
+      $(".navbar-custom .nav-link").removeClass("active");
+      $(".sidebar .nav-link").removeClass("active");
+      $(`.sidebar .nav-link[data-section="reports"]`).addClass("active");
+    });
+  
+    // Initialize
+    checkAuthentication();
+  
+    // Responsive Adjustments
+    $(window).resize(function () {
+      if ($(window).width() > 768) {
+        $("#sidebar").removeClass("sidebar-active");
+        $("#mainContent").removeClass("main-content-full");
+      }
+    });
+  });
+  </script>
 </body>
 </html>
