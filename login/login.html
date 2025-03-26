@@ -83,11 +83,29 @@
       </div>
     </div>
 
-    <div id="notification" class="alert d-none" role="alert"></div>
-
     <div class="tab-buttons">
       <button id="usernameTab" class="btn btn-primary btn-sm">Login with Username & Password</button>
       <button id="otpTab" class="btn btn-secondary btn-sm">Login with OTP</button>
+    </div>
+  </div>
+
+  <!-- Bootstrap Modal for Notifications -->
+  <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" id="notificationMessage">
+          <!-- Message will be inserted here -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -97,35 +115,24 @@
       let otpTimer;
       const otpTimeout = 60; // Countdown timer duration in seconds
 
-      // Fetch CSRF Token
-      function fetchCSRFToken() {
-        $.ajax({
-          url: 'http://104.37.187.187:8000/users/get-csrf-token/',
-          type: 'GET',
-          success: function (response) {
-            console.log('🟢 CSRF Token Fetched:', response.csrftoken);
-            window.csrftoken = response.csrftoken;
-            localStorage.setItem('csrftoken', response.csrftoken);
-            console.log('🔹 Stored CSRF Token:', response.csrftoken);
-          },
-          error: function (xhr) {
-            console.error('❌ Failed to Fetch CSRF Token:', xhr.responseJSON || xhr.statusText);
-          }
-        });
-      }
-
-      fetchCSRFToken();
-      let csrftoken = localStorage.getItem('csrftoken');
-      console.log('🔹 Retrieved CSRF Token:', csrftoken);
-
+      // Show Notification using Bootstrap Modal
       function showNotification(message, type) {
-        const notification = $('#notification');
-        notification.removeClass('d-none alert-success alert-danger');
-        notification.addClass(`alert-${type}`);
-        notification.text(message);
-        notification.fadeIn(300).delay(3000).fadeOut(300);
+        const modal = $('#notificationModal');
+        const messageEl = $('#notificationMessage');
+        
+        // Update modal content
+        messageEl.text(message);
+        
+        // Update modal title and styling based on type
+        $('#notificationModalLabel').text(type === 'success' ? 'Success' : 'Error');
+        messageEl.removeClass('text-success text-danger');
+        messageEl.addClass(type === 'success' ? 'text-success' : 'text-danger');
+        
+        // Show the modal
+        modal.modal('show');
       }
 
+      // Start OTP Countdown
       function startOtpCountdown() {
         let timeLeft = otpTimeout;
         $('#otpCountdown').text(`You can request another OTP in ${timeLeft} seconds.`);
@@ -143,189 +150,209 @@
         }, 1000);
       }
 
+      // Fetch CSRF Token as a Promise
+      function fetchCSRFToken() {
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            url: 'http://104.37.187.187:8000/users/get-csrf-token/',
+            type: 'GET',
+            success: function (response) {
+              if (response.csrftoken) {
+                console.log('🟢 CSRF Token Fetched:', response.csrftoken);
+                localStorage.setItem('csrftoken', response.csrftoken);
+                resolve(response.csrftoken);
+              } else {
+                reject(new Error('CSRF token not found in response'));
+              }
+            },
+            error: function (xhr) {
+              console.error('❌ Failed to Fetch CSRF Token:', xhr.responseJSON || xhr.statusText);
+              reject(xhr);
+            }
+          });
+        });
+      }
+
+      // Store User Data with Validation
+      function storeUserData(response, username) {
+        if (!response.token) {
+          throw new Error('Token missing in response');
+        }
+        if (!response.user_type) {
+          throw new Error('User type missing in response');
+        }
+        if (!response.role_level) {
+          throw new Error('Role level missing in response');
+        }
+        if (!response.permissions) {
+          throw new Error('Permissions missing in response');
+        }
+
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('username', username);
+        localStorage.setItem('user_type', response.user_type);
+        localStorage.setItem('role_level', response.role_level);
+        localStorage.setItem('permissions', JSON.stringify(response.permissions));
+        localStorage.setItem('csrftoken', localStorage.getItem('csrftoken')); // Ensure CSRF token is stored
+
+        console.log('🔹 Stored Data:', {
+          token: localStorage.getItem('token'),
+          username: localStorage.getItem('username'),
+          user_type: localStorage.getItem('user_type'),
+          role_level: localStorage.getItem('role_level'),
+          permissions: JSON.parse(localStorage.getItem('permissions')),
+          csrftoken: localStorage.getItem('csrftoken'),
+        });
+      }
+
+      // Redirect to Dashboard
+      function redirectToDashboard() {
+        console.log('🟢 Redirecting to Unified Dashboard');
+        window.location.href = '/dashboard/index.html';
+      }
+
       // Handle Username/Password Login
-      $('#usernameForm').submit(function (e) {
+      async function handleUsernameLogin(e) {
         e.preventDefault();
         const username = $('#usernameLogin').val();
         const password = $('#passwordLogin').val();
 
-        console.log('🟢 Posting Login Data:', { username, password });
+        if (!username || !password) {
+          showNotification('Please enter both username and password.', 'danger');
+          return;
+        }
 
-        $.ajax({
-          url: 'http://104.37.187.187:8000/users/login/',
-          type: 'POST',
-          contentType: 'application/json',
-          headers: {
-            'X-CSRFToken': csrftoken,
-          },
-          data: JSON.stringify({ username, password }),
-          success: function (response) {
-            console.log('🟢 Full Login Response:', response);
+        try {
+          const csrftoken = await fetchCSRFToken();
+          console.log('🟢 Posting Login Data:', { username, password });
 
-            // Store all relevant data in localStorage
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('username', username);
-            localStorage.setItem('user_type', response.user_type);
-            localStorage.setItem('role_level', response.role_level);
-            localStorage.setItem('permissions', JSON.stringify(response.permissions));
-            localStorage.setItem('csrftoken', csrftoken);
+          const response = await $.ajax({
+            url: 'http://104.37.187.187:8000/users/login/',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+              'X-CSRFToken': csrftoken,
+            },
+            data: JSON.stringify({ username, password })
+          });
 
-            // Log stored data for debugging
-            console.log('🔹 Stored Data:', {
-              token: localStorage.getItem('token'),
-              username: localStorage.getItem('username'),
-              user_type: localStorage.getItem('user_type'),
-              role_level: localStorage.getItem('role_level'),
-              permissions: JSON.parse(localStorage.getItem('permissions')),
-              csrftoken: localStorage.getItem('csrftoken'),
+          console.log('🟢 Full Login Response:', response);
+          storeUserData(response, username);
+
+          const token = localStorage.getItem('token');
+          if (token) {
+            const cookieResponse = await $.ajax({
+              url: 'http://104.37.187.187:8000/cookie/verify/',
+              type: 'POST',
+              contentType: 'application/json',
+              headers: {
+                'X-CSRFToken': csrftoken,
+                'Authorization': 'Token ' + token,
+              },
+              data: JSON.stringify({ username })
             });
 
-            // Verify cookie with token
-            const token = localStorage.getItem('token');
-            if (token) {
-              $.ajax({
-                url: 'http://104.37.187.187:8000/cookie/verify/',
-                type: 'POST',
-                contentType: 'application/json',
-                headers: {
-                  'X-CSRFToken': csrftoken,
-                  'Authorization': 'Token ' + token,
-                },
-                data: JSON.stringify({ username }),
-                success: function (cookieResponse) {
-                  console.log('✅ Cookie Verification Success:', cookieResponse);
-                  showNotification(cookieResponse.message, 'success');
-                  redirectToDashboard();
-                },
-                error: function (xhr) {
-                  console.error('❌ Cookie Verification Error:', xhr.responseJSON);
-                  showNotification(xhr.responseJSON.error || 'Cookie verification failed.', 'danger');
-                },
-              });
-            } else {
-              console.error('❌ Token not found after login.');
-              showNotification('Login failed: Token missing.', 'danger');
-            }
-          },
-          error: function (xhr) {
-            console.error('❌ Login Error:', xhr.responseJSON);
-            showNotification(xhr.responseJSON.error || 'Login failed', 'danger');
-          },
-        });
-      });
+            console.log('✅ Cookie Verification Success:', cookieResponse);
+            showNotification(cookieResponse.message, 'success');
+            setTimeout(redirectToDashboard, 1000); // Delay redirect to allow user to see the success message
+          } else {
+            throw new Error('Token not found after login');
+          }
+        } catch (error) {
+          console.error('❌ Login Error:', error.responseJSON || error.message);
+          showNotification(error.responseJSON?.error || error.message || 'Login failed', 'danger');
+        }
+      }
 
       // Handle Send OTP
-      $('#sendOtp').on('click', function () {
+      async function handleSendOtp() {
         const username = $('#usernameOtp').val();
         if (!username) {
           showNotification('Please enter your username.', 'danger');
           return;
         }
 
-        console.log('🟢 Posting OTP Request for Username:', { username });
+        try {
+          const csrftoken = await fetchCSRFToken();
+          console.log('🟢 Posting OTP Request for Username:', { username });
 
-        $.ajax({
-          url: 'http://104.37.187.187:8000/users/send-otp/',
-          type: 'POST',
-          contentType: 'application/json',
-          headers: {
-            'X-CSRFToken': csrftoken,
-          },
-          data: JSON.stringify({ username }),
-          success: function (response) {
-            console.log('🟢 OTP Response:', response);
-            $('#otpSection').removeClass('d-none');
-            showNotification('OTP sent successfully.', 'success');
-            startOtpCountdown();
-          },
-          error: function (xhr) {
-            console.error('❌ OTP Error:', xhr.responseJSON);
-            showNotification(xhr.responseJSON.error || 'Failed to send OTP.', 'danger');
-          },
-        });
-      });
+          const response = await $.ajax({
+            url: 'http://104.37.187.187:8000/users/send-otp/',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+              'X-CSRFToken': csrftoken,
+            },
+            data: JSON.stringify({ username })
+          });
+
+          console.log('🟢 OTP Response:', response);
+          $('#otpSection').removeClass('d-none');
+          showNotification('OTP sent successfully.', 'success');
+          startOtpCountdown();
+        } catch (error) {
+          console.error('❌ OTP Error:', error.responseJSON || error.message);
+          showNotification(error.responseJSON?.error || error.message || 'Failed to send OTP.', 'danger');
+        }
+      }
 
       // Handle OTP Verification
-      $('#otpForm').submit(function (e) {
+      async function handleOtpVerification(e) {
         e.preventDefault();
         const username = $('#usernameOtp').val();
         const otp = $('#otp').val();
 
-        if (!otp) {
-          showNotification('Please enter the OTP.', 'danger');
+        if (!username || !otp) {
+          showNotification('Please enter both username and OTP.', 'danger');
           return;
         }
 
-        console.log('🟢 Posting OTP Verification Data:', { username, otp });
+        try {
+          const csrftoken = await fetchCSRFToken();
+          console.log('🟢 Posting OTP Verification Data:', { username, otp });
 
-        $.ajax({
-          url: 'http://104.37.187.187:8000/users/otp/',
-          type: 'POST',
-          contentType: 'application/json',
-          headers: {
-            'X-CSRFToken': csrftoken,
-          },
-          data: JSON.stringify({ username, otp }),
-          success: function (response) {
-            console.log('🟢 OTP Verification Response:', response);
+          const response = await $.ajax({
+            url: 'http://104.37.187.187:8000/users/otp/',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+              'X-CSRFToken': csrftoken,
+            },
+            data: JSON.stringify({ username, otp })
+          });
 
-            // Store all relevant data in localStorage
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('username', username);
-            localStorage.setItem('user_type', response.user_type);
-            localStorage.setItem('role_level', response.role_level);
-            localStorage.setItem('permissions', JSON.stringify(response.permissions));
-            localStorage.setItem('csrftoken', csrftoken);
+          console.log('🟢 OTP Verification Response:', response);
+          storeUserData(response, username);
 
-            // Log stored data for debugging
-            console.log('🔹 Stored Data:', {
-              token: localStorage.getItem('token'),
-              username: localStorage.getItem('username'),
-              user_type: localStorage.getItem('user_type'),
-              role_level: localStorage.getItem('role_level'),
-              permissions: JSON.parse(localStorage.getItem('permissions')),
-              csrftoken: localStorage.getItem('csrftoken'),
+          const token = localStorage.getItem('token');
+          if (token) {
+            const cookieResponse = await $.ajax({
+              url: 'http://104.37.187.187:8000/cookie/verify/',
+              type: 'POST',
+              contentType: 'application/json',
+              headers: {
+                'X-CSRFToken': csrftoken,
+                'Authorization': 'Token ' + token,
+              },
+              data: JSON.stringify({ username })
             });
 
-            // Verify cookie with token
-            const token = localStorage.getItem('token');
-            if (token) {
-              $.ajax({
-                url: 'http://104.37.187.187:8000/cookie/verify/',
-                type: 'POST',
-                contentType: 'application/json',
-                headers: {
-                  'X-CSRFToken': csrftoken,
-                  'Authorization': 'Token ' + token,
-                },
-                data: JSON.stringify({ username }),
-                success: function (cookieResponse) {
-                  console.log('✅ Cookie Verification Success:', cookieResponse);
-                  showNotification(cookieResponse.message, 'success');
-                  redirectToDashboard();
-                },
-                error: function (xhr) {
-                  console.error('❌ Cookie Verification Error:', xhr.responseJSON);
-                  showNotification(xhr.responseJSON.error || 'Cookie verification failed.', 'danger');
-                },
-              });
-            } else {
-              console.error('❌ Token not found after OTP verification.');
-              showNotification('Login failed: Token missing.', 'danger');
-            }
-          },
-          error: function (xhr) {
-            console.error('❌ OTP Verification Error:', xhr.responseJSON);
-            showNotification(xhr.responseJSON.error || 'OTP verification failed.', 'danger');
-          },
-        });
-      });
-
-      // Redirect all users to a single dashboard
-      function redirectToDashboard() {
-        console.log('🟢 Redirecting to Unified Dashboard');
-        window.location.href = '/dashboard/index.html'; // Single dashboard for all roles
+            console.log('✅ Cookie Verification Success:', cookieResponse);
+            showNotification(cookieResponse.message, 'success');
+            setTimeout(redirectToDashboard, 1000); // Delay redirect to allow user to see the success message
+          } else {
+            throw new Error('Token not found after OTP verification');
+          }
+        } catch (error) {
+          console.error('❌ OTP Verification Error:', error.responseJSON || error.message);
+          showNotification(error.responseJSON?.error || error.message || 'OTP verification failed.', 'danger');
+        }
       }
+
+      // Event Listeners
+      $('#usernameForm').submit(handleUsernameLogin);
+      $('#sendOtp').on('click', handleSendOtp);
+      $('#otpForm').submit(handleOtpVerification);
 
       // Toggle between forms
       $('#usernameTab').on('click', function () {
