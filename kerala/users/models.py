@@ -23,15 +23,15 @@ class CustomUserManager(BaseUserManager):
             role_level=role_level
         )
         user.set_password(password)
-        self._assign_permissions(user, user_type, role_level)
-        user.save(using=self._db)
+        user.save(using=self._db)  # Save the user first
+        self._assign_permissions(user, user_type, role_level)  # Then assign permissions
         return user
 
     def create_superuser(self, username, email, password=None, first_name="Admin", last_name="User"):
         user = self.create_user(username, email, password, first_name, last_name, user_type='Admin', role_level='Senior')
         user.is_staff = True
         user.is_superuser = True
-        user.save(using=self._db)
+        user.save(using=self._db)  # Save again to update is_staff and is_superuser
         return user
 
     def _assign_permissions(self, user, user_type, role_level):
@@ -133,7 +133,7 @@ class Nurse(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     contact_number = models.CharField(max_length=15)
     email = models.EmailField()
-    certification = models.CharField(max_length=255, blank=True, null=True)  # Optional field for nurse certification
+    certification = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.user.role_level} Nurse"

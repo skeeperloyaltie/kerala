@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from users.models import User  # Import your actual User model
+from users.models import User
 
 class Command(BaseCommand):
     help = "Create a superuser with default credentials"
@@ -12,6 +12,6 @@ class Command(BaseCommand):
         if User.objects.filter(username=username).exists():
             self.stdout.write(self.style.ERROR(f"User '{username}' already exists!"))
         else:
+            # Create superuser using the manager
             user = User.objects.create_superuser(username=username, email=email, password=password)
-            user.save()
             self.stdout.write(self.style.SUCCESS(f"Superuser '{username}' created successfully!"))
