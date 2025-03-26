@@ -7,17 +7,27 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail
 from django.utils import timezone
-from .models import User, OTPVerification
-from .serializers import LoginSerializer, OTPLoginSerializer
+from .models import User, OTPVerification, Receptionist, Doctor, Nurse
+from .serializers import LoginSerializer, OTPLoginSerializer, UserProfileSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
-
+from django.middleware.csrf import get_token
+from rest_framework.generics import RetrieveAPIView  # Add this import
 
 # Get the logger for the application
 logger = logging.getLogger(__name__)
+
+def get_user_permissions(user):
+    """Helper function to return permissions based on user role."""
+    permissions = {
+        "can_view": user.has_perm('appointments.view_appointment'),
+        "can_create": user.has_perm('appointments.add_appointment'),
+        "can_edit": user.has_perm('appointments.change_appointment'),
+    }
+    return permissions
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
@@ -36,16 +46,17 @@ class LoginView(APIView):
                 if user:
                     if user.is_active:
                         logger.info(f"User {username} authenticated successfully")
-                        login(request, user)  # Django login function
-                        
-                        # Generate Token
+                        login(request, user)
                         token, created = Token.objects.get_or_create(user=user)
+                        permissions = get_user_permissions(user)
 
-                        # Return the token and user type
+                        # Return user info with permissions for the dashboard
                         return Response({
-                            "message": "Login successful", 
+                            "message": "Login successful",
                             "user_type": user.user_type,
-                            "token": token.key
+                            "role_level": user.role_level,
+                            "token": token.key,
+                            "permissions": permissions
                         }, status=status.HTTP_200_OK)
                     else:
                         logger.warning(f"Inactive user attempted login: {username}")
@@ -85,16 +96,17 @@ class OTPLoginView(APIView):
                     otp_verification.verified = True
                     otp_verification.save()
                     logger.info(f"OTP verified successfully for user: {username}")
-                    login(request, user)  # Log the user in after OTP verification
-                    
-                    # Generate Token
+                    login(request, user)
                     token, created = Token.objects.get_or_create(user=user)
+                    permissions = get_user_permissions(user)
 
-                    # Return token and user type
+                    # Return user info with permissions
                     return Response({
-                        "message": "OTP verified and login successful", 
+                        "message": "OTP verified and login successful",
                         "user_type": user.user_type,
-                        "token": token.key
+                        "role_level": user.role_level,
+                        "token": token.key,
+                        "permissions": permissions
                     }, status=status.HTTP_200_OK)
                 else:
                     logger.warning(f"Invalid OTP entered for user: {username}")
@@ -105,6 +117,7 @@ class OTPLoginView(APIView):
         else:
             logger.error(f"OTP validation failed: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SendOTPView(APIView):
@@ -121,12 +134,11 @@ class SendOTPView(APIView):
                 logger.warning(f"Cannot send OTP to inactive user: {username}")
                 return Response({"error": "User account is inactive"}, status=status.HTTP_403_FORBIDDEN)
 
-            # Create OTPVerification instance and set expires_at before saving
             otp_verification = OTPVerification.objects.create(
                 user=user,
                 expires_at=timezone.now() + timezone.timedelta(minutes=5)
             )
-            otp_verification.generate_otp()  # Ensure this method updates the otp field
+            otp_verification.generate_otp()
             otp_verification.save()
 
             otp = otp_verification.otp
@@ -143,7 +155,6 @@ class SendOTPView(APIView):
         subject = "Your OTP Code"
         message = f"Your OTP code is {otp}"
         send_mail(subject, message, 'no-reply@example.com', [email])
-
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -167,154 +178,111 @@ class OTPVerifyAndLoginView(APIView):
             if otp == otp_verification.otp:
                 otp_verification.verified = True
                 otp_verification.save()
-
-                # Log the user in
                 login(request, user)
-
-                # Generate token
                 token, created = Token.objects.get_or_create(user=user)
+                permissions = get_user_permissions(user)
 
                 return Response({
                     "message": "OTP verified and login successful",
-                    "token": token.key,  # Provide the token in the response
-                    'user_type': user.user_type
+                    "token": token.key,
+                    "user_type": user.user_type,
+                    "role_level": user.role_level,
+                    "permissions": permissions
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Invalid OTP"}, status=status.HTTP_401_UNAUTHORIZED)
         except OTPVerification.DoesNotExist:
             return Response({"error": "OTP not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = [TokenAuthentication]  # TokenAuthentication to ensure the user is authenticated
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
     def post(self, request):
-        token = request.headers.get('Authorization')  # Retrieve the token from the request header
+        token = request.headers.get('Authorization')
         if not token:
             logger.warning("Logout request received without a token")
             return Response({"error": "Authorization token is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Extract the token from the 'Bearer' format
             token = token.split(' ')[1]
             user_token = Token.objects.get(key=token)
-            
-            # Perform the logout
             user_token.delete()
-            logger.info(f"User logged out successfully, token {token} deleted")
-
+            logger.info(f"User {request.user.username} logged out successfully, token {token} deleted")
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
-
         except Token.DoesNotExist:
             logger.warning(f"Invalid or expired token provided for logout")
             return Response({"error": "Invalid token or token does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
-
         except Exception as e:
             logger.exception(f"Error during logout process: {e}")
             return Response({"error": "An error occurred during logout"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import RetrieveAPIView
-from .models import User, Receptionist, Doctor
-from .serializers import UserProfileSerializer
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.authtoken.models import Token
-import logging
-
-from users.serializers import UserProfileSerializer
-
-logger = logging.getLogger(__name__)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class UserProfileView(RetrieveAPIView):
-    """
-    Fetches the authenticated user's profile details.
-    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
 
     def get_object(self):
-        """
-        Retrieves the user profile using the token in the Authorization header.
-        """
-        request = self.request
-        token = request.headers.get('Authorization')  # Retrieve the token from the request header
-
-        if not token:
-            logger.warning("Request received without an authorization token")
-            return Response({"error": "Authorization token is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # Extract token from 'Token <token_key>' format
-            token_key = token.split(' ')[1]
-            user_token = Token.objects.get(key=token_key)
-            user = user_token.user  # Get the user from the token
-        except (Token.DoesNotExist, IndexError):
-            logger.warning("Invalid or expired token provided")
-            return Response({"error": "Invalid token or token does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
-        except Exception as e:
-            logger.exception(f"Error retrieving user from token: {e}")
-            return Response({"error": "An error occurred while processing the request"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Fetch profile details based on user type
+        user = self.request.user
         profile_data = {
             "username": user.username,
             "user_type": user.user_type,
-            "email": user.email
+            "role_level": user.role_level,
+            "email": user.email,
+            "permissions": get_user_permissions(user)
         }
 
-        # Fetch Receptionist details if applicable
         if user.user_type == "Receptionist":
             try:
                 receptionist = Receptionist.objects.get(user=user)
                 profile_data.update({
-                    "first_name": receptionist.first_name,
-                    "last_name": receptionist.last_name,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
                     "contact_number": receptionist.contact_number
                 })
             except Receptionist.DoesNotExist:
                 profile_data["error"] = "Receptionist profile not found"
-
-        # Fetch Doctor details if applicable
         elif user.user_type == "Doctor":
             try:
                 doctor = Doctor.objects.get(user=user)
                 profile_data.update({
-                    "first_name": doctor.first_name,
-                    "last_name": doctor.last_name,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
                     "specialization": doctor.specialization,
                     "contact_number": doctor.contact_number
                 })
             except Doctor.DoesNotExist:
                 profile_data["error"] = "Doctor profile not found"
+        elif user.user_type == "Nurse":
+            try:
+                nurse = Nurse.objects.get(user=user)
+                profile_data.update({
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "contact_number": nurse.contact_number,
+                    "certification": nurse.certification
+                })
+            except Nurse.DoesNotExist:
+                profile_data["error"] = "Nurse profile not found"
+        elif user.user_type == "Admin":
+            profile_data.update({
+                "first_name": user.first_name,
+                "last_name": user.last_name
+            })
 
         return profile_data
 
     def retrieve(self, request, *args, **kwargs):
-        """
-        Override retrieve method to return custom profile data.
-        """
         profile_data = self.get_object()
-        if isinstance(profile_data, Response):  
-            # If get_object() returned a Response (error case), return it directly
+        if isinstance(profile_data, Response):
             return profile_data
-
+        logger.info(f"Profile retrieved for user: {request.user.username}")
         return Response(profile_data, status=status.HTTP_200_OK)
 
-
-from django.http import JsonResponse
-from django.middleware.csrf import get_token
 
 def get_csrf_token(request):
     return JsonResponse({'csrftoken': get_token(request)})

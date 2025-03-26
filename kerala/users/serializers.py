@@ -10,19 +10,12 @@ class OTPLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     otp = serializers.IntegerField()
 
-
-from rest_framework import serializers
-from .models import User
-
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', "username", "user_type", "email"]
-
-from rest_framework import serializers
-from .models import User
+        fields = ['id', 'username', 'user_type', 'role_level', 'email']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "user_type"]
+        fields = ['id', 'username', 'email', 'user_type', 'role_level']

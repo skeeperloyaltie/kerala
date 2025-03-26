@@ -4,15 +4,17 @@ from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
+from rest_framework import status, generics, permissions, pagination
 from django.utils import timezone
-from django.utils.timezone import make_aware
-
-import pytz
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.core.cache import cache
 from datetime import datetime
-from .models import Appointment, Patient
-from .serializers import AppointmentSerializer, PatientSerializer
-from users.models import Doctor
+import pytz
+from .models import Appointment, Patient, Vitals
+from .serializers import AppointmentSerializer, PatientSerializer, DoctorSerializer, VitalsSerializer
+from users.models import Doctor, Receptionist, Nurse
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -26,28 +28,22 @@ class CreatePatientView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        logger.info(f"Received patient creation request from user {request.user.username}: {request.data}")
+        user = request.user
+        logger.info(f"Received patient creation request from user {user.username}: {request.data}")
+
+        # Only Medium/Senior Receptionists, Nurses, Doctors, or Admins can create patients
+        if not (user.is_superuser or user.has_perm('appointments.add_appointment')):
+            logger.warning(f"Unauthorized patient creation attempt by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("Only Medium or Senior roles can create patients.")
+
         serializer = PatientSerializer(data=request.data)
         if serializer.is_valid():
             patient = serializer.save()
-            logger.info(f"Patient created successfully: {patient.patient_id}")
+            logger.info(f"Patient created successfully: {patient.patient_id} by {user.username}")
             return Response({"message": "Patient created successfully.", "patient": PatientSerializer(patient).data}, status=status.HTTP_201_CREATED)
         logger.error(f"Patient creation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from .serializers import AppointmentSerializer
-from datetime import datetime
-import pytz
-import logging
-
-logger = logging.getLogger(__name__)
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateAppointmentView(APIView):
@@ -57,6 +53,11 @@ class CreateAppointmentView(APIView):
         user = request.user
         data = request.data
         logger.info(f"Received appointment creation request from user {user.username}: {data}")
+
+        # Only Medium/Senior roles or Admins can create appointments
+        if not (user.is_superuser or user.has_perm('appointments.add_appointment')):
+            logger.warning(f"Unauthorized appointment creation attempt by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("Only Medium or Senior roles can create appointments.")
 
         required_fields = ["patient_id", "appointment_date", "doctor_id"]
         missing_fields = [field for field in required_fields if field not in data or not data[field]]
@@ -92,14 +93,12 @@ class CreateAppointmentView(APIView):
             logger.warning(f"Duplicate appointment for {patient.patient_id} on {appointment_date}")
             return Response({"error": "An appointment for this patient at this date and time already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Update patient's current_medications if current_illness is provided
         current_illness = data.get("current_illness", "").strip()
         if current_illness:
             patient.current_medications = current_illness
             patient.save(update_fields=["current_medications"])
             logger.info(f"Updated patient {patient.patient_id} current_medications to: {current_illness}")
 
-        # Create the appointment
         appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor,
@@ -110,260 +109,134 @@ class CreateAppointmentView(APIView):
             created_by=user
         )
 
-        logger.info(f"Appointment created: {appointment.id}")
+        logger.info(f"Appointment created: {appointment.id} by {user.username}")
         return Response({
             "message": "Appointment created successfully.",
             "appointment": AppointmentSerializer(appointment).data
         }, status=status.HTTP_201_CREATED)
 
 
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from users.models import Doctor
-from .serializers import DoctorSerializer  # Ensure you have a serializer for doctors
-import logging
-
-# Set up the logger
-logger = logging.getLogger(__name__)
-
 class DoctorListView(APIView):
-    """
-    API view to fetch the list of available doctors.
-    Only authenticated users can access this endpoint.
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        """
-        Retrieve the list of doctors.
-        """
+        user = request.user
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) requested the list of doctors.")
+
+        # All authenticated users can view doctors (Basic and above)
+        if not user.has_perm('appointments.view_appointment'):
+            logger.warning(f"Unauthorized doctor list access by {user.username}")
+            raise PermissionDenied("You do not have permission to view doctors.")
+
         try:
-            logger.info(f"User {request.user.id} ({request.user.username}) requested the list of doctors.")
-
             doctors = Doctor.objects.all()
-            if not doctors.exists():
-                logger.warning("No doctors found in the database.")
-
             serializer = DoctorSerializer(doctors, many=True)
-
             logger.info(f"Fetched {doctors.count()} doctors successfully.")
             return Response({"doctors": serializer.data}, status=status.HTTP_200_OK)
-
         except Exception as e:
             logger.error(f"Error fetching doctors: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while retrieving doctors."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .models import Appointment
-from .serializers import AppointmentSerializer
-
-import logging
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .models import Appointment
-from .serializers import AppointmentSerializer
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-
-# Set up a logger
-logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AppointmentListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        status_filter = request.query_params.get('status', 'Scheduled')
         user = request.user
+        status_filter = request.query_params.get('status', 'Scheduled')
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) requesting appointments with status '{status_filter}'")
 
-        logger.info(f"User {user.username} ({user.user_type}) is requesting appointments with status '{status_filter}'")
+        # Check view permission
+        if not user.has_perm('appointments.view_appointment'):
+            logger.warning(f"Unauthorized appointment list access by {user.username}")
+            raise PermissionDenied("You do not have permission to view appointments.")
 
         try:
-            # Doctors can only view their own appointments and patients assigned to them
             if user.user_type == "Doctor":
                 appointments = Appointment.objects.filter(doctor=user.doctor, status=status_filter)
                 logger.info(f"Doctor {user.username} fetched {appointments.count()} appointments")
-
-            # Receptionists can view all appointments
-            elif user.user_type == "Receptionist":
+            elif user.user_type in ["Receptionist", "Nurse"] or user.is_superuser:
                 appointments = Appointment.objects.filter(status=status_filter)
-                logger.info(f"Receptionist {user.username} fetched {appointments.count()} appointments")
-
-            # For other user types, return an error
+                logger.info(f"{user.user_type} {user.username} fetched {appointments.count()} appointments")
             else:
                 logger.warning(f"Unauthorized access attempt by {user.username} ({user.user_type})")
-                return Response(
-                    {"error": "Only Doctors and Receptionists can view appointments."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                return Response({"error": "Only Doctors, Nurses, Receptionists, or Admins can view appointments."}, status=status.HTTP_403_FORBIDDEN)
 
-            # Serialize the appointments with full details
             serializer = AppointmentSerializer(appointments, many=True)
-
-            # Log detailed serialized data
-            logger.info(f"Appointments returned for {user.username}: {serializer.data}")
-
+            logger.info(f"Appointments returned for {user.username}: {len(serializer.data)}")
             return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
-
         except Exception as e:
             logger.error(f"Error fetching appointments for {user.username}: {str(e)}", exc_info=True)
-            return Response(
-                {"error": "An error occurred while retrieving appointments."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": "An error occurred while retrieving appointments."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from .models import Vitals, Appointment
-from .serializers import VitalsSerializer
-
-import logging
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from .models import Vitals
-from .serializers import VitalsSerializer
-
-# Set up import logging
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from .models import Vitals
-from .serializers import VitalsSerializer
-
-# Set up the logger
-logger = logging.getLogger(__name__)
 
 class VitalsAPIView(APIView):
-    """
-    API view to create, update, and retrieve vitals for an appointment.
-    Only doctors and receptionists can add/update vitals.
-    Fetching vitals is allowed for all authenticated users.
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, appointment_id=None):
-        """
-        Retrieve vitals for a specific appointment.
-        """
-        logger.info(f"GET request received for appointment ID: {appointment_id}")
-        
+        user = request.user
+        logger.info(f"GET request for vitals by {user.username} for appointment ID: {appointment_id}")
+
+        if not user.has_perm('appointments.view_appointment'):
+            logger.warning(f"Unauthorized vitals access by {user.username}")
+            raise PermissionDenied("You do not have permission to view vitals.")
+
         try:
             vitals = get_object_or_404(Vitals, appointment_id=appointment_id)
             serializer = VitalsSerializer(vitals)
             logger.info(f"Vitals retrieved successfully for appointment ID: {appointment_id}")
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"Error retrieving vitals for appointment ID: {appointment_id}. Error: {str(e)}")
+            logger.error(f"Error retrieving vitals for appointment ID: {appointment_id}: {str(e)}")
             return Response({"error": "Vitals not found."}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request, appointment_id=None):
-        """
-        Create vitals for an appointment. Only doctors and receptionists can add vitals.
-        """
-        logger.info(f"POST request received with data: {request.data}")
-        
-        if not request.user.is_authenticated or not (hasattr(request.user, 'doctor') or hasattr(request.user, 'receptionist')):
-            logger.warning(f"Unauthorized access attempt by user: {request.user.username}")
-            return Response({"error": "Only doctors and receptionists can add vitals."}, status=status.HTTP_403_FORBIDDEN)
+        user = request.user
+        logger.info(f"POST request for vitals by {user.username}: {request.data}")
 
-        # Use the appointment_id from the URL
+        # Only Medium/Senior Nurses, Doctors, or Admins can add vitals
+        if not (user.is_superuser or user.has_perm('appointments.add_appointment') and user.user_type in ['Nurse', 'Doctor']):
+            logger.warning(f"Unauthorized vitals creation attempt by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("Only Medium or Senior Nurses and Doctors can add vitals.")
+
         appointment_id = appointment_id or request.data.get("appointment")
-
         if Vitals.objects.filter(appointment_id=appointment_id).exists():
             logger.warning(f"Vitals already exist for appointment ID: {appointment_id}")
             return Response({"error": "Vitals for this appointment already exist."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = VitalsSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(appointment_id=appointment_id, recorded_by=request.user)  # Save the vitals
-            logger.info(f"Vitals created successfully for appointment ID: {appointment_id} by user: {request.user.username}")
+            serializer.save(appointment_id=appointment_id, recorded_by=user)
+            logger.info(f"Vitals created successfully for appointment ID: {appointment_id} by {user.username}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        logger.error(f"Invalid data received for vitals creation: {serializer.errors}")
+        logger.error(f"Invalid data for vitals creation: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, appointment_id=None):
-        """
-        Update vitals for a given appointment. Only doctors and receptionists can update vitals.
-        """
-        logger.info(f"PATCH request received for appointment ID: {appointment_id} with data: {request.data}")
-        
-        if not request.user.is_authenticated or not (hasattr(request.user, 'doctor') or hasattr(request.user, 'receptionist')):
-            logger.warning(f"Unauthorized access attempt by user: {request.user.username}")
-            return Response({"error": "Only doctors and receptionists can update vitals."}, status=status.HTTP_403_FORBIDDEN)
+        user = request.user
+        logger.info(f"PATCH request for vitals by {user.username} for appointment ID: {appointment_id}")
+
+        # Only Senior Nurses, Doctors, or Admins can update vitals
+        if not (user.is_superuser or user.has_perm('appointments.change_appointment') and user.user_type in ['Nurse', 'Doctor']):
+            logger.warning(f"Unauthorized vitals update attempt by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("Only Senior Nurses and Doctors can update vitals.")
 
         try:
             vitals = get_object_or_404(Vitals, appointment_id=appointment_id)
             serializer = VitalsSerializer(vitals, data=request.data, partial=True)
-
             if serializer.is_valid():
-                serializer.save(recorded_by=request.user)  # Update the user who modified vitals
-                logger.info(f"Vitals updated successfully for appointment ID: {appointment_id} by user: {request.user.username}")
+                serializer.save(recorded_by=user)
+                logger.info(f"Vitals updated successfully for appointment ID: {appointment_id} by {user.username}")
                 return Response(serializer.data, status=status.HTTP_200_OK)
-
-            logger.error(f"Invalid data received for vitals update: {serializer.errors}")
+            logger.error(f"Invalid data for vitals update: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error(f"Error updating vitals for appointment ID: {appointment_id}. Error: {str(e)}")
+            logger.error(f"Error updating vitals for appointment ID: {appointment_id}: {str(e)}")
             return Response({"error": "Vitals not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-import logging
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .models import Appointment
-from .serializers import AppointmentSerializer
-from users.models import Doctor, Receptionist
-
-from django.core.exceptions import ObjectDoesNotExist
-
-# Set up logging
-logger = logging.getLogger(__name__)
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .models import Appointment, Patient
-from .serializers import AppointmentSerializer
-from users.models import Doctor, Receptionist
-from datetime import datetime
-import pytz
-import logging
-
-logger = logging.getLogger(__name__)
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 @method_decorator(csrf_exempt, name='dispatch')
 class EditAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -371,60 +244,46 @@ class EditAppointmentView(APIView):
     def patch(self, request, appointment_id):
         user = request.user
         data = request.data.copy()
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) attempting to edit appointment {appointment_id}")
 
-        logger.info(f"User {user.username} ({user.user_type}) attempting to edit appointment {appointment_id}.")
-        logger.info(f"Received data: {data}")
-
-        if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
-            logger.warning(f"Unauthorized attempt to edit appointment {appointment_id} by {user.username}.")
-            return Response({"error": "Only doctors and receptionists can edit appointments."}, status=status.HTTP_403_FORBIDDEN)
+        # Only Senior roles or Admins can edit appointments
+        if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
+            logger.warning(f"Unauthorized edit attempt by {user.username}")
+            raise PermissionDenied("Only Senior roles can edit appointments.")
 
         appointment = get_object_or_404(Appointment, id=appointment_id)
-
-        if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+        if user.user_type == "Doctor" and appointment.doctor != user.doctor:
             logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
-            return Response({"error": "You can only edit your own appointments."}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied("You can only edit your own appointments.")
 
-        # Store original appointment_date for comparison
         original_appointment_date = appointment.appointment_date
-
-        # Process patient_id if provided
         if "patient_id" in data:
             patient = get_object_or_404(Patient, patient_id=data["patient_id"])
             appointment.patient = patient
             logger.info(f"Matched patient ID {data['patient_id']} to DB ID {patient.id}")
 
-        # Update patient fields if provided
         if "current_illness" in data:
             appointment.patient.current_medications = data["current_illness"]
             appointment.patient.save(update_fields=["current_medications"])
 
-        # Handle appointment_date only if provided
         if "appointment_date" in data:
             try:
-                appointment_date_str = data["appointment_date"]
-                appointment_date = datetime.fromisoformat(appointment_date_str.replace("Z", "+00:00"))
-                # Localize to Kolkata timezone only if not already timezone-aware
+                appointment_date = datetime.fromisoformat(data["appointment_date"].replace("Z", "+00:00"))
                 appointment_date = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date.astimezone(KOLKATA_TZ)
-                
                 now_kolkata = datetime.now(KOLKATA_TZ)
                 if appointment_date <= now_kolkata:
                     logger.warning(f"Attempt to set appointment {appointment_id} date in the past: {appointment_date}")
                     return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Check if the date has changed
                 if appointment_date != original_appointment_date:
                     appointment.appointment_date = appointment_date
-                    appointment.status = "Rescheduled"  # Set status to Rescheduled if date changes
+                    appointment.status = "Rescheduled"
                     logger.info(f"Updated appointment_date for {appointment_id} to {appointment_date} and status to Rescheduled")
                 else:
-                    appointment.appointment_date = appointment_date  # Update date even if unchanged, but no status change
-                    logger.info(f"appointment_date for {appointment_id} updated to {appointment_date}, no status change needed")
-            except ValueError as e:
-                logger.error(f"Invalid appointment date format: {e}")
-                return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
+                    appointment.appointment_date = appointment_date
+            except ValueError:
+                logger.error(f"Invalid appointment date format: {data['appointment_date']}")
+                return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Handle doctor_id
         if "doctor_id" in data and data["doctor_id"]:
             doctor = get_object_or_404(Doctor, id=data["doctor_id"])
             appointment.doctor = doctor
@@ -432,9 +291,8 @@ class EditAppointmentView(APIView):
         appointment.notes = data.get("notes", appointment.notes)
         appointment.updated_by = user
 
-        # Handle status update from request (only if provided and date didn’t change)
         allowed_statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"]
-        if "status" in data and "appointment_date" not in data:  # Only override status if date isn’t changed
+        if "status" in data and "appointment_date" not in data:
             if data["status"] in allowed_statuses:
                 appointment.status = data["status"]
             else:
@@ -444,40 +302,12 @@ class EditAppointmentView(APIView):
         try:
             appointment.save()
             serializer = AppointmentSerializer(appointment)
-            logger.info(f"Appointment {appointment_id} successfully updated by {user.username}.")
-            return Response({
-                "message": "Appointment updated successfully.",
-                "appointment": serializer.data
-            }, status=status.HTTP_200_OK)
+            logger.info(f"Appointment {appointment_id} successfully updated by {user.username}")
+            return Response({"message": "Appointment updated successfully.", "appointment": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error updating appointment {appointment_id}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-import logging
-
-from .models import Appointment  # Import the Appointment model
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-import logging
-from .models import Appointment
-import pytz
-
-logger = logging.getLogger(__name__)
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CancelAppointmentView(APIView):
@@ -487,12 +317,12 @@ class CancelAppointmentView(APIView):
         user = request.user
         data = request.data
         appointment_ids = data.get("appointment_ids")
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) attempting to cancel appointment(s)")
 
-        logger.info(f"User {user.username} attempting to cancel appointment(s).")
-
-        if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
-            logger.warning(f"Unauthorized cancellation attempt by {user.username}.")
-            return Response({"error": "Only doctors and receptionists can cancel appointments."}, status=status.HTTP_403_FORBIDDEN)
+        # Only Senior roles or Admins can cancel (update) appointments
+        if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
+            logger.warning(f"Unauthorized cancellation attempt by {user.username}")
+            raise PermissionDenied("Only Senior roles can cancel appointments.")
 
         if appointment_id:
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
@@ -504,40 +334,21 @@ class CancelAppointmentView(APIView):
             return Response({"error": "Appointment ID or list of IDs required."}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_count = 0
-        now_kolkata = datetime.now(KOLKATA_TZ)  # Used only for logging
         for appointment in appointments:
-            if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+            if user.user_type == "Doctor" and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} tried to cancel an appointment they don't own.")
                 continue
-
             appointment.status = data.get("status", "Canceled")
             appointment.updated_by = user
-            # No change to appointment_date; it remains as stored
             appointment.save()
             updated_count += 1
 
         if updated_count == 0:
             return Response({"error": "No appointments were canceled. Check permissions or appointment IDs."}, status=status.HTTP_403_FORBIDDEN)
 
-        logger.info(f"User {user.username} successfully canceled {updated_count} appointment(s) at {now_kolkata}.")
+        logger.info(f"User {user.username} successfully canceled {updated_count} appointment(s)")
         return Response({"message": f"Successfully canceled {updated_count} appointment(s)."}, status=status.HTTP_200_OK)
 
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-import logging
-from .models import Appointment
-from datetime import datetime
-import pytz
-from django.core.cache import cache
-
-logger = logging.getLogger(__name__)
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RescheduleAppointmentView(APIView):
@@ -546,34 +357,32 @@ class RescheduleAppointmentView(APIView):
     def patch(self, request, appointment_id=None):
         user = request.user
         data = request.data
-        new_date_str = data.get("appointment_date")  # Expecting ISO format
+        new_date_str = data.get("appointment_date")
         appointment_ids = data.get("appointment_ids")
         patient_id = data.get("patient_id")
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) attempting to reschedule appointments")
 
-        logger.info(f"User {user.username} attempting to reschedule appointments.")
-
-        if not hasattr(user, 'doctor') and not hasattr(user, 'receptionist'):
-            logger.warning(f"Unauthorized attempt by {user.username}.")
-            return Response({"error": "Only doctors and receptionists can reschedule appointments."}, status=status.HTTP_403_FORBIDDEN)
+        # Only Senior roles or Admins can reschedule (update) appointments
+        if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
+            logger.warning(f"Unauthorized reschedule attempt by {user.username}")
+            raise PermissionDenied("Only Senior roles can reschedule appointments.")
 
         if not new_date_str:
             logger.error("Reschedule request is missing the new date.")
             return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Parse and validate new appointment_date
         try:
             new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00"))
             new_date = KOLKATA_TZ.localize(new_date) if not new_date.tzinfo else new_date.astimezone(KOLKATA_TZ)
         except ValueError:
             logger.error(f"Invalid date format: {new_date_str}")
-            return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS' (e.g., '2025-03-10T14:30:00')."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
 
         now_kolkata = datetime.now(KOLKATA_TZ)
         if new_date <= now_kolkata:
             logger.warning(f"Attempt to reschedule to past date: {new_date}")
-            return Response({"error": "New appointment date must be in the future (Kolkata time: " + str(now_kolkata) + ")."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "New appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch appointments to reschedule
         appointments = []
         if appointment_id:
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
@@ -587,15 +396,12 @@ class RescheduleAppointmentView(APIView):
         if not appointments:
             return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Process appointment updates
         updated_count = 0
         affected_patient_ids = set()
         for appointment in appointments:
-            if hasattr(user, 'doctor') and appointment.doctor != user.doctor:
+            if user.user_type == "Doctor" and appointment.doctor != user.doctor:
                 logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
                 continue
-
-            # Update only the appointment_date to the new_date, preserving its original timezone
             appointment.appointment_date = new_date
             appointment.status = data.get("status", "Rescheduled")
             appointment.updated_by = user
@@ -606,7 +412,6 @@ class RescheduleAppointmentView(APIView):
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Invalidate cache (unchanged)
         for patient_id in affected_patient_ids:
             cache_key_base = f"search_*_{patient_id}_*"
             possible_keys = [
@@ -618,24 +423,15 @@ class RescheduleAppointmentView(APIView):
                     cache.delete(key)
                     logger.info(f"Invalidated cache key: {key}")
 
-        logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}.")
-        return Response({"message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date} (Kolkata time)."}, status=status.HTTP_200_OK)
-import logging
-from rest_framework import generics, permissions, pagination
-from rest_framework.response import Response
-from django.core.cache import cache
-from django.db.models import Q
-from users.models import Doctor, Receptionist
-from .models import Patient, Appointment
-from .serializers import PatientSerializer, AppointmentSerializer
-from datetime import datetime
+        logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}")
+        return Response({"message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date}."}, status=status.HTTP_200_OK)
 
-logger = logging.getLogger(__name__)
 
 class StandardResultsSetPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
     max_page_size = 100
+
 
 class SearchView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -645,7 +441,10 @@ class SearchView(generics.ListAPIView):
         user = self.request.user
         query_params = self.request.query_params
 
-        # Collect available search parameters
+        if not user.has_perm('appointments.view_appointment'):
+            logger.warning(f"Unauthorized search attempt by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("You do not have permission to search appointments.")
+
         patient_ids = query_params.getlist("patient_id", [])
         patient_ids = [pid.strip() for pid in patient_ids if pid.strip()] if patient_ids else []
         first_name = query_params.get("first_name", "").strip()
@@ -659,24 +458,19 @@ class SearchView(generics.ListAPIView):
 
         query_key = f"{','.join(patient_ids)}_{first_name}_{last_name}_{contact_number}_{email}_{status}_{date_of_birth}_{appointment_date}_{doctor_id}"
         cache_key = f"search_{user.id}_{query_key}"
+        logger.info(f"User {user.username} searching with parameters: {query_key}")
 
-        logger.info(f"Received query params: {query_params}")
-        logger.info(f"User {user.id} ({user.user_type}) searching with parameters: {query_key}")
-
-        # Check cached results
         cached_results = cache.get(cache_key)
-        if cached_results and not appointment_date:  # Skip cache if searching by appointment_date
+        if cached_results and not appointment_date:
             logger.info(f"Cache hit for user {user.id}, query: {query_key}")
             return cached_results
 
         if not any([patient_ids, first_name, last_name, contact_number, email, status, date_of_birth, appointment_date, doctor_id]):
-            logger.info(f"Empty query received from user {user.id}.")
+            logger.info(f"Empty query received from user {user.id}")
             return {"patients": [], "appointments": []}
 
-        # Prepare query sets
         patients, appointments = [], []
-
-        if hasattr(user, "receptionist"):
+        if user.user_type in ["Receptionist", "Nurse"] or user.is_superuser:
             if patient_ids:
                 patients = Patient.objects.filter(patient_id__in=patient_ids)
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
@@ -719,78 +513,45 @@ class SearchView(generics.ListAPIView):
                 )
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
                 appointments = Appointment.objects.filter(patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
-
-        elif hasattr(user, "doctor"):
+        elif user.user_type == "Doctor":
             if patient_ids:
-                patients = Patient.objects.filter(
-                    patient_id__in=patient_ids,
-                    appointments__doctor=user.doctor
-                ).distinct()
+                patients = Patient.objects.filter(patient_id__in=patient_ids, appointments__doctor=user.doctor).distinct()
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                appointments = Appointment.objects.filter(
-                    doctor=user.doctor,
-                    patient__patient_id__in=patient_ids_from_patients
-                ).prefetch_related('vitals')
-            elif doctor_id:
-                if str(user.doctor.id) == doctor_id:
-                    appointments = Appointment.objects.filter(doctor=user.doctor).prefetch_related('vitals')
-                    patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
-                    patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
-                else:
-                    return {"patients": [], "appointments": []}
+                appointments = Appointment.objects.filter(doctor=user.doctor, patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
+            elif doctor_id and str(user.doctor.id) == doctor_id:
+                appointments = Appointment.objects.filter(doctor=user.doctor).prefetch_related('vitals')
+                patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
+                patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
             elif first_name:
-                patients = Patient.objects.filter(
-                    Q(appointments__doctor=user.doctor) & Q(first_name__iexact=first_name)
-                ).distinct()
+                patients = Patient.objects.filter(Q(appointments__doctor=user.doctor) & Q(first_name__iexact=first_name)).distinct()
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                appointments = Appointment.objects.filter(
-                    doctor=user.doctor,
-                    patient__patient_id__in=patient_ids_from_patients
-                ).prefetch_related('vitals')
+                appointments = Appointment.objects.filter(doctor=user.doctor, patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
             elif contact_number:
-                patients = Patient.objects.filter(
-                    Q(appointments__doctor=user.doctor) & Q(mobile_number__icontains=contact_number)
-                ).distinct()
+                patients = Patient.objects.filter(Q(appointments__doctor=user.doctor) & Q(mobile_number__icontains=contact_number)).distinct()
                 patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                appointments = Appointment.objects.filter(
-                    doctor=user.doctor,
-                    patient__patient_id__in=patient_ids_from_patients
-                ).prefetch_related('vitals')
+                appointments = Appointment.objects.filter(doctor=user.doctor, patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
             elif date_of_birth:
                 try:
                     dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
-                    patients = Patient.objects.filter(
-                        Q(appointments__doctor=user.doctor) & Q(date_of_birth=dob)
-                    ).distinct()
+                    patients = Patient.objects.filter(Q(appointments__doctor=user.doctor) & Q(date_of_birth=dob)).distinct()
                     patient_ids_from_patients = patients.values_list('patient_id', flat=True)
-                    appointments = Appointment.objects.filter(
-                        doctor=user.doctor,
-                        patient__patient_id__in=patient_ids_from_patients
-                    ).prefetch_related('vitals')
+                    appointments = Appointment.objects.filter(doctor=user.doctor, patient__patient_id__in=patient_ids_from_patients).prefetch_related('vitals')
                 except ValueError:
                     logger.error(f"Invalid date_of_birth format: {date_of_birth}")
                     return {"patients": [], "appointments": []}
             elif appointment_date:
                 try:
                     apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
-                    appointments = Appointment.objects.filter(
-                        doctor=user.doctor,
-                        appointment_date__date=apt_date
-                    ).prefetch_related('vitals')
+                    appointments = Appointment.objects.filter(doctor=user.doctor, appointment_date__date=apt_date).prefetch_related('vitals')
                     patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
                     patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
                 except ValueError:
                     logger.error(f"Invalid appointment_date format: {appointment_date}")
                     return {"patients": [], "appointments": []}
 
-        # Compile results
-        results = {
-            "patients": list(patients),
-            "appointments": list(appointments)
-        }
-
+        results = {"patients": list(patients), "appointments": list(appointments)}
         logger.info(f"Total search results fetched for user {user.id}: {sum(len(v) for v in results.values())}")
-        cache.set(cache_key, results, timeout=60)  # Cache for 10 minutes
+        cache.set(cache_key, results, timeout=60)
         return results
 
     def list(self, request, *args, **kwargs):
@@ -809,41 +570,41 @@ class SearchView(generics.ListAPIView):
         }
         return Response(response_data)
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Patient
-from .serializers import PatientSerializer
 
 class GetPatientDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, patient_id):
+        user = request.user
+        if not user.has_perm('appointments.view_appointment'):
+            logger.warning(f"Unauthorized patient details access by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("You do not have permission to view patient details.")
+
         try:
             patient = Patient.objects.get(patient_id=patient_id)
-            return Response({"patient": PatientSerializer(patient).data}, status=200)
+            if user.user_type == "Doctor" and not patient.appointments.filter(doctor=user.doctor).exists():
+                logger.warning(f"Doctor {user.username} attempted to access patient {patient_id} not assigned to them.")
+                raise PermissionDenied("You can only view details of your patients.")
+            return Response({"patient": PatientSerializer(patient).data}, status=status.HTTP_200_OK)
         except Patient.DoesNotExist:
-            return Response({"error": "Patient not found"}, status=404)
+            return Response({"error": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
-# views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from .models import Patient
-import logging
-
-logger = logging.getLogger(__name__)
 
 class PatientHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, patient_id):
+        user = request.user
+        if not user.has_perm('appointments.view_appointment'):
+            logger.warning(f"Unauthorized patient history access by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("You do not have permission to view patient history.")
+
         try:
             patient = get_object_or_404(Patient, patient_id=patient_id)
-            # Fetch history for Patient, Appointments, and Vitals
+            if user.user_type == "Doctor" and not patient.appointments.filter(doctor=user.doctor).exists():
+                logger.warning(f"Doctor {user.username} attempted to access history of patient {patient_id} not assigned to them.")
+                raise PermissionDenied("You can only view history of your patients.")
+
             patient_history = patient.history.all().order_by('-history_date')
             appointment_history = []
             vitals_history = []
@@ -852,7 +613,6 @@ class PatientHistoryView(APIView):
                 if hasattr(appt, 'vitals'):
                     vitals_history.extend(appt.vitals.history.all())
 
-            # Combine and format history data
             history_data = []
             for record in patient_history:
                 history_data.append({
@@ -881,10 +641,8 @@ class PatientHistoryView(APIView):
                     'appointment_id': record.appointment_id,
                 })
 
-            # Sort by date descending
             history_data.sort(key=lambda x: x['changed_at'], reverse=True)
-
-            logger.info(f"History fetched for patient {patient_id} by {request.user.username}")
+            logger.info(f"History fetched for patient {patient_id} by {user.username}")
             return Response({'history': history_data}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error fetching history for patient {patient_id}: {str(e)}")
