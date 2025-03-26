@@ -17,47 +17,19 @@
       background-color: #f8f9fa;
       min-height: 100vh;
     }
-    .sidebar {
-      height: 100vh;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      background-color: #343a40;
-      padding-top: 20px;
-      transition: transform 0.3s ease;
-    }
-    .sidebar-hidden {
-      transform: translateX(-250px);
-    }
-    .sidebar .nav-link {
-      color: #adb5bd;
-      padding: 10px 15px;
-    }
-    .sidebar .nav-link:hover, .sidebar .nav-link.active {
-      color: #fff;
-      background-color: #495057;
-    }
     .main-content {
-      margin-left: 250px;
       padding: 20px;
-      transition: margin-left 0.3s ease;
     }
-    .main-content-full {
-      margin-left: 0;
-    }
-    .navbar-brand img {
-      max-height: 40px;
-    }
-    /* Custom Navbar Styling to Match Screenshot */
+    /* Custom Navbar Styling */
     .navbar-custom {
       background-color: #1a2a6c; /* Dark blue background */
-      padding: 10px 20px;
+      padding: 5px 15px; /* Reduced padding for smaller height */
     }
     .navbar-custom .nav-link {
       color: #fff;
       font-weight: 500;
-      margin-right: 15px;
+      margin-right: 10px; /* Reduced margin for a more compact look */
+      font-size: 14px; /* Smaller font size */
     }
     .navbar-custom .nav-link:hover {
       color: #d1d5db;
@@ -67,8 +39,8 @@
       border-bottom: 2px solid #fff;
     }
     .navbar-custom .btn {
-      font-size: 14px;
-      padding: 5px 10px;
+      font-size: 12px; /* Smaller button font size */
+      padding: 4px 8px; /* Smaller button padding */
     }
     .navbar-custom .btn-primary {
       background-color: #3b82f6;
@@ -86,35 +58,26 @@
       background-color: #fff;
       border: none;
       border-radius: 5px;
-      padding: 5px 10px;
-      width: 150px;
-      font-size: 14px;
+      padding: 4px 8px; /* Smaller padding */
+      width: 120px; /* Reduced width */
+      font-size: 12px; /* Smaller font size */
     }
     .navbar-custom .status-text {
       color: #fff;
-      font-size: 14px;
-      margin-right: 20px;
+      font-size: 12px; /* Smaller font size */
+      margin-right: 15px; /* Reduced margin */
     }
     .navbar-custom .doctor-code {
       color: #fff;
-      font-size: 14px;
+      font-size: 12px; /* Smaller font size */
       font-weight: 500;
     }
     @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-250px);
-      }
-      .sidebar-active {
-        transform: translateX(0);
-      }
-      .main-content {
-        margin-left: 0;
-      }
       .navbar-custom .status-text {
         display: none;
       }
       .navbar-custom .flatpickr-input {
-        width: 120px;
+        width: 100px;
       }
     }
   </style>
@@ -125,11 +88,6 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-custom">
       <div class="container-fluid">
-        <!-- Sidebar Toggle for Mobile -->
-        <button class="navbar-toggler" type="button" id="sidebarToggle">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
         <!-- Date Picker -->
         <input type="text" class="flatpickr-input me-3" id="datePicker" readonly>
 
@@ -158,6 +116,7 @@
             <button class="btn btn-outline-light me-2" id="uploadPatientListBtn">Upload Patient List</button>
             <button class="btn btn-outline-light me-2" id="viewReportsBtn">View Reports</button>
             <span class="doctor-code">Doctor Code: HPEZ662</span>
+            <button class="btn btn-outline-light ms-2" id="logoutBtn">Logout</button>
           </div>
         </div>
       </div>
@@ -216,7 +175,138 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
   <!-- Custom JS -->
-  <!-- <script src="main.js"></script> -->
-  
+  <script>
+    $(document).ready(function () {
+      const API_BASE_URL = "http://104.37.187.187:8000"; // Adjust to your Django API
+
+      // Initialize Flatpickr for Date Picker
+      flatpickr("#datePicker", {
+        dateFormat: "d M Y",
+        defaultDate: new Date("2025-03-19"), // Set to match screenshot date
+        onChange: function (selectedDates, dateStr) {
+          console.log("Selected date:", dateStr);
+          // Add logic to filter appointments or content based on date
+        }
+      });
+
+      // Authentication Check
+      function checkAuthentication() {
+        const token = localStorage.getItem("token");
+        const userType = localStorage.getItem("user_type");
+        const roleLevel = localStorage.getItem("role_level");
+        const permissions = localStorage.getItem("permissions");
+
+        // Check if all required data is present
+        if (!token || !userType || !roleLevel || !permissions) {
+          console.error("❌ Missing authentication data in localStorage:", {
+            token: !!token,
+            userType: !!userType,
+            roleLevel: !!roleLevel,
+            permissions: !!permissions
+          });
+          window.location.href = "../login/login.html";
+          return;
+        }
+
+        // Verify token with the backend
+        $.ajax({
+          url: `${API_BASE_URL}/users/profile/`,
+          headers: { "Authorization": `Token ${token}` },
+          success: function (data) {
+            const user = data;
+            console.log("🟢 User Profile Fetched:", user);
+            adjustUIForRole(userType); // Use stored user_type for role-based UI
+            // Update doctor code if available
+            if (user.doctor_code) {
+              $(".doctor-code").text(`Doctor Code: ${user.doctor_code}`);
+            }
+          },
+          error: function (xhr) {
+            console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
+            localStorage.clear(); // Clear localStorage on auth failure
+            window.location.href = "../login/login.html";
+          }
+        });
+      }
+
+      // Role-Based UI Adjustments
+      function adjustUIForRole(role) {
+        const navItems = $(".navbar-custom .nav-item");
+        navItems.show();
+
+        switch (role) {
+          case "patient":
+            navItems.filter(":contains('Teleconsult')").hide();
+            $("#newBtn, #uploadPatientListBtn, #viewReportsBtn").hide();
+            break;
+          case "doctor":
+            // Doctors see all nav items in this minimal setup
+            break;
+          case "nurse":
+            navItems.filter(":contains('Refer & Earn')").hide();
+            $("#uploadPatientListBtn, #viewReportsBtn").hide();
+            break;
+          case "admin":
+            // Admin sees all
+            break;
+          case "receptionist":
+            navItems.filter(":contains('Teleconsult'), :contains('Refer & Earn')").hide();
+            $("#viewReportsBtn").hide();
+            break;
+          default:
+            console.warn("Unknown role:", role);
+        }
+      }
+
+      // Top Navigation Handling
+      $(".navbar-custom .nav-link").click(function (e) {
+        e.preventDefault();
+        const section = $(this).data("section");
+
+        $(".navbar-custom .nav-link").removeClass("active");
+        $(this).addClass("active");
+
+        $(".section").addClass("d-none").removeClass("active");
+        $(`#${section}Section`).removeClass("d-none").addClass("active");
+      });
+
+      // Button Actions
+      $("#newBtn").click(function () {
+        console.log("New button clicked");
+        // Add logic to open a modal for creating a new appointment or patient
+      });
+
+      $("#searchPatientBtn").click(function () {
+        console.log("Search Patient button clicked");
+        // Add logic to open a search modal or redirect to a search page
+      });
+
+      $("#supportBtn").click(function () {
+        console.log("Support button clicked");
+        // Add logic to open a support modal or redirect to support page
+      });
+
+      $("#uploadPatientListBtn").click(function () {
+        console.log("Upload Patient List button clicked");
+        // Add logic to handle file upload
+      });
+
+      $("#viewReportsBtn").click(function () {
+        console.log("View Reports button clicked");
+        $(".section").addClass("d-none").removeClass("active");
+        $("#reportsSection").removeClass("d-none").addClass("active");
+        $(".navbar-custom .nav-link").removeClass("active");
+      });
+
+      $("#logoutBtn").click(function (e) {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.href = "../login/login.html";
+      });
+
+      // Initialize
+      checkAuthentication();
+    });
+  </script>
 </body>
 </html>
