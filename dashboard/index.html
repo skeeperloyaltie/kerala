@@ -11,25 +11,39 @@
   <!-- Flatpickr CSS (for date picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   <!-- Custom Styles -->
   <style>
     body {
       background-color: #f8f9fa;
       min-height: 100vh;
-      font-size: 14px; /* Smaller font size for compact look */
+      font-size: 14px;
     }
     .main-content {
       padding: 10px;
     }
     /* Top Navbar Styling */
     .navbar-top {
-      background-color: #1a2a6c; /* Dark blue background */
+      background-color: #1a2a6c;
       padding: 5px 15px;
+      width: 100%;
     }
-    .navbar-top .nav-link, .navbar-top .navbar-brand {
+    .navbar-top .navbar-brand {
       color: #fff;
-      font-weight: 500;
       font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .navbar-top .nav-link {
+      color: #fff;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-right: 15px;
     }
     .navbar-top .nav-link:hover {
       color: #d1d5db;
@@ -41,14 +55,17 @@
     .navbar-top .btn-primary {
       background-color: #3b82f6;
       border-color: #3b82f6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .navbar-top .btn-outline-light {
-      border-color: #fff;
-      color: #fff;
+    .navbar-top .dropdown-menu {
+      font-size: 12px;
     }
-    .navbar-top .btn-outline-light:hover {
-      background-color: #fff;
-      color: #1a2a6c;
+    .navbar-top .form-control {
+      width: 150px;
+      font-size: 12px;
+      padding: 4px 8px;
     }
     /* Secondary Navbar Styling */
     .navbar-secondary {
@@ -77,6 +94,24 @@
       width: 120px;
       font-size: 12px;
     }
+    .navbar-secondary .btn-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      padding: 0;
+    }
+    .navbar-secondary .btn-outline-primary {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    .navbar-secondary .form-control {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
     /* Table Styling */
     .table-appointments {
       font-size: 14px;
@@ -88,10 +123,6 @@
     .table-appointments .status-reviewed {
       color: #28a745;
       font-weight: 500;
-    }
-    .table-appointments .btn-sm {
-      padding: 2px 5px;
-      font-size: 12px;
     }
     /* Responsive Adjustments */
     @media (max-width: 768px) {
@@ -105,6 +136,9 @@
         font-size: 12px;
         padding: 5px;
       }
+      .navbar-top .form-control {
+        width: 120px;
+      }
     }
   </style>
 </head>
@@ -114,30 +148,73 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">HealthPx</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTop" aria-controls="navbarTop" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarTop">
+        <!-- Left Side -->
+        <div class="d-flex align-items-center">
+          <a class="navbar-brand" href="#">
+            <i class="fas fa-hospital fa-lg"></i>
+            <span>City Hospital</span>
+          </a>
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#">Bills</a>
+              <a class="nav-link" href="#">
+                <i class="fas fa-file-invoice-dollar"></i>
+                All Bills
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Add Services</a>
+              <a class="nav-link" href="#">
+                <i class="fas fa-plus-circle"></i>
+                Add Services
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Patient Q</a>
+              <a class="nav-link" href="#">
+                <i class="fas fa-users"></i>
+                Patient Q
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Teleconsult</a>
+              <a class="nav-link" href="#">
+                <i class="fas fa-video"></i>
+                Tele Consults
+              </a>
             </li>
           </ul>
-          <div class="d-flex align-items-center">
-            <button class="btn btn-primary me-2" id="newBtn">New</button>
-            <button class="btn btn-outline-light me-2" id="searchPatientBtn">Search Patient</button>
-            <button class="btn btn-outline-light me-2" id="supportBtn">Support</button>
-            <button class="btn btn-outline-light ms-2" id="logoutBtn">Logout</button>
+        </div>
+
+        <!-- Right Side -->
+        <div class="d-flex align-items-center">
+          <button class="btn btn-primary me-2">
+            <i class="fas fa-plus"></i>
+            New
+          </button>
+          <form class="d-flex me-2">
+            <input class="form-control" type="search" placeholder="Search Patient" aria-label="Search">
+          </form>
+          <a class="nav-link me-2" href="#">
+            <i class="fas fa-headset"></i>
+            Support
+          </a>
+          <div class="dropdown me-2">
+            <a class="nav-link dropdown-toggle" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-th"></i>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="dashboardDropdown">
+              <li><a class="dropdown-item" href="#">Admin Dashboard</a></li>
+              <li><a class="dropdown-item" href="#">Doctor Dashboard</a></li>
+              <li><a class="dropdown-item" href="#">Reception Dashboard</a></li>
+            </ul>
+          </div>
+          <div class="dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="#">Username</a></li>
+              <li><a class="dropdown-item" href="#">Profile</a></li>
+              <li><a class="dropdown-item" href="#">Settings</a></li>
+              <li><a class="dropdown-item" href="#">Logout</a></li>
+            </ul>
           </div>
         </div>
       </div>
@@ -146,29 +223,59 @@
     <!-- Secondary Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-secondary">
       <div class="container-fluid">
-        <input type="text" class="flatpickr-input me-3" id="datePicker" readonly>
-        <div class="collapse navbar-collapse" id="navbarSecondary">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link active" href="#" data-section="all">All</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="booked">Booked</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="arrived">Arrived</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="on-going">On-Going</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="reviewed">Reviewed</a>
-            </li>
-          </ul>
-          <div class="d-flex align-items-center">
-            <button class="btn btn-outline-primary btn-sm me-2">Filter Name</button>
-            <button class="btn btn-outline-primary btn-sm me-2">Today</button>
-          </div>
+        <!-- Left Side -->
+        <div class="d-flex align-items-center me-auto">
+          <a class="nav-link me-2" href="#">
+            <i class="fas fa-sync-alt text-danger"></i>
+          </a>
+          <input type="text" class="flatpickr-input me-2" id="datePicker" readonly>
+          <button class="btn btn-outline-primary btn-circle me-2">
+            <i class="fas fa-star"></i>
+          </button>
+          <button class="btn btn-outline-primary btn-circle me-2">
+            M
+          </button>
+          <form class="d-flex me-2">
+            <input class="form-control" type="text" placeholder="Filter Name" aria-label="Filter">
+          </form>
+          <button class="btn btn-outline-primary btn-circle me-2">
+            <i class="fas fa-user"></i>
+          </button>
+          <button class="btn btn-outline-primary btn-circle me-2">
+            <i class="fas fa-filter"></i>
+          </button>
+          <button class="btn btn-outline-primary btn-circle me-2">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button class="btn btn-outline-primary btn-circle me-2">
+            <i class="fas fa-info-circle"></i>
+          </button>
+        </div>
+
+        <!-- Center -->
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" href="#" data-section="all">All</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-section="booked">Booked</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-section="arrived">Arrived</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-section="on-going">On-Going</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-section="reviewed">Reviewed</a>
+          </li>
+        </ul>
+
+        <!-- Right Side -->
+        <div class="d-flex align-items-center">
+          <input type="text" class="flatpickr-input me-2" id="dateFilter" readonly>
+          <button class="btn btn-outline-primary btn-sm me-2">Set</button>
+          <button class="btn btn-outline-primary btn-sm">Today</button>
         </div>
       </div>
     </nav>
@@ -207,7 +314,6 @@
               <td>Dr. Manikandan S</td>
               <td>Hospital Sharavana Bhavan - OPD C</td>
             </tr>
-            <!-- Add more rows as needed -->
           </tbody>
         </table>
       </div>
@@ -238,12 +344,15 @@
   
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <!-- <script src="main.js"> </script> -->
 
   <!-- Custom JS -->
   <script>
-    // Initialize Flatpickr
+    // Initialize Flatpickr for both date pickers
     flatpickr("#datePicker", {
+      dateFormat: "Y-m-d",
+      defaultDate: "2025-03-17"
+    });
+    flatpickr("#dateFilter", {
       dateFormat: "Y-m-d",
       defaultDate: "2025-03-17"
     });
