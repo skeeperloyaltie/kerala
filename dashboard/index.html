@@ -20,6 +20,7 @@
       background-color: #f8f9fa;
       min-height: 100vh;
       font-size: 11px;
+      margin: 0; /* Ensure no default body margin */
     }
     .main-content {
       padding: 10px;
@@ -27,8 +28,12 @@
     /* Top Navbar Styling */
     .navbar-top {
       background-color: #1a2a6c;
-      padding: 2px 10px; /* Reduced padding */
+      padding: 0 0; /* No padding on top or sides */
       width: 100%;
+      margin: 0; /* Ensure no margin */
+    }
+    .navbar-top .container-fluid {
+      padding: 2px 10px; /* Match secondary navbar padding */
     }
     .navbar-top .navbar-brand {
       color: #fff;
@@ -36,7 +41,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-right: 20px;
+      margin-right: 15px; /* Reduced margin */
     }
     .navbar-top .nav-link {
       color: #fff;
@@ -44,14 +49,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-right: 10px;
+      margin-right: 5px; /* Reduced margin to match secondary navbar */
     }
     .navbar-top .nav-link:hover {
       color: #d1d5db;
     }
     .navbar-top .btn {
       font-size: 11px;
-      padding: 2px 6px;
+      padding: 2px 6px; /* Match secondary navbar button padding */
     }
     .navbar-top .btn-primary {
       background-color: #3b82f6;
@@ -79,7 +84,7 @@
     /* Secondary Navbar Styling */
     .navbar-secondary {
       background-color: #e9ecef;
-      padding: 2px 10px; /* Reduced padding */
+      padding: 2px 10px; /* Consistent padding */
       border-bottom: 1px solid #dee2e6;
     }
     .navbar-secondary .nav-link {
@@ -112,7 +117,7 @@
       justify-content: center;
       font-size: 11px;
       padding: 0;
-      margin-right: 5px;
+      margin-right: 5px; /* Consistent spacing */
     }
     .navbar-secondary .btn-outline-primary {
       font-size: 11px;
