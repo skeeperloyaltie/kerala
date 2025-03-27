@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minimal Dashboard | CityHospital</title>
+  <title>Enhanced Dashboard | CityHospital</title>
 
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
@@ -16,68 +16,94 @@
     body {
       background-color: #f8f9fa;
       min-height: 100vh;
+      font-size: 14px; /* Smaller font size for compact look */
     }
     .main-content {
-      padding: 20px;
+      padding: 10px;
     }
-    /* Custom Navbar Styling */
-    .navbar-custom {
+    /* Top Navbar Styling */
+    .navbar-top {
       background-color: #1a2a6c; /* Dark blue background */
-      padding: 5px 15px; /* Reduced padding for smaller height */
+      padding: 5px 15px;
     }
-    .navbar-custom .nav-link {
+    .navbar-top .nav-link, .navbar-top .navbar-brand {
       color: #fff;
       font-weight: 500;
-      margin-right: 10px; /* Reduced margin for a more compact look */
-      font-size: 14px; /* Smaller font size */
+      font-size: 14px;
     }
-    .navbar-custom .nav-link:hover {
+    .navbar-top .nav-link:hover {
       color: #d1d5db;
     }
-    .navbar-custom .nav-link.active {
-      color: #fff;
-      border-bottom: 2px solid #fff;
+    .navbar-top .btn {
+      font-size: 12px;
+      padding: 4px 8px;
     }
-    .navbar-custom .btn {
-      font-size: 12px; /* Smaller button font size */
-      padding: 4px 8px; /* Smaller button padding */
-    }
-    .navbar-custom .btn-primary {
+    .navbar-top .btn-primary {
       background-color: #3b82f6;
       border-color: #3b82f6;
     }
-    .navbar-custom .btn-outline-light {
+    .navbar-top .btn-outline-light {
       border-color: #fff;
       color: #fff;
     }
-    .navbar-custom .btn-outline-light:hover {
+    .navbar-top .btn-outline-light:hover {
       background-color: #fff;
       color: #1a2a6c;
     }
-    .navbar-custom .flatpickr-input {
+    /* Secondary Navbar Styling */
+    .navbar-secondary {
+      background-color: #e9ecef;
+      padding: 5px 15px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .navbar-secondary .nav-link {
+      color: #1a2a6c;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+    .navbar-secondary .nav-link:hover {
+      color: #3b82f6;
+    }
+    .navbar-secondary .nav-link.active {
+      color: #3b82f6;
+      border-bottom: 2px solid #3b82f6;
+    }
+    .navbar-secondary .flatpickr-input {
       background-color: #fff;
       border: none;
       border-radius: 5px;
-      padding: 4px 8px; /* Smaller padding */
-      width: 120px; /* Reduced width */
-      font-size: 12px; /* Smaller font size */
+      padding: 4px 8px;
+      width: 120px;
+      font-size: 12px;
     }
-    .navbar-custom .status-text {
-      color: #fff;
-      font-size: 12px; /* Smaller font size */
-      margin-right: 15px; /* Reduced margin */
+    /* Table Styling */
+    .table-appointments {
+      font-size: 14px;
     }
-    .navbar-custom .doctor-code {
-      color: #fff;
-      font-size: 12px; /* Smaller font size */
+    .table-appointments th, .table-appointments td {
+      padding: 8px;
+      vertical-align: middle;
+    }
+    .table-appointments .status-reviewed {
+      color: #28a745;
       font-weight: 500;
     }
+    .table-appointments .btn-sm {
+      padding: 2px 5px;
+      font-size: 12px;
+    }
+    /* Responsive Adjustments */
     @media (max-width: 768px) {
-      .navbar-custom .status-text {
-        display: none;
+      .navbar-top .nav-link, .navbar-secondary .nav-link {
+        font-size: 12px;
       }
-      .navbar-custom .flatpickr-input {
+      .navbar-secondary .flatpickr-input {
         width: 100px;
+      }
+      .table-appointments th, .table-appointments td {
+        font-size: 12px;
+        padding: 5px;
       }
     }
   </style>
@@ -86,83 +112,104 @@
   <!-- Main Content -->
   <div class="main-content" id="mainContent">
     <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-custom">
+    <nav class="navbar navbar-expand-lg navbar-top">
       <div class="container-fluid">
-        <!-- Date Picker -->
-        <input type="text" class="flatpickr-input me-3" id="datePicker" readonly>
-
-        <!-- Navigation Tabs -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto">
+        <a class="navbar-brand" href="#">HealthPx</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTop" aria-controls="navbarTop" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarTop">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link active" href="#" data-section="appointments">Appointments</a>
+              <a class="nav-link" href="#">Bills</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" data-section="teleconsult">Teleconsult</a>
+              <a class="nav-link" href="#">Add Services</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" data-section="refer-earn">Refer & Earn</a>
+              <a class="nav-link" href="#">Patient Q</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Teleconsult</a>
             </li>
           </ul>
-
-          <!-- Status Text -->
-          <span class="status-text">Total: 0, Pending: 0, Complete: 0</span>
-
-          <!-- Right-Side Actions -->
           <div class="d-flex align-items-center">
             <button class="btn btn-primary me-2" id="newBtn">New</button>
             <button class="btn btn-outline-light me-2" id="searchPatientBtn">Search Patient</button>
             <button class="btn btn-outline-light me-2" id="supportBtn">Support</button>
-            <button class="btn btn-outline-light me-2" id="uploadPatientListBtn">Upload Patient List</button>
-            <button class="btn btn-outline-light me-2" id="viewReportsBtn">View Reports</button>
-            <span class="doctor-code">Doctor Code: HPEZ662</span>
             <button class="btn btn-outline-light ms-2" id="logoutBtn">Logout</button>
           </div>
         </div>
       </div>
     </nav>
 
-    <!-- Content Sections -->
-    <div class="container-fluid mt-4">
-      <div id="dashboardSection" class="section d-none">
-        <h2>Dashboard</h2>
-        <p>This is the dashboard overview. Content will be added here.</p>
+    <!-- Secondary Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-secondary">
+      <div class="container-fluid">
+        <input type="text" class="flatpickr-input me-3" id="datePicker" readonly>
+        <div class="collapse navbar-collapse" id="navbarSecondary">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" href="#" data-section="all">All</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section="booked">Booked</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section="arrived">Arrived</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section="on-going">On-Going</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section="reviewed">Reviewed</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-outline-primary btn-sm me-2">Filter Name</button>
+            <button class="btn btn-outline-primary btn-sm me-2">Today</button>
+          </div>
+        </div>
       </div>
-      <div id="patientsSection" class="section d-none">
-        <h2>Patients</h2>
-        <p>Manage patients here.</p>
-      </div>
+    </nav>
+
+    <!-- Appointments Table -->
+    <div class="container-fluid mt-3">
       <div id="appointmentsSection" class="section active">
-        <h2>Appointments</h2>
-        <p>View and manage appointments.</p>
-      </div>
-      <div id="teleconsultSection" class="section d-none">
-        <h2>Teleconsult</h2>
-        <p>Manage teleconsultations.</p>
-      </div>
-      <div id="refer-earnSection" class="section d-none">
-        <h2>Refer & Earn</h2>
-        <p>Refer and earn rewards.</p>
-      </div>
-      <div id="recordsSection" class="section d-none">
-        <h2>Medical Records</h2>
-        <p>Access medical records.</p>
-      </div>
-      <div id="prescriptionsSection" class="section d-none">
-        <h2>Prescriptions</h2>
-        <p>Manage prescriptions.</p>
-      </div>
-      <div id="reportsSection" class="section d-none">
-        <h2>Reports</h2>
-        <p>View reports.</p>
-      </div>
-      <div id="lab-testsSection" class="section d-none">
-        <h2>Lab Tests</h2>
-        <p>Manage lab tests.</p>
-      </div>
-      <div id="settingsSection" class="section d-none">
-        <h2>Settings</h2>
-        <p>Adjust settings.</p>
+        <table class="table table-appointments table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Token</th>
+              <th>Name</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Doctor</th>
+              <th>Procedure Charges</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>449</td>
+              <td>2</td>
+              <td>Satheesh</td>
+              <td>05:04 PM</td>
+              <td><span class="status-reviewed">REVIEWED</span></td>
+              <td>Dr. Manikandan S</td>
+              <td>Procedure Charges</td>
+            </tr>
+            <tr>
+              <td>450</td>
+              <td>3</td>
+              <td>Prabhu</td>
+              <td>05:03 PM</td>
+              <td><span class="status-reviewed">REVIEWED</span></td>
+              <td>Dr. Manikandan S</td>
+              <td>Hospital Sharavana Bhavan - OPD C</td>
+            </tr>
+            <!-- Add more rows as needed -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -191,8 +238,25 @@
   
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="main.js"> </script>
 
   <!-- Custom JS -->
-  <script src="main.js"></script>
+  <script>
+    // Initialize Flatpickr
+    flatpickr("#datePicker", {
+      dateFormat: "Y-m-d",
+      defaultDate: "2025-03-17"
+    });
+
+    // Navigation Tab Switching
+    document.querySelectorAll('.navbar-secondary .nav-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.navbar-secondary .nav-link').forEach(nav => nav.classList.remove('active'));
+        this.classList.add('active');
+        // Add logic to filter table data based on the selected tab (e.g., All, Booked, etc.)
+      });
+    });
+  </script>
 </body>
 </html>
