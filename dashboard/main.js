@@ -1,24 +1,6 @@
 $(document).ready(function () {
   const API_BASE_URL = "http://104.37.187.187:8000"; // Adjust to your Django API
 
-  // Show Notification using Bootstrap Modal
-  function showNotification(message, type, redirect = null) {
-    const modal = $('#notificationModal');
-    const messageEl = $('#notificationMessage');
-    messageEl.text(message);
-    $('#notificationModalLabel').text(type === 'success' ? 'Success' : 'Error');
-    messageEl.removeClass('text-success text-danger');
-    messageEl.addClass(type === 'success' ? 'text-success' : 'text-danger');
-    modal.modal('show');
-    console.log(`🔔 Notification [${type.toUpperCase()}]: ${message}`);
-    if (redirect) {
-      setTimeout(() => {
-        console.log(`🔄 Redirecting to: ${redirect}`);
-        window.location.href = redirect;
-      }, 1000);
-    }
-  }
-
   // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
@@ -65,7 +47,8 @@ $(document).ready(function () {
         roleLevel: !!roleLevel,
         permissions: !!permissions
       });
-      showNotification("Authentication failed: Missing required data. Please log in again.", "danger", "../login/login.html");
+      alert("Authentication failed: Missing required data. Please log in again.");
+      window.location.href = "../login/login.html";
       return;
     }
 
@@ -85,7 +68,8 @@ $(document).ready(function () {
         console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
         localStorage.clear();
         console.log("🗑️ Cleared localStorage due to authentication failure");
-        showNotification("Authentication failed: Invalid token. Please log in again.", "danger", "../login/login.html");
+        alert("Authentication failed: Invalid token. Please log in again.");
+        window.location.href = "../login/login.html";
       }
     });
   }
@@ -170,7 +154,7 @@ $(document).ready(function () {
         break;
       default:
         console.warn("⚠️ Unknown role combination:", role);
-        showNotification("Unknown role detected. Access restricted.", "danger");
+        alert("Unknown role detected. Access restricted.");
         navItems.hide();
         secondaryNavItems.hide();
         buttons.hide();
@@ -178,6 +162,7 @@ $(document).ready(function () {
 
     console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
     bindLogoutEvent();
+    bindModalActions();
   }
 
   // Logout Function
@@ -198,7 +183,8 @@ $(document).ready(function () {
         sessionStorage.clear();
         localStorage.clear();
         document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        showNotification("Logged out successfully.", "success", "../login/login.html");
+        alert("Logged out successfully.");
+        window.location.href = "../login/login.html";
       },
       error: function (xhr) {
         console.error("❌ Logout failed:", xhr.status, xhr.responseText);
@@ -213,7 +199,8 @@ $(document).ready(function () {
     sessionStorage.clear();
     localStorage.clear();
     document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    showNotification("Logged out successfully (forced).", "success", "../login/login.html");
+    alert("Logged out successfully (forced).");
+    window.location.href = "../login/login.html";
   }
 
   // Bind Logout Event
@@ -226,11 +213,30 @@ $(document).ready(function () {
     });
   }
 
-  // Handle New Button Click to Open Modal
-  $(".navbar-top .btn:contains('New')").click(function () {
-    console.log("🖱️ New Button Clicked");
-    $('#newActionModal').modal('show');
-  });
+  // Bind Modal Actions
+  function bindModalActions() {
+    // Map actions to tabs
+    const actionToTabMap = {
+      "new": "addPatientTab",
+      "all-bills": "billsTab",
+      "add-services": "addServiceTab", // Assuming an Add Service tab will be added
+      "patient-q": "addPatientTab",
+      "tele-consults": "visitsTab",
+      "support": "profileTab"
+    };
+
+    // Bind click events for all actionable elements
+    $("[data-action]").off('click').on('click', function (e) {
+      e.preventDefault();
+      const action = $(this).data("action");
+      console.log(`🖱️ Action Triggered: ${action}`);
+
+      // Open modal and switch to the appropriate tab
+      const tabId = actionToTabMap[action] || "addPatientTab";
+      $(`#${tabId}`).tab('show');
+      $('#newActionModal').modal('show');
+    });
+  }
 
   // Handle Add Patient Form Submission
   $("#addPatientForm").submit(function (e) {
@@ -244,7 +250,7 @@ $(document).ready(function () {
     };
 
     $.ajax({
-      url: `${API_BASE_URL}/patients/create/`, // Adjust to your actual API endpoint
+      url: `${API_BASE_URL}/patients/create/`,
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(patientData),
@@ -252,16 +258,18 @@ $(document).ready(function () {
       success: function (data) {
         console.log("✅ Patient Created Successfully:", data);
         // Update patient details in the modal
-        $("#patientName").text(`${data.first_name} ${data.last_name}`);
-        $("#patientDOB").text(`DOB: ${data.date_of_birth}`);
-        $("#patientInstances").text(`Instances: ${data.instances || '0'}`);
-        showNotification("Patient added successfully!", "success");
-        // Clear form
+        const fullName = `${data.first_name} ${data.last_name}`;
+        const dob = new Date(data.date_of_birth);
+        const age = new Date().getFullYear() - dob.getFullYear();
+        const patientId = data.id || "N/A";
+        $("#patientName").text(fullName);
+        $("#patientMeta").text(`${data.gender} | ${age} Years | ${patientId}`);
+        alert("Patient added successfully!");
         $("#addPatientForm")[0].reset();
       },
       error: function (xhr) {
         console.error("❌ Failed to Add Patient:", xhr.responseJSON || xhr.statusText);
-        showNotification("Failed to add patient. Please try again.", "danger");
+        alert("Failed to add patient. Please try again.");
       }
     });
   });
@@ -270,21 +278,7 @@ $(document).ready(function () {
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
     console.log("🖱️ Add Bill Submitted");
-    showNotification("Bill added successfully! (Placeholder)", "success");
-  });
-
-  // Handle Add Service Form Submission (Placeholder)
-  $("#addServiceForm").submit(function (e) {
-    e.preventDefault();
-    console.log("🖱️ Add Service Submitted");
-    showNotification("Service added successfully! (Placeholder)", "success");
-  });
-
-  // Button Actions
-  $(".navbar-top .nav-link:contains('Support')").click(function (e) {
-    e.preventDefault();
-    console.log("🖱️ Support Button Clicked");
-    showNotification("Support action triggered. (Placeholder)", "success");
+    alert("Bill added successfully! (Placeholder)");
   });
 
   // Initialize

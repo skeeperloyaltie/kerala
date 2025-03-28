@@ -20,17 +20,17 @@
       background-color: #f8f9fa;
       min-height: 100vh;
       font-size: 11px;
-      margin: 0; /* Ensure no default body margin */
+      margin: 0;
     }
     /* Top Navbar Styling */
     .navbar-top {
       background-color: #1a2a6c;
-      padding: 0 0; /* No padding on top or sides */
+      padding: 0;
       width: 100%;
-      margin: 0; /* Ensure no margin */
+      margin: 0;
     }
     .navbar-top .container-fluid {
-      padding: 2px 10px; /* Match secondary navbar padding */
+      padding: 2px 10px;
     }
     .navbar-top .navbar-brand {
       color: #fff;
@@ -38,7 +38,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-right: 15px; /* Reduced margin */
+      margin-right: 15px;
     }
     .navbar-top .nav-link {
       color: #fff;
@@ -46,14 +46,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-right: 5px; /* Reduced margin to match secondary navbar */
+      margin-right: 5px;
     }
     .navbar-top .nav-link:hover {
       color: #d1d5db;
     }
     .navbar-top .btn {
       font-size: 11px;
-      padding: 2px 6px; /* Match secondary navbar button padding */
+      padding: 2px 6px;
     }
     .navbar-top .btn-primary {
       background-color: #3b82f6;
@@ -64,7 +64,7 @@
     }
     .navbar-top .dropdown-menu {
       font-size: 11px;
-      min-width: 150px; /* Ensure dropdown width is sufficient */
+      min-width: 150px;
     }
     .navbar-top .dropdown-item {
       padding: 5px 10px;
@@ -81,7 +81,7 @@
     /* Secondary Navbar Styling */
     .navbar-secondary {
       background-color: #e9ecef;
-      padding: 2px 10px; /* Consistent padding */
+      padding: 2px 10px;
       border-bottom: 1px solid #dee2e6;
     }
     .navbar-secondary .nav-link {
@@ -114,7 +114,7 @@
       justify-content: center;
       font-size: 11px;
       padding: 0;
-      margin-right: 5px; /* Consistent spacing */
+      margin-right: 5px;
     }
     .navbar-secondary .btn-outline-primary {
       font-size: 11px;
@@ -137,6 +137,103 @@
     .table-appointments .status-reviewed {
       color: #28a745;
       font-weight: 500;
+    }
+    /* Modal Styling */
+    .modal-dialog-centered-custom {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 60px);
+      margin: 30px auto;
+    }
+    #newActionModal .modal-content {
+      font-size: 10px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 900px;
+    }
+    #newActionModal .modal-header {
+      background-color: #1a2a6c;
+      color: white;
+      padding: 5px 10px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+    }
+    #newActionModal .modal-header .patient-details {
+      display: flex;
+      align-items: center;
+      font-size: 10px;
+    }
+    #newActionModal .modal-header .patient-details i {
+      font-size: 14px;
+      margin-right: 5px;
+    }
+    #newActionModal .modal-header .patient-info {
+      display: flex;
+      flex-direction: column;
+    }
+    #newActionModal .modal-header .patient-info .patient-name {
+      font-size: 11px;
+      font-weight: 500;
+      margin-right: 5px;
+    }
+    #newActionModal .modal-header .patient-info .patient-meta {
+      font-size: 9px;
+      color: #d1d5db;
+    }
+    #newActionModal .modal-header .visit-pad-btn {
+      font-size: 9px;
+      padding: 2px 6px;
+      margin-left: 5px;
+      height: 20px;
+      line-height: 1;
+    }
+    #newActionModal .modal-header .nav-tabs {
+      border: none;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+    }
+    #newActionModal .modal-header .nav-tabs .nav-link {
+      color: white;
+      padding: 2px 6px;
+      font-size: 10px;
+      border: none;
+      display: flex;
+      align-items: center;
+    }
+    #newActionModal .modal-header .nav-tabs .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+    #newActionModal .modal-header .nav-tabs .nav-link i {
+      font-size: 12px;
+      margin-right: 3px;
+    }
+    #newActionModal .modal-header .btn-close {
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    #newActionModal .modal-body {
+      padding: 10px;
+    }
+    #newActionModal .modal-body .form-label {
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+    #newActionModal .modal-body .form-control,
+    #newActionModal .modal-body .form-select {
+      font-size: 10px;
+      padding: 2px 6px;
+      height: 24px;
+    }
+    #newActionModal .modal-body .btn {
+      font-size: 10px;
+      padding: 2px 8px;
+    }
+    #newActionModal .modal-body .row {
+      margin-bottom: 5px;
     }
     /* Responsive Adjustments */
     @media (max-width: 768px) {
@@ -162,6 +259,9 @@
         font-size: 10px;
         padding: 2px 4px;
       }
+      #newActionModal .modal-content {
+        max-width: 95%;
+      }
     }
   </style>
 </head>
@@ -175,28 +275,29 @@
         <div class="d-flex align-items-center">
           <a class="navbar-brand" href="#">
             <i class="fas fa-hospital fa-lg fa-icon"></i>
-City Hospital          </a>
+            City Hospital
+          </a>
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="#" data-action="all-bills">
                 <i class="fas fa-file-invoice-dollar fa-icon"></i>
                 All Bills
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="#" data-action="add-services">
                 <i class="fas fa-plus-circle fa-icon"></i>
                 Add Services
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="#" data-action="patient-q">
                 <i class="fas fa-users fa-icon"></i>
                 Patient Q
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="#" data-action="tele-consults">
                 <i class="fas fa-video fa-icon"></i>
                 Tele Consults
               </a>
@@ -206,14 +307,14 @@ City Hospital          </a>
 
         <!-- Right Side -->
         <div class="d-flex align-items-center">
-          <button class="btn btn-primary me-2">
+          <button class="btn btn-primary me-2" data-action="new">
             <i class="fas fa-plus fa-icon"></i>
             New
           </button>
           <form class="d-flex me-2">
             <input class="form-control" type="search" placeholder="Search Patient" aria-label="Search">
           </form>
-          <a class="nav-link me-2" href="#">
+          <a class="nav-link me-2" href="#" data-action="support">
             <i class="fas fa-headset fa-icon"></i>
             Support
           </a>
@@ -259,7 +360,6 @@ City Hospital          </a>
           <button class="btn btn-outline-primary btn-circle me-2">
             M
           </button>
-         
           <button class="btn btn-outline-primary btn-circle me-2">
             <i class="fas fa-user"></i>
           </button>
@@ -343,143 +443,147 @@ City Hospital          </a>
   </div>
 
   <!-- New Action Modal -->
-<div class="modal fade" id="newActionModal" tabindex="-1" aria-labelledby="newActionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header" style="background-color: #1a2a6c; color: white; padding: 8px 16px;">
-        <!-- Left Side: Patient Details -->
-        <div class="d-flex flex-column">
-          <h5 class="modal-title" id="newActionModalLabel">New Patient</h5>
-          <div id="patientDetails" class="mt-1">
-            <span id="patientName">No Patient Selected</span><br>
-            <span id="patientDOB">DOB: N/A</span><br>
-            <span id="patientInstances">Instances: N/A</span>
-          </div>
-        </div>
-        <!-- Right Side: Tabs -->
-        <ul class="nav nav-tabs ms-auto" id="newActionTabs" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="addPatientTab" data-bs-toggle="tab" href="#addPatient" role="tab" aria-controls="addPatient" aria-selected="true">Appt</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="addBillsTab" data-bs-toggle="tab" href="#addBills" role="tab" aria-controls="addBills" aria-selected="false">Add Bills</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="addServiceTab" data-bs-toggle="tab" href="#addService" role="tab" aria-controls="addService" aria-selected="false">Add Service</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="labProfileTab" data-bs-toggle="tab" href="#labProfile" role="tab" aria-controls="labProfile" aria-selected="false">Lab Profile</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="paymentsTab" data-bs-toggle="tab" href="#payments" role="tab" aria-controls="payments" aria-selected="false">Payments</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="visitsTab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="false">Visits</a>
-          </li>
-        </ul>
-        <!-- Close Button -->
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <!-- Modal Body -->
-      <div class="modal-body p-3">
-        <div class="tab-content" id="newActionTabContent">
-          <!-- Add New Patient Tab -->
-          <div class="tab-pane fade show active" id="addPatient" role="tabpanel" aria-labelledby="addPatientTab">
-            <form id="addPatientForm">
-              <div class="row mb-2">
-                <div class="col-md-6">
-                  <label for="patientFirstName" class="form-label">First Name</label>
-                  <input type="text" class="form-control form-control-sm" id="patientFirstName" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientLastName" class="form-label">Last Name</label>
-                  <input type="text" class="form-control form-control-sm" id="patientLastName" required>
-                </div>
-              </div>
-              <div class="row mb-2">
-                <div class="col-md-6">
-                  <label for="patientDOBInput" class="form-label">Date of Birth</label>
-                  <input type="text" class="form-control form-control-sm flatpickr-input" id="patientDOBInput" readonly required>
-                </div>
-                <div class="col-md-6">
-                  <label for="patientGender" class="form-label">Gender</label>
-                  <select class="form-select form-select-sm" id="patientGender" required>
-                    <option value="" disabled selected>Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-              <div class="row mb-2">
-                <div class="col-md-12">
-                  <label for="patientContact" class="form-label">Contact Number</label>
-                  <input type="text" class="form-control form-control-sm" id="patientContact" required>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary btn-sm">Add Patient</button>
-            </form>
-          </div>
-          <!-- Add Bills Tab -->
-          <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
-            <form id="addBillsForm">
-              <div class="mb-2">
-                <label for="billDescription" class="form-label">Description</label>
-                <input type="text" class="form-control form-control-sm" id="billDescription" required>
-              </div>
-              <div class="mb-2">
-                <label for="billAmount" class="form-label">Amount (₹)</label>
-                <input type="number" class="form-control form-control-sm" id="billAmount" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-sm">Add Bill</button>
-            </form>
-          </div>
-          <!-- Add Service Tab -->
-          <div class="tab-pane fade" id="addService" role="tabpanel" aria-labelledby="addServiceTab">
-            <form id="addServiceForm">
-              <div class="mb-2">
-                <label for="serviceName" class="form-label">Service Name</label>
-                <input type="text" class="form-control form-control-sm" id="serviceName" required>
-              </div>
-              <div class="mb-2">
-                <label for="serviceCost" class="form-label">Cost (₹)</label>
-                <input type="number" class="form-control form-control-sm" id="serviceCost" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-sm">Add Service</button>
-            </form>
-          </div>
-          <!-- Lab Profile Tab -->
-          <div class="tab-pane fade" id="labProfile" role="tabpanel" aria-labelledby="labProfileTab">
-            <p>Lab Profile content goes here.</p>
-          </div>
-          <!-- Payments Tab -->
-          <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="paymentsTab">
-            <p>Payments content goes here.</p>
-          </div>
-          <!-- Visits Tab -->
-          <div class="tab-pane fade" id="visits" role="tabpanel" aria-labelledby="visitsTab">
-            <p>Visits content goes here.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-  <!-- Bootstrap Modal for Notifications -->
-  <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+  <div class="modal fade" id="newActionModal" tabindex="-1" aria-labelledby="newActionModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-centered-custom">
       <div class="modal-content">
+        <!-- Modal Header -->
         <div class="modal-header">
-          <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <!-- Left Side: Patient Details -->
+          <div class="patient-details">
+            <i class="fas fa-user fa-icon"></i>
+            <div class="patient-info">
+              <div class="d-flex align-items-center">
+                <span id="patientName" class="patient-name">No Patient Selected</span>
+                <button class="btn btn-primary btn-sm visit-pad-btn">Visit Pad</button>
+              </div>
+              <span id="patientMeta" class="patient-meta">N/A | N/A | N/A</span>
+            </div>
+          </div>
+          <!-- Right Side: Tabs -->
+          <ul class="nav nav-tabs ms-auto" id="newActionTabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link" id="abhaTab" data-bs-toggle="tab" href="#abha" role="tab" aria-controls="abha" aria-selected="false">
+                <i class="fas fa-id-card"></i> ABHA
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" id="addPatientTab" data-bs-toggle="tab" href="#addPatient" role="tab" aria-controls="addPatient" aria-selected="true">
+                <i class="fas fa-calendar-check"></i> Appt
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="addBillsTab" data-bs-toggle="tab" href="#addBills" role="tab" aria-controls="addBills" aria-selected="false">
+                <i class="fas fa-file-invoice-dollar"></i> Add Bills
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="billsTab" data-bs-toggle="tab" href="#bills" role="tab" aria-controls="bills" aria-selected="false">
+                <i class="fas fa-file-invoice"></i> Bills
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="paymentsTab" data-bs-toggle="tab" href="#payments" role="tab" aria-controls="payments" aria-selected="false">
+                <i class="fas fa-money-bill-wave"></i> Payments
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="visitsTab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="false">
+                <i class="fas fa-hospital-user"></i> Visits
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="labProfileTab" data-bs-toggle="tab" href="#labProfile" role="tab" aria-controls="labProfile" aria-selected="false">
+                <i class="fas fa-flask"></i> Lab
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="profileTab" data-bs-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">
+                <i class="fas fa-user-circle"></i> Profile
+              </a>
+            </li>
+          </ul>
+          <!-- Close Button -->
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body" id="notificationMessage">
-          <!-- Message will be inserted here -->
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <div class="tab-content" id="newActionTabContent">
+            <!-- ABHA Tab -->
+            <div class="tab-pane fade" id="abha" role="tabpanel" aria-labelledby="abhaTab">
+              <p>ABHA content goes here.</p>
+            </div>
+            <!-- Add New Patient Tab -->
+            <div class="tab-pane fade show active" id="addPatient" role="tabpanel" aria-labelledby="addPatientTab">
+              <form id="addPatientForm">
+                <div class="row">
+                  <div class="col-md-6">
+                    <label for="patientFirstName" class="form-label">First Name</label>
+                    <input type="text" class="form-control form-control-sm" id="patientFirstName" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="patientLastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control form-control-sm" id="patientLastName" required>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <label for="patientDOBInput" class="form-label">Date of Birth</label>
+                    <input type="text" class="form-control form-control-sm flatpickr-input" id="patientDOBInput" readonly required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="patientGender" class="form-label">Gender</label>
+                    <select class="form-select form-select-sm" id="patientGender" required>
+                      <option value="" disabled selected>Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <label for="patientContact" class="form-label">Contact Number</label>
+                    <input type="text" class="form-control form-control-sm" id="patientContact" required>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm mt-2">Add Patient</button>
+              </form>
+            </div>
+            <!-- Add Bills Tab -->
+            <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
+              <form id="addBillsForm">
+                <div class="mb-2">
+                  <label for="billDescription" class="form-label">Description</label>
+                  <input type="text" class="form-control form-control-sm" id="billDescription" required>
+                </div>
+                <div class="mb-2">
+                  <label for="billAmount" class="form-label">Amount (₹)</label>
+                  <input type="number" class="form-control form-control-sm" id="billAmount" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Add Bill</button>
+              </form>
+            </div>
+            <!-- Bills Tab -->
+            <div class="tab-pane fade" id="bills" role="tabpanel" aria-labelledby="billsTab">
+              <p>Bills content goes here.</p>
+            </div>
+            <!-- Payments Tab -->
+            <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="paymentsTab">
+              <p>Payments content goes here.</p>
+            </div>
+            <!-- Visits Tab -->
+            <div class="tab-pane fade" id="visits" role="tabpanel" aria-labelledby="visitsTab">
+              <p>Visits content goes here.</p>
+            </div>
+            <!-- Lab Profile Tab -->
+            <div class="tab-pane fade" id="labProfile" role="tabpanel" aria-labelledby="labProfileTab">
+              <p>Lab Profile content goes here.</p>
+            </div>
+            <!-- Profile Tab -->
+            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profileTab">
+              <p>Profile content goes here.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -495,11 +599,7 @@ City Hospital          </a>
 
   <!-- Custom JS -->
   <script>
-    // Initialize Flatpickr for both date pickers
-    flatpickr("#datePicker", {
-      dateFormat: "Y-m-d",
-      defaultDate: "2025-03-17"
-    });
+    // Initialize Flatpickr for date pickers
     flatpickr("#dateFilter", {
       dateFormat: "Y-m-d",
       defaultDate: "2025-03-17"
@@ -511,7 +611,6 @@ City Hospital          </a>
         e.preventDefault();
         document.querySelectorAll('.navbar-secondary .nav-link').forEach(nav => nav.classList.remove('active'));
         this.classList.add('active');
-        // Add logic to filter table data based on the selected tab (e.g., All, Booked, etc.)
       });
     });
 
@@ -521,8 +620,6 @@ City Hospital          </a>
         const dropdownMenu = this.querySelector('.dropdown-menu');
         const rect = dropdownMenu.getBoundingClientRect();
         const windowWidth = window.innerWidth;
-
-        // Prevent dropdown from going off-screen on the right
         if (rect.right > windowWidth) {
           dropdownMenu.style.right = '0';
           dropdownMenu.style.left = 'auto';
