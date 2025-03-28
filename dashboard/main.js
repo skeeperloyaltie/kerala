@@ -19,15 +19,21 @@ $(document).ready(function () {
     }
   }
 
-  // Initialize Flatpickr (restored and aligned with HTML)
+  // Initialize Flatpickr
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
-    defaultDate: "2025-03-28", // Updated to current date
+    defaultDate: "2025-03-28",
     onChange: function (selectedDates, dateStr) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
     }
   });
   console.log("🟢 Flatpickr Initialized for #dateFilter with default date: 28 Mar 2025");
+
+  // Get Authentication Headers
+  function getAuthHeaders() {
+    const token = localStorage.getItem("token");
+    return token ? { "Authorization": `Token ${token}` } : {};
+  }
 
   // Authentication Check
   function checkAuthentication() {
@@ -58,12 +64,12 @@ $(document).ready(function () {
       url: `${API_BASE_URL}/users/profile/`,
       type: "GET",
       headers: { "Authorization": `Token ${token}` },
-      successA: function (data) {
+      success: function (data) { // Fixed typo from successA to success
         console.log("🟢 User Profile Fetched Successfully:", data);
         adjustUIForRole(userType, roleLevel);
         if (data.doctor_code) {
           console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
-          $(".doctor-code").text(`Doctor Code: ${data.doctor_code}`); // Restore if needed
+          $(".doctor-code").text(`Doctor Code: ${data.doctor_code}`);
         }
       },
       error: function (xhr) {
@@ -84,6 +90,7 @@ $(document).ready(function () {
     const searchInput = $(".navbar-top .form-control");
     const dateFilter = $("#dateFilter");
     const dashboardDropdown = $("#dashboardDropdown").parent();
+    const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
 
     navItems.show();
     secondaryNavItems.show();
@@ -91,6 +98,7 @@ $(document).ready(function () {
     searchInput.show();
     dateFilter.show();
     dashboardDropdown.show();
+    logoutLink.show(); // Ensure logout is visible
 
     const role = `${userType}-${roleLevel}`.toLowerCase();
     switch (role) {
@@ -103,7 +111,7 @@ $(document).ready(function () {
         break;
       case "doctor-basic":
         navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
-        buttons.filter(":contains('New')").hide(); // Adjusted to match HTML
+        buttons.filter(":contains('New')").hide();
         secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
         $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
         dashboardDropdown.hide();
@@ -160,96 +168,71 @@ $(document).ready(function () {
     }
 
     console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
+
+    // Re-bind logout event after UI adjustment
+    bindLogoutEvent();
   }
-// Button Actions
-$("#newBtn").click(function () {
-  console.log("🖱️ New Button Clicked");
-  showNotification("New action triggered. (Placeholder)", "success");
-  // Add logic to open a modal for creating a new appointment or patient
-});
 
-$("#searchPatientBtn").click(function () {
-  console.log("🖱️ Search Patient Button Clicked");
-  showNotification("Search Patient action triggered. (Placeholder)", "success");
-  // Add logic to open a search modal or redirect to a search page
-});
-
-$("#supportBtn").click(function () {
-  console.log("🖱️ Support Button Clicked");
-  showNotification("Support action triggered. (Placeholder)", "success");
-  // Add logic to open a support modal or redirect to support page
-});
-
-$("#uploadPatientListBtn").click(function () {
-  console.log("🖱️ Upload Patient List Button Clicked");
-  showNotification("Upload Patient List action triggered. (Placeholder)", "success");
-  // Add logic to handle file upload
-});
-
-$("#viewReportsBtn").click(function () {
-  console.log("🖱️ View Reports Button Clicked");
-  showNotification("Switching to Reports section.", "success");
-  $(".section").addClass("d-none").removeClass("active");
-  $("#reportsSection").removeClass("d-none").addClass("active");
-  console.log("✅ Displayed Reports section");
-  $(".navbar-custom .nav-link").removeClass("active");
-  console.log("✅ Cleared active nav link");
-});
-
-$("#logoutBtn").click(function (e) {
-  e.preventDefault();
-  console.log("🖱️ Logout Button Clicked");
-  localStorage.clear();
-  logoutUser();
-  console.log("🗑️ Cleared localStorage");
-});
-
-function attemptLogout() {
-  console.log("Attempting logout...");
-  logoutUser();
-  setTimeout(() => {
-    if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) {
+  // Logout Function
+  function logoutUser() {
+    const headers = getAuthHeaders();
+    if (!headers['Authorization']) {
+      console.warn("No authorization token found. Forcing logout...");
       forceLogout();
+      return;
     }
-  }, 3000);
-}
 
-function forceLogout() {
-  console.log("Forcing logout...");
-  sessionStorage.clear();
-  localStorage.clear();
-  document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  showNotification("Logged out successfully.", "success", "../login/login.html");
-
-  window.location.href = 'http://smarthospitalmaintain.com/';
-}
-
-function logoutUser() {
-  const headers = getAuthHeaders();
-  if (!headers['Authorization']) {
-    console.warn("No authorization for logout. Redirecting...");
-    window.location.href = 'http://smarthospitalmaintain.com/';
-    return;
+    $.ajax({
+      url: `${API_BASE_URL}/users/logout/`, // Consistent with API_BASE_URL
+      type: "POST",
+      headers: headers,
+      success: function () {
+        console.log("✅ Logout successful");
+        sessionStorage.clear();
+        localStorage.clear();
+        document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        showNotification("Logged out successfully.", "success", "../login/login.html");
+      },
+      error: function (xhr) {
+        console.error("❌ Logout failed:", xhr.status, xhr.responseText);
+        forceLogout(); // Fallback to force logout on failure
+      }
+    });
   }
-  $.ajax({
-    url: 'http://smarthospitalmaintain.com:8000/users/logout/',
-    type: 'POST',
-    headers: headers,
-    success: function() {
-      console.log("Logout successful");
-      sessionStorage.clear();
-      localStorage.clear();
-      document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      showNotification("Logged out successfully.", "success", "../login/login.html");
 
-      window.location.href = 'http://smarthospitalmaintain.com/';
-    },
-    error: function(xhr) {
-      console.error("Logout failed:", xhr.status, xhr.responseText);
-    }
+  // Force Logout Fallback
+  function forceLogout() {
+    console.log("🔒 Forcing logout...");
+    sessionStorage.clear();
+    localStorage.clear();
+    document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    showNotification("Logged out successfully (forced).", "success", "../login/login.html");
+  }
+
+  // Bind Logout Event
+  function bindLogoutEvent() {
+    const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
+    logoutLink.off('click').on('click', function (e) { // Prevent multiple bindings
+      e.preventDefault();
+      console.log("🖱️ Logout Clicked");
+      logoutUser();
+    });
+  }
+
+  // Button Actions (adjusted to match HTML)
+  $(".navbar-top .btn:contains('New')").click(function () {
+    console.log("🖱️ New Button Clicked");
+    showNotification("New action triggered. (Placeholder)", "success");
   });
-}
 
+  $(".navbar-top .nav-link:contains('Support')").click(function (e) {
+    e.preventDefault();
+    console.log("🖱️ Support Button Clicked");
+    showNotification("Support action triggered. (Placeholder)", "success");
+  });
+
+  // Remove unused handlers
+  // $("#searchPatientBtn"), $("#uploadPatientListBtn"), $("#viewReportsBtn") not in HTML
 
   // Initialize
   console.log("🚀 Initializing Dashboard...");
