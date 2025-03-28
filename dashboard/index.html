@@ -138,21 +138,26 @@
       color: #28a745;
       font-weight: 500;
     }
-    /* Modal Styling */
-    .modal-dialog-centered-custom {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: calc(100vh - 60px); /* Changed back to 100vh from 200vh */
-      margin: 30px auto;
-  }
+   /* Modal Styling */
+.modal-dialog-centered-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  margin: 30px auto;
+  width: 2000px; /* Match the modal-content width to prevent overflow */
+  max-width: none; /* Override Bootstrap's default max-width */
+}
+
 #newActionModal .modal-content {
   font-size: 11px;
   border-radius: 8px;
-  width: 2000px; /* Fixed width set here (removed max-width) */
-  height: 800px; /* Fixed height set here (removed max-height) */
-  overflow-y: auto; /* Added to handle content overflow */
+  width: 2000px; /* Fixed width set here */
+  height: 800px; /* Fixed height set here */
+  overflow-y: auto; /* Handle vertical overflow */
+  overflow-x: hidden; /* Prevent horizontal overflow */
 }
+
 #newActionModal .modal-header {
   background-color: #1a2a6c;
   color: white;
@@ -160,44 +165,53 @@
   height: 60px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Added to space out left and right content */
+  justify-content: space-between;
+  width: 100%; /* Ensure header spans full width */
 }
+
 #newActionModal .modal-header .patient-details {
   display: flex;
   align-items: center;
-  font-size: 11px; /* Increased from 10px */
+  font-size: 11px;
 }
+
 #newActionModal .modal-header .patient-details i {
-  font-size: 15px; /* Increased from 14px */
-  margin-right: 6px; /* Slightly increased from 5px */
+  font-size: 15px;
+  margin-right: 6px;
 }
+
 #newActionModal .modal-header .patient-info {
   display: flex;
   flex-direction: column;
 }
+
 #newActionModal .modal-header .patient-info .patient-name {
-  font-size: 12px; /* Increased from 11px */
+  font-size: 12px;
   font-weight: 500;
-  margin-right: 6px; /* Slightly increased from 5px */
+  margin-right: 6px;
 }
+
 #newActionModal .modal-header .patient-info .patient-meta {
-  font-size: 10px; /* Increased from 9px */
+  font-size: 10px;
   color: #d1d5db;
 }
+
 #newActionModal .modal-header .visit-pad-btn {
-  font-size: 10px; /* Increased from 9px */
-  padding: 3px 7px; /* Slightly increased from 2px 6px */
-  margin-left: 6px; /* Slightly increased from 5px */
-  height: 22px; /* Increased from 20px */
+  font-size: 10px;
+  padding: 3px 7px;
+  margin-left: 6px;
+  height: 22px;
   line-height: 1;
 }
+
 #newActionModal .modal-header .nav-tabs {
   border: none;
   display: flex;
   align-items: center;
-  flex-wrap: nowrap; /* Ensures tabs stay on one line */
-  margin-left: 20px; /* Adds space between patient details and tabs */
+  flex-wrap: nowrap;
+  margin-left: 20px;
 }
+
 #newActionModal .modal-header .nav-tabs .nav-link {
   color: white;
   padding: 3px 7px;
@@ -205,77 +219,88 @@
   border: none;
   display: flex;
   align-items: center;
-  white-space: nowrap; /* Prevents tab text from wrapping */
+  white-space: nowrap;
 }
+
 #newActionModal .modal-header .nav-tabs .nav-link.active {
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
+
 #newActionModal .modal-header .nav-tabs .nav-link i {
-  font-size: 13px; /* Increased from 12px */
-  margin-right: 4px; /* Slightly increased from 3px */
+  font-size: 13px;
+  margin-right: 4px;
 }
+
 #newActionModal .modal-header .btn-close {
   font-size: 13px;
-  margin-left: 10px; /* Increased from 6px for better spacing */
+  margin-left: 10px;
 }
+
 #newActionModal .modal-body {
-  padding: 12px; /* Slightly increased from 10px */
+  padding: 12px;
+  height: calc(100% - 60px); /* Adjust for header height */
+  overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal overflow */
+  width: 100%; /* Ensure body spans full width */
 }
+
 #newActionModal .modal-body .form-label {
-  font-size: 11px; /* Increased from 10px */
+  font-size: 11px;
   margin-bottom: 2px;
 }
+
 #newActionModal .modal-body .form-control,
 #newActionModal .modal-body .form-select {
-  font-size: 11px; /* Increased from 10px */
-  padding: 3px 7px; /* Slightly increased from 2px 6px */
-  height: 26px; /* Increased from 24px */
+  font-size: 11px;
+  padding: 3px 7px;
+  height: 26px;
 }
+
 #newActionModal .modal-body .btn {
-  font-size: 11px; /* Increased from 10px */
-  padding: 3px 9px; /* Slightly increased from 2px 8px */
+  font-size: 11px;
+  padding: 3px 9px;
 }
+
 #newActionModal .modal-body .row {
-  margin-bottom: 6px; /* Slightly increased from 5px */
+  margin-bottom: 6px;
 }
 
 /* Responsive Adjustments */
-/* Responsive Adjustments */
 @media (max-width: 768px) {
+  .modal-dialog-centered-custom {
+      width: 95%; /* Override fixed width for smaller screens */
+  }
   #newActionModal .modal-content {
-      width: 95%; /* Overrides fixed width for smaller screens */
-      height: 90vh; /* Overrides fixed height for smaller screens */
+      width: 95%; /* Override fixed width for smaller screens */
+      height: 90vh; /* Override fixed height for smaller screens */
   }
   #newActionModal .modal-header .nav-tabs {
       margin-left: 10px; /* Reduced spacing on smaller screens */
   }
-      .navbar-top .nav-link, .navbar-secondary .nav-link {
-        font-size: 10px;
-      }
-      .navbar-secondary .flatpickr-input {
-        width: 80px;
-      }
-      .table-appointments th, .table-appointments td {
-        font-size: 10px;
-        padding: 4px;
-      }
-      .navbar-top .form-control {
-        width: 100px;
-      }
-      .navbar-secondary .btn-circle {
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
-      }
-      .navbar-secondary .btn-outline-primary {
-        font-size: 10px;
-        padding: 2px 4px;
-      }
-      #newActionModal .modal-content {
-        max-width: 95%;
-      }
-    }
+  .navbar-top .nav-link, .navbar-secondary .nav-link {
+      font-size: 10px;
+  }
+  .navbar-secondary .flatpickr-input {
+      width: 80px;
+  }
+  .table-appointments th, .table-appointments td {
+      font-size: 10px;
+      padding: 4px;
+  }
+  .navbar-top .form-control {
+      width: 100px;
+  }
+  .navbar-secondary .btn-circle {
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
+  }
+  .navbar-secondary .btn-outline-primary {
+      font-size: 10px;
+      padding: 2px 4px;
+  }
+}
   </style>
 </head>
 <body>
