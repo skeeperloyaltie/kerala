@@ -200,9 +200,56 @@ $("#logoutBtn").click(function (e) {
   e.preventDefault();
   console.log("🖱️ Logout Button Clicked");
   localStorage.clear();
+  logoutUser();
   console.log("🗑️ Cleared localStorage");
-  showNotification("Logged out successfully.", "success", "../login/login.html");
 });
+
+function attemptLogout() {
+  console.log("Attempting logout...");
+  logoutUser();
+  setTimeout(() => {
+    if (sessionStorage.getItem('authToken') || localStorage.getItem('authToken')) {
+      forceLogout();
+    }
+  }, 3000);
+}
+
+function forceLogout() {
+  console.log("Forcing logout...");
+  sessionStorage.clear();
+  localStorage.clear();
+  document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  showNotification("Logged out successfully.", "success", "../login/login.html");
+
+  window.location.href = 'http://smarthospitalmaintain.com/';
+}
+
+function logoutUser() {
+  const headers = getAuthHeaders();
+  if (!headers['Authorization']) {
+    console.warn("No authorization for logout. Redirecting...");
+    window.location.href = 'http://smarthospitalmaintain.com/';
+    return;
+  }
+  $.ajax({
+    url: 'http://smarthospitalmaintain.com:8000/users/logout/',
+    type: 'POST',
+    headers: headers,
+    success: function() {
+      console.log("Logout successful");
+      sessionStorage.clear();
+      localStorage.clear();
+      document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      showNotification("Logged out successfully.", "success", "../login/login.html");
+
+      window.location.href = 'http://smarthospitalmaintain.com/';
+    },
+    error: function(xhr) {
+      console.error("Logout failed:", xhr.status, xhr.responseText);
+    }
+  });
+}
+
 
   // Initialize
   console.log("🚀 Initializing Dashboard...");
