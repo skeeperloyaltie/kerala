@@ -139,102 +139,110 @@
       font-weight: 500;
     }
     /* Modal Styling */
-    .modal-dialog-centered-custom {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: calc(100vh - 60px);
-      margin: 30px auto;
-    }
-    #newActionModal .modal-content {
-      font-size: 10px;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 1400px;
-    }
-    #newActionModal .modal-header {
-      background-color: #1a2a6c;
-      color: white;
-      padding: 5px 10px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-    }
-    #newActionModal .modal-header .patient-details {
-      display: flex;
-      align-items: center;
-      font-size: 10px;
-    }
-    #newActionModal .modal-header .patient-details i {
-      font-size: 14px;
-      margin-right: 5px;
-    }
-    #newActionModal .modal-header .patient-info {
-      display: flex;
-      flex-direction: column;
-    }
-    #newActionModal .modal-header .patient-info .patient-name {
-      font-size: 11px;
-      font-weight: 500;
-      margin-right: 5px;
-    }
-    #newActionModal .modal-header .patient-info .patient-meta {
-      font-size: 9px;
-      color: #d1d5db;
-    }
-    #newActionModal .modal-header .visit-pad-btn {
-      font-size: 9px;
-      padding: 2px 6px;
-      margin-left: 5px;
-      height: 20px;
-      line-height: 1;
-    }
-    #newActionModal .modal-header .nav-tabs {
-      border: none;
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-    }
-    #newActionModal .modal-header .nav-tabs .nav-link {
-      color: white;
-      padding: 2px 6px;
-      font-size: 10px;
-      border: none;
-      display: flex;
-      align-items: center;
-    }
-    #newActionModal .modal-header .nav-tabs .nav-link.active {
-      background-color: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-    }
-    #newActionModal .modal-header .nav-tabs .nav-link i {
-      font-size: 12px;
-      margin-right: 3px;
-    }
-    #newActionModal .modal-header .btn-close {
-      font-size: 12px;
-      margin-left: 5px;
-    }
-    #newActionModal .modal-body {
-      padding: 10px;
-    }
-    #newActionModal .modal-body .form-label {
-      font-size: 10px;
-      margin-bottom: 2px;
-    }
-    #newActionModal .modal-body .form-control,
-    #newActionModal .modal-body .form-select {
-      font-size: 10px;
-      padding: 2px 6px;
-      height: 24px;
-    }
-    #newActionModal .modal-body .btn {
-      font-size: 10px;
-      padding: 2px 8px;
-    }
-    #newActionModal .modal-body .row {
-      margin-bottom: 5px;
-    }
+.modal-dialog-centered-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  margin: 30px auto;
+}
+#newActionModal .modal-content {
+  font-size: 11px; /* Increased from 10px to 11px */
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1600px; /* Increased from 1400px to 1600px */
+  max-height: 90vh; /* Added to control height */
+}
+#newActionModal .modal-header {
+  background-color: #1a2a6c;
+  color: white;
+  padding: 6px 12px; /* Slightly increased from 5px 10px */
+  height: 44px; /* Increased from 40px */
+  display: flex;
+  align-items: center;
+}
+#newActionModal .modal-header .patient-details {
+  display: flex;
+  align-items: center;
+  font-size: 11px; /* Increased from 10px */
+}
+#newActionModal .modal-header .patient-details i {
+  font-size: 15px; /* Increased from 14px */
+  margin-right: 6px; /* Slightly increased from 5px */
+}
+#newActionModal .modal-header .patient-info {
+  display: flex;
+  flex-direction: column;
+}
+#newActionModal .modal-header .patient-info .patient-name {
+  font-size: 12px; /* Increased from 11px */
+  font-weight: 500;
+  margin-right: 6px; /* Slightly increased from 5px */
+}
+#newActionModal .modal-header .patient-info .patient-meta {
+  font-size: 10px; /* Increased from 9px */
+  color: #d1d5db;
+}
+#newActionModal .modal-header .visit-pad-btn {
+  font-size: 10px; /* Increased from 9px */
+  padding: 3px 7px; /* Slightly increased from 2px 6px */
+  margin-left: 6px; /* Slightly increased from 5px */
+  height: 22px; /* Increased from 20px */
+  line-height: 1;
+}
+#newActionModal .modal-header .nav-tabs {
+  border: none;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+#newActionModal .modal-header .nav-tabs .nav-link {
+  color: white;
+  padding: 3px 7px; /* Slightly increased from 2px 6px */
+  font-size: 11px; /* Increased from 10px */
+  border: none;
+  display: flex;
+  align-items: center;
+}
+#newActionModal .modal-header .nav-tabs .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+#newActionModal .modal-header .nav-tabs .nav-link i {
+  font-size: 13px; /* Increased from 12px */
+  margin-right: 4px; /* Slightly increased from 3px */
+}
+#newActionModal .modal-header .btn-close {
+  font-size: 13px; /* Increased from 12px */
+  margin-left: 6px; /* Slightly increased from 5px */
+}
+#newActionModal .modal-body {
+  padding: 12px; /* Slightly increased from 10px */
+}
+#newActionModal .modal-body .form-label {
+  font-size: 11px; /* Increased from 10px */
+  margin-bottom: 2px;
+}
+#newActionModal .modal-body .form-control,
+#newActionModal .modal-body .form-select {
+  font-size: 11px; /* Increased from 10px */
+  padding: 3px 7px; /* Slightly increased from 2px 6px */
+  height: 26px; /* Increased from 24px */
+}
+#newActionModal .modal-body .btn {
+  font-size: 11px; /* Increased from 10px */
+  padding: 3px 9px; /* Slightly increased from 2px 8px */
+}
+#newActionModal .modal-body .row {
+  margin-bottom: 6px; /* Slightly increased from 5px */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  #newActionModal .modal-content {
+      max-width: 95%;
+  }
+}
     /* Responsive Adjustments */
     @media (max-width: 768px) {
       .navbar-top .nav-link, .navbar-secondary .nav-link {
