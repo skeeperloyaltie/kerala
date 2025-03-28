@@ -342,6 +342,131 @@ City Hospital          </a>
     </div>
   </div>
 
+  <!-- New Action Modal -->
+<div class="modal fade" id="newActionModal" tabindex="-1" aria-labelledby="newActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header" style="background-color: #1a2a6c; color: white; padding: 8px 16px;">
+        <!-- Left Side: Patient Details -->
+        <div class="d-flex flex-column">
+          <h5 class="modal-title" id="newActionModalLabel">New Patient</h5>
+          <div id="patientDetails" class="mt-1">
+            <span id="patientName">No Patient Selected</span><br>
+            <span id="patientDOB">DOB: N/A</span><br>
+            <span id="patientInstances">Instances: N/A</span>
+          </div>
+        </div>
+        <!-- Right Side: Tabs -->
+        <ul class="nav nav-tabs ms-auto" id="newActionTabs" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="addPatientTab" data-bs-toggle="tab" href="#addPatient" role="tab" aria-controls="addPatient" aria-selected="true">Appt</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="addBillsTab" data-bs-toggle="tab" href="#addBills" role="tab" aria-controls="addBills" aria-selected="false">Add Bills</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="addServiceTab" data-bs-toggle="tab" href="#addService" role="tab" aria-controls="addService" aria-selected="false">Add Service</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="labProfileTab" data-bs-toggle="tab" href="#labProfile" role="tab" aria-controls="labProfile" aria-selected="false">Lab Profile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="paymentsTab" data-bs-toggle="tab" href="#payments" role="tab" aria-controls="payments" aria-selected="false">Payments</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="visitsTab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="false">Visits</a>
+          </li>
+        </ul>
+        <!-- Close Button -->
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <!-- Modal Body -->
+      <div class="modal-body p-3">
+        <div class="tab-content" id="newActionTabContent">
+          <!-- Add New Patient Tab -->
+          <div class="tab-pane fade show active" id="addPatient" role="tabpanel" aria-labelledby="addPatientTab">
+            <form id="addPatientForm">
+              <div class="row mb-2">
+                <div class="col-md-6">
+                  <label for="patientFirstName" class="form-label">First Name</label>
+                  <input type="text" class="form-control form-control-sm" id="patientFirstName" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="patientLastName" class="form-label">Last Name</label>
+                  <input type="text" class="form-control form-control-sm" id="patientLastName" required>
+                </div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-md-6">
+                  <label for="patientDOBInput" class="form-label">Date of Birth</label>
+                  <input type="text" class="form-control form-control-sm flatpickr-input" id="patientDOBInput" readonly required>
+                </div>
+                <div class="col-md-6">
+                  <label for="patientGender" class="form-label">Gender</label>
+                  <select class="form-select form-select-sm" id="patientGender" required>
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-md-12">
+                  <label for="patientContact" class="form-label">Contact Number</label>
+                  <input type="text" class="form-control form-control-sm" id="patientContact" required>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Add Patient</button>
+            </form>
+          </div>
+          <!-- Add Bills Tab -->
+          <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
+            <form id="addBillsForm">
+              <div class="mb-2">
+                <label for="billDescription" class="form-label">Description</label>
+                <input type="text" class="form-control form-control-sm" id="billDescription" required>
+              </div>
+              <div class="mb-2">
+                <label for="billAmount" class="form-label">Amount (₹)</label>
+                <input type="number" class="form-control form-control-sm" id="billAmount" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Add Bill</button>
+            </form>
+          </div>
+          <!-- Add Service Tab -->
+          <div class="tab-pane fade" id="addService" role="tabpanel" aria-labelledby="addServiceTab">
+            <form id="addServiceForm">
+              <div class="mb-2">
+                <label for="serviceName" class="form-label">Service Name</label>
+                <input type="text" class="form-control form-control-sm" id="serviceName" required>
+              </div>
+              <div class="mb-2">
+                <label for="serviceCost" class="form-label">Cost (₹)</label>
+                <input type="number" class="form-control form-control-sm" id="serviceCost" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Add Service</button>
+            </form>
+          </div>
+          <!-- Lab Profile Tab -->
+          <div class="tab-pane fade" id="labProfile" role="tabpanel" aria-labelledby="labProfileTab">
+            <p>Lab Profile content goes here.</p>
+          </div>
+          <!-- Payments Tab -->
+          <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="paymentsTab">
+            <p>Payments content goes here.</p>
+          </div>
+          <!-- Visits Tab -->
+          <div class="tab-pane fade" id="visits" role="tabpanel" aria-labelledby="visitsTab">
+            <p>Visits content goes here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
   <!-- Bootstrap Modal for Notifications -->
   <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
     <div class="modal-dialog">

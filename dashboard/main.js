@@ -19,7 +19,7 @@ $(document).ready(function () {
     }
   }
 
-  // Initialize Flatpickr
+  // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
     defaultDate: "2025-03-28",
@@ -28,6 +28,15 @@ $(document).ready(function () {
     }
   });
   console.log("🟢 Flatpickr Initialized for #dateFilter with default date: 28 Mar 2025");
+
+  // Initialize Flatpickr for Patient DOB in Modal
+  flatpickr("#patientDOBInput", {
+    dateFormat: "Y-m-d",
+    maxDate: "today",
+    onChange: function (selectedDates, dateStr) {
+      console.log("📅 Patient DOB Changed - Selected date:", dateStr);
+    }
+  });
 
   // Get Authentication Headers
   function getAuthHeaders() {
@@ -64,7 +73,7 @@ $(document).ready(function () {
       url: `${API_BASE_URL}/users/profile/`,
       type: "GET",
       headers: { "Authorization": `Token ${token}` },
-      success: function (data) { // Fixed typo from successA to success
+      success: function (data) {
         console.log("🟢 User Profile Fetched Successfully:", data);
         adjustUIForRole(userType, roleLevel);
         if (data.doctor_code) {
@@ -98,7 +107,7 @@ $(document).ready(function () {
     searchInput.show();
     dateFilter.show();
     dashboardDropdown.show();
-    logoutLink.show(); // Ensure logout is visible
+    logoutLink.show();
 
     const role = `${userType}-${roleLevel}`.toLowerCase();
     switch (role) {
@@ -168,8 +177,6 @@ $(document).ready(function () {
     }
 
     console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
-
-    // Re-bind logout event after UI adjustment
     bindLogoutEvent();
   }
 
@@ -183,7 +190,7 @@ $(document).ready(function () {
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/users/logout/`, // Consistent with API_BASE_URL
+      url: `${API_BASE_URL}/users/logout/`,
       type: "POST",
       headers: headers,
       success: function () {
@@ -195,7 +202,7 @@ $(document).ready(function () {
       },
       error: function (xhr) {
         console.error("❌ Logout failed:", xhr.status, xhr.responseText);
-        forceLogout(); // Fallback to force logout on failure
+        forceLogout();
       }
     });
   }
@@ -212,27 +219,73 @@ $(document).ready(function () {
   // Bind Logout Event
   function bindLogoutEvent() {
     const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
-    logoutLink.off('click').on('click', function (e) { // Prevent multiple bindings
+    logoutLink.off('click').on('click', function (e) {
       e.preventDefault();
       console.log("🖱️ Logout Clicked");
       logoutUser();
     });
   }
 
-  // Button Actions (adjusted to match HTML)
+  // Handle New Button Click to Open Modal
   $(".navbar-top .btn:contains('New')").click(function () {
     console.log("🖱️ New Button Clicked");
-    showNotification("New action triggered. (Placeholder)", "success");
+    $('#newActionModal').modal('show');
   });
 
+  // Handle Add Patient Form Submission
+  $("#addPatientForm").submit(function (e) {
+    e.preventDefault();
+    const patientData = {
+      first_name: $("#patientFirstName").val(),
+      last_name: $("#patientLastName").val(),
+      date_of_birth: $("#patientDOBInput").val(),
+      gender: $("#patientGender").val(),
+      contact_number: $("#patientContact").val()
+    };
+
+    $.ajax({
+      url: `${API_BASE_URL}/patients/create/`, // Adjust to your actual API endpoint
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(patientData),
+      contentType: "application/json",
+      success: function (data) {
+        console.log("✅ Patient Created Successfully:", data);
+        // Update patient details in the modal
+        $("#patientName").text(`${data.first_name} ${data.last_name}`);
+        $("#patientDOB").text(`DOB: ${data.date_of_birth}`);
+        $("#patientInstances").text(`Instances: ${data.instances || '0'}`);
+        showNotification("Patient added successfully!", "success");
+        // Clear form
+        $("#addPatientForm")[0].reset();
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to Add Patient:", xhr.responseJSON || xhr.statusText);
+        showNotification("Failed to add patient. Please try again.", "danger");
+      }
+    });
+  });
+
+  // Handle Add Bills Form Submission (Placeholder)
+  $("#addBillsForm").submit(function (e) {
+    e.preventDefault();
+    console.log("🖱️ Add Bill Submitted");
+    showNotification("Bill added successfully! (Placeholder)", "success");
+  });
+
+  // Handle Add Service Form Submission (Placeholder)
+  $("#addServiceForm").submit(function (e) {
+    e.preventDefault();
+    console.log("🖱️ Add Service Submitted");
+    showNotification("Service added successfully! (Placeholder)", "success");
+  });
+
+  // Button Actions
   $(".navbar-top .nav-link:contains('Support')").click(function (e) {
     e.preventDefault();
     console.log("🖱️ Support Button Clicked");
     showNotification("Support action triggered. (Placeholder)", "success");
   });
-
-  // Remove unused handlers
-  // $("#searchPatientBtn"), $("#uploadPatientListBtn"), $("#viewReportsBtn") not in HTML
 
   // Initialize
   console.log("🚀 Initializing Dashboard...");
