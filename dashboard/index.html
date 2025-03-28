@@ -218,7 +218,9 @@
   font-size: 11px;
   border: none;
   display: flex;
-  align-items: center;
+  flex-direction: column; /* Stack icon and text vertically */
+  align-items: center; /* Center items horizontally */
+  justify-content: center; /* Center items vertically */
   white-space: nowrap;
 }
 
@@ -229,8 +231,10 @@
 
 #newActionModal .modal-header .nav-tabs .nav-link i {
   font-size: 13px;
-  margin-right: 4px;
+  margin-bottom: 3px; /* Add space between icon and text */
+  margin-right: 0; /* Remove right margin since we're stacking vertically */
 }
+
 
 #newActionModal .modal-header .btn-close {
   font-size: 13px;
