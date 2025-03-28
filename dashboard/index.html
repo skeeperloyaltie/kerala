@@ -139,27 +139,28 @@
       font-weight: 500;
     }
     /* Modal Styling */
-.modal-dialog-centered-custom {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 60px);
-  margin: 30px auto;
-}
+    .modal-dialog-centered-custom {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 60px); /* Changed back to 100vh from 200vh */
+      margin: 30px auto;
+  }
 #newActionModal .modal-content {
-  font-size: 11px; /* Increased from 10px to 11px */
+  font-size: 11px;
   border-radius: 8px;
-  width: 100%;
-  max-width: 1600px; /* Increased from 1400px to 1600px */
-  max-height: 90vh; /* Added to control height */
+  width: 1600px; /* Fixed width set here (removed max-width) */
+  height: 800px; /* Fixed height set here (removed max-height) */
+  overflow-y: auto; /* Added to handle content overflow */
 }
 #newActionModal .modal-header {
   background-color: #1a2a6c;
   color: white;
-  padding: 6px 12px; /* Slightly increased from 5px 10px */
-  height: 44px; /* Increased from 40px */
+  padding: 6px 12px;
+  height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between; /* Added to space out left and right content */
 }
 #newActionModal .modal-header .patient-details {
   display: flex;
@@ -192,17 +193,19 @@
 }
 #newActionModal .modal-header .nav-tabs {
   border: none;
-  margin-left: auto;
   display: flex;
   align-items: center;
+  flex-wrap: nowrap; /* Ensures tabs stay on one line */
+  margin-left: 20px; /* Adds space between patient details and tabs */
 }
 #newActionModal .modal-header .nav-tabs .nav-link {
   color: white;
-  padding: 3px 7px; /* Slightly increased from 2px 6px */
-  font-size: 11px; /* Increased from 10px */
+  padding: 3px 7px;
+  font-size: 11px;
   border: none;
   display: flex;
   align-items: center;
+  white-space: nowrap; /* Prevents tab text from wrapping */
 }
 #newActionModal .modal-header .nav-tabs .nav-link.active {
   background-color: rgba(255, 255, 255, 0.2);
@@ -213,8 +216,8 @@
   margin-right: 4px; /* Slightly increased from 3px */
 }
 #newActionModal .modal-header .btn-close {
-  font-size: 13px; /* Increased from 12px */
-  margin-left: 6px; /* Slightly increased from 5px */
+  font-size: 13px;
+  margin-left: 10px; /* Increased from 6px for better spacing */
 }
 #newActionModal .modal-body {
   padding: 12px; /* Slightly increased from 10px */
@@ -238,13 +241,15 @@
 }
 
 /* Responsive Adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   #newActionModal .modal-content {
-      max-width: 95%;
+      width: 95%; /* Overrides fixed width for smaller screens */
+      height: 90vh; /* Overrides fixed height for smaller screens */
   }
-}
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
+  #newActionModal .modal-header .nav-tabs {
+      margin-left: 10px; /* Reduced spacing on smaller screens */
+  }
       .navbar-top .nav-link, .navbar-secondary .nav-link {
         font-size: 10px;
       }
