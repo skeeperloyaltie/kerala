@@ -161,26 +161,48 @@ $(document).ready(function () {
 
     console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
   }
+// Button Actions
+$("#newBtn").click(function () {
+  console.log("🖱️ New Button Clicked");
+  showNotification("New action triggered. (Placeholder)", "success");
+  // Add logic to open a modal for creating a new appointment or patient
+});
 
-  // Button Actions (restored and adjusted)
-  $(".navbar-top .btn:contains('New')").click(function () {
-    console.log("🖱️ New Button Clicked");
-    showNotification("New action triggered. (Placeholder)", "success");
-  });
+$("#searchPatientBtn").click(function () {
+  console.log("🖱️ Search Patient Button Clicked");
+  showNotification("Search Patient action triggered. (Placeholder)", "success");
+  // Add logic to open a search modal or redirect to a search page
+});
 
-  $("#supportBtn").click(function () {
-    console.log("🖱️ Support Button Clicked");
-    showNotification("Support action triggered. (Placeholder)", "success");
-  });
+$("#supportBtn").click(function () {
+  console.log("🖱️ Support Button Clicked");
+  showNotification("Support action triggered. (Placeholder)", "success");
+  // Add logic to open a support modal or redirect to support page
+});
 
-  // Logout (assuming a logout link/button exists)
-  $("#logoutBtn").click(function (e) {
-    e.preventDefault();
-    console.log("🖱️ Logout Button Clicked");
-    localStorage.clear();
-    console.log("🗑️ Cleared localStorage");
-    showNotification("Logged out successfully.", "success", "../login/login.html");
-  });
+$("#uploadPatientListBtn").click(function () {
+  console.log("🖱️ Upload Patient List Button Clicked");
+  showNotification("Upload Patient List action triggered. (Placeholder)", "success");
+  // Add logic to handle file upload
+});
+
+$("#viewReportsBtn").click(function () {
+  console.log("🖱️ View Reports Button Clicked");
+  showNotification("Switching to Reports section.", "success");
+  $(".section").addClass("d-none").removeClass("active");
+  $("#reportsSection").removeClass("d-none").addClass("active");
+  console.log("✅ Displayed Reports section");
+  $(".navbar-custom .nav-link").removeClass("active");
+  console.log("✅ Cleared active nav link");
+});
+
+$("#logoutBtn").click(function (e) {
+  e.preventDefault();
+  console.log("🖱️ Logout Button Clicked");
+  localStorage.clear();
+  console.log("🗑️ Cleared localStorage");
+  showNotification("Logged out successfully.", "success", "../login/login.html");
+});
 
   // Initialize
   console.log("🚀 Initializing Dashboard...");
