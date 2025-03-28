@@ -247,6 +247,7 @@
   overflow-y: auto;
   overflow-x: hidden; /* Prevent horizontal overflow */
   width: 100%; /* Ensure body spans full width */
+  position: relative;
 }
 
 #newActionModal .modal-body .form-label {
@@ -304,6 +305,42 @@
       font-size: 10px;
       padding: 2px 4px;
   }
+}
+
+/* Autocomplete Dropdown Styling */
+.autocomplete-dropdown {
+  position: absolute;
+  width: 100%;
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 11px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.autocomplete-dropdown li {
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.autocomplete-dropdown li:hover {
+  background-color: #f8f9fa;
+}
+
+/* Sticky Footer Styling */
+.sticky-footer {
+  position: sticky;
+  bottom: 0;
+  background-color: #fff;
+  padding: 10px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+  z-index: 10;
 }
   </style>
 </head>
@@ -555,42 +592,181 @@
               <p>ABHA content goes here.</p>
             </div>
             <!-- Add New Patient Tab -->
-            <div class="tab-pane fade show active" id="addPatient" role="tabpanel" aria-labelledby="addPatientTab">
-              <form id="addPatientForm">
-                <div class="row">
-                  <div class="col-md-6">
-                    <label for="patientFirstName" class="form-label">First Name</label>
-                    <input type="text" class="form-control form-control-sm" id="patientFirstName" required>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="patientLastName" class="form-label">Last Name</label>
-                    <input type="text" class="form-control form-control-sm" id="patientLastName" required>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-md-6">
-                    <label for="patientDOBInput" class="form-label">Date of Birth</label>
-                    <input type="text" class="form-control form-control-sm flatpickr-input" id="patientDOBInput" readonly required>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="patientGender" class="form-label">Gender</label>
-                    <select class="form-select form-select-sm" id="patientGender" required>
-                      <option value="" disabled selected>Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-md-12">
-                    <label for="patientContact" class="form-label">Contact Number</label>
-                    <input type="text" class="form-control form-control-sm" id="patientContact" required>
-                  </div>
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm mt-2">Add Patient</button>
-              </form>
-            </div>
+            <!-- Add New Patient Tab -->
+<div class="tab-pane fade show active" id="addPatient" role="tabpanel" aria-labelledby="addPatientTab">
+  <form id="addPatientForm">
+    <!-- Row 1: Patient Name and Phone Number -->
+    <div class="row mb-3">
+      <div class="col-md-4 position-relative">
+        <label for="patientFirstName" class="form-label">First Name</label>
+        <input type="text" class="form-control form-control-sm" id="patientFirstName" required autocomplete="off">
+        <ul class="dropdown-menu autocomplete-dropdown" id="firstNameSuggestions" style="display: none;"></ul>
+      </div>
+      <div class="col-md-4 position-relative">
+        <label for="patientLastName" class="form-label">Last Name</label>
+        <input type="text" class="form-control form-control-sm" id="patientLastName" required autocomplete="off">
+        <ul class="dropdown-menu autocomplete-dropdown" id="lastNameSuggestions" style="display: none;"></ul>
+      </div>
+      <div class="col-md-4">
+        <label for="patientPhone" class="form-label">Phone Number</label>
+        <input type="text" class="form-control form-control-sm" id="patientPhone" required>
+      </div>
+    </div>
+
+    <!-- Row 2: Gender, Age, Preferred Language -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label for="patientGender" class="form-label">Gender</label>
+        <select class="form-select form-select-sm" id="patientGender" required>
+          <option value="" disabled selected>Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="patientAge" class="form-label">Age (Years)</label>
+        <input type="number" class="form-control form-control-sm" id="patientAge" required>
+      </div>
+      <div class="col-md-4">
+        <label for="preferredLanguage" class="form-label">Preferred Language</label>
+        <select class="form-select form-select-sm" id="preferredLanguage">
+          <option value="" disabled selected>Select Language</option>
+          <option value="English">English</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Telugu">Telugu</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 3: City, Address -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label for="patientCity" class="form-label">City</label>
+        <input type="text" class="form-control form-control-sm" id="patientCity">
+      </div>
+      <div class="col-md-8">
+        <label for="patientAddress" class="form-label">Address</label>
+        <input type="text" class="form-control form-control-sm" id="patientAddress">
+      </div>
+    </div>
+
+    <!-- Row 4: Pin -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label for="patientPin" class="form-label">Pin</label>
+        <input type="text" class="form-control form-control-sm" id="patientPin">
+      </div>
+    </div>
+
+    <!-- Row 5: Marital Status, Since, Blood Group -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label for="maritalStatus" class="form-label">Marital Status</label>
+        <select class="form-select form-select-sm" id="maritalStatus">
+          <option value="" disabled selected>Select Status</option>
+          <option value="Single">Single</option>
+          <option value="Married">Married</option>
+          <option value="Divorced">Divorced</option>
+          <option value="Widowed">Widowed</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="maritalSince" class="form-label">Since</label>
+        <input type="text" class="form-control form-control-sm flatpickr-input" id="maritalSince" readonly>
+      </div>
+      <div class="col-md-4">
+        <label for="bloodGroup" class="form-label">Blood Group</label>
+        <select class="form-select form-select-sm" id="bloodGroup">
+          <option value="" disabled selected>Select Blood Group</option>
+          <option value="A+">A+</option>
+          <option value="A-">A-</option>
+          <option value="B+">B+</option>
+          <option value="B-">B-</option>
+          <option value="AB+">AB+</option>
+          <option value="AB-">AB-</option>
+          <option value="O+">O+</option>
+          <option value="O-">O-</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 6: Referred By, Doctor Name and Specialty -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label for="referredBy" class="form-label">Referred By</label>
+        <input type="text" class="form-control form-control-sm" id="referredBy">
+      </div>
+      <div class="col-md-4">
+        <label for="doctorName" class="form-label">Doctor Name</label>
+        <input type="text" class="form-control form-control-sm" id="doctorName">
+      </div>
+      <div class="col-md-4">
+        <label for="doctorSpecialty" class="form-label">Specialty</label>
+        <input type="text" class="form-control form-control-sm" id="doctorSpecialty">
+      </div>
+    </div>
+
+    <!-- Row 7: Channel, CIO -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="channel" class="form-label">Channel (How did the patient hear about you?)</label>
+        <select class="form-select form-select-sm" id="channel">
+          <option value="" disabled selected>Select Channel</option>
+          <option value="Website">Website</option>
+          <option value="Referral">Referral</option>
+          <option value="Advertisement">Advertisement</option>
+          <option value="Social Media">Social Media</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="cio" class="form-label">CIO</label>
+        <input type="text" class="form-control form-control-sm" id="cio">
+      </div>
+    </div>
+
+    <!-- Row 8: Occupation, Tag -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="occupation" class="form-label">Occupation</label>
+        <input type="text" class="form-control form-control-sm" id="occupation">
+      </div>
+      <div class="col-md-6">
+        <label for="tag" class="form-label">Tag</label>
+        <input type="text" class="form-control form-control-sm" id="tag">
+      </div>
+    </div>
+
+    <!-- Row 9: Mobile 2, Aadhar Number -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="mobile2" class="form-label">Mobile 2</label>
+        <input type="text" class="form-control form-control-sm" id="mobile2">
+      </div>
+      <div class="col-md-6">
+        <label for="aadharNumber" class="form-label">Aadhar Number</label>
+        <input type="text" class="form-control form-control-sm" id="aadharNumber">
+      </div>
+    </div>
+
+    <!-- Row 10: Image Upload -->
+    <div class="row mb-3">
+      <div class="col-md-12">
+        <label for="patientImage" class="form-label">Upload Image</label>
+        <input type="file" class="form-control form-control-sm" id="patientImage" accept="image/*">
+      </div>
+    </div>
+
+    <!-- Sticky Footer with Buttons -->
+    <div class="sticky-footer">
+      <button type="submit" class="btn btn-primary btn-sm me-2" id="addAndCreateBill">Add & Create Bill</button>
+      <button type="submit" class="btn btn-primary btn-sm" id="addAndCreateAppointment">Add & Create Appointment</button>
+    </div>
+  </form>
+</div>
             <!-- Add Bills Tab -->
             <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
               <form id="addBillsForm">
@@ -668,6 +844,90 @@
         }
       });
     });
+
+
+    // Mock patient data (simulating a database)
+const patients = [
+{ firstName: "Gopi", lastName: "Krishnan", phone: "9876543210" },
+{ firstName: "Gopi", lastName: "Nair", phone: "9123456789" },
+{ firstName: "Suresh", lastName: "Kumar", phone: "9988776655" },
+{ firstName: "Anita", lastName: "Gopi", phone: "9876541230" },
+{ firstName: "Gopi", lastName: "Sharma", phone: "9765432109" }
+];
+
+// Autocomplete for First Name
+const firstNameInput = document.getElementById('patientFirstName');
+const firstNameSuggestions = document.getElementById('firstNameSuggestions');
+const lastNameInput = document.getElementById('patientLastName');
+const lastNameSuggestions = document.getElementById('lastNameSuggestions');
+
+firstNameInput.addEventListener('input', function () {
+const query = this.value.toLowerCase();
+firstNameSuggestions.innerHTML = '';
+firstNameSuggestions.style.display = 'none';
+
+if (query.length > 0) {
+    const matches = patients.filter(patient => patient.firstName.toLowerCase().includes(query));
+    if (matches.length > 0) {
+        matches.forEach(patient => {
+            const li = document.createElement('li');
+            li.classList.add('dropdown-item');
+            li.textContent = `${patient.firstName} ${patient.lastName} (${patient.phone})`;
+            li.addEventListener('click', () => {
+                firstNameInput.value = patient.firstName;
+                lastNameInput.value = patient.lastName;
+                document.getElementById('patientPhone').value = patient.phone;
+                firstNameSuggestions.style.display = 'none';
+                lastNameSuggestions.style.display = 'none';
+            });
+            firstNameSuggestions.appendChild(li);
+        });
+        firstNameSuggestions.style.display = 'block';
+    }
+}
+});
+
+// Autocomplete for Last Name
+lastNameInput.addEventListener('input', function () {
+const query = this.value.toLowerCase();
+lastNameSuggestions.innerHTML = '';
+lastNameSuggestions.style.display = 'none';
+
+if (query.length > 0) {
+    const matches = patients.filter(patient => patient.lastName.toLowerCase().includes(query));
+    if (matches.length > 0) {
+        matches.forEach(patient => {
+            const li = document.createElement('li');
+            li.classList.add('dropdown-item');
+            li.textContent = `${patient.firstName} ${patient.lastName} (${patient.phone})`;
+            li.addEventListener('click', () => {
+                firstNameInput.value = patient.firstName;
+                lastNameInput.value = patient.lastName;
+                document.getElementById('patientPhone').value = patient.phone;
+                firstNameSuggestions.style.display = 'none';
+                lastNameSuggestions.style.display = 'none';
+            });
+            lastNameSuggestions.appendChild(li);
+        });
+        lastNameSuggestions.style.display = 'block';
+    }
+}
+});
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function (e) {
+if (!firstNameInput.contains(e.target) && !firstNameSuggestions.contains(e.target)) {
+    firstNameSuggestions.style.display = 'none';
+}
+if (!lastNameInput.contains(e.target) && !lastNameSuggestions.contains(e.target)) {
+    lastNameSuggestions.style.display = 'none';
+}
+});
+
+// Initialize Flatpickr for date fields
+flatpickr("#maritalSince", {
+dateFormat: "Y-m-d"
+});
   </script>
 </body>
 </html>
