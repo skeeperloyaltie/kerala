@@ -285,7 +285,7 @@ $("#addPatientForm").submit(function (e) {
   };
 
   $.ajax({
-    url: `${API_BASE_URL}/patients-and-appointments/create/`,
+    url: `${API_BASE_URL}/appointments/patients-and-appointments/create/`,
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(patientData),
