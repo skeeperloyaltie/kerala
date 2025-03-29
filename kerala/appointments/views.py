@@ -647,3 +647,89 @@ class PatientHistoryView(APIView):
         except Exception as e:
             logger.error(f"Error fetching history for patient {patient_id}: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+        
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from .serializers import CreatePatientAndAppointmentSerializer, PatientSerializer, AppointmentSerializer
+from .models import Patient, Appointment
+from users.models import Receptionist
+
+class CreatePatientAndAppointmentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = CreatePatientAndAppointmentSerializer(data=request.data)
+        if serializer.is_valid():
+            # Create the patient
+            patient_data = {
+                'first_name': serializer.validated_data['first_name'],
+                'last_name': serializer.validated_data['last_name'],
+                'gender': serializer.validated_data['gender'],
+                'date_of_birth': serializer.validated_data['date_of_birth'],
+                'father_name': serializer.validated_data['father_name'],
+                'mobile_number': serializer.validated_data['mobile_number'],
+                'alternate_mobile_number': serializer.validated_data.get('alternate_mobile_number'),
+                'aadhar_number': serializer.validated_data.get('aadhar_number'),
+                'preferred_language': serializer.validated_data.get('preferred_language'),
+                'marital_status': serializer.validated_data.get('marital_status'),
+                'marital_since': serializer.validated_data.get('marital_since'),
+                'referred_by': serializer.validated_data.get('referred_by'),
+                'channel': serializer.validated_data.get('channel'),
+                'cio': serializer.validated_data.get('cio'),
+                'occupation': serializer.validated_data.get('occupation'),
+                'tag': serializer.validated_data.get('tag'),
+                'blood_group': serializer.validated_data.get('blood_group'),
+                'address': serializer.validated_data.get('address'),
+                'city': serializer.validated_data.get('city'),
+                'pincode': serializer.validated_data.get('pincode'),
+                'email': serializer.validated_data.get('email'),
+                'known_allergies': serializer.validated_data.get('known_allergies'),
+                'current_medications': serializer.validated_data.get('current_medications'),
+                'past_medical_history': serializer.validated_data.get('past_medical_history'),
+                'specific_notes': serializer.validated_data.get('specific_notes'),
+                'primary_doctor': serializer.validated_data.get('primary_doctor'),
+                'emergency_contact_name': serializer.validated_data.get('emergency_contact_name'),
+                'emergency_contact_relationship': serializer.validated_data.get('emergency_contact_relationship'),
+                'emergency_contact_number': serializer.validated_data.get('emergency_contact_number'),
+                'insurance_provider': serializer.validated_data.get('insurance_provider'),
+                'policy_number': serializer.validated_data.get('policy_number'),
+                'payment_preference': serializer.validated_data.get('payment_preference'),
+                'admission_type': serializer.validated_data.get('admission_type'),
+                'hospital_code': serializer.validated_data.get('hospital_code'),
+            }
+            patient_serializer = PatientSerializer(data=patient_data)
+            if patient_serializer.is_valid():
+                patient = patient_serializer.save()
+
+                # Create the appointment
+                appointment_data = {
+                    'patient': patient.id,
+                    'doctor': serializer.validated_data.get('doctor'),
+                    'appointment_date': serializer.validated_data['appointment_date'],
+                    'notes': serializer.validated_data.get('notes'),
+                    'is_emergency': serializer.validated_data.get('is_emergency', False),
+                    'created_by': request.user.id,
+                    'status': 'scheduled',
+                }
+                # Set receptionist if the user is a receptionist
+                try:
+                    receptionist = Receptionist.objects.get(user=request.user)
+                    appointment_data['receptionist'] = receptionist.id
+                except Receptionist.DoesNotExist:
+                    appointment_data['receptionist'] = None
+
+                appointment_serializer = AppointmentSerializer(data=appointment_data)
+                if appointment_serializer.is_valid():
+                    appointment = appointment_serializer.save()
+                    return Response({
+                        'patient': patient_serializer.data,
+                        'appointment': appointment_serializer.data
+                    }, status=status.HTTP_201_CREATED)
+                return Response(appointment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(patient_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

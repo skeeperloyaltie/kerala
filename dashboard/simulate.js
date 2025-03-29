@@ -1,6 +1,12 @@
 
     //simulate.js
     // Mock patient data (simulating a database)
+    // Initialize Flatpickr for appointment date
+flatpickr("#appointmentDate", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    minDate: "today"
+});
     const patients = [
         { firstName: "Gopi", lastName: "Krishnan", phone: "9876543210" },
         { firstName: "Gopi", lastName: "Nair", phone: "9123456789" },

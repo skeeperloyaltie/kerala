@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     CreateAppointmentView,
     AppointmentListView,
+    CreatePatientAndAppointmentView,
     CreatePatientView,
     DoctorListView,
     GetPatientDetailsView,
@@ -28,5 +29,7 @@ urlpatterns = [
     path('reschedule/', RescheduleAppointmentView.as_view(), name='bulk-reschedule-appointment'),
     path('search/', SearchView.as_view(), name='search-appointment'),
     path('patients/<str:patient_id>/history/', PatientHistoryView.as_view(), name='patient-history'),
+    path('patients-and-appointments/create/', CreatePatientAndAppointmentView.as_view(), name='create-patient-and-appointment'),
+
 
 ]

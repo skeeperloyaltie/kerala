@@ -20,11 +20,21 @@ class Patient(models.Model):
     father_name = models.CharField(max_length=255)
     address = models.TextField(null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
-    pincode = models.CharField(max_length=6, null=True, blank=True)  # Assuming 6-digit pincode
+    pincode = models.CharField(max_length=6, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     mobile_number = models.CharField(max_length=15)
     alternate_mobile_number = models.CharField(max_length=15, null=True, blank=True)
     aadhar_number = models.CharField(max_length=12, null=True, blank=True, unique=True)
+
+    # New Fields from Modal
+    preferred_language = models.CharField(max_length=50, null=True, blank=True)
+    marital_status = models.CharField(max_length=20, choices=[('Single', 'Single'), ('Married', 'Married'), ('Divorced', 'Divorced'), ('Widowed', 'Widowed')], null=True, blank=True)
+    marital_since = models.DateField(null=True, blank=True)
+    referred_by = models.CharField(max_length=255, null=True, blank=True)
+    channel = models.CharField(max_length=50, choices=[('Website', 'Website'), ('Referral', 'Referral'), ('Advertisement', 'Advertisement'), ('Social Media', 'Social Media'), ('Other', 'Other')], null=True, blank=True)
+    cio = models.CharField(max_length=100, null=True, blank=True)
+    occupation = models.CharField(max_length=100, null=True, blank=True)
+    tag = models.CharField(max_length=100, null=True, blank=True)
 
     # Medical Information
     blood_group = models.CharField(max_length=5, null=True, blank=True)
@@ -44,8 +54,8 @@ class Patient(models.Model):
     policy_number = models.CharField(max_length=50, null=True, blank=True)
     payment_preference = models.CharField(max_length=20, choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Insurance', 'Insurance')], null=True, blank=True)
 
-    admission_type = models.CharField(max_length=2, choices=ADMISSION_TYPE_CHOICES, default='OU')  # Default to Outpatient
-    hospital_code = models.CharField(max_length=3, default='115')  # Default hospital code
+    admission_type = models.CharField(max_length=2, choices=ADMISSION_TYPE_CHOICES, default='OU')
+    hospital_code = models.CharField(max_length=3, default='115')
 
     class Meta:
         unique_together = ('first_name', 'mobile_number')
@@ -68,7 +78,6 @@ class Patient(models.Model):
         return age
 
     def generate_patient_id(self):
-        """Generate patient ID in format KH[AdmissionType][HospitalCode][PatientNumber]"""
         prefix = f"KH{self.admission_type}{self.hospital_code}"
         last_patient = Patient.objects.filter(patient_id__startswith=prefix).order_by('-patient_id').first()
         if last_patient:
@@ -77,7 +86,6 @@ class Patient(models.Model):
         else:
             new_number = 1
         return f"{prefix}{new_number:03d}"
-
 
 
 class Appointment(models.Model):
@@ -96,7 +104,7 @@ class Appointment(models.Model):
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Scheduled')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')  # Changed default to 'scheduled'
     appointment_date = models.DateTimeField()
     notes = models.TextField(null=True, blank=True)
     is_emergency = models.BooleanField(default=False)
