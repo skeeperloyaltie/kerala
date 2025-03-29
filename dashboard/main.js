@@ -1,3 +1,4 @@
+// main.js
 $(document).ready(function () {
   const API_BASE_URL = "http://104.37.187.187:8000"; // Adjust to your Django API
 
@@ -162,7 +163,6 @@ $(document).ready(function () {
 
     console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
     bindLogoutEvent();
-    bindModalActions();
   }
 
   // Logout Function
@@ -213,40 +213,30 @@ $(document).ready(function () {
     });
   }
 
-  // Bind Modal Actions
-  function bindModalActions() {
-    // Map actions to tabs
-    const actionToTabMap = {
-      "new": "addPatientTab",
-      "all-bills": "billsTab",
-      "add-services": "addServiceTab", // Assuming an Add Service tab will be added
-      "patient-q": "addPatientTab",
-      "tele-consults": "visitsTab",
-      "support": "profileTab"
-    };
-
-    // Bind click events for all actionable elements
-    $("[data-action]").off('click').on('click', function (e) {
-      e.preventDefault();
-      const action = $(this).data("action");
-      console.log(`🖱️ Action Triggered: ${action}`);
-
-      // Open modal and switch to the appropriate tab
-      const tabId = actionToTabMap[action] || "addPatientTab";
-      $(`#${tabId}`).tab('show');
-      $('#newActionModal').modal('show');
-    });
-  }
-
   // Handle Add Patient Form Submission
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
     const patientData = {
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
-      date_of_birth: $("#patientDOBInput").val(),
       gender: $("#patientGender").val(),
-      contact_number: $("#patientContact").val()
+      age: $("#patientAge").val(),
+      phone: $("#patientPhone").val(),
+      city: $("#patientCity").val(),
+      address: $("#patientAddress").val(),
+      pin: $("#patientPin").val(),
+      marital_status: $("#maritalStatus").val(),
+      marital_since: $("#maritalSince").val(),
+      blood_group: $("#bloodGroup").val(),
+      referred_by: $("#referredBy").val(),
+      doctor_name: $("#doctorName").val(),
+      doctor_specialty: $("#doctorSpecialty").val(),
+      channel: $("#channel").val(),
+      cio: $("#cio").val(),
+      occupation: $("#occupation").val(),
+      tag: $("#tag").val(),
+      mobile2: $("#mobile2").val(),
+      aadhar_number: $("#aadharNumber").val()
     };
 
     $.ajax({
@@ -259,9 +249,8 @@ $(document).ready(function () {
         console.log("✅ Patient Created Successfully:", data);
         // Update patient details in the modal
         const fullName = `${data.first_name} ${data.last_name}`;
-        const dob = new Date(data.date_of_birth);
-        const age = new Date().getFullYear() - dob.getFullYear();
-        const patientId = data.id || "N/A";
+        const age = data.age || 'N/A';
+        const patientId = data.id || 'N/A';
         $("#patientName").text(fullName);
         $("#patientMeta").text(`${data.gender} | ${age} Years | ${patientId}`);
         alert("Patient added successfully!");
@@ -279,6 +268,13 @@ $(document).ready(function () {
     e.preventDefault();
     console.log("🖱️ Add Bill Submitted");
     alert("Bill added successfully! (Placeholder)");
+  });
+
+  // Handle Add Payments Form Submission (Placeholder)
+  $("#addPaymentsForm").submit(function (e) {
+    e.preventDefault();
+    console.log("🖱️ Add Payment Submitted");
+    alert("Payment added successfully! (Placeholder)");
   });
 
   // Initialize

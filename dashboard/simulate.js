@@ -1,4 +1,5 @@
 
+    //simulate.js
     // Mock patient data (simulating a database)
     const patients = [
         { firstName: "Gopi", lastName: "Krishnan", phone: "9876543210" },
