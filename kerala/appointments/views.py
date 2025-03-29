@@ -705,8 +705,6 @@ class CreatePatientAndAppointmentView(APIView):
             patient_serializer = PatientSerializer(data=patient_data)
             if patient_serializer.is_valid():
                 patient = patient_serializer.save()
-
-                # Create the appointment
                 appointment_data = {
                     'patient': patient.id,
                     'doctor': serializer.validated_data.get('doctor'),
@@ -716,7 +714,6 @@ class CreatePatientAndAppointmentView(APIView):
                     'created_by': request.user.id,
                     'status': 'scheduled',
                 }
-                # Set receptionist if the user is a receptionist
                 try:
                     receptionist = Receptionist.objects.get(user=request.user)
                     appointment_data['receptionist'] = receptionist.id
@@ -730,6 +727,9 @@ class CreatePatientAndAppointmentView(APIView):
                         'patient': patient_serializer.data,
                         'appointment': appointment_serializer.data
                     }, status=status.HTTP_201_CREATED)
+                logger.error(f"Appointment serializer errors: {appointment_serializer.errors}")
                 return Response(appointment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Patient serializer errors: {patient_serializer.errors}")
             return Response(patient_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"CreatePatientAndAppointment serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

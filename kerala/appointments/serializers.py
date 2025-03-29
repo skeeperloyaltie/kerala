@@ -170,16 +170,13 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     hospital_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
 
     # Appointment fields
-    doctor = serializers.IntegerField(required=False, allow_null=True)
-    appointment_date = serializers.DateTimeField(required=True)  # Use DateTimeField instead of CharField
+    doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)
+    appointment_date = serializers.DateTimeField(required=True)  # Correctly defined as DateTimeField
     notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
     is_emergency = serializers.BooleanField(default=False)
 
     def to_internal_value(self, data):
-        # Call the parent class's to_internal_value to validate all fields
         validated_data = super().to_internal_value(data)
-
-        # Since appointment_date is now a DateTimeField, it’s already parsed by the serializer
         appointment_date = validated_data.get('appointment_date')
         if appointment_date:
             KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
@@ -188,7 +185,6 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
             else:  # If aware, convert to Kolkata timezone
                 appointment_date = appointment_date.astimezone(KOLKATA_TZ)
             validated_data['appointment_date'] = appointment_date
-
         return validated_data
 
     def validate_date_of_birth(self, value):
@@ -204,5 +200,4 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
         return value
 
     def validate(self, data):
-        # Additional validation if needed
         return data
