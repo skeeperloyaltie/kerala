@@ -1,5 +1,4 @@
-
-//main.js
+// main.js
 $(document).ready(function () {
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
@@ -13,14 +12,8 @@ $(document).ready(function () {
   });
   console.log("🟢 Flatpickr Initialized for #dateFilter with default date: 28 Mar 2025");
 
-  // Initialize Flatpickr for Patient DOB in Modal
-  flatpickr("#patientDOBInput", {
-    dateFormat: "Y-m-d",
-    maxDate: "today",
-    onChange: function (selectedDates, dateStr) {
-      console.log("📅 Patient DOB Changed - Selected date:", dateStr);
-    }
-  });
+  // Remove redundant Flatpickr initialization for #patientDOBInput since it's handled by flatpicker.js
+  // flatpickr("#patientDOBInput", { ... });
 
   // Get Authentication Headers
   function getAuthHeaders() {
@@ -215,169 +208,232 @@ $(document).ready(function () {
     });
   }
 
- // Bind Modal Actions
-function bindModalActions() {
-  console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
+  // Bind Modal Actions
+  function bindModalActions() {
+    console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
 
-  // Map actions to tabs
-  const actionToTabMap = {
-    "new": "addPatientTab",
-    "all-bills": "billsTab",
-    "add-services": "addBillsTab", // Map to an existing tab since addServiceTab doesn't exist
-    "patient-q": "addPatientTab",
-    "tele-consults": "visitsTab",
-    "support": "profileTab"
-  };
+    // Map actions to tabs
+    const actionToTabMap = {
+      "new": "addPatientTab",
+      "all-bills": "billsTab",
+      "add-services": "addBillsTab",
+      "patient-q": "addPatientTab",
+      "tele-consults": "visitsTab",
+      "support": "profileTab"
+    };
 
-  // Bind click events for all actionable elements
-  $("[data-action]").off('click').on('click', function (e) {
-    e.preventDefault();
-    const action = $(this).data("action");
-    console.log(`🖱️ Action Triggered: ${action}`);
+    // Bind click events for all actionable elements
+    $("[data-action]").off('click').on('click', function (e) {
+      e.preventDefault();
+      const action = $(this).data("action");
+      console.log(`🖱️ Action Triggered: ${action}`);
 
-    // Get the corresponding tab ID
-    const tabId = actionToTabMap[action] || "addPatientTab";
-    console.log(`🎯 Switching to Tab: ${tabId}`);
+      // Get the corresponding tab ID
+      const tabId = actionToTabMap[action] || "addPatientTab";
+      console.log(`🎯 Switching to Tab: ${tabId}`);
 
-    // Open the modal
-    const modal = $('#newActionModal');
-    modal.modal('show');
+      // Open the modal
+      const modal = $('#newActionModal');
+      modal.modal('show');
 
-    // Switch to the appropriate tab
-    const tabElement = $(`#${tabId}`);
-    if (tabElement.length) {
-      tabElement.tab('show');
-      console.log(`✅ Successfully switched to tab: ${tabId}`);
-    } else {
-      console.error(`❌ Tab with ID ${tabId} not found!`);
-    }
-  });
-}
-
-
-$("#addPatientForm").submit(function (e) {
-  e.preventDefault();
-
-  // Validate required fields
-  const requiredFields = [
-    { id: "patientFirstName", name: "First Name" },
-    { id: "patientLastName", name: "Last Name" },
-    { id: "patientGender", name: "Gender" },
-    { id: "patientDOB", name: "Date of Birth" },
-    { id: "fatherName", name: "Father's Name" },
-    { id: "patientPhone", name: "Phone Number" },
-    { id: "preferredLanguage", name: "Preferred Language" },
-    { id: "maritalStatus", name: "Marital Status" },
-    { id: "paymentPreference", name: "Payment Preference" },
-    { id: "appointmentDate", name: "Appointment Date" }
-  ];
-
-  let errors = [];
-  requiredFields.forEach(field => {
-    const value = $(`#${field.id}`).val();
-    if (!value || value.trim() === "") {
-      errors.push(`${field.name} is required.`);
-    }
-  });
-
-  // Validate date formats
-  const dateOfBirth = $("#patientDOB").val();
-  if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
-    errors.push("Date of Birth must be in YYYY-MM-DD format.");
-  }
-
-  const maritalSince = $("#maritalSince").val();
-  if (maritalSince && !/^\d{4}-\d{2}-\d{2}$/.test(maritalSince)) {
-    errors.push("Marital Since must be in YYYY-MM-DD format.");
-  }
-
-  const appointmentDate = $("#appointmentDate").val();
-  if (appointmentDate && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(appointmentDate)) {
-    errors.push("Appointment Date must be in YYYY-MM-DDTHH:MM:SS format.");
-  }
-
-  if (errors.length > 0) {
-    alert("Please fix the following errors:\n- " + errors.join("\n- "));
-    return;
-  }
-
-  const patientData = {
-    first_name: $("#patientFirstName").val(),
-    last_name: $("#patientLastName").val(),
-    gender: $("#patientGender").val(),
-    date_of_birth: $("#patientDOB").val(),
-    father_name: $("#fatherName").val(),
-    mobile_number: $("#patientPhone").val(),
-    alternate_mobile_number: $("#mobile2").val(),
-    aadhar_number: $("#aadharNumber").val(),
-    preferred_language: $("#preferredLanguage").val(),
-    marital_status: $("#maritalStatus").val(),
-    marital_since: $("#maritalSince").val() || null,
-    referred_by: $("#referredBy").val(),
-    channel: $("#channel").val(),
-    cio: $("#cio").val(),
-    occupation: $("#occupation").val(),
-    tag: $("#tag").val(),
-    blood_group: $("#bloodGroup").val(),
-    address: $("#patientAddress").val(),
-    city: $("#patientCity").val(),
-    pincode: $("#patientPin").val(),
-    known_allergies: $("#knownAllergies").val(),
-    current_medications: $("#currentMedications").val(),
-    past_medical_history: $("#pastMedicalHistory").val(),
-    specific_notes: $("#specificNotes").val(),
-    emergency_contact_name: $("#emergencyContactName").val(),
-    emergency_contact_relationship: $("#emergencyContactRelationship").val(),
-    emergency_contact_number: $("#emergencyContactNumber").val(),
-    insurance_provider: $("#insuranceProvider").val(),
-    policy_number: $("#policyNumber").val(),
-    payment_preference: $("#paymentPreference").val(),
-    admission_type: $("#admissionType").val(),
-    hospital_code: $("#hospitalCode").val(),
-    doctor: $("#doctor").val() || null,
-    appointment_date: $("#appointmentDate").val(),
-    notes: $("#appointmentNotes").val(),
-    is_emergency: false
-  };
-
-  $.ajax({
-    url: `${API_BASE_URL}/appointments/patients-and-appointments/create/`,
-    type: "POST",
-    headers: getAuthHeaders(),
-    data: JSON.stringify(patientData),
-    contentType: "application/json",
-    success: function (data) {
-      console.log("✅ Patient and Appointment Created Successfully:", data);
-      const fullName = `${data.patient.first_name} ${data.patient.last_name}`;
-      const age = data.patient.age || 'N/A';
-      const patientId = data.patient.patient_id || 'N/A';
-      $("#detailsTitle").text(fullName);
-      $("#detailsMeta").text(`${data.patient.gender} | ${age} Years | ${patientId}`);
-
-      updateDetailsSection(data.patient);
-
-      const activeButton = e.originalEvent.submitter.id;
-      if (activeButton === 'addAndCreateBill') {
-        toggleSplitView('addBills');
-        $('#profileTab').tab('show');
-      } else if (activeButton === 'addAndCreateAppointment') {
-        toggleSplitView('addPatient');
-        $('#profileTab').tab('show');
+      // Switch to the appropriate tab
+      const tabElement = $(`#${tabId}`);
+      if (tabElement.length) {
+        tabElement.tab('show');
+        console.log(`✅ Successfully switched to tab: ${tabId}`);
+      } else {
+        console.error(`❌ Tab with ID ${tabId} not found!`);
       }
+    });
+  }
 
-      alert("Patient and appointment added successfully!");
-      $("#addPatientForm")[0].reset();
-      // Reset Flatpickr inputs
-      flatpickr("#patientDOB").clear();
-      flatpickr("#maritalSince").clear();
-      flatpickr("#appointmentDate").clear();
-    },
-    error: function (xhr) {
-      console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
-      alert("Failed to add patient and appointment: " + (xhr.responseJSON ? JSON.stringify(xhr.responseJSON) : "Unknown error"));
+  // Add toggleSplitView function
+  function toggleSplitView(tabId) {
+    const modalBody = $("#modalBody");
+    const sidebarContentArea = $("#sidebarContentArea");
+    const sidebarTabContent = $("#sidebarTabContent");
+
+    // Clear previous sidebar content
+    sidebarTabContent.empty();
+
+    // Add the corresponding tab content to the sidebar
+    if (tabId === "addBills") {
+      sidebarTabContent.html(`
+        <div class="tab-pane fade show active" id="sidebarAddBills" role="tabpanel">
+          <h6>Add Bill for Patient</h6>
+          <form id="sidebarAddBillsForm">
+            <div class="mb-2">
+              <label for="sidebarBillDescription" class="form-label">Description</label>
+              <input type="text" class="form-control form-control-sm" id="sidebarBillDescription" required>
+            </div>
+            <div class="mb-2">
+              <label for="sidebarBillAmount" class="form-label">Amount (₹)</label>
+              <input type="number" class="form-control form-control-sm" id="sidebarBillAmount" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Add Bill</button>
+          </form>
+        </div>
+      `);
+
+      // Bind the form submission for the sidebar bill form
+      $("#sidebarAddBillsForm").off('submit').on('submit', function (e) {
+        e.preventDefault();
+        const billDescription = $("#sidebarBillDescription").val();
+        const billAmount = $("#sidebarBillAmount").val();
+        console.log("🖱️ Sidebar Add Bill Submitted:", { billDescription, billAmount });
+        alert("Bill added successfully from sidebar! (Placeholder)");
+      });
+    } else if (tabId === "addPatient") {
+      sidebarTabContent.html(`
+        <div class="tab-pane fade show active" id="sidebarAddPatient" role="tabpanel">
+          <h6>Patient Details</h6>
+          <p>Patient details will be displayed here after adding.</p>
+        </div>
+      `);
     }
+
+    // Show the sidebar by adding the split-view class
+    modalBody.addClass("split-view");
+    sidebarContentArea.show();
+    console.log(`✅ Split view toggled for tab: ${tabId}`);
+  }
+
+  // Add updateDetailsSection function
+  function updateDetailsSection(patientData) {
+    const fullName = `${patientData.first_name} ${patientData.last_name}`;
+    const age = patientData.age || 'N/A';
+    const patientId = patientData.patient_id || 'N/A';
+    const gender = patientData.gender || 'N/A';
+
+    $("#detailsTitle").text(fullName);
+    $("#detailsMeta").text(`${gender} | ${age} Years | ${patientId}`);
+    $("#visitPadBtn").show(); // Show the Visit Pad button if needed
+    console.log("✅ Updated patient details section:", { fullName, gender, age, patientId });
+  }
+
+  $("#addPatientForm").submit(function (e) {
+    e.preventDefault();
+
+    // Validate required fields
+    const requiredFields = [
+      { id: "patientFirstName", name: "First Name" },
+      { id: "patientLastName", name: "Last Name" },
+      { id: "patientGender", name: "Gender" },
+      { id: "patientDOB", name: "Date of Birth" },
+      { id: "fatherName", name: "Father's Name" },
+      { id: "patientPhone", name: "Phone Number" },
+      { id: "preferredLanguage", name: "Preferred Language" },
+      { id: "maritalStatus", name: "Marital Status" },
+      { id: "paymentPreference", name: "Payment Preference" },
+      { id: "appointmentDate", name: "Appointment Date" }
+    ];
+
+    let errors = [];
+    requiredFields.forEach(field => {
+      const value = $(`#${field.id}`).val();
+      if (!value || value.trim() === "") {
+        errors.push(`${field.name} is required.`);
+      }
+    });
+
+    // Validate date formats
+    const dateOfBirth = $("#patientDOB").val();
+    if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+      errors.push("Date of Birth must be in YYYY-MM-DD format.");
+    }
+
+    const maritalSince = $("#maritalSince").val();
+    if (maritalSince && !/^\d{4}-\d{2}-\d{2}$/.test(maritalSince)) {
+      errors.push("Marital Since must be in YYYY-MM-DD format.");
+    }
+
+    const appointmentDate = $("#appointmentDate").val();
+    if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate)) {
+      errors.push("Appointment Date must be in YYYY-MM-DD HH:MM format.");
+    }
+
+    if (errors.length > 0) {
+      alert("Please fix the following errors:\n- " + errors.join("\n- "));
+      return;
+    }
+
+    const patientData = {
+      first_name: $("#patientFirstName").val(),
+      last_name: $("#patientLastName").val(),
+      gender: $("#patientGender").val(),
+      date_of_birth: $("#patientDOB").val(),
+      father_name: $("#fatherName").val(),
+      mobile_number: $("#patientPhone").val(),
+      alternate_mobile_number: $("#mobile2").val(),
+      aadhar_number: $("#aadharNumber").val(),
+      preferred_language: $("#preferredLanguage").val(),
+      marital_status: $("#maritalStatus").val(),
+      marital_since: $("#maritalSince").val() || null,
+      referred_by: $("#referredBy").val(),
+      channel: $("#channel").val(),
+      cio: $("#cio").val(),
+      occupation: $("#occupation").val(),
+      tag: $("#tag").val(),
+      blood_group: $("#bloodGroup").val(),
+      address: $("#patientAddress").val(),
+      city: $("#patientCity").val(),
+      pincode: $("#patientPin").val(),
+      known_allergies: $("#knownAllergies").val(),
+      current_medications: $("#currentMedications").val(),
+      past_medical_history: $("#pastMedicalHistory").val(),
+      specific_notes: $("#specificNotes").val(),
+      emergency_contact_name: $("#emergencyContactName").val(),
+      emergency_contact_relationship: $("#emergencyContactRelationship").val(),
+      emergency_contact_number: $("#emergencyContactNumber").val(),
+      insurance_provider: $("#insuranceProvider").val(),
+      policy_number: $("#policyNumber").val(),
+      payment_preference: $("#paymentPreference").val(),
+      admission_type: $("#admissionType").val(),
+      hospital_code: $("#hospitalCode").val(),
+      doctor: $("#doctor").val() || null,
+      appointment_date: $("#appointmentDate").val(),
+      notes: $("#appointmentNotes").val(),
+      is_emergency: false
+    };
+
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/patients-and-appointments/create/`,
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(patientData),
+      contentType: "application/json",
+      success: function (data) {
+        console.log("✅ Patient and Appointment Created Successfully:", data);
+        const fullName = `${data.patient.first_name} ${data.patient.last_name}`;
+        const age = data.patient.age || 'N/A';
+        const patientId = data.patient.patient_id || 'N/A';
+        $("#detailsTitle").text(fullName);
+        $("#detailsMeta").text(`${data.patient.gender} | ${age} Years | ${patientId}`);
+
+        updateDetailsSection(data.patient);
+
+        const activeButton = e.originalEvent.submitter.id;
+        if (activeButton === 'addAndCreateBill') {
+          toggleSplitView('addBills');
+          $('#addBillsTab').tab('show'); // Switch to Add Bills tab
+        } else if (activeButton === 'addAndCreateAppointment') {
+          toggleSplitView('addPatient');
+          $('#profileTab').tab('show'); // Switch to Profile tab
+        }
+
+        alert("Patient and appointment added successfully!");
+        $("#addPatientForm")[0].reset();
+        // Reset Flatpickr inputs
+        flatpickr("#patientDOB").clear();
+        flatpickr("#maritalSince").clear();
+        flatpickr("#appointmentDate").clear();
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
+        alert("Failed to add patient and appointment: " + (xhr.responseJSON ? JSON.stringify(xhr.responseJSON) : "Unknown error"));
+      }
+    });
   });
-});
 
   // Handle Add Bills Form Submission (Placeholder)
   $("#addBillsForm").submit(function (e) {
@@ -391,38 +447,37 @@ $("#addPatientForm").submit(function (e) {
   checkAuthentication();
   console.log("✅ Dashboard Initialization Complete");
 
-// Fetch Doctors and Populate Dropdown
-function populateDoctorDropdown() {
-  $.ajax({
-    url: `${API_BASE_URL}/appointments/doctors/list/`,
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function (data) {
-      console.log("✅ Doctors Fetched Successfully:", data);
-      const doctorSelect = $("#doctor");
-      doctorSelect.empty();
-      doctorSelect.append('<option value="" selected>Select Doctor</option>');
-      data.doctors.forEach(doctor => {
-        doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
-      });
+  // Fetch Doctors and Populate Dropdown
+  function populateDoctorDropdown() {
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        console.log("✅ Doctors Fetched Successfully:", data);
+        const doctorSelect = $("#doctor");
+        doctorSelect.empty();
+        doctorSelect.append('<option value="" selected>Select Doctor</option>');
+        data.doctors.forEach(doctor => {
+          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
+        });
 
-      // Update specialty when a doctor is selected
-      doctorSelect.on('change', function () {
-        const selectedDoctorId = $(this).val();
-        const selectedDoctor = data.doctors.find(doctor => doctor.id == selectedDoctorId);
-        $("#doctorSpecialty").val(selectedDoctor ? selectedDoctor.specialization : '');
-      });
-    },
-    error: function (xhr) {
-      console.error("❌ Failed to Fetch Doctors:", xhr.responseJSON || xhr.statusText);
-      alert("Failed to fetch doctors. Please try again.");
-    }
+        // Update specialty when a doctor is selected
+        doctorSelect.on('change', function () {
+          const selectedDoctorId = $(this).val();
+          const selectedDoctor = data.doctors.find(doctor => doctor.id == selectedDoctorId);
+          $("#doctorSpecialty").val(selectedDoctor ? selectedDoctor.specialization : '');
+        });
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to Fetch Doctors:", xhr.responseJSON || xhr.statusText);
+        alert("Failed to fetch doctors. Please try again.");
+      }
+    });
+  }
+
+  // Call this function when the modal is opened
+  $('#newActionModal').on('shown.bs.modal', function () {
+    populateDoctorDropdown();
   });
-}
-
-// Call this function when the modal is opened
-$('#newActionModal').on('shown.bs.modal', function () {
-  populateDoctorDropdown();
-});
-
 });
