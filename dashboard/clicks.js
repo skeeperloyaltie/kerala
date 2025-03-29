@@ -72,3 +72,26 @@ function updateDetailsSection(patientData) {
     resetModalView();
     updateDetailsSection(null); // Reset the details section
   });
+
+  // clicks.js
+$(document).ready(function() {
+    // Navigation Tab Switching
+    $('.navbar-secondary .nav-link').on('click', function(e) {
+      e.preventDefault();
+      $('.navbar-secondary .nav-link').removeClass('active');
+      $(this).addClass('active');
+    });
+  
+    // Ensure dropdowns adjust to window width
+    $('.dropdown').on('show.bs.dropdown', function() {
+      const dropdownMenu = $(this).find('.dropdown-menu');
+      const rect = dropdownMenu[0].getBoundingClientRect();
+      const windowWidth = window.innerWidth;
+      if (rect.right > windowWidth) {
+        dropdownMenu.css({
+          right: '0',
+          left: 'auto'
+        });
+      }
+    });
+  });

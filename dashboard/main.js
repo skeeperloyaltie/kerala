@@ -12,9 +12,6 @@ $(document).ready(function () {
   });
   console.log("🟢 Flatpickr Initialized for #dateFilter with default date: 28 Mar 2025");
 
-  // Remove redundant Flatpickr initialization for #patientDOBInput since it's handled by flatpicker.js
-  // flatpickr("#patientDOBInput", { ... });
-
   // Get Authentication Headers
   function getAuthHeaders() {
     const token = localStorage.getItem("token");
@@ -357,6 +354,9 @@ $(document).ready(function () {
       return;
     }
 
+    // Transform appointmentDate to YYYY-MM-DDTHH:MM:SS format for the API
+    const formattedAppointmentDate = appointmentDate ? `${appointmentDate}:00`.replace(" ", "T") : null;
+
     const patientData = {
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
@@ -391,7 +391,7 @@ $(document).ready(function () {
       admission_type: $("#admissionType").val(),
       hospital_code: $("#hospitalCode").val(),
       doctor: $("#doctor").val() || null,
-      appointment_date: $("#appointmentDate").val(),
+      appointment_date: formattedAppointmentDate,
       notes: $("#appointmentNotes").val(),
       is_emergency: false
     };
@@ -430,7 +430,17 @@ $(document).ready(function () {
       },
       error: function (xhr) {
         console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
-        alert("Failed to add patient and appointment: " + (xhr.responseJSON ? JSON.stringify(xhr.responseJSON) : "Unknown error"));
+        let errorMessage = "Unknown error";
+        if (xhr.responseJSON) {
+          if (xhr.responseJSON.detail) {
+            errorMessage = xhr.responseJSON.detail; // Common for authentication errors
+          } else {
+            errorMessage = JSON.stringify(xhr.responseJSON); // Show all errors
+          }
+        } else if (xhr.statusText) {
+          errorMessage = xhr.statusText;
+        }
+        alert(`Failed to add patient and appointment: ${errorMessage}`);
       }
     });
   });

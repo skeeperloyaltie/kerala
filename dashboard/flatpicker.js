@@ -1,6 +1,7 @@
   //flatpicker.js
 
   // flatpicker.js
+// flatpicker.js
 function initializeDatePickers() {
   console.log("Initializing Flatpickr for .custom-datetime-picker elements...");
   $(".custom-datetime-picker").each(function() {
@@ -112,6 +113,15 @@ function initializeDatePickers() {
     }
   });
 }
+
+// Initialize on page load and modal show
+$(document).ready(function() {
+  initializeDatePickers();
+
+  $("#newActionModal").on("shown.bs.modal", function() {
+    initializeDatePickers();
+  });
+});
 
 // Initialize on page load and modal show
 $(document).ready(function() {
