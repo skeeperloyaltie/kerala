@@ -1,14 +1,20 @@
-// flatpicker.js
 function initializeDatePickers() {
   console.log("Initializing Flatpickr for .custom-datetime-picker elements...");
   $(".custom-datetime-picker").each(function() {
     const $input = $(this);
-    if (!$input.length) {
-      console.warn("Element not found for Flatpickr initialization:", $input.attr("id"));
+    const inputId = $input.attr("id");
+
+    // Skip if the element doesn't have an id
+    if (!inputId) {
+      console.warn("Skipping Flatpickr initialization for element without id:", $input);
       return;
     }
 
-    const inputId = $input.attr("id");
+    if (!$input.length) {
+      console.warn("Element not found for Flatpickr initialization:", inputId);
+      return;
+    }
+
     console.log("Processing input:", inputId);
 
     const isDateOnly = ["patientDOB", "maritalSince"].includes(inputId);

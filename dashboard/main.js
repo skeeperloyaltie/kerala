@@ -326,6 +326,9 @@ $(document).ready(function () {
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
 
+    initializeDatePickers();
+
+
     // Validate required fields
     const requiredFields = [
       { id: "patientFirstName", name: "First Name" },
@@ -359,10 +362,19 @@ $(document).ready(function () {
       errors.push("Marital Since must be in YYYY-MM-DD format.");
     }
 
-    const appointmentDate = $("#appointmentDate").val();
-    if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate)) {
-      errors.push("Appointment Date must be in YYYY-MM-DD HH:MM format.");
-    }
+    // Ensure we get the value from the hidden Flatpickr input
+    // Ensure we get the value from the hidden Flatpickr input
+const $appointmentDateInput = $("#appointmentDate");
+let appointmentDate;
+if ($appointmentDateInput[0]._flatpickr && $appointmentDateInput[0]._flatpickr.selectedDates[0]) {
+  appointmentDate = $appointmentDateInput[0]._flatpickr.formatDate($appointmentDateInput[0]._flatpickr.selectedDates[0], "Y-m-d H:i");
+} else {
+  appointmentDate = $appointmentDateInput.val();
+}
+console.log("🔍 Validating appointmentDate:", appointmentDate);
+if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate)) {
+  errors.push("Appointment Date must be in YYYY-MM-DD HH:MM format.");
+}
 
     if (errors.length > 0) {
       alert("Please fix the following errors:\n- " + errors.join("\n- "));
