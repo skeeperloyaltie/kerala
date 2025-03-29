@@ -162,6 +162,10 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     payment_preference = serializers.ChoiceField(choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Insurance', 'Insurance')], required=False, allow_blank=True)
     admission_type = serializers.ChoiceField(choices=[('IN', 'Inpatient'), ('OU', 'Outpatient')], required=False, default='OU')
     hospital_code = serializers.CharField(max_length=3, required=False, default='115')
+    preferred_language = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    marital_status = serializers.ChoiceField(choices=['Single', 'Married', 'Divorced', 'Widowed'], required=False, allow_null=True, allow_blank=True)
+    payment_preference = serializers.ChoiceField(choices=['Cash', 'Card', 'Insurance'], required=False, allow_null=True, allow_blank=True)
+    
 
     # Appointment fields
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)

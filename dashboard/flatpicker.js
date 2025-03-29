@@ -50,7 +50,8 @@ flatpickr("#maritalSince", {
 flatpickr("#appointmentDate", {
   enableTime: true,
   dateFormat: "Y-m-d\\TH:i:S",
-  minDate: "today",
+  minDate: new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }), // Set minDate to current time in Asia/Kolkata
+  defaultDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }), // Default to tomorrow
   onChange: function (selectedDates, dateStr) {
     console.log("📅 Appointment Date Changed - Selected date:", dateStr);
   }

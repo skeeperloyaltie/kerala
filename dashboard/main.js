@@ -254,10 +254,53 @@ function bindModalActions() {
   });
 }
 
-// Handle Add Patient and Appointment Form Submission
-// Handle Add Patient and Appointment Form Submission
+
 $("#addPatientForm").submit(function (e) {
   e.preventDefault();
+
+  // Validate required fields
+  const requiredFields = [
+    { id: "patientFirstName", name: "First Name" },
+    { id: "patientLastName", name: "Last Name" },
+    { id: "patientGender", name: "Gender" },
+    { id: "patientDOB", name: "Date of Birth" },
+    { id: "fatherName", name: "Father's Name" },
+    { id: "patientPhone", name: "Phone Number" },
+    { id: "preferredLanguage", name: "Preferred Language" },
+    { id: "maritalStatus", name: "Marital Status" },
+    { id: "paymentPreference", name: "Payment Preference" },
+    { id: "appointmentDate", name: "Appointment Date" }
+  ];
+
+  let errors = [];
+  requiredFields.forEach(field => {
+    const value = $(`#${field.id}`).val();
+    if (!value || value.trim() === "") {
+      errors.push(`${field.name} is required.`);
+    }
+  });
+
+  // Validate date formats
+  const dateOfBirth = $("#patientDOB").val();
+  if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+    errors.push("Date of Birth must be in YYYY-MM-DD format.");
+  }
+
+  const maritalSince = $("#maritalSince").val();
+  if (maritalSince && !/^\d{4}-\d{2}-\d{2}$/.test(maritalSince)) {
+    errors.push("Marital Since must be in YYYY-MM-DD format.");
+  }
+
+  const appointmentDate = $("#appointmentDate").val();
+  if (appointmentDate && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(appointmentDate)) {
+    errors.push("Appointment Date must be in YYYY-MM-DDTHH:MM:SS format.");
+  }
+
+  if (errors.length > 0) {
+    alert("Please fix the following errors:\n- " + errors.join("\n- "));
+    return;
+  }
+
   const patientData = {
     first_name: $("#patientFirstName").val(),
     last_name: $("#patientLastName").val(),
@@ -269,7 +312,7 @@ $("#addPatientForm").submit(function (e) {
     aadhar_number: $("#aadharNumber").val(),
     preferred_language: $("#preferredLanguage").val(),
     marital_status: $("#maritalStatus").val(),
-    marital_since: $("#maritalSince").val(),
+    marital_since: $("#maritalSince").val() || null,
     referred_by: $("#referredBy").val(),
     channel: $("#channel").val(),
     cio: $("#cio").val(),
@@ -291,7 +334,7 @@ $("#addPatientForm").submit(function (e) {
     payment_preference: $("#paymentPreference").val(),
     admission_type: $("#admissionType").val(),
     hospital_code: $("#hospitalCode").val(),
-    doctor: $("#doctor").val() || null, // Send the doctor ID or null
+    doctor: $("#doctor").val() || null,
     appointment_date: $("#appointmentDate").val(),
     notes: $("#appointmentNotes").val(),
     is_emergency: false
@@ -305,28 +348,29 @@ $("#addPatientForm").submit(function (e) {
     contentType: "application/json",
     success: function (data) {
       console.log("✅ Patient and Appointment Created Successfully:", data);
-      // Update patient details in the modal
       const fullName = `${data.patient.first_name} ${data.patient.last_name}`;
       const age = data.patient.age || 'N/A';
       const patientId = data.patient.patient_id || 'N/A';
       $("#detailsTitle").text(fullName);
       $("#detailsMeta").text(`${data.patient.gender} | ${age} Years | ${patientId}`);
 
-      // Call updateDetailsSection from clicks.js
       updateDetailsSection(data.patient);
 
-      // Determine which button was clicked to toggle the appropriate split view
       const activeButton = e.originalEvent.submitter.id;
       if (activeButton === 'addAndCreateBill') {
         toggleSplitView('addBills');
-        $('#profileTab').tab('show'); // Switch main tab to Profile
+        $('#profileTab').tab('show');
       } else if (activeButton === 'addAndCreateAppointment') {
         toggleSplitView('addPatient');
-        $('#profileTab').tab('show'); // Switch main tab to Profile
+        $('#profileTab').tab('show');
       }
 
       alert("Patient and appointment added successfully!");
       $("#addPatientForm")[0].reset();
+      // Reset Flatpickr inputs
+      flatpickr("#patientDOB").clear();
+      flatpickr("#maritalSince").clear();
+      flatpickr("#appointmentDate").clear();
     },
     error: function (xhr) {
       console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
