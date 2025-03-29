@@ -126,46 +126,78 @@ class AppointmentTestsSerializer(serializers.ModelSerializer):
         fields = ["id", "appointment", "temperature", "height", "weight", "blood_pressure"]
 
 
+# serializers.py
+from rest_framework import serializers
+from .models import Patient, Appointment
+from datetime import datetime
+import pytz
+
 class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     # Patient fields
-    first_name = serializers.CharField(max_length=255, required=True)
-    last_name = serializers.CharField(max_length=255, required=True)
-    gender = serializers.ChoiceField(choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], required=True)
-    date_of_birth = serializers.DateField(required=True)
-    mobile_number = serializers.CharField(max_length=15, required=True)
-    father_name = serializers.CharField(max_length=255, required=True)
-    address = serializers.CharField(required=False, allow_blank=True)
-    city = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    pincode = serializers.CharField(max_length=6, required=False, allow_blank=True)
-    email = serializers.EmailField(required=False, allow_blank=True)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    gender = serializers.CharField(max_length=10)
+    date_of_birth = serializers.DateField()
+    father_name = serializers.CharField(max_length=100)
+    mobile_number = serializers.CharField(max_length=15)
     alternate_mobile_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
     aadhar_number = serializers.CharField(max_length=12, required=False, allow_blank=True)
     preferred_language = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    marital_status = serializers.ChoiceField(choices=[('Single', 'Single'), ('Married', 'Married'), ('Divorced', 'Divorced'), ('Widowed', 'Widowed')], required=False, allow_blank=True)
+    marital_status = serializers.CharField(max_length=20, required=False, allow_blank=True)
     marital_since = serializers.DateField(required=False, allow_null=True)
-    referred_by = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    channel = serializers.ChoiceField(choices=[('Website', 'Website'), ('Referral', 'Referral'), ('Advertisement', 'Advertisement'), ('Social Media', 'Social Media'), ('Other', 'Other')], required=False, allow_blank=True)
-    cio = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    referred_by = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    channel = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    cio = serializers.CharField(max_length=50, required=False, allow_blank=True)
     occupation = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    tag = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    blood_group = serializers.CharField(max_length=5, required=False, allow_blank=True)
-    known_allergies = serializers.CharField(required=False, allow_blank=True)
-    current_medications = serializers.CharField(required=False, allow_blank=True)
-    past_medical_history = serializers.CharField(required=False, allow_blank=True)
-    specific_notes = serializers.CharField(required=False, allow_blank=True)
-    primary_doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)
-    emergency_contact_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    emergency_contact_relationship = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    tag = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    blood_group = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    address = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    city = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    pincode = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    known_allergies = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    current_medications = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    past_medical_history = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    specific_notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    primary_doctor = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    emergency_contact_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    emergency_contact_relationship = serializers.CharField(max_length=50, required=False, allow_blank=True)
     emergency_contact_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
-    insurance_provider = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    insurance_provider = serializers.CharField(max_length=100, required=False, allow_blank=True)
     policy_number = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    payment_preference = serializers.ChoiceField(choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Insurance', 'Insurance')], required=False, allow_blank=True)
-    admission_type = serializers.ChoiceField(choices=[('IN', 'Inpatient'), ('OU', 'Outpatient')], required=False, default='OU')
-    hospital_code = serializers.CharField(max_length=3, required=False, default='115')
-    preferred_language = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    marital_status = serializers.ChoiceField(choices=['Single', 'Married', 'Divorced', 'Widowed'], required=False, allow_null=True, allow_blank=True)
-    payment_preference = serializers.ChoiceField(choices=['Cash', 'Card', 'Insurance'], required=False, allow_null=True, allow_blank=True)
-    
+    payment_preference = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    admission_type = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    hospital_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
+
+    # Appointment fields
+    doctor = serializers.IntegerField(required=False, allow_null=True)
+    appointment_date = serializers.CharField()
+    notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    is_emergency = serializers.BooleanField(default=False)
+
+    def to_internal_value(self, data):
+        # Call the parent class's to_internal_value to validate all fields
+        validated_data = super().to_internal_value(data)
+
+        # Handle appointment_date conversion
+        appointment_date_str = validated_data.get('appointment_date')
+        if appointment_date_str:
+            try:
+                # Line 94: This is where the error occurs
+                appointment_date = datetime.fromisoformat(appointment_date_str.replace("Z", "+00:00"))
+                # Ensure the datetime is timezone-aware
+                KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
+                if not appointment_date.tzinfo:
+                    appointment_date = KOLKATA_TZ.localize(appointment_date)
+                else:
+                    appointment_date = appointment_date.astimezone(KOLKATA_TZ)
+                validated_data['appointment_date'] = appointment_date
+            except ValueError as e:
+                raise serializers.ValidationError({
+                    'appointment_date': 'Invalid date format. Use YYYY-MM-DDTHH:MM:SS+HH:MM or YYYY-MM-DDTHH:MM:SSZ.'
+                }) from e
+
+        return validated_data
 
     # Appointment fields
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)

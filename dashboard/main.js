@@ -376,10 +376,13 @@ if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate))
   errors.push("Appointment Date must be in YYYY-MM-DD HH:MM format.");
 }
 
-    if (errors.length > 0) {
-      alert("Please fix the following errors:\n- " + errors.join("\n- "));
-      return;
-    }
+if (!formattedAppointmentDate) {
+  errors.push("Appointment Date is required.");
+}
+if (errors.length > 0) {
+  alert("Please fix the following errors:\n- " + errors.join("\n- "));
+  return;
+}
 
     // Transform appointmentDate to YYYY-MM-DDTHH:MM:SS+03:00 format for the API
     const formattedAppointmentDate = appointmentDate ? `${appointmentDate}:00+03:00`.replace(" ", "T") : null;
@@ -422,7 +425,9 @@ if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate))
       notes: $("#appointmentNotes").val(),
       is_emergency: false
     };
-
+    
+    console.log("📤 Sending patientData to API:", patientData);
+    
     $.ajax({
       url: `${API_BASE_URL}/appointments/patients-and-appointments/create/`,
       type: "POST",
@@ -436,21 +441,20 @@ if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate))
         const patientId = data.patient.patient_id || 'N/A';
         $("#detailsTitle").text(fullName);
         $("#detailsMeta").text(`${data.patient.gender} | ${age} Years | ${patientId}`);
-
+    
         updateDetailsSection(data.patient);
-
+    
         const activeButton = e.originalEvent.submitter.id;
         if (activeButton === 'addAndCreateBill') {
           toggleSplitView('addBills');
-          $('#addBillsTab').tab('show'); // Switch to Add Bills tab
+          $('#addBillsTab').tab('show');
         } else if (activeButton === 'addAndCreateAppointment') {
           toggleSplitView('addPatient');
-          $('#profileTab').tab('show'); // Switch to Profile tab
+          $('#profileTab').tab('show');
         }
-
+    
         alert("Patient and appointment added successfully!");
         $("#addPatientForm")[0].reset();
-        // Reset Flatpickr inputs
         flatpickr("#patientDOB").clear();
         flatpickr("#maritalSince").clear();
         flatpickr("#appointmentDate").clear();
@@ -460,11 +464,11 @@ if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate))
         let errorMessage = "Unknown error";
         if (xhr.responseJSON) {
           if (xhr.responseJSON.detail) {
-            errorMessage = xhr.responseJSON.detail; // Common for authentication errors
+            errorMessage = xhr.responseJSON.detail;
           } else if (xhr.responseJSON.appointment_date) {
-            errorMessage = `Appointment Date Error: ${xhr.responseJSON.appointment_date}`; // Specific error for appointment_date
+            errorMessage = `Appointment Date Error: ${xhr.responseJSON.appointment_date}`;
           } else {
-            errorMessage = JSON.stringify(xhr.responseJSON); // Show all errors
+            errorMessage = JSON.stringify(xhr.responseJSON);
           }
         } else if (xhr.statusText) {
           errorMessage = xhr.statusText;
