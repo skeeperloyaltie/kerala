@@ -4,6 +4,7 @@ from .models import Appointment, Patient, AppointmentTests, Vitals
 from users.models import Doctor, Receptionist, Nurse
 from datetime import date, datetime
 import pytz
+from django.utils import timezone
 
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
@@ -67,7 +68,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     patient_id = serializers.CharField(write_only=True, source="patient.patient_id")
     doctor = DoctorSerializer(read_only=True)
     doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor", allow_null=True)
-    receptionist = serializers.PrimaryKeyRelatedField(queryset=Receptionist.objects.all(), read_only=True)
+    receptionist = serializers.PrimaryKeyRelatedField(read_only=True, source='receptionist')  # Removed queryset
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
     appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
@@ -104,7 +105,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return representation
 
     def validate_appointment_date(self, value):
-        if value < pytz.timezone.now():
+        if value < timezone.now():
             raise serializers.ValidationError("Appointment date cannot be in the past.")
         return value
 
@@ -123,8 +124,8 @@ class AppointmentTestsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentTests
         fields = ["id", "appointment", "temperature", "height", "weight", "blood_pressure"]
-        
-        
+
+
 class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     # Patient fields
     first_name = serializers.CharField(max_length=255, required=True)
@@ -176,6 +177,6 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
         return value
 
     def validate_appointment_date(self, value):
-        if value < pytz.timezone.now():
+        if value < timezone.now():
             raise serializers.ValidationError("Appointment date cannot be in the past.")
         return value
