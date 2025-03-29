@@ -1,7 +1,7 @@
 
 //main.js
 $(document).ready(function () {
-  const API_BASE_URL = "http://104.37.187.187:8000"; // Adjust to your Django API
+  const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
   // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
