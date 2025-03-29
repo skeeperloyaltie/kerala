@@ -171,7 +171,7 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
 
     # Appointment fields
     doctor = serializers.IntegerField(required=False, allow_null=True)
-    appointment_date = serializers.CharField()
+    appointment_date = serializers.DateTimeField(required=True)  # Use DateTimeField instead of CharField
     notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
     is_emergency = serializers.BooleanField(default=False)
 
@@ -179,31 +179,17 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
         # Call the parent class's to_internal_value to validate all fields
         validated_data = super().to_internal_value(data)
 
-        # Handle appointment_date conversion
-        appointment_date_str = validated_data.get('appointment_date')
-        if appointment_date_str:
-            try:
-                # Line 94: This is where the error occurs
-                appointment_date = datetime.fromisoformat(appointment_date_str.replace("Z", "+00:00"))
-                # Ensure the datetime is timezone-aware
-                KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-                if not appointment_date.tzinfo:
-                    appointment_date = KOLKATA_TZ.localize(appointment_date)
-                else:
-                    appointment_date = appointment_date.astimezone(KOLKATA_TZ)
-                validated_data['appointment_date'] = appointment_date
-            except ValueError as e:
-                raise serializers.ValidationError({
-                    'appointment_date': 'Invalid date format. Use YYYY-MM-DDTHH:MM:SS+HH:MM or YYYY-MM-DDTHH:MM:SSZ.'
-                }) from e
+        # Since appointment_date is now a DateTimeField, it’s already parsed by the serializer
+        appointment_date = validated_data.get('appointment_date')
+        if appointment_date:
+            KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
+            if not appointment_date.tzinfo:  # If naive datetime, localize it
+                appointment_date = KOLKATA_TZ.localize(appointment_date)
+            else:  # If aware, convert to Kolkata timezone
+                appointment_date = appointment_date.astimezone(KOLKATA_TZ)
+            validated_data['appointment_date'] = appointment_date
 
         return validated_data
-
-    # Appointment fields
-    doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)
-    appointment_date = serializers.DateTimeField(required=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
-    is_emergency = serializers.BooleanField(default=False)
 
     def validate_date_of_birth(self, value):
         today = date.today()
@@ -216,3 +202,7 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
         if value < timezone.now():
             raise serializers.ValidationError("Appointment date cannot be in the past.")
         return value
+
+    def validate(self, data):
+        # Additional validation if needed
+        return data
