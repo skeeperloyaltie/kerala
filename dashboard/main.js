@@ -1,4 +1,12 @@
 // main.js
+function resetModalView() {
+  console.log("🔄 Resetting modal view...");
+  const modalBody = $("#modalBody");
+  const sidebarContentArea = $("#sidebarContentArea");
+  modalBody.removeClass("split-view");
+  sidebarContentArea.hide();
+}
+
 $(document).ready(function () {
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
@@ -297,15 +305,22 @@ $(document).ready(function () {
 
   // Add updateDetailsSection function
   function updateDetailsSection(patientData) {
-    const fullName = `${patientData.first_name} ${patientData.last_name}`;
-    const age = patientData.age || 'N/A';
-    const patientId = patientData.patient_id || 'N/A';
-    const gender = patientData.gender || 'N/A';
-
-    $("#detailsTitle").text(fullName);
-    $("#detailsMeta").text(`${gender} | ${age} Years | ${patientId}`);
-    $("#visitPadBtn").show(); // Show the Visit Pad button if needed
-    console.log("✅ Updated patient details section:", { fullName, gender, age, patientId });
+    if (patientData) {
+      const fullName = `${patientData.first_name} ${patientData.last_name}`;
+      const age = patientData.age || 'N/A';
+      const patientId = patientData.patient_id || 'N/A';
+      const gender = patientData.gender || 'N/A';
+  
+      $("#detailsTitle").text(`Appointment for ${fullName}`);
+      $("#detailsMeta").text(`${gender} | ${age} Years | ${patientId}`);
+      $("#visitPadBtn").show();
+      console.log("✅ Updated patient details section:", { fullName, gender, age, patientId });
+    } else {
+      $("#detailsTitle").text('No Patient Selected');
+      $("#detailsMeta").text('N/A | N/A | N/A');
+      $("#visitPadBtn").hide();
+      console.log("✅ Reset patient details section");
+    }
   }
 
   $("#addPatientForm").submit(function (e) {
@@ -354,8 +369,8 @@ $(document).ready(function () {
       return;
     }
 
-    // Transform appointmentDate to YYYY-MM-DDTHH:MM:SS format for the API
-    const formattedAppointmentDate = appointmentDate ? `${appointmentDate}:00`.replace(" ", "T") : null;
+    // Transform appointmentDate to YYYY-MM-DDTHH:MM:SS+03:00 format for the API
+    const formattedAppointmentDate = appointmentDate ? `${appointmentDate}:00+03:00`.replace(" ", "T") : null;
 
     const patientData = {
       first_name: $("#patientFirstName").val(),
@@ -429,11 +444,13 @@ $(document).ready(function () {
         flatpickr("#appointmentDate").clear();
       },
       error: function (xhr) {
-        console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
+        console.error("❌ Failed to Add Patient and Appointment:", xhr.status, xhr.responseJSON || xhr.statusText);
         let errorMessage = "Unknown error";
         if (xhr.responseJSON) {
           if (xhr.responseJSON.detail) {
             errorMessage = xhr.responseJSON.detail; // Common for authentication errors
+          } else if (xhr.responseJSON.appointment_date) {
+            errorMessage = `Appointment Date Error: ${xhr.responseJSON.appointment_date}`; // Specific error for appointment_date
           } else {
             errorMessage = JSON.stringify(xhr.responseJSON); // Show all errors
           }
@@ -490,4 +507,6 @@ $(document).ready(function () {
   $('#newActionModal').on('shown.bs.modal', function () {
     populateDoctorDropdown();
   });
+
+  resetModalView();
 });
