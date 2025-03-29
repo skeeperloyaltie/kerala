@@ -376,17 +376,17 @@ if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate))
   errors.push("Appointment Date must be in YYYY-MM-DD HH:MM format.");
 }
 
-if (!formattedAppointmentDate) {
-  errors.push("Appointment Date is required.");
-}
-if (errors.length > 0) {
-  alert("Please fix the following errors:\n- " + errors.join("\n- "));
-  return;
-}
 
     // Transform appointmentDate to YYYY-MM-DDTHH:MM:SS+03:00 format for the API
     const formattedAppointmentDate = appointmentDate ? `${appointmentDate}:00+03:00`.replace(" ", "T") : null;
-
+    if (!formattedAppointmentDate) {
+      errors.push("Appointment Date is required.");
+    }
+    if (errors.length > 0) {
+      alert("Please fix the following errors:\n- " + errors.join("\n- "));
+      return;
+    }
+    
     const patientData = {
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
