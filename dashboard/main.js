@@ -215,66 +215,112 @@ $(document).ready(function () {
     });
   }
 
-  // Bind Modal Actions
-  function bindModalActions() {
-    // Map actions to tabs
-    const actionToTabMap = {
-      "new": "addPatientTab",
-      "all-bills": "billsTab",
-      "add-services": "addServiceTab", // Assuming an Add Service tab will be added
-      "patient-q": "addPatientTab",
-      "tele-consults": "visitsTab",
-      "support": "profileTab"
-    };
+ // Bind Modal Actions
+function bindModalActions() {
+  console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
 
-    // Bind click events for all actionable elements
-    $("[data-action]").off('click').on('click', function (e) {
-      e.preventDefault();
-      const action = $(this).data("action");
-      console.log(`🖱️ Action Triggered: ${action}`);
+  // Map actions to tabs
+  const actionToTabMap = {
+    "new": "addPatientTab",
+    "all-bills": "billsTab",
+    "add-services": "addBillsTab", // Map to an existing tab since addServiceTab doesn't exist
+    "patient-q": "addPatientTab",
+    "tele-consults": "visitsTab",
+    "support": "profileTab"
+  };
 
-      // Open modal and switch to the appropriate tab
-      const tabId = actionToTabMap[action] || "addPatientTab";
-      $(`#${tabId}`).tab('show');
-      $('#newActionModal').modal('show');
-    });
-  }
-
-  // Handle Add Patient Form Submission
-  $("#addPatientForm").submit(function (e) {
+  // Bind click events for all actionable elements
+  $("[data-action]").off('click').on('click', function (e) {
     e.preventDefault();
-    const patientData = {
-      first_name: $("#patientFirstName").val(),
-      last_name: $("#patientLastName").val(),
-      date_of_birth: $("#patientDOBInput").val(),
-      gender: $("#patientGender").val(),
-      contact_number: $("#patientContact").val()
-    };
+    const action = $(this).data("action");
+    console.log(`🖱️ Action Triggered: ${action}`);
 
-    $.ajax({
-      url: `${API_BASE_URL}/patients/create/`,
-      type: "POST",
-      headers: getAuthHeaders(),
-      data: JSON.stringify(patientData),
-      contentType: "application/json",
-      success: function (data) {
-        console.log("✅ Patient Created Successfully:", data);
-        // Update patient details in the modal
-        const fullName = `${data.first_name} ${data.last_name}`;
-        const dob = new Date(data.date_of_birth);
-        const age = new Date().getFullYear() - dob.getFullYear();
-        const patientId = data.id || "N/A";
-        $("#patientName").text(fullName);
-        $("#patientMeta").text(`${data.gender} | ${age} Years | ${patientId}`);
-        alert("Patient added successfully!");
-        $("#addPatientForm")[0].reset();
-      },
-      error: function (xhr) {
-        console.error("❌ Failed to Add Patient:", xhr.responseJSON || xhr.statusText);
-        alert("Failed to add patient. Please try again.");
-      }
-    });
+    // Get the corresponding tab ID
+    const tabId = actionToTabMap[action] || "addPatientTab";
+    console.log(`🎯 Switching to Tab: ${tabId}`);
+
+    // Open the modal
+    const modal = $('#newActionModal');
+    modal.modal('show');
+
+    // Switch to the appropriate tab
+    const tabElement = $(`#${tabId}`);
+    if (tabElement.length) {
+      tabElement.tab('show');
+      console.log(`✅ Successfully switched to tab: ${tabId}`);
+    } else {
+      console.error(`❌ Tab with ID ${tabId} not found!`);
+    }
   });
+}
+
+// Handle Add Patient and Appointment Form Submission
+$("#addPatientForm").submit(function (e) {
+  e.preventDefault();
+  const patientData = {
+    first_name: $("#patientFirstName").val(),
+    last_name: $("#patientLastName").val(),
+    gender: $("#patientGender").val(),
+    date_of_birth: new Date(2025 - parseInt($("#patientAge").val()), 0, 1).toISOString().split('T')[0], // Approximate DOB based on age
+    father_name: "Unknown", // Placeholder; add a field in the modal if needed
+    mobile_number: $("#patientPhone").val(),
+    alternate_mobile_number: $("#mobile2").val(),
+    aadhar_number: $("#aadharNumber").val(),
+    preferred_language: $("#preferredLanguage").val(),
+    marital_status: $("#maritalStatus").val(),
+    marital_since: $("#maritalSince").val(),
+    referred_by: $("#referredBy").val(),
+    channel: $("#channel").val(),
+    cio: $("#cio").val(),
+    occupation: $("#occupation").val(),
+    tag: $("#tag").val(),
+    blood_group: $("#bloodGroup").val(),
+    address: $("#patientAddress").val(),
+    city: $("#patientCity").val(),
+    pincode: $("#patientPin").val(),
+    doctor: $("#doctorName").val() ? null : null, // Replace with actual doctor ID lookup if needed
+    appointment_date: $("#appointmentDate").val(),
+    notes: "", // Add a notes field in the modal if needed
+    is_emergency: false
+  };
+
+  $.ajax({
+    url: `${API_BASE_URL}/patients-and-appointments/create/`,
+    type: "POST",
+    headers: getAuthHeaders(),
+    data: JSON.stringify(patientData),
+    contentType: "application/json",
+    success: function (data) {
+      console.log("✅ Patient and Appointment Created Successfully:", data);
+      // Update patient details in the modal
+      const fullName = `${data.patient.first_name} ${data.patient.last_name}`;
+      const age = data.patient.age || 'N/A';
+      const patientId = data.patient.patient_id || 'N/A';
+      $("#detailsTitle").text(fullName);
+      $("#detailsMeta").text(`${data.patient.gender} | ${age} Years | ${patientId}`);
+
+      // Call updateDetailsSection from clicks.js
+      updateDetailsSection(data.patient);
+
+      // Determine which button was clicked to toggle the appropriate split view
+      const activeButton = e.originalEvent.submitter.id;
+      if (activeButton === 'addAndCreateBill') {
+        toggleSplitView('addBills');
+        $('#profileTab').tab('show'); // Switch main tab to Profile
+      } else if (activeButton === 'addAndCreateAppointment') {
+        toggleSplitView('addPatient');
+        $('#profileTab').tab('show'); // Switch main tab to Profile
+      }
+
+      alert("Patient and appointment added successfully!");
+      $("#addPatientForm")[0].reset();
+    },
+    error: function (xhr) {
+      console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
+      alert("Failed to add patient and appointment. Please try again.");
+    }
+  });
+});
 
   // Handle Add Bills Form Submission (Placeholder)
   $("#addBillsForm").submit(function (e) {
