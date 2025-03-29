@@ -729,26 +729,29 @@
           </div>
 
           <!-- Row 6: Referred By, Doctor Name and Specialty -->
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="referredBy" class="form-label">Referred By</label>
-              <input type="text" class="form-control form-control-sm" id="referredBy">
-            </div>
-            <div class="col-md-4">
-              <label for="doctorName" class="form-label">Doctor Name</label>
-              <input type="text" class="form-control form-control-sm" id="doctorName">
-            </div>
-            <!-- Row 6.5: Appointment Date -->
 <div class="row mb-3">
+  <div class="col-md-4">
+    <label for="referredBy" class="form-label">Referred By</label>
+    <input type="text" class="form-control form-control-sm" id="referredBy">
+  </div>
+  <div class="col-md-4">
+    <label for="doctor" class="form-label">Doctor</label>
+    <select class="form-select form-select-sm" id="doctor">
+      <option value="" selected>Select Doctor</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label for="doctorSpecialty" class="form-label">Specialty</label>
+    <input type="text" class="form-control form-control-sm" id="doctorSpecialty" readonly>
+  </div>
+</div>
+            <!-- Row 6.5: Appointment Date -->
   <div class="col-md-4">
     <label for="appointmentDate" class="form-label">Appointment Date</label>
     <input type="text" class="form-control form-control-sm flatpickr-input" id="appointmentDate" readonly required>
   </div>
-</div>
-            <div class="col-md-4">
-              <label for="doctorSpecialty" class="form-label">Specialty</label>
-              <input type="text" class="form-control form-control-sm" id="doctorSpecialty">
-            </div>
+
+           
           </div>
 
           <!-- Row 7: Channel, CIO -->
@@ -801,6 +804,128 @@
               <input type="file" class="form-control form-control-sm" id="patientImage" accept="image/*">
             </div>
           </div>
+
+          <!-- Add these fields to the #addPatient form in the modal -->
+<!-- Row 11: Known Allergies, Current Medications -->
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="knownAllergies" class="form-label">Known Allergies</label>
+    <input type="text" class="form-control form-control-sm" id="knownAllergies">
+  </div>
+  <div class="col-md-6">
+    <label for="currentMedications" class="form-label">Current Medications</label>
+    <input type="text" class="form-control form-control-sm" id="currentMedications">
+  </div>
+</div>
+
+<!-- Row 12: Past Medical History, Specific Notes -->
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="pastMedicalHistory" class="form-label">Past Medical History</label>
+    <input type="text" class="form-control form-control-sm" id="pastMedicalHistory">
+  </div>
+  <div class="col-md-6">
+    <label for="specificNotes" class="form-label">Specific Notes</label>
+    <input type="text" class="form-control form-control-sm" id="specificNotes">
+  </div>
+</div>
+
+<!-- Row 13: Emergency Contact Details -->
+<div class="row mb-3">
+  <div class="col-md-4">
+    <label for="emergencyContactName" class="form-label">Emergency Contact Name</label>
+    <input type="text" class="form-control form-control-sm" id="emergencyContactName">
+  </div>
+  <div class="col-md-4">
+    <label for="emergencyContactRelationship" class="form-label">Relationship</label>
+    <input type="text" class="form-control form-control-sm" id="emergencyContactRelationship">
+  </div>
+  <div class="col-md-4">
+    <label for="emergencyContactNumber" class="form-label">Emergency Contact Number</label>
+    <input type="text" class="form-control form-control-sm" id="emergencyContactNumber">
+  </div>
+</div>
+
+<!-- Row 14: Insurance Details -->
+<div class="row mb-3">
+  <div class="col-md-4">
+    <label for="insuranceProvider" class="form-label">Insurance Provider</label>
+    <input type="text" class="form-control form-control-sm" id="insuranceProvider">
+  </div>
+  <div class="col-md-4">
+    <label for="policyNumber" class="form-label">Policy Number</label>
+    <input type="text" class="form-control form-control-sm" id="policyNumber">
+  </div>
+  <div class="col-md-4">
+    <label for="paymentPreference" class="form-label">Payment Preference</label>
+    <select class="form-select form-select-sm" id="paymentPreference">
+      <option value="" disabled selected>Select Preference</option>
+      <option value="Cash">Cash</option>
+      <option value="Card">Card</option>
+      <option value="Insurance">Insurance</option>
+    </select>
+  </div>
+</div>
+
+<!-- Row 15: Admission Type, Hospital Code -->
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="admissionType" class="form-label">Admission Type</label>
+    <select class="form-select form-select-sm" id="admissionType">
+      <option value="OU" selected>Outpatient (OU)</option>
+      <option value="IN">Inpatient (IN)</option>
+    </select>
+  </div>
+  <div class="col-md-6">
+    <label for="hospitalCode" class="form-label">Hospital Code</label>
+    <input type="text" class="form-control form-control-sm" id="hospitalCode" value="115">
+  </div>
+</div>
+
+<!-- Update existing fields -->
+<!-- Replace the Age field with Date of Birth -->
+<div class="row mb-3">
+  <div class="col-md-4">
+    <label for="patientGender" class="form-label">Gender</label>
+    <select class="form-select form-select-sm" id="patientGender" required>
+      <option value="" disabled selected>Select Gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label for="patientDOB" class="form-label">Date of Birth</label>
+    <input type="text" class="form-control form-control-sm flatpickr-input" id="patientDOB" readonly required>
+  </div>
+  <div class="col-md-4">
+    <label for="preferredLanguage" class="form-label">Preferred Language</label>
+    <select class="form-select form-select-sm" id="preferredLanguage">
+      <option value="" disabled selected>Select Language</option>
+      <option value="English">English</option>
+      <option value="Hindi">Hindi</option>
+      <option value="Tamil">Tamil</option>
+      <option value="Telugu">Telugu</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+</div>
+
+<!-- Add Father Name field -->
+<div class="row mb-3">
+  <div class="col-md-4">
+    <label for="fatherName" class="form-label">Father's Name</label>
+    <input type="text" class="form-control form-control-sm" id="fatherName" required>
+  </div>
+</div>
+
+<!-- Add Notes field -->
+<div class="row mb-3">
+  <div class="col-md-12">
+    <label for="appointmentNotes" class="form-label">Appointment Notes</label>
+    <textarea class="form-control form-control-sm" id="appointmentNotes" rows="3"></textarea>
+  </div>
+</div>
 
           <!-- Sticky Footer with Buttons -->
           <div class="sticky-footer">

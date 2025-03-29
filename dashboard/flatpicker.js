@@ -26,3 +26,32 @@
       }
     });
   });
+
+
+  // Initialize Flatpickr for Date of Birth
+flatpickr("#patientDOB", {
+  dateFormat: "Y-m-d",
+  maxDate: "today",
+  onChange: function (selectedDates, dateStr) {
+    console.log("📅 Patient DOB Changed - Selected date:", dateStr);
+  }
+});
+
+// Initialize Flatpickr for Marital Since
+flatpickr("#maritalSince", {
+  dateFormat: "Y-m-d",
+  maxDate: "today",
+  onChange: function (selectedDates, dateStr) {
+    console.log("📅 Marital Since Changed - Selected date:", dateStr);
+  }
+});
+
+// Initialize Flatpickr for Appointment Date
+flatpickr("#appointmentDate", {
+  enableTime: true,
+  dateFormat: "Y-m-d\\TH:i:S",
+  minDate: "today",
+  onChange: function (selectedDates, dateStr) {
+    console.log("📅 Appointment Date Changed - Selected date:", dateStr);
+  }
+});

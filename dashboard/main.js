@@ -255,14 +255,15 @@ function bindModalActions() {
 }
 
 // Handle Add Patient and Appointment Form Submission
+// Handle Add Patient and Appointment Form Submission
 $("#addPatientForm").submit(function (e) {
   e.preventDefault();
   const patientData = {
     first_name: $("#patientFirstName").val(),
     last_name: $("#patientLastName").val(),
     gender: $("#patientGender").val(),
-    date_of_birth: new Date(2025 - parseInt($("#patientAge").val()), 0, 1).toISOString().split('T')[0], // Approximate DOB based on age
-    father_name: "Unknown", // Placeholder; add a field in the modal if needed
+    date_of_birth: $("#patientDOB").val(),
+    father_name: $("#fatherName").val(),
     mobile_number: $("#patientPhone").val(),
     alternate_mobile_number: $("#mobile2").val(),
     aadhar_number: $("#aadharNumber").val(),
@@ -278,9 +279,21 @@ $("#addPatientForm").submit(function (e) {
     address: $("#patientAddress").val(),
     city: $("#patientCity").val(),
     pincode: $("#patientPin").val(),
-    doctor: $("#doctorName").val() ? null : null, // Replace with actual doctor ID lookup if needed
+    known_allergies: $("#knownAllergies").val(),
+    current_medications: $("#currentMedications").val(),
+    past_medical_history: $("#pastMedicalHistory").val(),
+    specific_notes: $("#specificNotes").val(),
+    emergency_contact_name: $("#emergencyContactName").val(),
+    emergency_contact_relationship: $("#emergencyContactRelationship").val(),
+    emergency_contact_number: $("#emergencyContactNumber").val(),
+    insurance_provider: $("#insuranceProvider").val(),
+    policy_number: $("#policyNumber").val(),
+    payment_preference: $("#paymentPreference").val(),
+    admission_type: $("#admissionType").val(),
+    hospital_code: $("#hospitalCode").val(),
+    doctor: $("#doctor").val() || null, // Send the doctor ID or null
     appointment_date: $("#appointmentDate").val(),
-    notes: "", // Add a notes field in the modal if needed
+    notes: $("#appointmentNotes").val(),
     is_emergency: false
   };
 
@@ -317,7 +330,7 @@ $("#addPatientForm").submit(function (e) {
     },
     error: function (xhr) {
       console.error("❌ Failed to Add Patient and Appointment:", xhr.responseJSON || xhr.statusText);
-      alert("Failed to add patient and appointment. Please try again.");
+      alert("Failed to add patient and appointment: " + (xhr.responseJSON ? JSON.stringify(xhr.responseJSON) : "Unknown error"));
     }
   });
 });
@@ -333,4 +346,39 @@ $("#addPatientForm").submit(function (e) {
   console.log("🚀 Initializing Dashboard...");
   checkAuthentication();
   console.log("✅ Dashboard Initialization Complete");
+
+// Fetch Doctors and Populate Dropdown
+function populateDoctorDropdown() {
+  $.ajax({
+    url: `${API_BASE_URL}/appointments/doctors/list/`,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      console.log("✅ Doctors Fetched Successfully:", data);
+      const doctorSelect = $("#doctor");
+      doctorSelect.empty();
+      doctorSelect.append('<option value="" selected>Select Doctor</option>');
+      data.doctors.forEach(doctor => {
+        doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
+      });
+
+      // Update specialty when a doctor is selected
+      doctorSelect.on('change', function () {
+        const selectedDoctorId = $(this).val();
+        const selectedDoctor = data.doctors.find(doctor => doctor.id == selectedDoctorId);
+        $("#doctorSpecialty").val(selectedDoctor ? selectedDoctor.specialization : '');
+      });
+    },
+    error: function (xhr) {
+      console.error("❌ Failed to Fetch Doctors:", xhr.responseJSON || xhr.statusText);
+      alert("Failed to fetch doctors. Please try again.");
+    }
+  });
+}
+
+// Call this function when the modal is opened
+$('#newActionModal').on('shown.bs.modal', function () {
+  populateDoctorDropdown();
+});
+
 });
