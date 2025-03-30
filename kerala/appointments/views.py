@@ -665,12 +665,10 @@ class CreatePatientAndAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        logger.info(f"Request data: {request.data}")  # Log incoming data for debugging
+        logger.info(f"Request data: {request.data}")
 
-        # Use CreatePatientAndAppointmentSerializer directly
         serializer = CreatePatientAndAppointmentSerializer(data=request.data)
         if serializer.is_valid():
-            # Create the patient
             patient_data = {
                 'first_name': serializer.validated_data['first_name'],
                 'last_name': serializer.validated_data['last_name'],
@@ -697,7 +695,7 @@ class CreatePatientAndAppointmentView(APIView):
                 'current_medications': serializer.validated_data.get('current_medications', ''),
                 'past_medical_history': serializer.validated_data.get('past_medical_history', ''),
                 'specific_notes': serializer.validated_data.get('specific_notes', ''),
-                'primary_doctor': serializer.validated_data.get('primary_doctor', ''),  # Note: This is a string field
+                'primary_doctor': serializer.validated_data.get('primary_doctor'),
                 'emergency_contact_name': serializer.validated_data.get('emergency_contact_name', ''),
                 'emergency_contact_relationship': serializer.validated_data.get('emergency_contact_relationship', ''),
                 'emergency_contact_number': serializer.validated_data.get('emergency_contact_number', ''),
@@ -708,28 +706,18 @@ class CreatePatientAndAppointmentView(APIView):
                 'hospital_code': serializer.validated_data.get('hospital_code', ''),
             }
 
-            # Handle primary_doctor if it’s meant to be a Doctor instance
-            if patient_data['primary_doctor']:
-                try:
-                    doctor = Doctor.objects.get(id=patient_data['primary_doctor'])
-                    patient_data['primary_doctor'] = doctor
-                except (Doctor.DoesNotExist, ValueError):
-                    logger.warning(f"Invalid primary_doctor ID: {patient_data['primary_doctor']}")
-                    patient_data['primary_doctor'] = None  # Or raise a validation error if required
-
             patient_serializer = PatientSerializer(data=patient_data)
             if patient_serializer.is_valid():
                 patient = patient_serializer.save()
                 logger.info(f"Patient created: {patient.patient_id}")
 
-                # Create the appointment
+                # Create appointment data matching serializer fields
                 appointment_data = {
-                    'patient': patient,  # Use patient instance directly
-                    'doctor': serializer.validated_data.get('doctor'),  # Already a Doctor instance or None
+                    'patient_id': patient.patient_id,  # String, matches serializer
+                    'doctor_id': serializer.validated_data.get('doctor').id if serializer.validated_data.get('doctor') else None,  # Integer or None, matches serializer
                     'appointment_date': serializer.validated_data['appointment_date'],
                     'notes': serializer.validated_data.get('notes', ''),
                     'is_emergency': serializer.validated_data.get('is_emergency', False),
-                    'created_by': request.user,
                     'status': 'scheduled',
                 }
 
@@ -740,9 +728,8 @@ class CreatePatientAndAppointmentView(APIView):
                 except Receptionist.DoesNotExist:
                     appointment_data['receptionist'] = None
 
-                # Use AppointmentSerializer for final validation and saving
+                # Pass request context for created_by
                 appointment_serializer = AppointmentSerializer(data=appointment_data, context={'request': request})
-
                 if appointment_serializer.is_valid():
                     appointment = appointment_serializer.save()
                     logger.info(f"Appointment created: {appointment.id}")
