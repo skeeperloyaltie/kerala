@@ -101,7 +101,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Extract fields that need special handling
-        patient_id = validated_data.pop('patient.patient_id')  # Dotted-source field
+        patient_id = validated_data.pop('patient_id')  # Use 'patient_id' instead of 'patient.patient_id'
         doctor = validated_data.pop('doctor', None)  # Already a Doctor instance or None
 
         # Fetch the patient instance using patient_id
@@ -153,6 +153,7 @@ import pytz
 
 class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     # Patient fields
+    
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
     gender = serializers.CharField(max_length=10)
