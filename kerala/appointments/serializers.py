@@ -161,7 +161,7 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     current_medications = serializers.CharField(max_length=255, required=False, allow_blank=True)
     past_medical_history = serializers.CharField(max_length=255, required=False, allow_blank=True)
     specific_notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    primary_doctor = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    primary_doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)  # Changed to match PatientSerializer
     emergency_contact_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     emergency_contact_relationship = serializers.CharField(max_length=50, required=False, allow_blank=True)
     emergency_contact_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
