@@ -1,7 +1,7 @@
 # appointments/serializers.py
 from rest_framework import serializers
 from .models import Appointment, Patient, AppointmentTests, Vitals
-from users.models import Doctor, Receptionist, Nurse
+from users.models import Doctor, Receptionist, Nurse, User
 from datetime import date, datetime
 import pytz
 from django.utils import timezone
@@ -65,10 +65,10 @@ class VitalsSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
-    patient_id = serializers.CharField(write_only=True, source="patient.patient_id")
+    patient_id = serializers.CharField(write_only=True)  # Remove source="patient.patient_id" to avoid confusion
     doctor = DoctorSerializer(read_only=True)
     doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor", allow_null=True)
-    receptionist = serializers.PrimaryKeyRelatedField(read_only=True)  # No queryset needed since read-only
+    receptionist = serializers.PrimaryKeyRelatedField(read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
     appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
@@ -92,23 +92,43 @@ class AppointmentSerializer(serializers.ModelSerializer):
         appointment_date = validated_data.get('appointment_date')
         if appointment_date:
             KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-            if not appointment_date.tzinfo:  # If naive datetime, localize it
+            if not appointment_date.tzinfo:
                 appointment_date = KOLKATA_TZ.localize(appointment_date)
-            else:  # If aware, convert to Kolkata timezone
+            else:
                 appointment_date = appointment_date.astimezone(KOLKATA_TZ)
             validated_data['appointment_date'] = appointment_date
         return validated_data
 
     def create(self, validated_data):
-        # Extract fields that need special handling
-        patient_id = validated_data.pop('patient_id')  # Use 'patient_id' instead of 'patient.patient_id'
-        doctor = validated_data.pop('doctor', None)  # Already a Doctor instance or None
+        # Extract fields directly from validated_data
+        patient_id = validated_data.get('patient_id')  # Use get() to avoid KeyError if missing
+        doctor = validated_data.get('doctor')  # Already a Doctor instance or None from doctor_id
+        created_by_id = validated_data.get('created_by')
+        receptionist_id = validated_data.get('receptionist')
 
-        # Fetch the patient instance using patient_id
+        # Fetch patient instance
+        if not patient_id:
+            raise serializers.ValidationError({"patient_id": "This field is required."})
         try:
             patient = Patient.objects.get(patient_id=patient_id)
         except Patient.DoesNotExist:
             raise serializers.ValidationError({"patient_id": "Patient with this ID does not exist."})
+
+        # Fetch created_by instance
+        if not created_by_id:
+            raise serializers.ValidationError({"created_by": "This field is required."})
+        try:
+            created_by = User.objects.get(id=created_by_id)  # Assuming created_by is a User instance
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"created_by": "User does not exist."})
+
+        # Fetch receptionist if provided
+        receptionist = None
+        if receptionist_id:
+            try:
+                receptionist = Receptionist.objects.get(id=receptionist_id)
+            except Receptionist.DoesNotExist:
+                pass  # Optional field, so ignore if not found
 
         # Create the Appointment instance
         appointment = Appointment.objects.create(
@@ -118,16 +138,16 @@ class AppointmentSerializer(serializers.ModelSerializer):
             status=validated_data.get('status', 'scheduled'),
             notes=validated_data.get('notes', ''),
             is_emergency=validated_data.get('is_emergency', False),
-            created_by=validated_data.get('created_by'),
-            receptionist=validated_data.get('receptionist')
+            created_by=created_by,
+            receptionist=receptionist
         )
         return appointment
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['illness'] = instance.patient.current_medications if instance.patient.current_medications else "None"
-        representation['visited_time'] = None  # Placeholder
-        representation['completion_status'] = None  # Placeholder
+        representation['visited_time'] = None
+        representation['completion_status'] = None
         return representation
 
     def validate_appointment_date(self, value):
@@ -136,9 +156,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        # Additional validation if needed
         return data
-
 class AppointmentTestsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentTests
