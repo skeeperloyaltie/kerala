@@ -1,7 +1,8 @@
 # appointments/serializers.py
 from rest_framework import serializers
 from .models import Appointment, Patient, AppointmentTests, Vitals
-from users.models import Doctor, Receptionist, Nurse, User
+from users.models import Doctor, Receptionist, Nurse
+from django.contrib.auth.models import User
 from datetime import date, datetime
 import pytz
 from django.utils import timezone
