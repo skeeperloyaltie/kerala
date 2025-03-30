@@ -68,7 +68,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     patient_id = serializers.CharField(write_only=True, source="patient.patient_id")
     doctor = DoctorSerializer(read_only=True)
     doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor", allow_null=True)
-    receptionist = serializers.PrimaryKeyRelatedField(read_only=True)  # Removed queryset
+    receptionist = serializers.PrimaryKeyRelatedField(read_only=True)  # No queryset needed since read-only
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
     appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
@@ -99,6 +99,30 @@ class AppointmentSerializer(serializers.ModelSerializer):
             validated_data['appointment_date'] = appointment_date
         return validated_data
 
+    def create(self, validated_data):
+        # Extract fields that need special handling
+        patient_id = validated_data.pop('patient.patient_id')  # Dotted-source field
+        doctor = validated_data.pop('doctor', None)  # Already a Doctor instance or None
+
+        # Fetch the patient instance using patient_id
+        try:
+            patient = Patient.objects.get(patient_id=patient_id)
+        except Patient.DoesNotExist:
+            raise serializers.ValidationError({"patient_id": "Patient with this ID does not exist."})
+
+        # Create the Appointment instance
+        appointment = Appointment.objects.create(
+            patient=patient,
+            doctor=doctor,
+            appointment_date=validated_data.get('appointment_date'),
+            status=validated_data.get('status', 'scheduled'),
+            notes=validated_data.get('notes', ''),
+            is_emergency=validated_data.get('is_emergency', False),
+            created_by=validated_data.get('created_by'),
+            receptionist=validated_data.get('receptionist')
+        )
+        return appointment
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['illness'] = instance.patient.current_medications if instance.patient.current_medications else "None"
@@ -112,15 +136,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        # Ensure patient_id corresponds to an existing patient
-        patient_id = data.get('patient', {}).get('patient_id')
-        if patient_id:
-            try:
-                Patient.objects.get(patient_id=patient_id)
-            except Patient.DoesNotExist:
-                raise serializers.ValidationError({"patient_id": "Patient with this ID does not exist."})
+        # Additional validation if needed
         return data
-
 
 class AppointmentTestsSerializer(serializers.ModelSerializer):
     class Meta:
