@@ -741,16 +741,7 @@ class CreatePatientAndAppointmentView(APIView):
                     appointment_data['receptionist'] = None
 
                 # Use AppointmentSerializer for final validation and saving
-                appointment_serializer = AppointmentSerializer(data={
-                    'patient_id': patient.patient_id,  # Match AppointmentSerializer's expected field
-                    'doctor_id': appointment_data['doctor'].id if appointment_data['doctor'] else None,
-                    'appointment_date': appointment_data['appointment_date'],
-                    'notes': appointment_data['notes'],
-                    'is_emergency': appointment_data['is_emergency'],
-                    'created_by': appointment_data['created_by'].id,
-                    'status': appointment_data['status'],
-                    'receptionist': appointment_data['receptionist'].id if appointment_data['receptionist'] else None,
-                })
+                appointment_serializer = AppointmentSerializer(data=appointment_data, context={'request': request})
 
                 if appointment_serializer.is_valid():
                     appointment = appointment_serializer.save()

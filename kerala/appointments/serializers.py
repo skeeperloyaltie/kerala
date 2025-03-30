@@ -63,6 +63,12 @@ class VitalsSerializer(serializers.ModelSerializer):
         representation['recorded_by'] = instance.recorded_by.username if instance.recorded_by else "N/A"
         return representation
 
+
+class AppointmentTestsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppointmentTests
+        fields = ["id", "appointment", "temperature", "height", "weight", "blood_pressure"]
+
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
     patient_id = serializers.CharField(write_only=True)  # For input, maps to patient
@@ -103,7 +109,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         # Extract fields from validated_data
         patient_id = validated_data.get('patient_id')
         doctor = validated_data.get('doctor')  # Already a Doctor instance or None from doctor_id
-        # Note: created_by is set in the view and passed directly, not validated here
+        created_by = self.context.get('request').user  # Get created_by from request context
 
         # Fetch patient instance
         if not patient_id:
@@ -113,7 +119,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         except Patient.DoesNotExist:
             raise serializers.ValidationError({"patient_id": "Patient with this ID does not exist."})
 
-        # Use validated_data directly, expecting created_by to be a User instance
+        # Create the appointment with created_by from context
         appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor,
@@ -121,7 +127,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             status=validated_data.get('status', 'scheduled'),
             notes=validated_data.get('notes', ''),
             is_emergency=validated_data.get('is_emergency', False),
-            created_by=validated_data.get('created_by'),  # Expecting a User instance from the view
+            created_by=created_by,  # Use the User instance from context
             receptionist=validated_data.get('receptionist')
         )
         return appointment
@@ -139,16 +145,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        # Ensure created_by is present (though view should handle this)
-        if 'created_by' not in data:
-            raise serializers.ValidationError({"created_by": "This field is required."})
+        # No need to enforce created_by here since it's set in create()
         return data
-class AppointmentTestsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AppointmentTests
-        fields = ["id", "appointment", "temperature", "height", "weight", "blood_pressure"]
-
-
 # serializers.py
 from rest_framework import serializers
 from .models import Patient, Appointment
