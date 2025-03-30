@@ -68,7 +68,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     patient_id = serializers.CharField(write_only=True, source="patient.patient_id")
     doctor = DoctorSerializer(read_only=True)
     doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor", allow_null=True)
-    receptionist = serializers.PrimaryKeyRelatedField(read_only=True, source='receptionist')  # Removed queryset
+    receptionist = serializers.PrimaryKeyRelatedField(read_only=True)  # Removed queryset
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
     appointment_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
