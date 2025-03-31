@@ -329,13 +329,12 @@ $(document).ready(function () {
   // Fetch Patient Details and Populate Modal
   function fetchPatientDetails(patientId) {
     $.ajax({
-        url: `${API_BASE_URL}/patients/details/${patientId}/`,
+        url: `${API_BASE_URL}/patients/details/${patientId}/`,  // Changed "detail" to "details"
         type: "GET",
         headers: getAuthHeaders(),
         success: function (data) {
             console.log("✅ Raw patient details response:", data);
-            // Adjust for nested 'patient' key
-            const patientData = data.patient || data;  // Handle both nested and flat responses
+            const patientData = data.patient || data;  // Handle nested response
             console.log("✅ Processed patient data:", patientData);
             populateProfileTab(patientData);
             $('#newActionModal').modal('show');
@@ -347,7 +346,7 @@ $(document).ready(function () {
             alert("Failed to fetch patient details: " + (xhr.responseText || "Unknown error"));
         }
     });
-}
+} 
 
   // Populate Profile Tab
   function populateProfileTab(patient) {

@@ -100,59 +100,47 @@ class PatientSearchView(generics.ListAPIView):
         return Response({'patients': serializer.data})
     
     
+# patients/views.py
 class PatientDetailView(generics.RetrieveAPIView):
-    """
-    Returns detailed information about a specific patient.
-    - Doctors: Can only see details of their assigned patients
-    - Receptionists: Can see details of any patient
-    Includes patient details, appointments, doctors, and vitals.
-    """
     serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'pk'  # Using patient's primary key
+    lookup_field = 'patient_id'  # Change from 'pk' to 'patient_id'
 
     def get_queryset(self):
-        """
-        Customize the queryset based on user's role and ensure proper access control
-        """
         user = self.request.user
-        patient_id = self.kwargs.get('pk')
+        patient_id = self.kwargs.get('patient_id')  # Use patient_id from URL
         
         logger.info(f"User {user.username} ({user.user_type if hasattr(user, 'user_type') else 'Unknown'}) "
                    f"requesting details for patient ID {patient_id}")
 
-        # Base queryset with prefetching
         base_qs = Patient.objects.prefetch_related(
             "appointments__doctor",
             "appointments__vitals"
         )
 
-        if hasattr(user, 'doctor'):  # Doctor role
-            # Filter to only patients this doctor is assigned to
+        if hasattr(user, 'doctor'):
             queryset = base_qs.filter(
                 Q(primary_doctor=user.doctor) | 
                 Q(appointments__doctor=user.doctor)
             )
             return queryset
-
-        elif hasattr(user, 'receptionist'):  # Receptionist role
-            # Receptionists can access all patients
+        elif hasattr(user, 'receptionist'):
             return base_qs
-
         else:
-            # Return empty queryset for unauthorized users
             logger.warning(f"Unauthorized attempt by {user.username} to access patient details")
             return base_qs.none()
 
     def retrieve(self, request, *args, **kwargs):
-        logger.info(f"Retrieving patient details for pk={self.kwargs.get('pk')}")
         try:
             queryset = self.get_queryset()
-            logger.info(f"Queryset count: {queryset.count()}")
-            patient = get_object_or_404(queryset, pk=self.kwargs.get('pk'))
+            logger.info(f"Queryset count before filter: {queryset.count()}")
+            patient = get_object_or_404(queryset, patient_id=self.kwargs.get('patient_id'))  # Use patient_id
             serializer = self.get_serializer(patient)
             logger.info(f"Patient data: {serializer.data}")
             return Response({"patient": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"Error: {str(e)}", exc_info=True)
-            return Response({"error": "An error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error retrieving patient details for ID {self.kwargs.get('patient_id')}: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while retrieving patient details"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
