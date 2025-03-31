@@ -733,18 +733,26 @@
           <div class="row mb-3">
             <div class="col-md-4 position-relative">
               <label for="patientFirstName" class="form-label">First Name</label>
-              <span class="input-group-text" id="basic-addon1">Mr</span>
-              <input type="text" class="form-control form-control-sm" id="patientFirstName" required autocomplete="off">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" id="patientFirstName" required autocomplete="off">
+              </div>
               <ul class="dropdown-menu autocomplete-dropdown" id="firstNameSuggestions" style="display: none;"></ul>
             </div>
             <div class="col-md-4 position-relative">
               <label for="patientLastName" class="form-label">Last Name</label>
-              <input type="text" class="form-control form-control-sm" id="patientLastName" required autocomplete="off">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" id="patientLastName" required autocomplete="off">
+              </div>
               <ul class="dropdown-menu autocomplete-dropdown" id="lastNameSuggestions" style="display: none;"></ul>
             </div>
             <div class="col-md-4">
               <label for="patientPhone" class="form-label">Phone Number</label>
-              <input type="text" class="form-control form-control-sm" id="patientPhone" required>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                <input type="text" class="form-control" id="patientPhone" required>
+              </div>
             </div>
           </div>
       
@@ -752,32 +760,36 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="patientGender" class="form-label">Gender</label>
-              <span class="input-group-text" id="basic-addon1">Gender</span>
-              <select class="form-select form-select-sm" id="patientGender" required>
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
+                <select class="form-select" id="patientGender" required>
+                  <option value="" disabled selected>Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="patientDOB" class="form-label">Date of Birth</label>
-              <span class="input-group-text" id="basic-addon1">DoB</span>
-
-              <input type="text" class="form-control form-control-sm flatpickr-input custom-datetime-picker" id="patientDOB" readonly required>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="patientDOB" readonly required>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="preferredLanguage" class="form-label">Preferred Language</label>
-              <span class="input-group-text" id="basic-addon1">Language</span>
-
-              <select class="form-select form-select-sm" id="preferredLanguage" required>
-                <option value="" disabled selected>Select Language</option>
-                <option value="English">English</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Tamil">Tamil</option>
-                <option value="Telugu">Telugu</option>
-                <option value="Other">Other</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-language"></i></span>
+                <select class="form-select" id="preferredLanguage" required>
+                  <option value="" disabled selected>Select Language</option>
+                  <option value="English">English</option>
+                  <option value="Hindi">Hindi</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Telugu">Telugu</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
           </div>
       
@@ -785,30 +797,35 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="fatherName" class="form-label">Father's Name</label>
-              <span class="input-group-text" id="basic-addon1">Mr</span>
-              <input type="text" class="form-control form-control-sm" id="fatherName" required>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                <input type="text" class="form-control" id="fatherName" required>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="maritalStatus" class="form-label">Marital Status</label>
-              <span class="input-group-text" id="basic-addon1">M.Status</span>
-
-              <select class="form-select form-select-sm" id="maritalStatus" required>
-                <option value="" disabled selected>Select Status</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Divorced">Divorced</option>
-                <option value="Widowed">Widowed</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-ring"></i></span>
+                <select class="form-select" id="maritalStatus" required>
+                  <option value="" disabled selected>Select Status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                </select>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="paymentPreference" class="form-label">Payment Preference</label>
-              <span class="input-group-text" id="basic-addon1">Payment</span>
-              <select class="form-select form-select-sm" id="paymentPreference" required>
-                <option value="" disabled selected>Select Preference</option>
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="Insurance">Insurance</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
+                <select class="form-select" id="paymentPreference" required>
+                  <option value="" disabled selected>Select Preference</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Insurance">Insurance</option>
+                </select>
+              </div>
             </div>
           </div>
       
@@ -816,8 +833,10 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="appointmentDate" class="form-label">Appointment Date</label>
-              <span class="input-group-text" id="basic-addon1">Appt.Date</span>
-              <input type="text" class="form-control form-control-sm flatpickr-input custom-datetime-picker" id="appointmentDate" readonly required>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="appointmentDate" readonly required>
+              </div>
             </div>
           </div>
       
@@ -828,18 +847,24 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="patientCity" class="form-label">City</label>
-              <span class="input-group-text" id="basic-addon1">City</span>
-              <input type="text" class="form-control form-control-sm" id="patientCity">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-city"></i></span>
+                <input type="text" class="form-control" id="patientCity">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="patientAddress" class="form-label">Address</label>
-              <span class="input-group-text" id="basic-addon1">Address</span>
-              <input type="text" class="form-control form-control-sm" id="patientAddress">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-home"></i></span>
+                <input type="text" class="form-control" id="patientAddress">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="patientPin" class="form-label">Pin</label>
-              <span class="input-group-text" id="basic-addon1">Pin</span>
-              <input type="text" class="form-control form-control-sm" id="patientPin">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-map-pin"></i></span>
+                <input type="text" class="form-control" id="patientPin">
+              </div>
             </div>
           </div>
       
@@ -847,23 +872,27 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="maritalSince" class="form-label">Marital Since</label>
-              <span class="input-group-text" id="basic-addon1">Since</span>
-              <input type="text" class="form-control form-control-sm flatpickr-input custom-datetime-picker" id="maritalSince" readonly>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="maritalSince" readonly>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="bloodGroup" class="form-label">Blood Group</label>
-              <span class="input-group-text" id="basic-addon1">B.Group</span>
-              <select class="form-select form-select-sm" id="bloodGroup">
-                <option value="" disabled selected>Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-tint"></i></span>
+                <select class="form-select" id="bloodGroup">
+                  <option value="" disabled selected>Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
             </div>
           </div>
       
@@ -871,17 +900,26 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="referredBy" class="form-label">Referred By</label>
-              <input type="text" class="form-control form-control-sm" id="referredBy">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-plus"></i></span>
+                <input type="text" class="form-control" id="referredBy">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="doctor" class="form-label">Doctor</label>
-              <select class="form-select form-select-sm" id="doctor">
-                <option value="" selected>Select Doctor</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+                <select class="form-select" id="doctor">
+                  <option value="" selected>Select Doctor</option>
+                </select>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="doctorSpecialty" class="form-label">Specialty</label>
-              <input type="text" class="form-control form-control-sm" id="doctorSpecialty" readonly>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
+                <input type="text" class="form-control" id="doctorSpecialty" readonly>
+              </div>
             </div>
           </div>
       
@@ -889,18 +927,24 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="channel" class="form-label">Channel (How did the patient hear about you?)</label>
-              <select class="form-select form-select-sm" id="channel">
-                <option value="" disabled selected>Select Channel</option>
-                <option value="Website">Website</option>
-                <option value="Referral">Referral</option>
-                <option value="Advertisement">Advertisement</option>
-                <option value="Social Media">Social Media</option>
-                <option value="Other">Other</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-bullhorn"></i></span>
+                <select class="form-select" id="channel">
+                  <option value="" disabled selected>Select Channel</option>
+                  <option value="Website">Website</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Advertisement">Advertisement</option>
+                  <option value="Social Media">Social Media</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
             <div class="col-md-6">
               <label for="cio" class="form-label">CIO</label>
-              <input type="text" class="form-control form-control-sm" id="cio">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                <input type="text" class="form-control" id="cio">
+              </div>
             </div>
           </div>
       
@@ -908,11 +952,17 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="occupation" class="form-label">Occupation</label>
-              <input type="text" class="form-control form-control-sm" id="occupation">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
+                <input type="text" class="form-control" id="occupation">
+              </div>
             </div>
             <div class="col-md-6">
               <label for="tag" class="form-label">Tag</label>
-              <input type="text" class="form-control form-control-sm" id="tag">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                <input type="text" class="form-control" id="tag">
+              </div>
             </div>
           </div>
       
@@ -920,11 +970,17 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="mobile2" class="form-label">Mobile 2</label>
-              <input type="text" class="form-control form-control-sm" id="mobile2">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                <input type="text" class="form-control" id="mobile2">
+              </div>
             </div>
             <div class="col-md-6">
               <label for="aadharNumber" class="form-label">Aadhar Number</label>
-              <input type="text" class="form-control form-control-sm" id="aadharNumber">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                <input type="text" class="form-control" id="aadharNumber">
+              </div>
             </div>
           </div>
       
@@ -932,11 +988,17 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="knownAllergies" class="form-label">Known Allergies</label>
-              <input type="text" class="form-control form-control-sm" id="knownAllergies">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-allergies"></i></span>
+                <input type="text" class="form-control" id="knownAllergies">
+              </div>
             </div>
             <div class="col-md-6">
               <label for="currentMedications" class="form-label">Current Medications</label>
-              <input type="text" class="form-control form-control-sm" id="currentMedications">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-pills"></i></span>
+                <input type="text" class="form-control" id="currentMedications">
+              </div>
             </div>
           </div>
       
@@ -944,11 +1006,17 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="pastMedicalHistory" class="form-label">Past Medical History</label>
-              <input type="text" class="form-control form-control-sm" id="pastMedicalHistory">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-history"></i></span>
+                <input type="text" class="form-control" id="pastMedicalHistory">
+              </div>
             </div>
             <div class="col-md-6">
               <label for="specificNotes" class="form-label">Specific Notes</label>
-              <input type="text" class="form-control form-control-sm" id="specificNotes">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
+                <input type="text" class="form-control" id="specificNotes">
+              </div>
             </div>
           </div>
       
@@ -956,15 +1024,24 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="emergencyContactName" class="form-label">Emergency Contact Name</label>
-              <input type="text" class="form-control form-control-sm" id="emergencyContactName">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" id="emergencyContactName">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="emergencyContactRelationship" class="form-label">Relationship</label>
-              <input type="text" class="form-control form-control-sm" id="emergencyContactRelationship">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-users"></i></span>
+                <input type="text" class="form-control" id="emergencyContactRelationship">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="emergencyContactNumber" class="form-label">Emergency Contact Number</label>
-              <input type="text" class="form-control form-control-sm" id="emergencyContactNumber">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                <input type="text" class="form-control" id="emergencyContactNumber">
+              </div>
             </div>
           </div>
       
@@ -972,11 +1049,17 @@
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="insuranceProvider" class="form-label">Insurance Provider</label>
-              <input type="text" class="form-control form-control-sm" id="insuranceProvider">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                <input type="text" class="form-control" id="insuranceProvider">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="policyNumber" class="form-label">Policy Number</label>
-              <input type="text" class="form-control form-control-sm" id="policyNumber">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
+                <input type="text" class="form-control" id="policyNumber">
+              </div>
             </div>
           </div>
       
@@ -984,14 +1067,20 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="admissionType" class="form-label">Admission Type</label>
-              <select class="form-select form-select-sm" id="admissionType">
-                <option value="OU" selected>Outpatient (OU)</option>
-                <option value="IN">Inpatient (IN)</option>
-              </select>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-hospital"></i></span>
+                <select class="form-select" id="admissionType">
+                  <option value="OU" selected>Outpatient (OU)</option>
+                  <option value="IN">Inpatient (IN)</option>
+                </select>
+              </div>
             </div>
             <div class="col-md-6">
               <label for="hospitalCode" class="form-label">Hospital Code</label>
-              <input type="text" class="form-control form-control-sm" id="hospitalCode" value="115">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-hospital-symbol"></i></span>
+                <input type="text" class="form-control" id="hospitalCode" value="115">
+              </div>
             </div>
           </div>
       
@@ -999,7 +1088,10 @@
           <div class="row mb-3">
             <div class="col-md-12">
               <label for="appointmentNotes" class="form-label">Appointment Notes</label>
-              <textarea class="form-control form-control-sm" id="appointmentNotes" rows="3"></textarea>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-notes-medical"></i></span>
+                <textarea class="form-control" id="appointmentNotes" rows="3"></textarea>
+              </div>
             </div>
           </div>
       
@@ -1007,7 +1099,10 @@
           <div class="row mb-3">
             <div class="col-md-12">
               <label for="patientImage" class="form-label">Upload Image</label>
-              <input type="file" class="form-control form-control-sm" id="patientImage" accept="image/*">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-image"></i></span>
+                <input type="file" class="form-control" id="patientImage" accept="image/*">
+              </div>
             </div>
           </div>
       
