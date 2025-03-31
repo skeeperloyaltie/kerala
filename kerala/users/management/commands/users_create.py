@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 "last_name": "M",
                 "password": "GopiPass123",
                 "user_type": "Doctor",
-                "role_level": "Basic",  # Basic Doctor
+                "role_level": "Senior",  # Basic Doctor
                 "email": "gopizee007@gmail.com",
                 "extra": {
                     "specialization": "Dentistry",
@@ -78,7 +78,7 @@ class Command(BaseCommand):
                 "last_name": "Sekar",
                 "password": "RoshniPass123",
                 "user_type": "Receptionist",
-                "role_level": "Basic",  # Basic Receptionist
+                "role_level": "Senior",  # Basic Receptionist
                 "email": "roshnisekar@gmail.com",
                 "extra": {
                     "contact_number": "1234567890",
