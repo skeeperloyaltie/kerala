@@ -243,70 +243,29 @@ class EditAppointmentView(APIView):
 
     def patch(self, request, appointment_id):
         user = request.user
-        data = request.data.copy()
-        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) attempting to edit appointment {appointment_id}")
+        logger.info(f"User {user.username} editing appointment {appointment_id}")
 
-        # Only Senior roles or Admins can edit appointments
         if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
-            logger.warning(f"Unauthorized edit attempt by {user.username}")
             raise PermissionDenied("Only Senior roles can edit appointments.")
 
         appointment = get_object_or_404(Appointment, id=appointment_id)
         if user.user_type == "Doctor" and appointment.doctor != user.doctor:
-            logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
             raise PermissionDenied("You can only edit your own appointments.")
 
-        original_appointment_date = appointment.appointment_date
-        if "patient_id" in data:
-            patient = get_object_or_404(Patient, patient_id=data["patient_id"])
-            appointment.patient = patient
-            logger.info(f"Matched patient ID {data['patient_id']} to DB ID {patient.id}")
-
+        # Prepare data for serializer
+        data = request.data.copy()
         if "current_illness" in data:
-            appointment.patient.current_medications = data["current_illness"]
-            appointment.patient.save(update_fields=["current_medications"])
+            patient = appointment.patient
+            patient.current_medications = data.pop("current_illness")
+            patient.save(update_fields=["current_medications"])
 
-        if "appointment_date" in data:
-            try:
-                appointment_date = datetime.fromisoformat(data["appointment_date"].replace("Z", "+00:00"))
-                appointment_date = KOLKATA_TZ.localize(appointment_date) if not appointment_date.tzinfo else appointment_date.astimezone(KOLKATA_TZ)
-                now_kolkata = datetime.now(KOLKATA_TZ)
-                if appointment_date <= now_kolkata:
-                    logger.warning(f"Attempt to set appointment {appointment_id} date in the past: {appointment_date}")
-                    return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
-                if appointment_date != original_appointment_date:
-                    appointment.appointment_date = appointment_date
-                    appointment.status = "Rescheduled"
-                    logger.info(f"Updated appointment_date for {appointment_id} to {appointment_date} and status to Rescheduled")
-                else:
-                    appointment.appointment_date = appointment_date
-            except ValueError:
-                logger.error(f"Invalid appointment date format: {data['appointment_date']}")
-                return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if "doctor_id" in data and data["doctor_id"]:
-            doctor = get_object_or_404(Doctor, id=data["doctor_id"])
-            appointment.doctor = doctor
-
-        appointment.notes = data.get("notes", appointment.notes)
-        appointment.updated_by = user
-
-        allowed_statuses = ["Waiting", "Scheduled", "Pending", "Active", "Completed", "Canceled", "Rescheduled"]
-        if "status" in data and "appointment_date" not in data:
-            if data["status"] in allowed_statuses:
-                appointment.status = data["status"]
-            else:
-                logger.error(f"Invalid status '{data['status']}' provided.")
-                return Response({"error": "Invalid status value."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            appointment.save()
-            serializer = AppointmentSerializer(appointment)
-            logger.info(f"Appointment {appointment_id} successfully updated by {user.username}")
+        serializer = AppointmentSerializer(appointment, data=data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(updated_by=user)
+            logger.info(f"Appointment {appointment_id} updated by {user.username}")
             return Response({"message": "Appointment updated successfully.", "appointment": serializer.data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Error updating appointment {appointment_id}: {str(e)}")
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"Errors updating appointment {appointment_id}: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -360,73 +319,48 @@ class RescheduleAppointmentView(APIView):
         new_date_str = data.get("appointment_date")
         appointment_ids = data.get("appointment_ids")
         patient_id = data.get("patient_id")
-        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) attempting to reschedule appointments")
 
-        # Only Senior roles or Admins can reschedule (update) appointments
         if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
-            logger.warning(f"Unauthorized reschedule attempt by {user.username}")
             raise PermissionDenied("Only Senior roles can reschedule appointments.")
 
         if not new_date_str:
-            logger.error("Reschedule request is missing the new date.")
             return Response({"error": "New appointment date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00"))
             new_date = KOLKATA_TZ.localize(new_date) if not new_date.tzinfo else new_date.astimezone(KOLKATA_TZ)
         except ValueError:
-            logger.error(f"Invalid date format: {new_date_str}")
             return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        now_kolkata = datetime.now(KOLKATA_TZ)
-        if new_date <= now_kolkata:
-            logger.warning(f"Attempt to reschedule to past date: {new_date}")
+        if new_date <= datetime.now(KOLKATA_TZ):
             return Response({"error": "New appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
 
-        appointments = []
         if appointment_id:
             appointments = [get_object_or_404(Appointment, id=appointment_id)]
         elif appointment_ids:
-            appointments = list(Appointment.objects.filter(id__in=appointment_ids))
+            appointments = Appointment.objects.filter(id__in=appointment_ids)
         elif patient_id:
-            appointments = list(Appointment.objects.filter(patient__patient_id=patient_id))
+            appointments = Appointment.objects.filter(patient__patient_id=patient_id)
         else:
             return Response({"error": "Provide an appointment ID, list of IDs, or patient ID."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not appointments:
+        if not appointments.exists():
             return Response({"error": "No valid appointments found."}, status=status.HTTP_404_NOT_FOUND)
 
         updated_count = 0
-        affected_patient_ids = set()
         for appointment in appointments:
             if user.user_type == "Doctor" and appointment.doctor != user.doctor:
-                logger.warning(f"Doctor {user.username} attempted unauthorized reschedule.")
                 continue
-            appointment.appointment_date = new_date
-            appointment.status = data.get("status", "Rescheduled")
-            appointment.updated_by = user
-            appointment.save()
-            updated_count += 1
-            affected_patient_ids.add(appointment.patient.patient_id)
+            serializer = AppointmentSerializer(appointment, data={"appointment_date": new_date, "status": data.get("status", "Rescheduled")}, partial=True, context={'request': request})
+            if serializer.is_valid():
+                serializer.save(updated_by=user)
+                updated_count += 1
 
         if updated_count == 0:
             return Response({"error": "No appointments were updated. Check permissions or IDs."}, status=status.HTTP_403_FORBIDDEN)
 
-        for patient_id in affected_patient_ids:
-            cache_key_base = f"search_*_{patient_id}_*"
-            possible_keys = [
-                f"search_{user.id}_{patient_id}_",
-                f"search_{user.id}_{patient_id}_{new_date.strftime('%Y-%m-%d')}",
-            ]
-            for key in possible_keys:
-                if cache.get(key) is not None:
-                    cache.delete(key)
-                    logger.info(f"Invalidated cache key: {key}")
-
-        logger.info(f"User {user.username} successfully rescheduled {updated_count} appointment(s) to {new_date}")
-        return Response({"message": f"Successfully rescheduled {updated_count} appointment(s) to {new_date}."}, status=status.HTTP_200_OK)
-
-
+        logger.info(f"User {user.username} rescheduled {updated_count} appointments to {new_date}")
+        return Response({"message": f"Successfully rescheduled {updated_count} appointments to {new_date}."}, status=status.HTTP_200_OK)
 class StandardResultsSetPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
@@ -498,13 +432,20 @@ class SearchView(generics.ListAPIView):
                     return {"patients": [], "appointments": []}
             elif appointment_date:
                 try:
-                    apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
-                    appointments = Appointment.objects.filter(appointment_date__date=apt_date).prefetch_related('vitals')
+                    apt_datetime = datetime.strptime(appointment_date, "%Y-%m-%dT%H:%M:%S%z")
+                    apt_datetime = apt_datetime.astimezone(KOLKATA_TZ)
+                    appointments = Appointment.objects.filter(appointment_date=apt_datetime).prefetch_related('vitals')
                     patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
                     patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
                 except ValueError:
-                    logger.error(f"Invalid appointment_date format: {appointment_date}")
-                    return {"patients": [], "appointments": []}
+                    try:
+                        apt_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+                        appointments = Appointment.objects.filter(appointment_date__date=apt_date).prefetch_related('vitals')
+                        patient_ids_from_appts = appointments.values_list('patient__patient_id', flat=True)
+                        patients = Patient.objects.filter(patient_id__in=patient_ids_from_appts)
+                    except ValueError:
+                        logger.error(f"Invalid appointment_date format: {appointment_date}")
+                        return {"patients": [], "appointments": []}
             else:
                 patients = Patient.objects.filter(
                     Q(last_name__icontains=last_name) |
@@ -569,7 +510,47 @@ class SearchView(generics.ListAPIView):
             "appointments": AppointmentSerializer(paginated_results.get("appointments", []), many=True).data if paginated_results.get("appointments") else [],
         }
         return Response(response_data)
+    
+## list appointments based on date
+class AppointmentListByDateView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        date_str = request.query_params.get('date', None)
+        logger.info(f"User {user.username} requesting appointments for date: {date_str}")
+
+        if not user.has_perm('appointments.view_appointment'):
+            raise PermissionDenied("You do not have permission to view appointments.")
+
+        if not date_str:
+            return Response({"error": "Date parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            date_filter = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use 'YYYY-MM-DD'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if user.user_type == "Doctor":
+                appointments = Appointment.objects.filter(
+                    doctor=user.doctor,
+                    appointment_date__date=date_filter
+                )
+            elif user.user_type in ["Receptionist", "Nurse"] or user.is_superuser:
+                appointments = Appointment.objects.filter(
+                    appointment_date__date=date_filter
+                )
+            else:
+                return Response({"error": "Unauthorized role."}, status=status.HTTP_403_FORBIDDEN)
+
+            serializer = AppointmentSerializer(appointments, many=True)
+            logger.info(f"Fetched {appointments.count()} appointments for {date_filter}")
+            return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error fetching appointments: {str(e)}", exc_info=True)
+            return Response({"error": "An error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
 class GetPatientDetailsView(APIView):
     permission_classes = [IsAuthenticated]

@@ -5,12 +5,13 @@ $(document).ready(function () {
   // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
-    defaultDate: "2025-03-28",
+    defaultDate: new Date(), // Set to today by default
     onChange: function (selectedDates, dateStr) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
+      fetchAppointmentsByDate(dateStr); // Fetch appointments when date changes
     }
   });
-  console.log("🟢 Flatpickr Initialized for #dateFilter with default date: 28 Mar 2025");
+  console.log("🟢 Flatpickr Initialized for #dateFilter with default date: Today");
 
   // Get Authentication Headers
   function getAuthHeaders() {
@@ -55,6 +56,7 @@ $(document).ready(function () {
           console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
           $(".doctor-code").text(`Doctor Code: ${data.doctor_code}`);
         }
+        fetchAppointmentsByDate(); // Fetch today's appointments on load
       },
       error: function (xhr) {
         console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
@@ -66,7 +68,7 @@ $(document).ready(function () {
     });
   }
 
-  // Role-Based UI Adjustments
+  // Role-Based UI Adjustments (unchanged)
   function adjustUIForRole(userType, roleLevel) {
     console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
     const navItems = $(".navbar-top .nav-item");
@@ -158,7 +160,84 @@ $(document).ready(function () {
     setupPatientSearch();
   }
 
-  // Logout Function
+  // Fetch Appointments by Date
+  function fetchAppointmentsByDate(dateStr = null) {
+    const today = new Date();
+    const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const selectedDate = dateStr || defaultDate;
+
+    console.log(`📅 Fetching appointments for date: ${selectedDate}`);
+
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/by-date/?date=${selectedDate}`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        console.log("✅ Appointments Fetched Successfully:", data);
+        populateAppointmentsTable(data.appointments, selectedDate);
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to Fetch Appointments:", xhr.status, xhr.responseJSON || xhr.statusText);
+        let errorMessage = xhr.responseJSON?.error || "Unknown error";
+        alert(`Failed to fetch appointments: ${errorMessage}`);
+        populateAppointmentsTable([], selectedDate); // Clear table on error
+      }
+    });
+  }
+
+  // Populate Appointments Table
+  function populateAppointmentsTable(appointments, date) {
+    const $tbody = $('.table-appointments tbody');
+    $tbody.empty();
+
+    if (!appointments || appointments.length === 0) {
+      $tbody.append(`<tr><td colspan="7" class="text-center">No appointments found for ${date}</td></tr>`);
+      console.log(`ℹ️ No appointments to display for ${date}`);
+      return;
+    }
+
+    appointments.forEach((appt, index) => {
+      const appointmentDate = new Date(appt.appointment_date);
+      const timeStr = appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const doctorName = appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A';
+      const patientName = `${appt.patient.first_name} ${appt.patient.last_name || ''}`;
+      const statusClass = `status-${appt.status.toLowerCase().replace(' ', '-')}`;
+
+      const $row = $(`
+        <tr>
+          <td>${index + 1}</td>
+          <td>${appt.id}</td> <!-- Using appointment ID as token for simplicity -->
+          <td>${patientName}</td>
+          <td>${timeStr}</td>
+          <td><span class="${statusClass}">${appt.status.toUpperCase()}</span></td>
+          <td>${doctorName}</td>
+          <td>${appt.notes || 'N/A'}</td> <!-- Using notes as placeholder for Procedure Charges -->
+        </tr>
+      `);
+      $tbody.append($row);
+    });
+
+    console.log(`✅ Populated appointments table with ${appointments.length} entries for ${date}`);
+  }
+
+  // Bind Date Filter Buttons
+  function bindDateFilterButtons() {
+    $('.btn:contains("Set")').on('click', function () {
+      const dateStr = $("#dateFilter").val();
+      console.log("🖱️ Set Date Clicked:", dateStr);
+      fetchAppointmentsByDate(dateStr);
+    });
+
+    $('.btn:contains("Today")').on('click', function () {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      console.log("🖱️ Today Clicked:", todayStr);
+      $("#dateFilter").val(todayStr); // Update Flatpickr input
+      fetchAppointmentsByDate(todayStr);
+    });
+  }
+
+  // Logout Function (unchanged)
   function logoutUser() {
     const headers = getAuthHeaders();
     if (!headers['Authorization']) {
@@ -186,7 +265,7 @@ $(document).ready(function () {
     });
   }
 
-  // Force Logout Fallback
+  // Force Logout Fallback (unchanged)
   function forceLogout() {
     console.log("🔒 Forcing logout...");
     sessionStorage.clear();
@@ -196,7 +275,7 @@ $(document).ready(function () {
     window.location.href = "../login/login.html";
   }
 
-  // Bind Logout Event
+  // Bind Logout Event (unchanged)
   function bindLogoutEvent() {
     const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
     logoutLink.off('click').on('click', function (e) {
@@ -206,7 +285,7 @@ $(document).ready(function () {
     });
   }
 
-  // Bind Modal Actions
+  // Bind Modal Actions (unchanged)
   function bindModalActions() {
     console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
 
@@ -240,7 +319,7 @@ $(document).ready(function () {
     });
   }
 
-  // Reset Modal View
+  // Reset Modal View (unchanged)
   function resetModalView() {
     console.log("🔄 Resetting modal view...");
     const modalBody = $("#modalBody");
@@ -249,7 +328,7 @@ $(document).ready(function () {
     sidebarContentArea.hide();
   }
 
-  // Setup Patient Search with Autocomplete
+  // Setup Patient Search with Autocomplete (unchanged)
   function setupPatientSearch() {
     console.log("🔍 Setting up patient search...");
     const $searchInput = $('.navbar-top .form-control');
@@ -317,7 +396,7 @@ $(document).ready(function () {
     });
   }
 
-  // Debounce function to limit API calls
+  // Debounce function (unchanged)
   function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -326,33 +405,32 @@ $(document).ready(function () {
     };
   }
 
-  // Fetch Patient Details and Populate Modal
+  // Fetch Patient Details (unchanged)
   function fetchPatientDetails(patientId) {
     $.ajax({
-        url: `${API_BASE_URL}/patients/details/${patientId}/`,
-        type: "GET",
-        headers: getAuthHeaders(),
-        success: function (data) {
-            console.log("✅ Raw patient details response:", data);
-            const patientData = data.patient || data;
-            console.log("✅ Processed patient data:", patientData);
-            populateProfileTab(patientData);
-            $('#newActionModal').modal('show');
-            $('#profileTab').tab('show');
-            updateDetailsSection(patientData);
-        },
-        error: function (xhr) {
-            console.error("❌ Fetch patient error:", xhr.status, xhr.responseText);
-            let errorMsg = xhr.responseJSON?.error || "Unknown error";
-            alert(`Failed to fetch patient details: ${errorMsg}`);
-        }
+      url: `${API_BASE_URL}/patients/details/${patientId}/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        console.log("✅ Raw patient details response:", data);
+        const patientData = data.patient || data;
+        console.log("✅ Processed patient data:", patientData);
+        populateProfileTab(patientData);
+        $('#newActionModal').modal('show');
+        $('#profileTab').tab('show');
+        updateDetailsSection(patientData);
+      },
+      error: function (xhr) {
+        console.error("❌ Fetch patient error:", xhr.status, xhr.responseText);
+        let errorMsg = xhr.responseJSON?.error || "Unknown error";
+        alert(`Failed to fetch patient details: ${errorMsg}`);
+      }
     });
-}
+  }
 
-  // Populate Profile Tab
+  // Populate Profile Tab (unchanged)
   function populateProfileTab(patient) {
     const $profileTab = $('#profile');
-    // Populate required fields
     $('#profileFirstName').val(patient.first_name || '');
     $('#profileLastName').val(patient.last_name || '');
     $('#profilePhone').val(patient.mobile_number || '');
@@ -364,7 +442,6 @@ $(document).ready(function () {
     $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
     $('#profileAppointmentDate').val(patient.appointment_date ? patient.appointment_date.replace('T', ' ').substring(0, 16) : 'N/A');
   
-    // Populate additional fields
     $('#profileCity').val(patient.city || '');
     $('#profileAddress').val(patient.address || '');
     $('#profilePin').val(patient.pincode || '');
@@ -392,9 +469,7 @@ $(document).ready(function () {
     $('#profileHospitalCode').val(patient.hospital_code || '');
     $('#profileAppointmentNotes').val(patient.notes || '');
   
-    // Add event listeners for addons
     $('#editProfileBtn').off('click').on('click', function () {
-      // Transfer data to addPatientForm and switch tab
       $('#patientFirstName').val(patient.first_name || '');
       $('#patientLastName').val(patient.last_name || '');
       $('#patientPhone').val(patient.mobile_number || '');
@@ -447,7 +522,7 @@ $(document).ready(function () {
     console.log("✅ Profile tab populated with patient data:", patient);
   }
 
-  // Show Prompt to Create New Patient
+  // Show Create Patient Prompt (unchanged)
   function showCreatePatientPrompt(query) {
     const [firstName, ...lastNameParts] = query.split(' ');
     const lastName = lastNameParts.join(' ');
@@ -490,7 +565,7 @@ $(document).ready(function () {
     });
   }
 
-  // Update Details Section (from clicks.js)
+  // Update Details Section (unchanged)
   function updateDetailsSection(patientData) {
     const detailsTitle = document.getElementById('detailsTitle');
     const detailsMeta = document.getElementById('detailsMeta');
@@ -512,7 +587,7 @@ $(document).ready(function () {
     }
   }
 
-  // Toggle Split View (from clicks.js)
+  // Toggle Split View (unchanged)
   function toggleSplitView(tabId) {
     const modalBody = document.getElementById('modalBody');
     const sidebarContentArea = document.getElementById('sidebarContentArea');
@@ -530,7 +605,7 @@ $(document).ready(function () {
     console.log(`✅ Split view toggled for tab: ${tabId}`);
   }
 
-  // Add Patient Form Submission
+  // Add Patient Form Submission (unchanged)
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
   
@@ -639,14 +714,14 @@ $(document).ready(function () {
       success: function (data) {
         console.log("✅ Patient and Appointment Created Successfully:", data);
         updateDetailsSection(data.patient);
-        populateProfileTab(data.patient); // Populate profile tab after creation
-        $('#profileTab').tab('show'); // Switch to profile tab
+        populateProfileTab(data.patient);
+        $('#profileTab').tab('show');
   
         const activeButton = e.originalEvent.submitter.id;
         if (activeButton === 'addAndCreateBill') {
           toggleSplitView('addBills');
           $('#addBillsTab').tab('show');
-          $('#patientIdForBill').val(data.patient.patient_id); // Pre-fill patient ID in bill form
+          $('#patientIdForBill').val(data.patient.patient_id);
         } else if (activeButton === 'addAndCreateAppointment') {
           toggleSplitView('addPatient');
         }
@@ -676,20 +751,18 @@ $(document).ready(function () {
     });
   });
 
-  // Handle Add Bills Form Submission (Placeholder)
+  // Add Bills Form Submission (unchanged)
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
     console.log("🖱️ Add Bill Submitted");
   
-    // Collect form data
     const billData = {
-      patient_id: $("#patientIdForBill").val(), // Assuming a hidden/input field for patient ID
+      patient_id: $("#patientIdForBill").val(),
       description: $("#billDescription").val(),
       amount: $("#billAmount").val(),
-      date: $("#billDate").val() || new Date().toISOString().split('T')[0] // Default to today if not provided
+      date: $("#billDate").val() || new Date().toISOString().split('T')[0]
     };
   
-    // Basic validation
     let errors = [];
     if (!billData.patient_id) errors.push("Patient ID is required.");
     if (!billData.description || billData.description.trim() === "") errors.push("Description is required.");
@@ -700,9 +773,8 @@ $(document).ready(function () {
       return;
     }
   
-    // Send to backend
     $.ajax({
-      url: `${API_BASE_URL}/bills/create/`, // Adjust to your actual endpoint
+      url: `${API_BASE_URL}/bills/create/`,
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(billData),
@@ -710,8 +782,7 @@ $(document).ready(function () {
       success: function (data) {
         console.log("✅ Bill Added Successfully:", data);
         alert("Bill added successfully!");
-        $("#addBillsForm")[0].reset(); // Reset the form
-        // Optionally update UI, e.g., refresh bill list or close split view
+        $("#addBillsForm")[0].reset();
       },
       error: function (xhr) {
         console.error("❌ Failed to Add Bill:", xhr.status, xhr.responseJSON || xhr.statusText);
@@ -726,7 +797,7 @@ $(document).ready(function () {
     });
   });
 
-  // Populate Doctor Dropdown
+  // Populate Doctor Dropdown (unchanged)
   function populateDoctorDropdown() {
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
@@ -754,7 +825,7 @@ $(document).ready(function () {
     });
   }
 
-  // Event Listeners
+  // Event Listeners (updated)
   $('#newActionModal').on('shown.bs.modal', function () {
     populateDoctorDropdown();
     initializeDatePickers(); // Call from flatpicker.js
@@ -768,5 +839,6 @@ $(document).ready(function () {
   // Initialize
   console.log("🚀 Initializing Dashboard...");
   checkAuthentication();
+  bindDateFilterButtons(); // Bind buttons after DOM is ready
   console.log("✅ Dashboard Initialization Complete");
 });
