@@ -145,26 +145,14 @@ class PatientDetailView(generics.RetrieveAPIView):
             return base_qs.none()
 
     def retrieve(self, request, *args, **kwargs):
-        """
-        Handle the retrieval of patient details
-        """
+        logger.info(f"Retrieving patient details for pk={self.kwargs.get('pk')}")
         try:
-            # Get the patient instance
             queryset = self.get_queryset()
+            logger.info(f"Queryset count: {queryset.count()}")
             patient = get_object_or_404(queryset, pk=self.kwargs.get('pk'))
-            
-            # Serialize the data
             serializer = self.get_serializer(patient)
-            
-            logger.info(f"Successfully retrieved patient details for ID {self.kwargs.get('pk')} "
-                       f"by user {request.user.username}")
-            
+            logger.info(f"Patient data: {serializer.data}")
             return Response({"patient": serializer.data}, status=status.HTTP_200_OK)
-            
         except Exception as e:
-            logger.error(f"Error retrieving patient details for ID {self.kwargs.get('pk')} "
-                        f"by {request.user.username}: {str(e)}", exc_info=True)
-            return Response(
-                {"error": "An error occurred while retrieving patient details"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"Error: {str(e)}", exc_info=True)
+            return Response({"error": "An error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
