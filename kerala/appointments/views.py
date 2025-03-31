@@ -252,18 +252,18 @@ class EditAppointmentView(APIView):
         if user.user_type == "Doctor" and appointment.doctor != user.doctor:
             raise PermissionDenied("You can only edit your own appointments.")
 
-        # Prepare data for serializer
-        data = request.data.copy()
-        if "current_illness" in data:
-            patient = appointment.patient
-            patient.current_medications = data.pop("current_illness")
-            patient.save(update_fields=["current_medications"])
-
-        serializer = AppointmentSerializer(appointment, data=data, partial=True, context={'request': request})
+        serializer = AppointmentSerializer(appointment, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save(updated_by=user)
+            # Optionally update patient if patient_id is provided
+            patient_id = request.data.get('patient_id')
+            if patient_id:
+                patient = get_object_or_404(Patient, patient_id=patient_id)
+                patient_serializer = PatientSerializer(patient, data=request.data, partial=True)
+                if patient_serializer.is_valid():
+                    patient_serializer.save()
             logger.info(f"Appointment {appointment_id} updated by {user.username}")
-            return Response({"message": "Appointment updated successfully.", "appointment": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"message": "Appointment updated successfully.", "appointment": serializer.data, "patient": patient_serializer.data if patient_id else None}, status=status.HTTP_200_OK)
         logger.error(f"Errors updating appointment {appointment_id}: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
