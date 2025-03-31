@@ -7,6 +7,7 @@ from appointments.models import Patient
 from .serializers import PatientSerializer
 import logging
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 
 logger = logging.getLogger(__name__)
@@ -82,11 +83,12 @@ class PatientSearchView(generics.ListAPIView):
     serializer_class = PatientSerializer
 
     def get_queryset(self):
+        user = self.request.user
         query = self.request.query_params.get('query', '').strip()
         if not query:
             return Patient.objects.none()
 
-        return Patient.objects.filter(
+        base_qs = Patient.objects.filter(
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(patient_id__icontains=query) |
@@ -94,21 +96,31 @@ class PatientSearchView(generics.ListAPIView):
             Q(date_of_birth__icontains=query)
         )
 
+        if hasattr(user, 'doctor'):
+            return base_qs.filter(
+                Q(primary_doctor=user.doctor) | 
+                Q(appointments__doctor=user.doctor)
+            ).distinct()
+        elif hasattr(user, 'receptionist'):
+            return base_qs
+        else:
+            return base_qs.none()
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'patients': serializer.data})
     
     
-# patients/views.py
+# patients/views.py# patients/views.py
 class PatientDetailView(generics.RetrieveAPIView):
     serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'patient_id'  # Change from 'pk' to 'patient_id'
+    lookup_field = 'patient_id'
 
     def get_queryset(self):
         user = self.request.user
-        patient_id = self.kwargs.get('patient_id')  # Use patient_id from URL
+        patient_id = self.kwargs.get('patient_id')
         
         logger.info(f"User {user.username} ({user.user_type if hasattr(user, 'user_type') else 'Unknown'}) "
                    f"requesting details for patient ID {patient_id}")
@@ -123,24 +135,36 @@ class PatientDetailView(generics.RetrieveAPIView):
                 Q(primary_doctor=user.doctor) | 
                 Q(appointments__doctor=user.doctor)
             )
+            logger.info(f"Doctor queryset count: {queryset.count()}")
             return queryset
         elif hasattr(user, 'receptionist'):
+            logger.info(f"Receptionist queryset count: {base_qs.count()}")
             return base_qs
         else:
             logger.warning(f"Unauthorized attempt by {user.username} to access patient details")
             return base_qs.none()
 
     def retrieve(self, request, *args, **kwargs):
+        patient_id = self.kwargs.get('patient_id')
+        logger.info(f"Attempting to retrieve patient with patient_id={patient_id}")
         try:
             queryset = self.get_queryset()
-            logger.info(f"Queryset count before filter: {queryset.count()}")
-            patient = get_object_or_404(queryset, patient_id=self.kwargs.get('patient_id'))  # Use patient_id
+            if not queryset.exists():
+                logger.warning(f"No patients accessible to {request.user.username} for patient_id={patient_id}")
+                raise Http404(f"No patient found with ID {patient_id} for this user")
+            
+            patient = get_object_or_404(queryset, patient_id=patient_id)
             serializer = self.get_serializer(patient)
-            logger.info(f"Patient data: {serializer.data}")
+            logger.info(f"Found patient: {serializer.data}")
             return Response({"patient": serializer.data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Error retrieving patient details for ID {self.kwargs.get('patient_id')}: {str(e)}", exc_info=True)
+        except Http404:
             return Response(
-                {"error": "An error occurred while retrieving patient details"},
+                {"error": f"Patient with ID {patient_id} not found or not accessible"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error retrieving patient {patient_id}: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An unexpected error occurred"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

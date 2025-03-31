@@ -329,12 +329,12 @@ $(document).ready(function () {
   // Fetch Patient Details and Populate Modal
   function fetchPatientDetails(patientId) {
     $.ajax({
-        url: `${API_BASE_URL}/patients/details/${patientId}/`,  // Changed "detail" to "details"
+        url: `${API_BASE_URL}/patients/details/${patientId}/`,
         type: "GET",
         headers: getAuthHeaders(),
         success: function (data) {
             console.log("✅ Raw patient details response:", data);
-            const patientData = data.patient || data;  // Handle nested response
+            const patientData = data.patient || data;
             console.log("✅ Processed patient data:", patientData);
             populateProfileTab(patientData);
             $('#newActionModal').modal('show');
@@ -343,10 +343,11 @@ $(document).ready(function () {
         },
         error: function (xhr) {
             console.error("❌ Fetch patient error:", xhr.status, xhr.responseText);
-            alert("Failed to fetch patient details: " + (xhr.responseText || "Unknown error"));
+            let errorMsg = xhr.responseJSON?.error || "Unknown error";
+            alert(`Failed to fetch patient details: ${errorMsg}`);
         }
     });
-} 
+}
 
   // Populate Profile Tab
   function populateProfileTab(patient) {
