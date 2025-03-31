@@ -253,18 +253,21 @@ $(document).ready(function () {
   function setupPatientSearch() {
     console.log("🔍 Setting up patient search...");
     const $searchInput = $('.navbar-top .form-control');
+    console.log("🔍 Search input found:", $searchInput.length ? "Yes" : "No", $searchInput);
+
     const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
     $searchInput.after($dropdown);
   
     $searchInput.on('input', debounce(function () {
       console.log("✨ Search input triggered:", $searchInput.val());
       const query = $searchInput.val().trim();
-      if (query.length < 2) {
+      if (query.length < 1) {
         $dropdown.hide().empty();
         console.log("Query too short, skipping search");
         return;
       }
-  
+      console.log("🚀 Proceeding with search for query:", query);
+
       $.ajax({
         url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
         type: "GET",
@@ -274,6 +277,10 @@ $(document).ready(function () {
         },
         success: function (data) {
           console.log("✅ Patient search results:", data);
+          if (!data || !data.patients) {
+            data = { patients: [] };
+            console.log("🛠️ Mocking empty response for testing");
+          }
           $dropdown.empty();
           if (data.patients && data.patients.length > 0) {
             data.patients.forEach(patient => {
@@ -284,7 +291,7 @@ $(document).ready(function () {
             $dropdown.show();
             console.log("👀 Dropdown should be visible now");
           } else {
-            $dropdown.hide();
+            $dropdown.show();
             console.log("🕳️ No patients found, hiding dropdown");
             showCreatePatientPrompt(query);
           }

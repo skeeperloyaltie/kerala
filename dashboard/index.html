@@ -441,7 +441,7 @@
 /* Autocomplete Dropdown Styling */
 .autocomplete-dropdown {
   position: absolute;
-  width: 100%;
+  width: 120px; /* Match input width */
   z-index: 1000;
   max-height: 200px;
   overflow-y: auto;
@@ -451,6 +451,8 @@
   border: 1px solid #dee2e6;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  list-style: none; /* Remove default bullets */
 }
 
 .autocomplete-dropdown li {
@@ -1513,7 +1515,7 @@
   <script src="flatpicker.js"> </script>
 
   <script src="main.js"></script>
-  <script src="simulate.js"></script>
+  <!-- <script src="simulate.js"></script> -->
   <script src="clicks.js"></script>
 
   <!-- Custom JS -->
