@@ -658,7 +658,6 @@
       <div class="modal-content">
         <!-- Modal Header -->
         <div class="modal-header">
-          <!-- Left Side: Patient Details -->
           <!-- Left Side: Patient/Appointment Details -->
 <div class="patient-details" id="detailsSection">
   <i class="fas fa-user fa-icon"></i>
@@ -1159,10 +1158,342 @@
       <div class="tab-pane fade" id="labProfile" role="tabpanel" aria-labelledby="labProfileTab">
         <p>Lab Profile content goes here.</p>
       </div>
-      <!-- Profile Tab -->
-      <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profileTab">
-        <p>Profile content goes here.</p>
+   <!-- Profile Tab -->
+<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profileTab">
+  <div class="profile-content">
+    <h6 class="mb-3">Patient Profile</h6>
+    <form id="profileForm">
+      <!-- Required Fields Section -->
+      <h6 class="mb-3">Required Information</h6>
+
+      <!-- Row 1: Patient Name and Phone Number -->
+      <div class="row mb-3">
+        <div class="col-md-4 position-relative">
+          <label for="profileFirstName" class="form-label">First Name</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            <input type="text" class="form-control" id="profileFirstName" readonly>
+          </div>
+        </div>
+        <div class="col-md-4 position-relative">
+          <label for="profileLastName" class="form-label">Last Name</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            <input type="text" class="form-control" id="profileLastName" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profilePhone" class="form-label">Phone Number</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+            <input type="text" class="form-control" id="profilePhone" readonly>
+          </div>
+        </div>
       </div>
+
+      <!-- Row 2: Gender, Date of Birth, Preferred Language -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileGender" class="form-label">Gender</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
+            <input type="text" class="form-control" id="profileGender" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileDOB" class="form-label">Date of Birth</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+            <input type="text" class="form-control" id="profileDOB" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profilePreferredLanguage" class="form-label">Preferred Language</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-language"></i></span>
+            <input type="text" class="form-control" id="profilePreferredLanguage" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Father's Name, Marital Status, Payment Preference -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileFatherName" class="form-label">Father's Name</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+            <input type="text" class="form-control" id="profileFatherName" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileMaritalStatus" class="form-label">Marital Status</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-ring"></i></span>
+            <input type="text" class="form-control" id="profileMaritalStatus" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profilePaymentPreference" class="form-label">Payment Preference</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
+            <input type="text" class="form-control" id="profilePaymentPreference" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Appointment Date -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileAppointmentDate" class="form-label">Appointment Date</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+            <input type="text" class="form-control" id="profileAppointmentDate" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional Fields Section -->
+      <h6 class="mb-3 mt-4">Additional Information</h6>
+
+      <!-- Row 5: City, Address, Pin -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileCity" class="form-label">City</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-city"></i></span>
+            <input type="text" class="form-control" id="profileCity" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileAddress" class="form-label">Address</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-home"></i></span>
+            <input type="text" class="form-control" id="profileAddress" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profilePin" class="form-label">Pin</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-map-pin"></i></span>
+            <input type="text" class="form-control" id="profilePin" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 6: Marital Since, Blood Group -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileMaritalSince" class="form-label">Marital Since</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+            <input type="text" class="form-control" id="profileMaritalSince" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileBloodGroup" class="form-label">Blood Group</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-tint"></i></span>
+            <input type="text" class="form-control" id="profileBloodGroup" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 7: Referred By, Doctor, Doctor Specialty -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileReferredBy" class="form-label">Referred By</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-user-plus"></i></span>
+            <input type="text" class="form-control" id="profileReferredBy" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileDoctor" class="form-label">Doctor</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+            <input type="text" class="form-control" id="profileDoctor" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileDoctorSpecialty" class="form-label">Specialty</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
+            <input type="text" class="form-control" id="profileDoctorSpecialty" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 8: Channel, CIO -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="profileChannel" class="form-label">Channel</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-bullhorn"></i></span>
+            <input type="text" class="form-control" id="profileChannel" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="profileCIO" class="form-label">CIO</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+            <input type="text" class="form-control" id="profileCIO" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 9: Occupation, Tag -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="profileOccupation" class="form-label">Occupation</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
+            <input type="text" class="form-control" id="profileOccupation" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="profileTag" class="form-label">Tag</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-tag"></i></span>
+            <input type="text" class="form-control" id="profileTag" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 10: Mobile 2, Aadhar Number -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="profileMobile2" class="form-label">Mobile 2</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+            <input type="text" class="form-control" id="profileMobile2" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="profileAadharNumber" class="form-label">Aadhar Number</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+            <input type="text" class="form-control" id="profileAadharNumber" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 11: Known Allergies, Current Medications -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="profileKnownAllergies" class="form-label">Known Allergies</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-allergies"></i></span>
+            <input type="text" class="form-control" id="profileKnownAllergies" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="profileCurrentMedications" class="form-label">Current Medications</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-pills"></i></span>
+            <input type="text" class="form-control" id="profileCurrentMedications" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 12: Past Medical History, Specific Notes -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="profilePastMedicalHistory" class="form-label">Past Medical History</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-history"></i></span>
+            <input type="text" class="form-control" id="profilePastMedicalHistory" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="profileSpecificNotes" class="form-label">Specific Notes</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
+            <input type="text" class="form-control" id="profileSpecificNotes" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 13: Emergency Contact Details -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileEmergencyContactName" class="form-label">Emergency Contact Name</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            <input type="text" class="form-control" id="profileEmergencyContactName" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileEmergencyContactRelationship" class="form-label">Relationship</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-users"></i></span>
+            <input type="text" class="form-control" id="profileEmergencyContactRelationship" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profileEmergencyContactNumber" class="form-label">Emergency Contact Number</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+            <input type="text" class="form-control" id="profileEmergencyContactNumber" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 14: Insurance Details -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="profileInsuranceProvider" class="form-label">Insurance Provider</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+            <input type="text" class="form-control" id="profileInsuranceProvider" readonly>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="profilePolicyNumber" class="form-label">Policy Number</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
+            <input type="text" class="form-control" id="profilePolicyNumber" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 15: Admission Type, Hospital Code -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="profileAdmissionType" class="form-label">Admission Type</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-hospital"></i></span>
+            <input type="text" class="form-control" id="profileAdmissionType" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="profileHospitalCode" class="form-label">Hospital Code</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-hospital-symbol"></i></span>
+            <input type="text" class="form-control" id="profileHospitalCode" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 16: Appointment Notes -->
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <label for="profileAppointmentNotes" class="form-label">Appointment Notes</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-notes-medical"></i></span>
+            <textarea class="form-control" id="profileAppointmentNotes" rows="3" readonly></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Addons -->
+      <div class="profile-addons mt-3">
+        <button type="button" class="btn btn-secondary btn-sm" id="editProfileBtn">Edit Profile</button>
+        <button type="button" class="btn btn-info btn-sm" id="viewAppointmentsBtn">View Appointments</button>
+        <button type="button" class="btn btn-primary btn-sm" id="addBillFromProfileBtn">Add Bill</button>
+      </div>
+    </form>
+  </div>
+</div>
     </div>
   </div>
   <div class="sidebar-content-area" id="sidebarContentArea" style="display: none;">
