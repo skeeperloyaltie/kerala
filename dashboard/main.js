@@ -251,50 +251,58 @@ $(document).ready(function () {
 
   // Setup Patient Search with Autocomplete
   function setupPatientSearch() {
+    console.log("🔍 Setting up patient search...");
     const $searchInput = $('.navbar-top .form-control');
     const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
     $searchInput.after($dropdown);
-
+  
     $searchInput.on('input', debounce(function () {
+      console.log("✨ Search input triggered:", $searchInput.val());
       const query = $searchInput.val().trim();
       if (query.length < 2) {
         $dropdown.hide().empty();
+        console.log("Query too short, skipping search");
         return;
       }
-
+  
       $.ajax({
         url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
         type: "GET",
         headers: getAuthHeaders(),
+        beforeSend: function () {
+          console.log("📤 Sending search request for query:", query);
+        },
         success: function (data) {
           console.log("✅ Patient search results:", data);
           $dropdown.empty();
           if (data.patients && data.patients.length > 0) {
             data.patients.forEach(patient => {
-              $dropdown.append(
-                `<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`
-              );
+              const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
+              $dropdown.append($li);
+              console.log("➕ Added patient to dropdown:", $li.text());
             });
             $dropdown.show();
+            console.log("👀 Dropdown should be visible now");
           } else {
             $dropdown.hide();
+            console.log("🕳️ No patients found, hiding dropdown");
             showCreatePatientPrompt(query);
           }
         },
         error: function (xhr) {
-          console.error("❌ Search error:", xhr.responseText);
+          console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
           $dropdown.hide();
         }
       });
     }, 300));
-
+  
     $dropdown.on('click', 'li', function () {
       const patientId = $(this).data('patient-id');
       $searchInput.val($(this).text());
       $dropdown.hide();
       fetchPatientDetails(patientId);
     });
-
+  
     $(document).on('click', function (e) {
       if (!$(e.target).closest('.navbar-top .form-control, .autocomplete-dropdown').length) {
         $dropdown.hide();
