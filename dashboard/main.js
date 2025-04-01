@@ -507,8 +507,8 @@ function populateProfileTab(patient) {
     $('#maritalSince').val(patient.marital_since || '');
     $('#bloodGroup').val(patient.blood_group || '');
     $('#referredBy').val(patient.referred_by || '');
-    $('#doctor').val(appointment && appointment.doctor ? appointment.doctor.id : '');
-    $('#doctorSpecialty').val(appointment && appointment.doctor ? appointment.doctor.specialization : '');
+    $('#profileDoctor').val(patient.doctor ? `${patient.doctor.first_name} ${patient.doctor.last_name || ''}` : 'N/A');
+    $('#profileDoctorSpecialty').val(patient.doctor ? patient.doctor.specialization : '');
     $('#channel').val(patient.channel || '');
     $('#cio').val(patient.cio || '');
     $('#occupation').val(patient.occupation || '');
