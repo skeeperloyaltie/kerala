@@ -746,7 +746,6 @@ function populateProfileTab(patient) {
       errors.push("Appointment Date is required for editing an appointment.");
     }
   
-    // Add validation for primary doctor
     const primaryDoctor = $("#doctor").val();
     if (!primaryDoctor) {
       errors.push("Primary Doctor is required.");
@@ -790,13 +789,13 @@ function populateProfileTab(patient) {
       payment_preference: $("#paymentPreference").val(),
       admission_type: $("#admissionType").val(),
       hospital_code: $("#hospitalCode").val(),
-      primary_doctor: $("#doctor").val() // Add primary_doctor here
+      primary_doctor: $("#doctor").val()
     };
   
     const appointmentData = appointmentDate ? {
       appointment_date: appointmentDate,
       notes: $("#appointmentNotes").val(),
-      doctor: $("#doctor").val() || null,
+      doctor_id: $("#doctor").val() || null, // Rename to doctor_id
       is_emergency: false
     } : null;
   
@@ -827,6 +826,7 @@ function populateProfileTab(patient) {
         contentType: "application/json",
         success: function (updatedPatient) {
           if (appointmentId && appointmentData) {
+            // Update existing appointment
             $.ajax({
               url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
               type: "PATCH",
@@ -842,11 +842,12 @@ function populateProfileTab(patient) {
               }
             });
           } else if (appointmentData) {
+            // Create new appointment for existing patient
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
               headers: getAuthHeaders(),
-              data: JSON.stringify({ ...appointmentData, patient: patientId }),
+              data: JSON.stringify({ ...appointmentData, patient_id: patientId }), // Rename to patient_id
               contentType: "application/json",
               success: function (newAppointment) {
                 const combinedData = { ...updatedPatient, appointments: [newAppointment] };
@@ -874,11 +875,12 @@ function populateProfileTab(patient) {
         contentType: "application/json",
         success: function (newPatient) {
           if (appointmentData) {
+            // Create appointment along with patient
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
               headers: getAuthHeaders(),
-              data: JSON.stringify({ ...appointmentData, patient: newPatient.patient_id }),
+              data: JSON.stringify({ ...appointmentData, patient_id: newPatient.patient_id }), // Rename to patient_id
               contentType: "application/json",
               success: function (newAppointment) {
                 const combinedData = { ...newPatient, appointments: [newAppointment] };
