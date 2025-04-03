@@ -184,19 +184,36 @@ $(document).ready(function () {
   function populateAppointmentsTable(appointments, date) {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-
-    if (!appointments || appointments.length === 0) {
+  
+    // Log the raw appointments data for debugging
+    console.log(`📥 Received appointments data:`, appointments);
+  
+    // Normalize appointments to an array
+    let appointmentsArray = [];
+    if (Array.isArray(appointments)) {
+      appointmentsArray = appointments;
+    } else if (appointments && typeof appointments === 'object' && Array.isArray(appointments.results)) {
+      appointmentsArray = appointments.results;
+    } else if (appointments && typeof appointments === 'object' && !Array.isArray(appointments)) {
+      // If it's a single object, wrap it in an array
+      appointmentsArray = [appointments];
+    } else {
+      console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
+    }
+  
+    if (!appointmentsArray.length) {
       $tbody.append(`<tr><td colspan="7" class="text-center">No appointments found for ${date}</td></tr>`);
+      console.log(`ℹ️ No appointments to display for ${date}`);
       return;
     }
-
-    appointments.forEach((appt, index) => {
+  
+    appointmentsArray.forEach((appt, index) => {
       const appointmentDate = new Date(appt.appointment_date);
       const timeStr = appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const doctorName = appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A';
       const patientName = `${appt.patient.first_name} ${appt.patient.last_name || ''}`;
       const statusClass = `status-${appt.status.toLowerCase().replace(' ', '-')}`;
-
+  
       const $row = $(`
         <tr>
           <td>${index + 1}</td>
@@ -210,6 +227,8 @@ $(document).ready(function () {
       `);
       $tbody.append($row);
     });
+  
+    console.log(`✅ Populated appointments table with ${appointmentsArray.length} entries for ${date}`);
   }
 
   // Bind Date Filter Buttons
@@ -340,7 +359,7 @@ $(document).ready(function () {
       console.log("🚀 Proceeding with search for query:", query);
 
       $.ajax({
-        url: `${API_BASE_URL}/patients/list/?search=${encodeURIComponent(query)}`,
+        url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
         type: "GET",
         headers: getAuthHeaders(),
         beforeSend: function () {
