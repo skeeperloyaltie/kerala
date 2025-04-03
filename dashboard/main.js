@@ -288,7 +288,7 @@ $(document).ready(function () {
       "patient-q": "addPatientTab",
       "tele-consults": "visitsTab",
       "support": "profileTab"
-    } [action] || "addPatientTab";;
+    };
 
     $("[data-action]").off('click').on('click', function (e) {
       e.preventDefault();
