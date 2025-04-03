@@ -166,21 +166,16 @@ $(document).ready(function () {
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
 
-    console.log(`📅 Fetching appointments for date: ${selectedDate}`);
-
     $.ajax({
-      url: `${API_BASE_URL}/appointments/by-date/?date=${selectedDate}`,
+      url: `${API_BASE_URL}/appointments/list/?date=${selectedDate}`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        console.log("✅ Appointments Fetched Successfully:", data);
-        populateAppointmentsTable(data.appointments, selectedDate);
+        populateAppointmentsTable(data.results || data, selectedDate);
       },
       error: function (xhr) {
-        console.error("❌ Failed to Fetch Appointments:", xhr.status, xhr.responseJSON || xhr.statusText);
-        let errorMessage = xhr.responseJSON?.error || "Unknown error";
-        alert(`Failed to fetch appointments: ${errorMessage}`);
-        populateAppointmentsTable([], selectedDate); // Clear table on error
+        alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
+        populateAppointmentsTable([], selectedDate);
       }
     });
   }
@@ -192,7 +187,6 @@ $(document).ready(function () {
 
     if (!appointments || appointments.length === 0) {
       $tbody.append(`<tr><td colspan="7" class="text-center">No appointments found for ${date}</td></tr>`);
-      console.log(`ℹ️ No appointments to display for ${date}`);
       return;
     }
 
@@ -206,18 +200,16 @@ $(document).ready(function () {
       const $row = $(`
         <tr>
           <td>${index + 1}</td>
-          <td>${appt.id}</td> <!-- Using appointment ID as token for simplicity -->
+          <td>${appt.id}</td>
           <td>${patientName}</td>
           <td>${timeStr}</td>
           <td><span class="${statusClass}">${appt.status.toUpperCase()}</span></td>
           <td>${doctorName}</td>
-          <td>${appt.notes || 'N/A'}</td> <!-- Using notes as placeholder for Procedure Charges -->
+          <td>${appt.notes || 'N/A'}</td>
         </tr>
       `);
       $tbody.append($row);
     });
-
-    console.log(`✅ Populated appointments table with ${appointments.length} entries for ${date}`);
   }
 
   // Bind Date Filter Buttons
@@ -296,7 +288,7 @@ $(document).ready(function () {
       "patient-q": "addPatientTab",
       "tele-consults": "visitsTab",
       "support": "profileTab"
-    };
+    } [action] || "addPatientTab";;
 
     $("[data-action]").off('click').on('click', function (e) {
       e.preventDefault();
@@ -348,7 +340,7 @@ $(document).ready(function () {
       console.log("🚀 Proceeding with search for query:", query);
 
       $.ajax({
-        url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
+        url: `${API_BASE_URL}/patients/list/?search=${encodeURIComponent(query)}`,
         type: "GET",
         headers: getAuthHeaders(),
         beforeSend: function () {
@@ -408,22 +400,17 @@ $(document).ready(function () {
   // Fetch Patient Details (unchanged)
   function fetchPatientDetails(patientId) {
     $.ajax({
-      url: `${API_BASE_URL}/patients/details/${patientId}/`,
+      url: `${API_BASE_URL}/patients/patients/${patientId}/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        console.log("✅ Raw patient details response:", data);
-        const patientData = data.patient || data;
-        console.log("✅ Processed patient data:", patientData);
-        populateProfileTab(patientData);
+        populateProfileTab(data);
         $('#newActionModal').modal('show');
         $('#profileTab').tab('show');
-        updateDetailsSection(patientData);
+        updateDetailsSection(data);
       },
       error: function (xhr) {
-        console.error("❌ Fetch patient error:", xhr.status, xhr.responseText);
-        let errorMsg = xhr.responseJSON?.error || "Unknown error";
-        alert(`Failed to fetch patient details: ${errorMsg}`);
+        alert(`Failed to fetch patient details: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
   }
@@ -431,14 +418,14 @@ $(document).ready(function () {
 function populateProfileTab(patient) {
   const $profileTab = $('#profile');
   $('#profileFirstName').val(patient.first_name || '');
-  $('#profileLastName').val(patient.last_name || '');
-  $('#profilePhone').val(patient.mobile_number || '');
-  $('#profileGender').val(patient.gender || 'N/A');
-  $('#profileDOB').val(patient.date_of_birth || 'N/A');
-  $('#profilePreferredLanguage').val(patient.preferred_language || 'N/A');
-  $('#profileFatherName').val(patient.father_name || 'N/A');
-  $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
-  $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
+    $('#profileLastName').val(patient.last_name || '');
+    $('#profilePhone').val(patient.mobile_number || '');
+    $('#profileGender').val(patient.gender || 'N/A');
+    $('#profileDOB').val(patient.date_of_birth || 'N/A');
+    $('#profilePreferredLanguage').val(patient.preferred_language || 'N/A');
+    $('#profileFatherName').val(patient.father_name || 'N/A');
+    $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
+    $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
 
   // Handle appointment_date with Flatpickr (use first appointment if available)
   const $appointmentDateInput = $('#profileAppointmentDate');
@@ -450,33 +437,34 @@ function populateProfileTab(patient) {
   } else {
     $appointmentDateInput.val('');
   }
-
-  $('#profileCity').val(patient.city || '');
-  $('#profileAddress').val(patient.address || '');
-  $('#profilePin').val(patient.pincode || '');
-  $('#profileMaritalSince').val(patient.marital_since || '');
-  $('#profileBloodGroup').val(patient.blood_group || '');
-  $('#profileReferredBy').val(patient.referred_by || '');
-  $('#profileDoctor').val(appointment && appointment.doctor ? `${appointment.doctor.first_name} ${appointment.doctor.last_name || ''}` : 'N/A');
-  $('#profileDoctorSpecialty').val(appointment && appointment.doctor ? appointment.doctor.specialization : '');
-  $('#profileChannel').val(patient.channel || '');
-  $('#profileCIO').val(patient.cio || '');
-  $('#profileOccupation').val(patient.occupation || '');
-  $('#profileTag').val(patient.tag || '');
-  $('#profileMobile2').val(patient.alternate_mobile_number || '');
-  $('#profileAadharNumber').val(patient.aadhar_number || '');
-  $('#profileKnownAllergies').val(patient.known_allergies || '');
-  $('#profileCurrentMedications').val(patient.current_medications || '');
-  $('#profilePastMedicalHistory').val(patient.past_medical_history || '');
-  $('#profileSpecificNotes').val(patient.specific_notes || '');
-  $('#profileEmergencyContactName').val(patient.emergency_contact_name || '');
-  $('#profileEmergencyContactRelationship').val(patient.emergency_contact_relationship || '');
-  $('#profileEmergencyContactNumber').val(patient.emergency_contact_number || '');
-  $('#profileInsuranceProvider').val(patient.insurance_provider || '');
-  $('#profilePolicyNumber').val(patient.policy_number || '');
-  $('#profileAdmissionType').val(patient.admission_type || '');
-  $('#profileHospitalCode').val(patient.hospital_code || '');
-  $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
+  
+    $('#profileAppointmentDate').val(appointment ? appointment.appointment_date : '');
+    $('#profileCity').val(patient.city || '');
+    $('#profileAddress').val(patient.address || '');
+    $('#profilePin').val(patient.pincode || '');
+    $('#profileMaritalSince').val(patient.marital_since || '');
+    $('#profileBloodGroup').val(patient.blood_group || '');
+    $('#profileReferredBy').val(patient.referred_by || '');
+    $('#profileDoctor').val(appointment && appointment.doctor ? `${appointment.doctor.first_name} ${appointment.doctor.last_name || ''}` : 'N/A');
+    $('#profileDoctorSpecialty').val(appointment && appointment.doctor ? appointment.doctor.specialization : '');
+    $('#profileChannel').val(patient.channel || '');
+    $('#profileCIO').val(patient.cio || '');
+    $('#profileOccupation').val(patient.occupation || '');
+    $('#profileTag').val(patient.tag || '');
+    $('#profileMobile2').val(patient.alternate_mobile_number || '');
+    $('#profileAadharNumber').val(patient.aadhar_number || '');
+    $('#profileKnownAllergies').val(patient.known_allergies || '');
+    $('#profileCurrentMedications').val(patient.current_medications || '');
+    $('#profilePastMedicalHistory').val(patient.past_medical_history || '');
+    $('#profileSpecificNotes').val(patient.specific_notes || '');
+    $('#profileEmergencyContactName').val(patient.emergency_contact_name || '');
+    $('#profileEmergencyContactRelationship').val(patient.emergency_contact_relationship || '');
+    $('#profileEmergencyContactNumber').val(patient.emergency_contact_number || '');
+    $('#profileInsuranceProvider').val(patient.insurance_provider || '');
+    $('#profilePolicyNumber').val(patient.policy_number || '');
+    $('#profileAdmissionType').val(patient.admission_type || '');
+    $('#profileHospitalCode').val(patient.hospital_code || '');
+    $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
 
   // Re-initialize Flatpickr after setting values
   initializeDatePickers();
@@ -549,12 +537,115 @@ function populateProfileTab(patient) {
 }
 
   // Show Create Patient Prompt (unchanged)
+  // function showCreatePatientPrompt(query) {
+  //   const [firstName, ...lastNameParts] = query.split(' ');
+  //   const lastName = lastNameParts.join(' ');
+
+  //   const $modal = $('#newActionModal');
+  //   $modal.modal('hide');
+
+  //   const promptModal = new bootstrap.Modal(document.createElement('div'));
+  //   $(promptModal._element).html(`
+  //     <div class="modal-dialog">
+  //       <div class="modal-content">
+  //         <div class="modal-header">
+  //           <h5 class="modal-title">Patient Not Found</h5>
+  //           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  //         </div>
+  //         <div class="modal-body">
+  //           <p>No patient found matching "${query}". Would you like to create a new patient?</p>
+  //         </div>
+  //         <div class="modal-footer">
+  //           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Search Again</button>
+  //           <button type="button" class="btn btn-primary" id="createPatientBtn">Create Patient</button>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   `);
+  //   promptModal.show();
+
+  //   $('#createPatientBtn').on('click', function () {
+  //     promptModal.hide();
+  //     $modal.modal('show');
+  //     $('#addPatientTab').tab('show');
+  //     $('#patientFirstName').val(firstName);
+  //     $('#patientLastName').val(lastName);
+  //     resetModalView();
+  //     updateDetailsSection(null);
+  //   });
+
+  //   $(promptModal._element).on('hidden.bs.modal', function () {
+  //     $modal.modal('show');
+  //   });
+  // }
+
+  // Update Details Section (unchanged)
+  function updateDetailsSection(patientData) {
+    const detailsTitle = document.getElementById('detailsTitle');
+    const detailsMeta = document.getElementById('detailsMeta');
+    const visitPadBtn = document.getElementById('visitPadBtn');
+
+    if (patientData) {
+      const fullName = `${patientData.first_name} ${patientData.last_name || ''}`;
+      const age = patientData.age || 'N/A';
+      const patientId = patientData.patient_id || 'N/A';
+      detailsTitle.textContent = `Appointment for ${fullName}`;
+      detailsMeta.textContent = `${patientData.gender || 'N/A'} | ${age} Years | ${patientId}`;
+      visitPadBtn.style.display = 'inline-block';
+      console.log("✅ Updated patient details section:", { fullName, age, patientId });
+    } else {
+      detailsTitle.textContent = 'No Patient Selected';
+      detailsMeta.textContent = 'N/A | N/A | N/A';
+      visitPadBtn.style.display = 'none';
+      console.log("✅ Reset patient details section");
+    }
+  }
+  function populateAddPatientForm(patient, appointment = null) {
+    $('#patientFirstName').val(patient.first_name || '');
+    $('#patientLastName').val(patient.last_name || '');
+    $('#patientPhone').val(patient.mobile_number || '');
+    $('#patientGender').val(patient.gender || '');
+    $('#patientDOB').val(patient.date_of_birth || '');
+    $('#preferredLanguage').val(patient.preferred_language || '');
+    $('#fatherName').val(patient.father_name || '');
+    $('#maritalStatus').val(patient.marital_status || '');
+    $('#paymentPreference').val(patient.payment_preference || '');
+    $('#appointmentDate').val(appointment ? appointment.appointment_date : '');
+    $('#patientCity').val(patient.city || '');
+    $('#patientAddress').val(patient.address || '');
+    $('#patientPin').val(patient.pincode || '');
+    $('#maritalSince').val(patient.marital_since || '');
+    $('#bloodGroup').val(patient.blood_group || '');
+    $('#referredBy').val(patient.referred_by || '');
+    $('#doctor').val(appointment && appointment.doctor ? appointment.doctor.id : '');
+    $('#doctorSpecialty').val(appointment && appointment.doctor ? appointment.doctor.specialization : '');
+    $('#channel').val(patient.channel || '');
+    $('#cio').val(patient.cio || '');
+    $('#occupation').val(patient.occupation || '');
+    $('#tag').val(patient.tag || '');
+    $('#mobile2').val(patient.alternate_mobile_number || '');
+    $('#aadharNumber').val(patient.aadhar_number || '');
+    $('#knownAllergies').val(patient.known_allergies || '');
+    $('#currentMedications').val(patient.current_medications || '');
+    $('#pastMedicalHistory').val(patient.past_medical_history || '');
+    $('#specificNotes').val(patient.specific_notes || '');
+    $('#emergencyContactName').val(patient.emergency_contact_name || '');
+    $('#emergencyContactRelationship').val(patient.emergency_contact_relationship || '');
+    $('#emergencyContactNumber').val(patient.emergency_contact_number || '');
+    $('#insuranceProvider').val(patient.insurance_provider || '');
+    $('#policyNumber').val(patient.policy_number || '');
+    $('#admissionType').val(patient.admission_type || '');
+    $('#hospitalCode').val(patient.hospital_code || '');
+    $('#appointmentNotes').val(appointment ? appointment.notes || '' : '');
+
+    $('#addPatientForm').data('edit-mode', !!patient.patient_id);
+    $('#addPatientForm').data('patient-id', patient.patient_id);
+    $('#addPatientForm').data('appointment-id', appointment ? appointment.id : null);
+  }
+
   function showCreatePatientPrompt(query) {
     const [firstName, ...lastNameParts] = query.split(' ');
     const lastName = lastNameParts.join(' ');
-
-    const $modal = $('#newActionModal');
-    $modal.modal('hide');
 
     const promptModal = new bootstrap.Modal(document.createElement('div'));
     $(promptModal._element).html(`
@@ -578,39 +669,13 @@ function populateProfileTab(patient) {
 
     $('#createPatientBtn').on('click', function () {
       promptModal.hide();
-      $modal.modal('show');
+      $('#newActionModal').modal('show');
       $('#addPatientTab').tab('show');
       $('#patientFirstName').val(firstName);
       $('#patientLastName').val(lastName);
       resetModalView();
       updateDetailsSection(null);
     });
-
-    $(promptModal._element).on('hidden.bs.modal', function () {
-      $modal.modal('show');
-    });
-  }
-
-  // Update Details Section (unchanged)
-  function updateDetailsSection(patientData) {
-    const detailsTitle = document.getElementById('detailsTitle');
-    const detailsMeta = document.getElementById('detailsMeta');
-    const visitPadBtn = document.getElementById('visitPadBtn');
-
-    if (patientData) {
-      const fullName = `${patientData.first_name} ${patientData.last_name || ''}`;
-      const age = patientData.age || 'N/A';
-      const patientId = patientData.patient_id || 'N/A';
-      detailsTitle.textContent = `Appointment for ${fullName}`;
-      detailsMeta.textContent = `${patientData.gender || 'N/A'} | ${age} Years | ${patientId}`;
-      visitPadBtn.style.display = 'inline-block';
-      console.log("✅ Updated patient details section:", { fullName, age, patientId });
-    } else {
-      detailsTitle.textContent = 'No Patient Selected';
-      detailsMeta.textContent = 'N/A | N/A | N/A';
-      visitPadBtn.style.display = 'none';
-      console.log("✅ Reset patient details section");
-    }
   }
 
   // Toggle Split View (unchanged)
@@ -634,9 +699,7 @@ function populateProfileTab(patient) {
   // Add Patient Form Submission (unchanged)
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
-  
-    initializeDatePickers();
-  
+
     const requiredFields = [
       { id: "patientFirstName", name: "First Name" },
       { id: "patientLastName", name: "Last Name" },
@@ -646,10 +709,9 @@ function populateProfileTab(patient) {
       { id: "patientPhone", name: "Phone Number" },
       { id: "preferredLanguage", name: "Preferred Language" },
       { id: "maritalStatus", name: "Marital Status" },
-      { id: "paymentPreference", name: "Payment Preference" },
-      { id: "appointmentDate", name: "Appointment Date" }
+      { id: "paymentPreference", name: "Payment Preference" }
     ];
-  
+
     let errors = [];
     requiredFields.forEach(field => {
       const value = $(`#${field.id}`).val();
@@ -657,40 +719,20 @@ function populateProfileTab(patient) {
         errors.push(`${field.name} is required.`);
       }
     });
-  
-    const dateOfBirth = $("#patientDOB").val();
-    if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
-      errors.push("Date of Birth must be in YYYY-MM-DD format.");
+
+    const appointmentDateInput = $("#appointmentDate")[0]._flatpickr?.selectedDates[0];
+    const appointmentDate = appointmentDateInput ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30" : null;
+
+    if ($('#addPatientForm').data('appointment-id') && !appointmentDate) {
+      errors.push("Appointment Date is required for editing an appointment.");
     }
-  
-    const maritalSince = $("#maritalSince").val();
-    if (maritalSince && !/^\d{4}-\d{2}-\d{2}$/.test(maritalSince)) {
-      errors.push("Marital Since must be in YYYY-MM-DD format.");
-    }
-  
-    const $appointmentDateInput = $("#appointmentDate");
-    let appointmentDate;
-    if ($appointmentDateInput[0]._flatpickr && $appointmentDateInput[0]._flatpickr.selectedDates[0]) {
-      appointmentDate = $appointmentDateInput[0]._flatpickr.formatDate($appointmentDateInput[0]._flatpickr.selectedDates[0], "Y-m-d H:i");
-    } else {
-      appointmentDate = $appointmentDateInput.val();
-    }
-    if (appointmentDate && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(appointmentDate)) {
-      errors.push("Appointment Date must be in YYYY-MM-DD HH:MM format.");
-    }
-  
-    const formattedAppointmentDate = appointmentDate ? `${appointmentDate}:00+05:30`.replace(" ", "T") : null;
-    if (!formattedAppointmentDate) {
-      errors.push("Appointment Date is required.");
-    }
-  
+
     if (errors.length > 0) {
       alert("Please fix the following errors:\n- " + errors.join("\n- "));
       return;
     }
-  
+
     const patientData = {
-      patient_id: $("#addPatientForm").data('patient-id'), // String, for edit mode
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
       gender: $("#patientGender").val(),
@@ -722,76 +764,134 @@ function populateProfileTab(patient) {
       policy_number: $("#policyNumber").val(),
       payment_preference: $("#paymentPreference").val(),
       admission_type: $("#admissionType").val(),
-      hospital_code: $("#hospitalCode").val(),
-      doctor: $("#doctor").val() || null,
-      appointment_date: formattedAppointmentDate,
-      notes: $("#appointmentNotes").val(),
-      is_emergency: false
+      hospital_code: $("#hospitalCode").val()
     };
-  
+
+    const appointmentData = appointmentDate ? {
+      appointment_date: appointmentDate,
+      notes: $("#appointmentNotes").val(),
+      doctor: $("#doctor").val() || null,
+      is_emergency: false
+    } : null;
+
     const isEditMode = $('#addPatientForm').data('edit-mode');
-    const patientId = $('#addPatientForm').data('patient-id'); // String
-    const appointmentId = $('#addPatientForm').data('appointment-id'); // Integer
-  
-    console.log("📤 Submitting form data:", patientData, "Edit Mode:", isEditMode, "Patient ID:", patientId, "Appointment ID:", appointmentId);
-  
-    let url, method;
-    if (isEditMode && appointmentId) {
-      url = `${API_BASE_URL}/appointments/edit/${appointmentId}/`;
-      method = "PATCH";
-    } else {
-      url = `${API_BASE_URL}/appointments/patients-and-appointments/create/`;
-      method = "POST";
-      delete patientData.patient_id; // Remove patient_id for create mode as it’s generated by backend
-    }
-  
-    $.ajax({
-      url: url,
-      type: method,
-      headers: getAuthHeaders(),
-      data: JSON.stringify(patientData),
-      contentType: "application/json",
-      success: function (data) {
-        console.log(`✅ ${isEditMode ? 'Updated' : 'Created'} Successfully:`, data);
-        updateDetailsSection(data.patient);
-        populateProfileTab(data.patient);
-        $('#profileTab').tab('show');
-  
-        const activeButton = e.originalEvent.submitter.id;
-        if (activeButton === 'addAndCreateBill') {
-          toggleSplitView('addBills');
-          $('#addBillsTab').tab('show');
-          $('#patientIdForBill').val(data.patient.patient_id);
-        } else if (activeButton === 'addAndCreateAppointment' && !isEditMode) {
-          toggleSplitView('addPatient');
-        }
-  
-        alert(`${isEditMode ? 'Patient and appointment updated' : 'Patient and appointment added'} successfully!`);
-        $("#addPatientForm")[0].reset();
-        flatpickr("#patientDOB").clear();
-        flatpickr("#maritalSince").clear();
-        flatpickr("#appointmentDate").clear();
-        $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
-      },
-      error: function (xhr) {
-        console.error(`❌ Failed to ${isEditMode ? 'Update' : 'Add'} Patient and Appointment:`, xhr.status, xhr.responseJSON || xhr.statusText);
-        let errorMessage = "Unknown error";
-        if (xhr.responseJSON) {
-          if (xhr.responseJSON.detail) {
-            errorMessage = xhr.responseJSON.detail;
-          } else if (xhr.responseJSON.appointment_date) {
-            errorMessage = `Appointment Date Error: ${xhr.responseJSON.appointment_date}`;
+    const patientId = $('#addPatientForm').data('patient-id');
+    const appointmentId = $('#addPatientForm').data('appointment-id');
+    const activeButton = e.originalEvent.submitter.id;
+
+    if (isEditMode && patientId) {
+      // Update existing patient
+      $.ajax({
+        url: `${API_BASE_URL}/patients/patients/${patientId}/`,
+        type: "PATCH",
+        headers: getAuthHeaders(),
+        data: JSON.stringify(patientData),
+        contentType: "application/json",
+        success: function (updatedPatient) {
+          if (appointmentId && appointmentData) {
+            // Update existing appointment
+            $.ajax({
+              url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+              type: "PATCH",
+              headers: getAuthHeaders(),
+              data: JSON.stringify(appointmentData),
+              contentType: "application/json",
+              success: function (updatedAppointment) {
+                const combinedData = { ...updatedPatient, appointments: [updatedAppointment] };
+                handlePostSubmission(combinedData, activeButton);
+              },
+              error: function (xhr) {
+                alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+              }
+            });
+          } else if (appointmentData) {
+            // Create new appointment for existing patient
+            $.ajax({
+              url: `${API_BASE_URL}/appointments/create/`,
+              type: "POST",
+              headers: getAuthHeaders(),
+              data: JSON.stringify({ ...appointmentData, patient: patientId }),
+              contentType: "application/json",
+              success: function (newAppointment) {
+                const combinedData = { ...updatedPatient, appointments: [newAppointment] };
+                handlePostSubmission(combinedData, activeButton);
+              },
+              error: function (xhr) {
+                alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+              }
+            });
           } else {
-            errorMessage = JSON.stringify(xhr.responseJSON);
+            handlePostSubmission(updatedPatient, activeButton);
           }
-        } else if (xhr.statusText) {
-          errorMessage = xhr.statusText;
+        },
+        error: function (xhr) {
+          alert(`Failed to update patient: ${xhr.responseJSON?.error || "Unknown error"}`);
         }
-        alert(`Failed to ${isEditMode ? 'update' : 'add'} patient and appointment: ${errorMessage}`);
-      }
-    });
+      });
+    } else {
+      // Create new patient
+      $.ajax({
+        url: `${API_BASE_URL}/patients/patients/create/`,
+        type: "POST",
+        headers: getAuthHeaders(),
+        data: JSON.stringify(patientData),
+        contentType: "application/json",
+        success: function (newPatient) {
+          if (appointmentData) {
+            // Create appointment along with patient
+            $.ajax({
+              url: `${API_BASE_URL}/appointments/create/`,
+              type: "POST",
+              headers: getAuthHeaders(),
+              data: JSON.stringify({ ...appointmentData, patient: newPatient.patient_id }),
+              contentType: "application/json",
+              success: function (newAppointment) {
+                const combinedData = { ...newPatient, appointments: [newAppointment] };
+                handlePostSubmission(combinedData, activeButton);
+              },
+              error: function (xhr) {
+                alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+              }
+            });
+          } else {
+            handlePostSubmission(newPatient, activeButton);
+          }
+        },
+        error: function (xhr) {
+          alert(`Failed to create patient: ${xhr.responseJSON?.error || "Unknown error"}`);
+        }
+      });
+    }
   });
 
+  function handlePostSubmission(data, activeButton) {
+    updateDetailsSection(data);
+    populateProfileTab(data);
+    $('#profileTab').tab('show');
+
+    if (activeButton === 'addAndCreateBill') {
+      toggleSplitView('addBills');
+      $('#addBillsTab').tab('show');
+      $('#patientIdForBill').val(data.patient_id);
+    } else if (activeButton === 'addAndCreateAppointment') {
+      toggleSplitView('addPatient');
+      $('#addPatientTab').tab('show');
+      $('#addPatientForm')[0].reset();
+      flatpickr("#patientDOB").clear();
+      flatpickr("#maritalSince").clear();
+      flatpickr("#appointmentDate").clear();
+      $('#addPatientForm').data('patient-id', data.patient_id);
+    }
+
+    alert(`Patient ${$('#addPatientForm').data('edit-mode') ? 'updated' : 'created'} successfully!`);
+    if (activeButton !== 'addAndCreateAppointment') {
+      $("#addPatientForm")[0].reset();
+      flatpickr("#patientDOB").clear();
+      flatpickr("#maritalSince").clear();
+      flatpickr("#appointmentDate").clear();
+    }
+    $('#addPatientForm').removeData('edit-mode').removeData('appointment-id');
+  }
 
   // Add Bills Form Submission (unchanged)
   $("#addBillsForm").submit(function (e) {
@@ -846,7 +946,6 @@ function populateProfileTab(patient) {
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        console.log("✅ Doctors Fetched Successfully:", data);
         const doctorSelect = $("#doctor");
         doctorSelect.empty();
         doctorSelect.append('<option value="" selected>Select Doctor</option>');
@@ -855,14 +954,12 @@ function populateProfileTab(patient) {
         });
 
         doctorSelect.on('change', function () {
-          const selectedDoctorId = $(this).val();
-          const selectedDoctor = data.doctors.find(doctor => doctor.id == selectedDoctorId);
+          const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
           $("#doctorSpecialty").val(selectedDoctor ? selectedDoctor.specialization : '');
         });
       },
-      error: function (xhr) {
-        console.error("❌ Failed to Fetch Doctors:", xhr.responseJSON || xhr.statusText);
-        alert("Failed to fetch doctors. Please try again.");
+      error: function () {
+        alert("Failed to fetch doctors.");
       }
     });
   }

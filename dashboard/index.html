@@ -483,7 +483,10 @@
 .status-reviewed { background-color: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; }
 .status-pending { background-color: #ffc107; color: black; padding: 2px 6px; border-radius: 4px; }
 .status-active { background-color: #fd7e14; color: white; padding: 2px 6px; border-radius: 4px; }
-  </style>
+#newActionModal .modal-body .form-control[readonly] {
+  background-color: #e9ecef;
+}  
+</style>
 </head>
 <body>
   <!-- Main Content -->
@@ -491,57 +494,24 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-top">
       <div class="container-fluid">
-        <!-- Left Side -->
         <div class="d-flex align-items-center">
           <a class="navbar-brand" href="#">
             <i class="fas fa-hospital fa-lg fa-icon"></i>
             City Hospital
           </a>
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-action="all-bills">
-                <i class="fas fa-file-invoice-dollar fa-icon"></i>
-                All Bills
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-action="add-services">
-                <i class="fas fa-plus-circle fa-icon"></i>
-                Add Services
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-action="patient-q">
-                <i class="fas fa-users fa-icon"></i>
-                Patient Q
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-action="tele-consults">
-                <i class="fas fa-video fa-icon"></i>
-                Tele Consults
-              </a>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="#" data-action="all-bills"><i class="fas fa-file-invoice-dollar fa-icon"></i>All Bills</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-action="add-services"><i class="fas fa-plus-circle fa-icon"></i>Add Services</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-action="patient-q"><i class="fas fa-users fa-icon"></i>Patient Q</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-action="tele-consults"><i class="fas fa-video fa-icon"></i>Tele Consults</a></li>
           </ul>
         </div>
-
-        <!-- Right Side -->
         <div class="d-flex align-items-center">
-          <button class="btn btn-primary me-2" data-action="new">
-            <i class="fas fa-plus fa-icon"></i>
-            New
-          </button>
-          <form class="d-flex me-2">
-            <input class="form-control" type="search" placeholder="Search Patient" aria-label="Search">
-          </form>
-          <a class="nav-link me-2" href="#" data-action="support">
-            <i class="fas fa-headset fa-icon"></i>
-            Support
-          </a>
+          <button class="btn btn-primary me-2" data-action="new"><i class="fas fa-plus fa-icon"></i>New</button>
+          <form class="d-flex me-2"><input class="form-control" type="search" placeholder="Search Patient" aria-label="Search"></form>
+          <a class="nav-link me-2" href="#" data-action="support"><i class="fas fa-headset fa-icon"></i>Support</a>
           <div class="dropdown me-2">
-            <a class="nav-link dropdown-toggle" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fas fa-th fa-icon"></i>
-            </a>
+            <a class="nav-link dropdown-toggle" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-th fa-icon"></i></a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardDropdown">
               <li><a class="dropdown-item" href="#">Admin Dashboard</a></li>
               <li><a class="dropdown-item" href="#">Doctor Dashboard</a></li>
@@ -549,9 +519,7 @@
             </ul>
           </div>
           <div class="dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fas fa-user fa-icon"></i>
-            </a>
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-icon"></i></a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="#">Username</a></li>
               <li><a class="dropdown-item" href="#">Profile</a></li>
@@ -566,54 +534,23 @@
     <!-- Secondary Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-secondary">
       <div class="container-fluid">
-        <!-- Left Side -->
         <div class="d-flex align-items-center me-auto">
-          <a class="nav-link me-2" href="#">
-            <i class="fas fa-sync-alt text-danger"></i>
-          </a>
-          <form class="d-flex me-2">
-            <input class="form-control" type="text" placeholder="Filter Name" aria-label="Filter">
-          </form>
-          <button class="btn btn-outline-primary btn-circle me-2">
-            <i class="fas fa-star"></i>
-          </button>
-          <button class="btn btn-outline-primary btn-circle me-2">
-            M
-          </button>
-          <button class="btn btn-outline-primary btn-circle me-2">
-            <i class="fas fa-user"></i>
-          </button>
-          <button class="btn btn-outline-primary btn-circle me-2">
-            <i class="fas fa-filter"></i>
-          </button>
-          <button class="btn btn-outline-primary btn-circle me-2">
-            <i class="fas fa-plus"></i>
-          </button>
-          <button class="btn btn-outline-primary btn-circle me-2">
-            <i class="fas fa-info-circle"></i>
-          </button>
+          <a class="nav-link me-2" href="#"><i class="fas fa-sync-alt text-danger"></i></a>
+          <form class="d-flex me-2"><input class="form-control" type="text" placeholder="Filter Name" aria-label="Filter"></form>
+          <button class="btn btn-outline-primary btn-circle me-2"><i class="fas fa-star"></i></button>
+          <button class="btn btn-outline-primary btn-circle me-2">M</button>
+          <button class="btn btn-outline-primary btn-circle me-2"><i class="fas fa-user"></i></button>
+          <button class="btn btn-outline-primary btn-circle me-2"><i class="fas fa-filter"></i></button>
+          <button class="btn btn-outline-primary btn-circle me-2"><i class="fas fa-plus"></i></button>
+          <button class="btn btn-outline-primary btn-circle me-2"><i class="fas fa-info-circle"></i></button>
         </div>
-
-        <!-- Center -->
         <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" href="#" data-section="all">All</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-section="booked">Booked</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-section="arrived">Arrived</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-section="on-going">On-Going</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-section="reviewed">Reviewed</a>
-          </li>
+          <li class="nav-item"><a class="nav-link active" href="#" data-section="all">All</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-section="booked">Booked</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-section="arrived">Arrived</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-section="on-going">On-Going</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-section="reviewed">Reviewed</a></li>
         </ul>
-
-        <!-- Right Side -->
         <div class="d-flex align-items-center">
           <input type="text" class="flatpickr-input me-2" id="dateFilter" readonly>
           <button class="btn btn-outline-primary btn-sm me-2">Set</button>
@@ -652,58 +589,26 @@
         <!-- Modal Header -->
         <div class="modal-header">
           <!-- Left Side: Patient/Appointment Details -->
-<div class="patient-details" id="detailsSection">
-  <i class="fas fa-user fa-icon"></i>
-  <div class="patient-info">
-    <div class="d-flex align-items-center">
-      <span id="detailsTitle" class="patient-name">No Patient Selected</span>
-      <button class="btn btn-primary btn-sm visit-pad-btn" id="visitPadBtn" style="display: none;">Visit Pad</button>
-    </div>
-    <span id="detailsMeta" class="patient-meta">N/A | N/A | N/A</span>
-  </div>
-</div>
+          <div class="patient-details" id="detailsSection">
+            <i class="fas fa-user fa-icon"></i>
+            <div class="patient-info">
+              <div class="d-flex align-items-center">
+                <span id="detailsTitle" class="patient-name">No Patient Selected</span>
+                <button class="btn btn-primary btn-sm visit-pad-btn" id="visitPadBtn" style="display: none;">Visit Pad</button>
+              </div>
+              <span id="detailsMeta" class="patient-meta">N/A | N/A | N/A</span>
+            </div>
+          </div>
           <!-- Right Side: Tabs -->
           <ul class="nav nav-tabs ms-auto" id="newActionTabs" role="tablist">
-            <li class="nav-item">
-              <a class="nav-link" id="abhaTab" data-bs-toggle="tab" href="#abha" role="tab" aria-controls="abha" aria-selected="false">
-                <i class="fas fa-id-card"></i> ABHA
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link active" id="addPatientTab" data-bs-toggle="tab" href="#addPatient" role="tab" aria-controls="addPatient" aria-selected="true">
-                <i class="fas fa-calendar-check"></i> Appt
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="addBillsTab" data-bs-toggle="tab" href="#addBills" role="tab" aria-controls="addBills" aria-selected="false">
-                <i class="fas fa-file-invoice-dollar"></i> Add Bills
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="billsTab" data-bs-toggle="tab" href="#bills" role="tab" aria-controls="bills" aria-selected="false">
-                <i class="fas fa-file-invoice"></i> Bills
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="paymentsTab" data-bs-toggle="tab" href="#payments" role="tab" aria-controls="payments" aria-selected="false">
-                <i class="fas fa-money-bill-wave"></i> Payments
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="visitsTab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="false">
-                <i class="fas fa-hospital-user"></i> Visits
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="labProfileTab" data-bs-toggle="tab" href="#labProfile" role="tab" aria-controls="labProfile" aria-selected="false">
-                <i class="fas fa-flask"></i> Lab
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="profileTab" data-bs-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">
-                <i class="fas fa-user-circle"></i> Profile
-              </a>
-            </li>
+            <li class="nav-item"><a class="nav-link" id="abhaTab" data-bs-toggle="tab" href="#abha" role="tab" aria-controls="abha" aria-selected="false"><i class="fas fa-id-card"></i> ABHA</a></li>
+            <li class="nav-item"><a class="nav-link active" id="addPatientTab" data-bs-toggle="tab" href="#addPatient" role="tab" aria-controls="addPatient" aria-selected="true"><i class="fas fa-calendar-check"></i> Appt</a></li>
+            <li class="nav-item"><a class="nav-link" id="addBillsTab" data-bs-toggle="tab" href="#addBills" role="tab" aria-controls="addBills" aria-selected="false"><i class="fas fa-file-invoice-dollar"></i> Add Bills</a></li>
+            <li class="nav-item"><a class="nav-link" id="billsTab" data-bs-toggle="tab" href="#bills" role="tab" aria-controls="bills" aria-selected="false"><i class="fas fa-file-invoice"></i> Bills</a></li>
+            <li class="nav-item"><a class="nav-link" id="paymentsTab" data-bs-toggle="tab" href="#payments" role="tab" aria-controls="payments" aria-selected="false"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
+            <li class="nav-item"><a class="nav-link" id="visitsTab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="false"><i class="fas fa-hospital-user"></i> Visits</a></li>
+            <li class="nav-item"><a class="nav-link" id="labProfileTab" data-bs-toggle="tab" href="#labProfile" role="tab" aria-controls="labProfile" aria-selected="false"><i class="fas fa-flask"></i> Lab</a></li>
+            <li class="nav-item"><a class="nav-link" id="profileTab" data-bs-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false"><i class="fas fa-user-circle"></i> Profile</a></li>
           </ul>
           <!-- Close Button -->
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -721,117 +626,24 @@
           <!-- Required Fields Section -->
           <h6 class="mb-3">Required Information</h6>
       
-          <!-- Row 1: Patient Name and Phone Number -->
           <div class="row mb-3">
-            <div class="col-md-4 position-relative">
-              <label for="patientFirstName" class="form-label">First Name</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                <input type="text" class="form-control" id="patientFirstName" required autocomplete="off">
-              </div>
-              <ul class="dropdown-menu autocomplete-dropdown" id="firstNameSuggestions" style="display: none;"></ul>
-            </div>
-            <div class="col-md-4 position-relative">
-              <label for="patientLastName" class="form-label">Last Name</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                <input type="text" class="form-control" id="patientLastName" required autocomplete="off">
-              </div>
-              <ul class="dropdown-menu autocomplete-dropdown" id="lastNameSuggestions" style="display: none;"></ul>
-            </div>
-            <div class="col-md-4">
-              <label for="patientPhone" class="form-label">Phone Number</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                <input type="text" class="form-control" id="patientPhone" required>
-              </div>
-            </div>
+            <div class="col-md-4"><label for="patientFirstName" class="form-label">First Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="patientFirstName" required></div></div>
+            <div class="col-md-4"><label for="patientLastName" class="form-label">Last Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="patientLastName" required></div></div>
+            <div class="col-md-4"><label for="patientPhone" class="form-label">Phone Number</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-phone"></i></span><input type="text" class="form-control" id="patientPhone" required></div></div>
           </div>
-      
-          <!-- Row 2: Gender, Date of Birth, Preferred Language -->
           <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="patientGender" class="form-label">Gender</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
-                <select class="form-select" id="patientGender" required>
-                  <option value="" disabled selected>Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label for="patientDOB" class="form-label">Date of Birth</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="patientDOB" readonly required>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label for="preferredLanguage" class="form-label">Preferred Language</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-language"></i></span>
-                <select class="form-select" id="preferredLanguage" required>
-                  <option value="" disabled selected>Select Language</option>
-                  <option value="English">English</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Tamil">Tamil</option>
-                  <option value="Telugu">Telugu</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
+            <div class="col-md-4"><label for="patientGender" class="form-label">Gender</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-venus-mars"></i></span><select class="form-select" id="patientGender" required><option value="" disabled selected>Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div></div>
+            <div class="col-md-4"><label for="patientDOB" class="form-label">Date of Birth</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span><input type="text" class="form-control flatpickr-input custom-datetime-picker" id="patientDOB" readonly required></div></div>
+            <div class="col-md-4"><label for="preferredLanguage" class="form-label">Preferred Language</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-language"></i></span><select class="form-select" id="preferredLanguage" required><option value="" disabled selected>Select Language</option><option value="English">English</option><option value="Hindi">Hindi</option><option value="Tamil">Tamil</option><option value="Telugu">Telugu</option><option value="Other">Other</option></select></div></div>
           </div>
-      
-          <!-- Row 3: Father's Name, Marital Status, Payment Preference -->
           <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="fatherName" class="form-label">Father's Name</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
-                <input type="text" class="form-control" id="fatherName" required>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label for="maritalStatus" class="form-label">Marital Status</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-ring"></i></span>
-                <select class="form-select" id="maritalStatus" required>
-                  <option value="" disabled selected>Select Status</option>
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
-                  <option value="Widowed">Widowed</option>
-                </select>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label for="paymentPreference" class="form-label">Payment Preference</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
-                <select class="form-select" id="paymentPreference" required>
-                  <option value="" disabled selected>Select Preference</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Card">Card</option>
-                  <option value="Insurance">Insurance</option>
-                </select>
-              </div>
-            </div>
+            <div class="col-md-4"><label for="fatherName" class="form-label">Father's Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user-tie"></i></span><input type="text" class="form-control" id="fatherName" required></div></div>
+            <div class="col-md-4"><label for="maritalStatus" class="form-label">Marital Status</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-ring"></i></span><select class="form-select" id="maritalStatus" required><option value="" disabled selected>Select Status</option><option value="Single">Single</option><option value="Married">Married</option><option value="Divorced">Divorced</option><option value="Widowed">Widowed</option></select></div></div>
+            <div class="col-md-4"><label for="paymentPreference" class="form-label">Payment Preference</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-money-bill"></i></span><select class="form-select" id="paymentPreference" required><option value="" disabled selected>Select Preference</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Insurance">Insurance</option></select></div></div>
           </div>
-      
-          <!-- Row 4: Appointment Date -->
           <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="appointmentDate" class="form-label">Appointment Date</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
-                <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="appointmentDate" readonly required>
-              </div>
-            </div>
+            <div class="col-md-4"><label for="appointmentDate" class="form-label">Appointment Date</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-check"></i></span><input type="text" class="form-control flatpickr-input custom-datetime-picker" id="appointmentDate" readonly></div></div>
           </div>
-      
           <!-- Optional Fields Section -->
           <h6 class="mb-3 mt-4">Additional Information</h6>
       
@@ -1160,89 +972,23 @@
       <h6 class="mb-3">Required Information</h6>
 
       <!-- Row 1: Patient Name and Phone Number -->
-      <div class="row mb-3">
-        <div class="col-md-4 position-relative">
-          <label for="profileFirstName" class="form-label">First Name</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-user"></i></span>
-            <input type="text" class="form-control" id="profileFirstName" readonly>
-          </div>
-        </div>
-        <div class="col-md-4 position-relative">
-          <label for="profileLastName" class="form-label">Last Name</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-user"></i></span>
-            <input type="text" class="form-control" id="profileLastName" readonly>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label for="profilePhone" class="form-label">Phone Number</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-phone"></i></span>
-            <input type="text" class="form-control" id="profilePhone" readonly>
-          </div>
-        </div>
+      <<div class="row mb-3">
+        <div class="col-md-4"><label for="profileFirstName" class="form-label">First Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="profileFirstName" readonly></div></div>
+        <div class="col-md-4"><label for="profileLastName" class="form-label">Last Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="profileLastName" readonly></div></div>
+        <div class="col-md-4"><label for="profilePhone" class="form-label">Phone Number</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-phone"></i></span><input type="text" class="form-control" id="profilePhone" readonly></div></div>
       </div>
-
-      <!-- Row 2: Gender, Date of Birth, Preferred Language -->
       <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="profileGender" class="form-label">Gender</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
-            <input type="text" class="form-control" id="profileGender" readonly>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label for="profileDOB" class="form-label">Date of Birth</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-            <input type="text" class="form-control" id="profileDOB" readonly>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label for="profilePreferredLanguage" class="form-label">Preferred Language</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-language"></i></span>
-            <input type="text" class="form-control" id="profilePreferredLanguage" readonly>
-          </div>
-        </div>
+        <div class="col-md-4"><label for="profileGender" class="form-label">Gender</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-venus-mars"></i></span><input type="text" class="form-control" id="profileGender" readonly></div></div>
+        <div class="col-md-4"><label for="profileDOB" class="form-label">Date of Birth</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span><input type="text" class="form-control" id="profileDOB" readonly></div></div>
+        <div class="col-md-4"><label for="profilePreferredLanguage" class="form-label">Preferred Language</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-language"></i></span><input type="text" class="form-control" id="profilePreferredLanguage" readonly></div></div>
       </div>
-
-      <!-- Row 3: Father's Name, Marital Status, Payment Preference -->
       <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="profileFatherName" class="form-label">Father's Name</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
-            <input type="text" class="form-control" id="profileFatherName" readonly>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label for="profileMaritalStatus" class="form-label">Marital Status</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-ring"></i></span>
-            <input type="text" class="form-control" id="profileMaritalStatus" readonly>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label for="profilePaymentPreference" class="form-label">Payment Preference</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
-            <input type="text" class="form-control" id="profilePaymentPreference" readonly>
-          </div>
-        </div>
+        <div class="col-md-4"><label for="profileFatherName" class="form-label">Father's Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user-tie"></i></span><input type="text" class="form-control" id="profileFatherName" readonly></div></div>
+        <div class="col-md-4"><label for="profileMaritalStatus" class="form-label">Marital Status</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-ring"></i></span><input type="text" class="form-control" id="profileMaritalStatus" readonly></div></div>
+        <div class="col-md-4"><label for="profilePaymentPreference" class="form-label">Payment Preference</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-money-bill"></i></span><input type="text" class="form-control" id="profilePaymentPreference" readonly></div></div>
       </div>
-
-      <!-- Row 4: Appointment Date -->
       <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="profileAppointmentDate" class="form-label">Appointment Date</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
-            <input type="text" class="form-control" id="profileAppointmentDate" readonly>
-          </div>
-        </div>
+        <div class="col-md-4"><label for="profileAppointmentDate" class="form-label">Appointment Date</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-check"></i></span><input type="text" class="form-control" id="profileAppointmentDate" readonly></div></div>
       </div>
 
       <!-- Optional Fields Section -->
