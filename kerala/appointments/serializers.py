@@ -1,40 +1,12 @@
-# appointments/serializers.py
+from datetime import date
 from rest_framework import serializers
-from .models import Appointment, Patient, AppointmentTests, Vitals
-from users.models import Doctor, Receptionist, Nurse
-from django.contrib.auth.models import User
-from datetime import date, datetime
-import pytz
+from .models import Appointment, AppointmentTests, Vitals
+from patients.serializers import PatientSerializer  # Import from patients app
+from users.models import Doctor, Receptionist
 from django.utils import timezone
+import pytz
 
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-
-
-class PatientSerializer(serializers.ModelSerializer):
-    date_of_birth = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
-    primary_doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), allow_null=True)
-    marital_since = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"], allow_null=True)
-
-    class Meta:
-        model = Patient
-        fields = [
-            'patient_id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'age', 'father_name',
-            'address', 'city', 'pincode', 'email', 'mobile_number', 'alternate_mobile_number', 'aadhar_number',
-            'preferred_language', 'marital_status', 'marital_since', 'referred_by', 'channel', 'cio',
-            'occupation', 'tag', 'blood_group', 'known_allergies', 'current_medications', 'past_medical_history',
-            'specific_notes', 'primary_doctor', 'emergency_contact_name', 'emergency_contact_relationship',
-            'emergency_contact_number', 'insurance_provider', 'policy_number', 'payment_preference',
-            'admission_type', 'hospital_code'
-        ]
-        read_only_fields = ['patient_id', 'age']
-
-    def validate_date_of_birth(self, value):
-        today = date.today()
-        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
-        if age < 0:
-            raise serializers.ValidationError("Date of birth cannot be in the future.")
-        return value
-
 
 class DoctorSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', read_only=True)
@@ -44,7 +16,6 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['id', 'user', 'specialization', 'contact_number', 'email', 'first_name', 'last_name', 'role_level']
-
 
 class VitalsSerializer(serializers.ModelSerializer):
     recorded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
@@ -63,7 +34,6 @@ class VitalsSerializer(serializers.ModelSerializer):
         representation['recorded_by'] = instance.recorded_by.username if instance.recorded_by else "N/A"
         return representation
 
-
 class AppointmentTestsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentTests
@@ -71,9 +41,9 @@ class AppointmentTestsSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
-    patient_id = serializers.CharField(write_only=True)  # Expects patient_id string from view
+    patient_id = serializers.CharField(write_only=True)
     doctor = DoctorSerializer(read_only=True)
-    doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor", allow_null=True)  # Expects doctor ID or None
+    doctor_id = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), write_only=True, source="doctor", allow_null=True)
     receptionist = serializers.PrimaryKeyRelatedField(read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     updated_by_username = serializers.CharField(source="updated_by.username", read_only=True)
@@ -97,7 +67,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         validated_data = super().to_internal_value(data)
         appointment_date = validated_data.get('appointment_date')
         if appointment_date:
-            KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
             if not appointment_date.tzinfo:
                 appointment_date = KOLKATA_TZ.localize(appointment_date)
             else:
@@ -106,9 +75,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return validated_data
 
     def create(self, validated_data):
+        from patients.models import Patient  # Import here to avoid circular import
         patient_id = validated_data.get('patient_id')
-        doctor = validated_data.get('doctor')  # Already a Doctor instance or None from doctor_id
-        created_by = self.context.get('request').user  # From context
+        doctor = validated_data.get('doctor')
+        created_by = self.context.get('request').user
 
         if not patient_id:
             raise serializers.ValidationError({"patient_id": "This field is required."})
@@ -143,15 +113,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         return data
-# serializers.py
-from rest_framework import serializers
-from .models import Patient, Appointment
-from datetime import datetime
-import pytz
 
 class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     # Patient fields
-    
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
     gender = serializers.CharField(max_length=10)
@@ -177,7 +141,7 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     current_medications = serializers.CharField(max_length=255, required=False, allow_blank=True)
     past_medical_history = serializers.CharField(max_length=255, required=False, allow_blank=True)
     specific_notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    primary_doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)  # Changed to match PatientSerializer
+    primary_doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)
     emergency_contact_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     emergency_contact_relationship = serializers.CharField(max_length=50, required=False, allow_blank=True)
     emergency_contact_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
@@ -186,10 +150,9 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
     payment_preference = serializers.CharField(max_length=50, required=False, allow_blank=True)
     admission_type = serializers.CharField(max_length=50, required=False, allow_blank=True)
     hospital_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
-
     # Appointment fields
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)
-    appointment_date = serializers.DateTimeField(required=True)  # Correctly defined as DateTimeField
+    appointment_date = serializers.DateTimeField(required=True)
     notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
     is_emergency = serializers.BooleanField(default=False)
 
@@ -198,9 +161,9 @@ class CreatePatientAndAppointmentSerializer(serializers.Serializer):
         appointment_date = validated_data.get('appointment_date')
         if appointment_date:
             KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-            if not appointment_date.tzinfo:  # If naive datetime, localize it
+            if not appointment_date.tzinfo:
                 appointment_date = KOLKATA_TZ.localize(appointment_date)
-            else:  # If aware, convert to Kolkata timezone
+            else:
                 appointment_date = appointment_date.astimezone(KOLKATA_TZ)
             validated_data['appointment_date'] = appointment_date
         return validated_data

@@ -1,49 +1,29 @@
 from rest_framework import serializers
-from appointments.models import Patient, Appointment, Vitals
-from users.models import Doctor  # Import Doctor model
+from .models import Patient
+from users.models import Doctor
+from datetime import date
 
-from rest_framework import serializers
-from users.models import Doctor  # Import Doctor model
-
-class DoctorSerializer(serializers.ModelSerializer):
-    """Serializer for Doctor details"""
-
-    first_name = serializers.CharField(source="user.first_name")  # Fetch from related User model
-    last_name = serializers.CharField(source="user.last_name")    # Fetch from related User model
-    email = serializers.EmailField(source="user.email")          # Fetch email from User model
+class PatientSerializer(serializers.ModelSerializer):
+    date_of_birth = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+    primary_doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), allow_null=True)
+    marital_since = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"], allow_null=True)
 
     class Meta:
-        model = Doctor
-        fields = ["id", "first_name", "last_name", "specialization", "contact_number", "email"]
+        model = Patient
+        fields = [
+            'patient_id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'age', 'father_name',
+            'address', 'city', 'pincode', 'email', 'mobile_number', 'alternate_mobile_number', 'aadhar_number',
+            'preferred_language', 'marital_status', 'marital_since', 'referred_by', 'channel', 'cio',
+            'occupation', 'tag', 'blood_group', 'known_allergies', 'current_medications', 'past_medical_history',
+            'specific_notes', 'primary_doctor', 'emergency_contact_name', 'emergency_contact_relationship',
+            'emergency_contact_number', 'insurance_provider', 'policy_number', 'payment_preference',
+            'admission_type', 'hospital_code'
+        ]
+        read_only_fields = ['patient_id', 'age']
 
-
-
-class VitalsSerializer(serializers.ModelSerializer):
-    """Serializer for vitals recorded during the appointment"""
-    class Meta:
-        model = Vitals
-        fields = ["temperature", "height", "weight", "blood_pressure", "heart_rate", 
-                  "respiratory_rate", "oxygen_saturation", "blood_sugar_level", "bmi", "recorded_at"]
-
-
-class AppointmentSerializer(serializers.ModelSerializer):
-    """Serializer for Appointment details, including doctor and vitals"""
-    doctor = DoctorSerializer(read_only=True)  # Nested doctor details
-    vitals = VitalsSerializer(read_only=True)  # Nested vitals
-
-    class Meta:
-        model = Appointment
-        fields = ["id", "status", "appointment_date", "notes", "is_emergency", "doctor", "vitals"]
-
-from rest_framework import generics
-from appointments.models import Patient
-from appointments.serializers import PatientSerializer
-
-class PatientListView(generics.ListAPIView):
-    serializer_class = PatientSerializer
-
-    def get_queryset(self):
-        queryset = Patient.objects.all()
-        if self.request.user.user_type == 'Doctor':
-            return queryset.filter(primary_doctor__user=self.request.user)
-        return queryset
+    def validate_date_of_birth(self, value):
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 0:
+            raise serializers.ValidationError("Date of birth cannot be in the future.")
+        return value
