@@ -29,6 +29,8 @@ services:
       - "8000:8000"
     command: >
       sh -c "python manage.py makemigrations users &&
+             python manage.py makemigrations patients &&
+             python manage.py migrate patients &&
              python manage.py migrate users &&
              python manage.py makemigrations appointments &&
              python manage.py migrate appointments &&
@@ -36,7 +38,6 @@ services:
              python manage.py migrate monitor &&
              python manage.py makemigrations cookie &&
              python manage.py migrate cookie &&
-             python manage.py makemigrations patients &&
              python manage.py makemigrations &&
              python manage.py migrate &&
              python manage.py run_admin &&
