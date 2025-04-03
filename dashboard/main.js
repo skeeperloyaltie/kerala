@@ -746,6 +746,12 @@ function populateProfileTab(patient) {
       errors.push("Appointment Date is required for editing an appointment.");
     }
   
+    // Add validation for primary doctor
+    const primaryDoctor = $("#doctor").val();
+    if (!primaryDoctor) {
+      errors.push("Primary Doctor is required.");
+    }
+  
     if (errors.length > 0) {
       alert("Please fix the following errors:\n- " + errors.join("\n- "));
       return;
@@ -783,7 +789,8 @@ function populateProfileTab(patient) {
       policy_number: $("#policyNumber").val(),
       payment_preference: $("#paymentPreference").val(),
       admission_type: $("#admissionType").val(),
-      hospital_code: $("#hospitalCode").val()
+      hospital_code: $("#hospitalCode").val(),
+      primary_doctor: $("#doctor").val() // Add primary_doctor here
     };
   
     const appointmentData = appointmentDate ? {
@@ -796,8 +803,6 @@ function populateProfileTab(patient) {
     const isEditMode = $('#addPatientForm').data('edit-mode');
     const patientId = $('#addPatientForm').data('patient-id');
     const appointmentId = $('#addPatientForm').data('appointment-id');
-  
-    // Safely determine the active button
     let activeButton = null;
     if (e.originalEvent && e.originalEvent.submitter) {
       activeButton = e.originalEvent.submitter.id;
@@ -805,9 +810,9 @@ function populateProfileTab(patient) {
       console.warn("⚠️ Submitter not available, checking form buttons...");
       const $submitButtons = $('#addPatientForm').find('button[type="submit"]');
       if ($submitButtons.length === 1) {
-        activeButton = $submitButtons.attr('id'); // Use the only button’s ID
+        activeButton = $submitButtons.attr('id');
       } else {
-        activeButton = 'savePatient'; // Default fallback ID
+        activeButton = 'savePatient';
       }
     }
     console.log(`🖱️ Form submitted by button: ${activeButton}`);
@@ -822,7 +827,6 @@ function populateProfileTab(patient) {
         contentType: "application/json",
         success: function (updatedPatient) {
           if (appointmentId && appointmentData) {
-            // Update existing appointment
             $.ajax({
               url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
               type: "PATCH",
@@ -838,7 +842,6 @@ function populateProfileTab(patient) {
               }
             });
           } else if (appointmentData) {
-            // Create new appointment for existing patient
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
@@ -871,7 +874,6 @@ function populateProfileTab(patient) {
         contentType: "application/json",
         success: function (newPatient) {
           if (appointmentData) {
-            // Create appointment along with patient
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
