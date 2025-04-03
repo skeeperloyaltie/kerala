@@ -718,7 +718,7 @@ function populateProfileTab(patient) {
   // Add Patient Form Submission (unchanged)
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
-
+  
     const requiredFields = [
       { id: "patientFirstName", name: "First Name" },
       { id: "patientLastName", name: "Last Name" },
@@ -730,7 +730,7 @@ function populateProfileTab(patient) {
       { id: "maritalStatus", name: "Marital Status" },
       { id: "paymentPreference", name: "Payment Preference" }
     ];
-
+  
     let errors = [];
     requiredFields.forEach(field => {
       const value = $(`#${field.id}`).val();
@@ -738,19 +738,19 @@ function populateProfileTab(patient) {
         errors.push(`${field.name} is required.`);
       }
     });
-
+  
     const appointmentDateInput = $("#appointmentDate")[0]._flatpickr?.selectedDates[0];
     const appointmentDate = appointmentDateInput ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30" : null;
-
+  
     if ($('#addPatientForm').data('appointment-id') && !appointmentDate) {
       errors.push("Appointment Date is required for editing an appointment.");
     }
-
+  
     if (errors.length > 0) {
       alert("Please fix the following errors:\n- " + errors.join("\n- "));
       return;
     }
-
+  
     const patientData = {
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
@@ -785,19 +785,33 @@ function populateProfileTab(patient) {
       admission_type: $("#admissionType").val(),
       hospital_code: $("#hospitalCode").val()
     };
-
+  
     const appointmentData = appointmentDate ? {
       appointment_date: appointmentDate,
       notes: $("#appointmentNotes").val(),
       doctor: $("#doctor").val() || null,
       is_emergency: false
     } : null;
-
+  
     const isEditMode = $('#addPatientForm').data('edit-mode');
     const patientId = $('#addPatientForm').data('patient-id');
     const appointmentId = $('#addPatientForm').data('appointment-id');
-    const activeButton = e.originalEvent.submitter.id;
-
+  
+    // Safely determine the active button
+    let activeButton = null;
+    if (e.originalEvent && e.originalEvent.submitter) {
+      activeButton = e.originalEvent.submitter.id;
+    } else {
+      console.warn("⚠️ Submitter not available, checking form buttons...");
+      const $submitButtons = $('#addPatientForm').find('button[type="submit"]');
+      if ($submitButtons.length === 1) {
+        activeButton = $submitButtons.attr('id'); // Use the only button’s ID
+      } else {
+        activeButton = 'savePatient'; // Default fallback ID
+      }
+    }
+    console.log(`🖱️ Form submitted by button: ${activeButton}`);
+  
     if (isEditMode && patientId) {
       // Update existing patient
       $.ajax({
