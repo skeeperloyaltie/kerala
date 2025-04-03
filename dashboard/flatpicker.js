@@ -17,7 +17,7 @@ function initializeDatePickers() {
 
     console.log("Processing input:", inputId);
 
-    const isDateOnly = ["patientDOB", "maritalSince"].includes(inputId);
+    const isDateOnly = ["patientDOB", "maritalSince", "billDate"].includes(inputId);
 
     // Destroy any existing instance to prevent duplicates
     if ($input[0]._flatpickr) {
@@ -34,6 +34,7 @@ function initializeDatePickers() {
       time_24hr: false,
       minDate: ["appointmentDate"].includes(inputId) ? new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) : null,
       maxDate: ["patientDOB", "maritalSince"].includes(inputId) ? "today" : null,
+      defaultDate: ["billDate"].includes(inputId) ? "today" : null, // Set default to today for billDate
       appendTo: document.body,
       position: "auto",
       onOpen: function(selectedDates, dateStr, instance) {

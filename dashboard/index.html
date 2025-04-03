@@ -285,8 +285,9 @@
   border-left: 1px solid #dee2e6;
   padding: 12px;
   overflow-y: auto;
-  height: calc(100% - 60px); /* Match modal body height */
-  display: none; /* Hidden by default */
+  height: calc(100% - 60px);
+  display: none;
+  max-height: calc(100% - 60px); /* Ensure it doesn’t exceed modal height */
 }
 
 #modalBody.split-view .main-content-area {
@@ -921,12 +922,23 @@
       <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
         <form id="addBillsForm">
           <div class="mb-2">
+            <label for="patientIdForBill" class="form-label">Patient ID</label>
+            <input type="text" class="form-control form-control-sm" id="patientIdForBill" readonly>
+          </div>
+          <div class="mb-2">
             <label for="billDescription" class="form-label">Description</label>
             <input type="text" class="form-control form-control-sm" id="billDescription" required>
           </div>
           <div class="mb-2">
             <label for="billAmount" class="form-label">Amount (₹)</label>
             <input type="number" class="form-control form-control-sm" id="billAmount" required>
+          </div>
+          <div class="mb-2">
+            <label for="billDate" class="form-label">Bill Date</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+              <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="billDate" readonly>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary btn-sm">Add Bill</button>
         </form>
@@ -972,7 +984,7 @@
       <h6 class="mb-3">Required Information</h6>
 
       <!-- Row 1: Patient Name and Phone Number -->
-      <<div class="row mb-3">
+      <div class="row mb-3">
         <div class="col-md-4"><label for="profileFirstName" class="form-label">First Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="profileFirstName" readonly></div></div>
         <div class="col-md-4"><label for="profileLastName" class="form-label">Last Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="profileLastName" readonly></div></div>
         <div class="col-md-4"><label for="profilePhone" class="form-label">Phone Number</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-phone"></i></span><input type="text" class="form-control" id="profilePhone" readonly></div></div>
