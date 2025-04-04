@@ -454,112 +454,70 @@ $(document).ready(function () {
     });
   }
 // Populate Profile Tab
-function populateProfileTab(patient) {
-  const $profileTab = $('#profile');
-  $('#profileFirstName').val(patient.first_name || '');
-    $('#profileLastName').val(patient.last_name || '');
-    $('#profilePhone').val(patient.mobile_number || '');
-    $('#profileGender').val(patient.gender || 'N/A');
-    $('#profileDOB').val(patient.date_of_birth || 'N/A');
-    $('#profilePreferredLanguage').val(patient.preferred_language || 'N/A');
-    $('#profileFatherName').val(patient.father_name || 'N/A');
-    $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
-    $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
+function populateProfileTab(data) {
+  // Extract patient data from the nested structure
+  const patient = data.patient || data; // Handle both nested and flat responses
+  console.log("📋 Populating profile tab with data:", patient);
 
-  // Handle appointment_date with Flatpickr (use first appointment if available)
-  const $appointmentDateInput = $('#profileAppointmentDate');
+  // Basic patient info
+  $('#profileFirstName').val(patient.first_name || '');
+  $('#profileLastName').val(patient.last_name || '');
+  $('#profilePhone').val(patient.mobile_number || '');
+  $('#profileGender').val(patient.gender || 'N/A');
+  $('#profileDOB').val(patient.date_of_birth || 'N/A');
+  $('#profilePreferredLanguage').val(patient.preferred_language || 'N/A');
+  $('#profileFatherName').val(patient.father_name || 'N/A');
+  $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
+  $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
+
+  // Handle appointment data (use first appointment if available)
   const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
   if (appointment && appointment.appointment_date) {
     const appointmentDate = new Date(appointment.appointment_date);
     const formattedDate = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${String(appointmentDate.getHours()).padStart(2, '0')}:${String(appointmentDate.getMinutes()).padStart(2, '0')}`;
-    $appointmentDateInput.val(formattedDate);
+    $('#profileAppointmentDate').val(formattedDate);
   } else {
-    $appointmentDateInput.val('');
+    $('#profileAppointmentDate').val('N/A');
   }
-  
-    $('#profileAppointmentDate').val(appointment ? appointment.appointment_date : '');
-    $('#profileCity').val(patient.city || '');
-    $('#profileAddress').val(patient.address || '');
-    $('#profilePin').val(patient.pincode || '');
-    $('#profileMaritalSince').val(patient.marital_since || '');
-    $('#profileBloodGroup').val(patient.blood_group || '');
-    $('#profileReferredBy').val(patient.referred_by || '');
-    $('#profileDoctor').val(appointment && appointment.doctor ? `${appointment.doctor.first_name} ${appointment.doctor.last_name || ''}` : 'N/A');
-    $('#profileDoctorSpecialty').val(appointment && appointment.doctor ? appointment.doctor.specialization : '');
-    $('#profileChannel').val(patient.channel || '');
-    $('#profileCIO').val(patient.cio || '');
-    $('#profileOccupation').val(patient.occupation || '');
-    $('#profileTag').val(patient.tag || '');
-    $('#profileMobile2').val(patient.alternate_mobile_number || '');
-    $('#profileAadharNumber').val(patient.aadhar_number || '');
-    $('#profileKnownAllergies').val(patient.known_allergies || '');
-    $('#profileCurrentMedications').val(patient.current_medications || '');
-    $('#profilePastMedicalHistory').val(patient.past_medical_history || '');
-    $('#profileSpecificNotes').val(patient.specific_notes || '');
-    $('#profileEmergencyContactName').val(patient.emergency_contact_name || '');
-    $('#profileEmergencyContactRelationship').val(patient.emergency_contact_relationship || '');
-    $('#profileEmergencyContactNumber').val(patient.emergency_contact_number || '');
-    $('#profileInsuranceProvider').val(patient.insurance_provider || '');
-    $('#profilePolicyNumber').val(patient.policy_number || '');
-    $('#profileAdmissionType').val(patient.admission_type || '');
-    $('#profileHospitalCode').val(patient.hospital_code || '');
-    $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
 
-  // Re-initialize Flatpickr after setting values
+  // Additional patient info
+  $('#profileCity').val(patient.city || '');
+  $('#profileAddress').val(patient.address || '');
+  $('#profilePin').val(patient.pincode || '');
+  $('#profileMaritalSince').val(patient.marital_since || '');
+  $('#profileBloodGroup').val(patient.blood_group || '');
+  $('#profileReferredBy').val(patient.referred_by || '');
+
+  // Doctor info (use primary_doctor or appointment doctor)
+  const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
+  $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
+  $('#profileDoctorSpecialty').val(doctor.specialization || '');
+
+  $('#profileChannel').val(patient.channel || '');
+  $('#profileCIO').val(patient.cio || '');
+  $('#profileOccupation').val(patient.occupation || '');
+  $('#profileTag').val(patient.tag || '');
+  $('#profileMobile2').val(patient.alternate_mobile_number || '');
+  $('#profileAadharNumber').val(patient.aadhar_number || '');
+  $('#profileKnownAllergies').val(patient.known_allergies || '');
+  $('#profileCurrentMedications').val(patient.current_medications || '');
+  $('#profilePastMedicalHistory').val(patient.past_medical_history || '');
+  $('#profileSpecificNotes').val(patient.specific_notes || '');
+  $('#profileEmergencyContactName').val(patient.emergency_contact_name || '');
+  $('#profileEmergencyContactRelationship').val(patient.emergency_contact_relationship || '');
+  $('#profileEmergencyContactNumber').val(patient.emergency_contact_number || '');
+  $('#profileInsuranceProvider').val(patient.insurance_provider || '');
+  $('#profilePolicyNumber').val(patient.policy_number || '');
+  $('#profileAdmissionType').val(patient.admission_type || '');
+  $('#profileHospitalCode').val(patient.hospital_code || '');
+  $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
+
+  // Re-initialize Flatpickr after setting values (if needed)
   initializeDatePickers();
 
+  // Button event handlers
   $('#editProfileBtn').off('click').on('click', function () {
-    $('#patientFirstName').val(patient.first_name || '');
-    $('#patientLastName').val(patient.last_name || '');
-    $('#patientPhone').val(patient.mobile_number || '');
-    $('#patientGender').val(patient.gender || '');
-    $('#patientDOB').val(patient.date_of_birth || '');
-    $('#preferredLanguage').val(patient.preferred_language || '');
-    $('#fatherName').val(patient.father_name || '');
-    $('#maritalStatus').val(patient.marital_status || '');
-    $('#paymentPreference').val(patient.payment_preference || '');
-
-    const $editAppointmentDate = $('#appointmentDate');
-    if (appointment && appointment.appointment_date) {
-      const appointmentDate = new Date(appointment.appointment_date);
-      const formattedDate = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${String(appointmentDate.getHours()).padStart(2, '0')}:${String(appointmentDate.getMinutes()).padStart(2, '0')}`;
-      $editAppointmentDate.val(formattedDate);
-    } else {
-      $editAppointmentDate.val('');
-    }
-
-    $('#patientCity').val(patient.city || '');
-    $('#patientAddress').val(patient.address || '');
-    $('#patientPin').val(patient.pincode || '');
-    $('#maritalSince').val(patient.marital_since || '');
-    $('#bloodGroup').val(patient.blood_group || '');
-    $('#referredBy').val(patient.referred_by || '');
-    $('#profileDoctor').val(patient.doctor ? `${patient.doctor.first_name} ${patient.doctor.last_name || ''}` : 'N/A');
-    $('#profileDoctorSpecialty').val(patient.doctor ? patient.doctor.specialization : '');
-    $('#channel').val(patient.channel || '');
-    $('#cio').val(patient.cio || '');
-    $('#occupation').val(patient.occupation || '');
-    $('#tag').val(patient.tag || '');
-    $('#mobile2').val(patient.alternate_mobile_number || '');
-    $('#aadharNumber').val(patient.aadhar_number || '');
-    $('#knownAllergies').val(patient.known_allergies || '');
-    $('#currentMedications').val(patient.current_medications || '');
-    $('#pastMedicalHistory').val(patient.past_medical_history || '');
-    $('#specificNotes').val(patient.specific_notes || '');
-    $('#emergencyContactName').val(patient.emergency_contact_name || '');
-    $('#emergencyContactRelationship').val(patient.emergency_contact_relationship || '');
-    $('#emergencyContactNumber').val(patient.emergency_contact_number || '');
-    $('#insuranceProvider').val(patient.insurance_provider || '');
-    $('#policyNumber').val(patient.policy_number || '');
-    $('#admissionType').val(patient.admission_type || '');
-    $('#hospitalCode').val(patient.hospital_code || '');
-    $('#appointmentNotes').val(appointment ? appointment.notes || '' : '');
-
-    // Set edit mode and store IDs
-    $('#addPatientForm').data('edit-mode', !!appointment); // True if editing an existing appointment
-    $('#addPatientForm').data('patient-id', patient.patient_id); // String
-    $('#addPatientForm').data('appointment-id', appointment ? appointment.id : null); // Integer or null
-
+    populateAddPatientForm(patient, appointment);
     $('#addPatientTab').tab('show');
   });
 
@@ -575,61 +533,24 @@ function populateProfileTab(patient) {
   console.log("✅ Profile tab populated with patient data:", patient);
 }
 
-  // Show Create Patient Prompt (unchanged)
-  // function showCreatePatientPrompt(query) {
-  //   const [firstName, ...lastNameParts] = query.split(' ');
-  //   const lastName = lastNameParts.join(' ');
-
-  //   const $modal = $('#newActionModal');
-  //   $modal.modal('hide');
-
-  //   const promptModal = new bootstrap.Modal(document.createElement('div'));
-  //   $(promptModal._element).html(`
-  //     <div class="modal-dialog">
-  //       <div class="modal-content">
-  //         <div class="modal-header">
-  //           <h5 class="modal-title">Patient Not Found</h5>
-  //           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-  //         </div>
-  //         <div class="modal-body">
-  //           <p>No patient found matching "${query}". Would you like to create a new patient?</p>
-  //         </div>
-  //         <div class="modal-footer">
-  //           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Search Again</button>
-  //           <button type="button" class="btn btn-primary" id="createPatientBtn">Create Patient</button>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   `);
-  //   promptModal.show();
-
-  //   $('#createPatientBtn').on('click', function () {
-  //     promptModal.hide();
-  //     $modal.modal('show');
-  //     $('#addPatientTab').tab('show');
-  //     $('#patientFirstName').val(firstName);
-  //     $('#patientLastName').val(lastName);
-  //     resetModalView();
-  //     updateDetailsSection(null);
-  //   });
-
-  //   $(promptModal._element).on('hidden.bs.modal', function () {
-  //     $modal.modal('show');
-  //   });
-  // }
 
   // Update Details Section (unchanged)
-  function updateDetailsSection(patientData) {
+  function updateDetailsSection(data) {
     const detailsTitle = document.getElementById('detailsTitle');
     const detailsMeta = document.getElementById('detailsMeta');
     const visitPadBtn = document.getElementById('visitPadBtn');
-
-    if (patientData) {
-      const fullName = `${patientData.first_name} ${patientData.last_name || ''}`;
-      const age = patientData.age || 'N/A';
-      const patientId = patientData.patient_id || 'N/A';
-      detailsTitle.textContent = `Appointment for ${fullName}`;
-      detailsMeta.textContent = `${patientData.gender || 'N/A'} | ${age} Years | ${patientId}`;
+  
+    const patient = data && data.patient ? data.patient : data; // Handle nested or flat data
+    console.log("📋 Updating details section with data:", patient);
+  
+    if (patient && patient.patient_id) { // Ensure patient data exists
+      const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
+      const dob = patient.date_of_birth ? new Date(patient.date_of_birth) : null;
+      const age = dob ? Math.floor((new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25)) : 'N/A';
+      const patientId = patient.patient_id || 'N/A';
+  
+      detailsTitle.textContent = `${fullName}`;
+      detailsMeta.textContent = `${patient.gender || 'N/A'} | ${age} Years | ${patientId}`;
       visitPadBtn.style.display = 'inline-block';
       console.log("✅ Updated patient details section:", { fullName, age, patientId });
     } else {
@@ -639,6 +560,8 @@ function populateProfileTab(patient) {
       console.log("✅ Reset patient details section");
     }
   }
+
+
   function populateAddPatientForm(patient, appointment = null) {
     $('#patientFirstName').val(patient.first_name || '');
     $('#patientLastName').val(patient.last_name || '');
