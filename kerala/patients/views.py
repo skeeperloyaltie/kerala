@@ -117,27 +117,41 @@ class PatientSearchView(generics.ListAPIView):
         user = self.request.user
         query = self.request.query_params.get('query', '').strip()
         if not query:
+            logger.info(f"User {user.username} performed an empty search query.")
             return Patient.objects.none()
 
+        # Base queryset with search filters
         base_qs = Patient.objects.filter(
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(patient_id__icontains=query) |
             Q(mobile_number__icontains=query) |
             Q(date_of_birth__icontains=query)
-        )
+        ).prefetch_related("appointments__doctor")  # Optimize queries
 
-        if hasattr(user, 'doctor'):
-            return base_qs.filter(
-                Q(primary_doctor=user.doctor) | 
-                Q(appointments__doctor=user.doctor)
-            ).distinct()
-        elif hasattr(user, 'receptionist'):
+        # Role-based filtering
+        if hasattr(user, 'doctor'):  # Doctor role
+            # Include patients where the user is the primary doctor or has appointments
+            queryset = base_qs.filter(
+                Q(primary_doctor=user.doctor) |  # Primary doctor assignment
+                Q(appointments__doctor=user.doctor)  # Appointment assignment
+            ).distinct()  # Avoid duplicates
+            logger.info(f"Doctor {user.username} searched for '{query}': found {queryset.count()} patients.")
+            return queryset
+        elif hasattr(user, 'receptionist'):  # Receptionist role
+            # Receptionists can see all matching patients
+            logger.info(f"Receptionist {user.username} searched for '{query}': found {base_qs.count()} patients.")
             return base_qs
         else:
+            # Unauthorized roles return empty queryset
+            logger.warning(f"Unauthorized user {user.username} attempted patient search for '{query}'.")
             return base_qs.none()
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response({'patients': serializer.data})
+        try:
+            queryset = self.get_queryset()
+            serializer = self.serializer_class(queryset, many=True)
+            return Response({'patients': serializer.data}, status=200)
+        except Exception as e:
+            logger.error(f"Error in patient search for {request.user.username}: {str(e)}", exc_info=True)
+            return Response({'error': 'An error occurred while searching patients.'}, status=500)
