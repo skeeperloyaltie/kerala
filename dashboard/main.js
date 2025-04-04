@@ -427,9 +427,29 @@ $(document).ready(function () {
         $('#newActionModal').modal('show');
         $('#profileTab').tab('show');
         updateDetailsSection(data);
+        console.log(`✅ Fetched details for patient ${patientId}`);
       },
       error: function (xhr) {
-        alert(`Failed to fetch patient details: ${xhr.responseJSON?.error || "Unknown error"}`);
+        // Log the full error response for debugging
+        console.error(`❌ Failed to fetch patient details for ${patientId}:`, {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          response: xhr.responseJSON
+        });
+  
+        // Display the specific error message from the backend, if available
+        let errorMessage = "Failed to fetch patient details.";
+        if (xhr.responseJSON && xhr.responseJSON.error) {
+          errorMessage = xhr.responseJSON.error;
+        } else if (xhr.status === 403) {
+          errorMessage = "You do not have permission to view this patient’s details.";
+        } else if (xhr.status === 404) {
+          errorMessage = "Patient not found.";
+        } else {
+          errorMessage += ` Unknown error (Status: ${xhr.status}).`;
+        }
+  
+        alert(errorMessage);
       }
     });
   }
