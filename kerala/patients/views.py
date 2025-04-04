@@ -38,13 +38,19 @@ class GetPatientDetailsView(APIView):
         user = request.user
         if not user.has_perm('appointments.view_appointment'):
             logger.warning(f"Unauthorized patient details access by {user.username} ({user.user_type} - {user.role_level})")
-            raise PermissionDenied("You do not have permission to view patient details.")
+            return Response(
+                {"error": "You do not have permission to view patient details."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         try:
             patient = Patient.objects.get(patient_id=patient_id)
-            if user.user_type == "Doctor" and not patient.appointments.filter(doctor=user.doctor).exists():
+            if user.user_type == "Doctor" and not (patient.primary_doctor == user.doctor or patient.appointments.filter(doctor=user.doctor).exists()):
                 logger.warning(f"Doctor {user.username} attempted to access patient {patient_id} not assigned to them.")
-                raise PermissionDenied("You can only view details of your patients.")
+                return Response(
+                    {"error": f"You can only view details of your assigned patients. Patient {patient_id} is not assigned to you."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             return Response({"patient": PatientSerializer(patient).data}, status=status.HTTP_200_OK)
         except Patient.DoesNotExist:
             return Response({"error": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
