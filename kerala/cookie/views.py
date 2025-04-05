@@ -47,7 +47,7 @@ class CookieVerification(APIView):
 
                 # Generate JSON response with user ID
                 response = JsonResponse({
-                    'message': 'Cookie verification successful!',
+                    'message': 'Successfull Login!',
                     'user_id': user.id  # Include user ID in response
                 }, status=200)
 

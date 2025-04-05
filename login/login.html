@@ -35,12 +35,8 @@
       animation: fadeIn ease-in 1s;
     }
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .underlineHover:hover {
       color: #56baed;
@@ -96,7 +92,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body" id="notificationMessage">
@@ -119,16 +115,9 @@
       function showNotification(message, type) {
         const modal = $('#notificationModal');
         const messageEl = $('#notificationMessage');
-        
-        // Update modal content
         messageEl.text(message);
-        
-        // Update modal title and styling based on type
         $('#notificationModalLabel').text(type === 'success' ? 'Success' : 'Error');
-        messageEl.removeClass('text-success text-danger');
-        messageEl.addClass(type === 'success' ? 'text-success' : 'text-danger');
-        
-        // Show the modal
+        messageEl.removeClass('text-success text-danger').addClass(type === 'success' ? 'text-success' : 'text-danger');
         modal.modal('show');
       }
 
@@ -137,7 +126,6 @@
         let timeLeft = otpTimeout;
         $('#otpCountdown').text(`You can request another OTP in ${timeLeft} seconds.`);
         $('#resendOtp').addClass('d-none');
-
         otpTimer = setInterval(() => {
           timeLeft--;
           if (timeLeft <= 0) {
@@ -150,7 +138,7 @@
         }, 1000);
       }
 
-      // Fetch CSRF Token as a Promise
+      // Fetch CSRF Token
       function fetchCSRFToken() {
         return new Promise((resolve, reject) => {
           $.ajax({
@@ -175,25 +163,19 @@
 
       // Store User Data with Validation
       function storeUserData(response, username) {
-        if (!response.token) {
-          throw new Error('Token missing in response');
-        }
-        if (!response.user_type) {
-          throw new Error('User type missing in response');
-        }
-        if (!response.role_level) {
-          throw new Error('Role level missing in response');
-        }
-        if (!response.permissions) {
-          throw new Error('Permissions missing in response');
-        }
+        if (!response.token) throw new Error('Token missing in response');
+        if (!response.user_type) throw new Error('User type missing in response');
+        if (!response.role_level) throw new Error('Role level missing in response');
+        if (!response.permissions) throw new Error('Permissions missing in response');
+        if (response.is_superuser === undefined) throw new Error('Superuser status missing in response');
 
         localStorage.setItem('token', response.token);
         localStorage.setItem('username', username);
         localStorage.setItem('user_type', response.user_type);
         localStorage.setItem('role_level', response.role_level);
         localStorage.setItem('permissions', JSON.stringify(response.permissions));
-        localStorage.setItem('csrftoken', localStorage.getItem('csrftoken')); // Ensure CSRF token is stored
+        localStorage.setItem('is_superuser', response.is_superuser);
+        localStorage.setItem('csrftoken', localStorage.getItem('csrftoken'));
 
         console.log('🔹 Stored Data:', {
           token: localStorage.getItem('token'),
@@ -201,14 +183,16 @@
           user_type: localStorage.getItem('user_type'),
           role_level: localStorage.getItem('role_level'),
           permissions: JSON.parse(localStorage.getItem('permissions')),
+          is_superuser: localStorage.getItem('is_superuser'),
           csrftoken: localStorage.getItem('csrftoken'),
         });
       }
 
-      // Redirect to Dashboard
+      // Redirect to Appropriate Dashboard
       function redirectToDashboard() {
-        console.log('🟢 Redirecting to Unified Dashboard');
-        window.location.href = '/dashboard/index.html';
+        const isSuperuser = localStorage.getItem('is_superuser') === 'true';
+        console.log('🟢 Redirecting to:', isSuperuser ? 'Admin Dashboard' : 'User Dashboard');
+        window.location.href = isSuperuser ? '/dashboard/admin.html' : '/dashboard/index.html';
       }
 
       // Handle Username/Password Login
@@ -230,9 +214,7 @@
             url: 'http://104.37.187.187:8000/users/login/',
             type: 'POST',
             contentType: 'application/json',
-            headers: {
-              'X-CSRFToken': csrftoken,
-            },
+            headers: { 'X-CSRFToken': csrftoken },
             data: JSON.stringify({ username, password })
           });
 
@@ -245,16 +227,13 @@
               url: 'http://104.37.187.187:8000/cookie/verify/',
               type: 'POST',
               contentType: 'application/json',
-              headers: {
-                'X-CSRFToken': csrftoken,
-                'Authorization': 'Token ' + token,
-              },
+              headers: { 'X-CSRFToken': csrftoken, 'Authorization': 'Token ' + token },
               data: JSON.stringify({ username })
             });
 
-            console.log('✅ Successfulle Login :', cookieResponse);
+            console.log('✅ Successful Login:', cookieResponse);
             showNotification(cookieResponse.message, 'success');
-            setTimeout(redirectToDashboard, 1000); // Delay redirect to allow user to see the success message
+            setTimeout(redirectToDashboard, 1000);
           } else {
             throw new Error('Token not found after login');
           }
@@ -280,9 +259,7 @@
             url: 'http://104.37.187.187:8000/users/send-otp/',
             type: 'POST',
             contentType: 'application/json',
-            headers: {
-              'X-CSRFToken': csrftoken,
-            },
+            headers: { 'X-CSRFToken': csrftoken },
             data: JSON.stringify({ username })
           });
 
@@ -315,9 +292,7 @@
             url: 'http://104.37.187.187:8000/users/otp/',
             type: 'POST',
             contentType: 'application/json',
-            headers: {
-              'X-CSRFToken': csrftoken,
-            },
+            headers: { 'X-CSRFToken': csrftoken },
             data: JSON.stringify({ username, otp })
           });
 
@@ -330,16 +305,13 @@
               url: 'http://104.37.187.187:8000/cookie/verify/',
               type: 'POST',
               contentType: 'application/json',
-              headers: {
-                'X-CSRFToken': csrftoken,
-                'Authorization': 'Token ' + token,
-              },
+              headers: { 'X-CSRFToken': csrftoken, 'Authorization': 'Token ' + token },
               data: JSON.stringify({ username })
             });
 
-            console.log('✅ Successfull Login:', cookieResponse);
+            console.log('✅ Successful Login:', cookieResponse);
             showNotification(cookieResponse.message, 'success');
-            setTimeout(redirectToDashboard, 1000); // Delay redirect to allow user to see the success message
+            setTimeout(redirectToDashboard, 1000);
           } else {
             throw new Error('Token not found after OTP verification');
           }
