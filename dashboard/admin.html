@@ -8,14 +8,58 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
-    body { background-color: #f8f9fa; min-height: 100vh; font-size: 11px; margin: 0; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; }
-    .navbar-top { background-color: #1a2a6c; padding: 0; width: 100%; margin: 0; color: white; }
-    .navbar-secondary { background-color: #e9ecef; padding: 2px 10px; border-bottom: 1px solid #dee2e6; }
-    .admin-section { margin-top: 20px; }
-    .table th, .table td { padding: 6px; vertical-align: middle; }
-    .form-section { margin-top: 15px; padding: 15px; background-color: #fff; border: 1px solid #dee2e6; border-radius: 5px; }
-    .nav-link { color: white; }
-    .nav-link:hover { color: #b3c7ff; }
+    body { 
+      background-color: #f8f9fa; 
+      min-height: 100vh; 
+      font-size: 10px; /* Smaller font size for compactness */
+      margin: 0; 
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; 
+    }
+    .navbar-top { 
+      background-color: #1a2a6c; 
+      padding: 5px 10px; /* Reduced padding */
+      color: white; 
+    }
+    .navbar-secondary { 
+      background-color: #e9ecef; 
+      padding: 2px 8px; /* Reduced padding */
+      border-bottom: 1px solid #dee2e6; 
+    }
+    .admin-section { 
+      margin-top: 10px; /* Reduced margin */
+    }
+    .table { 
+      font-size: 10px; /* Match body font size */
+    }
+    .table th, .table td { 
+      padding: 4px; /* Reduced padding for compactness */
+      vertical-align: middle; 
+    }
+    .form-section { 
+      margin-top: 10px; /* Reduced margin */
+      padding: 10px; /* Reduced padding */
+      background-color: #fff; 
+      border: 1px solid #dee2e6; 
+      border-radius: 3px; /* Smaller radius */
+    }
+    .nav-link { 
+      color: white; 
+      padding: 4px 8px; /* Reduced padding */
+    }
+    .nav-link:hover { 
+      color: #b3c7ff; 
+    }
+    .form-control, .form-select, .btn { 
+      font-size: 10px; /* Match body font size */
+      padding: 3px 6px; /* Reduced padding */
+    }
+    h6 { 
+      font-size: 12px; /* Slightly larger for headers */
+      margin-bottom: 8px; 
+    }
+    .dropdown-menu { 
+      font-size: 10px; 
+    }
   </style>
 </head>
 <body>
@@ -25,17 +69,17 @@
       <div class="container-fluid">
         <div class="d-flex align-items-center">
           <a class="navbar-brand" href="#">
-            <i class="fas fa-hospital fa-lg fa-icon"></i> City Hospital - Admin
+            <i class="fas fa-hospital fa-icon"></i> City Hospital - Admin
           </a>
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item"><a class="nav-link" href="#" data-action="manage-users"><i class="fas fa-users fa-icon"></i> Manage Users</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-action="manage-patients"><i class="fas fa-user-injured fa-icon"></i> Manage Patients</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-action="manage-appointments"><i class="fas fa-calendar fa-icon"></i> Manage Appointments</a></li>
+          <ul class="navbar-nav me-auto mb-0">
+            <li class="nav-item"><a class="nav-link" href="#" data-action="manage-users"><i class="fas fa-users fa-icon"></i> Users</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-action="manage-patients"><i class="fas fa-user-injured fa-icon"></i> Patients</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-action="manage-appointments"><i class="fas fa-calendar fa-icon"></i> Appointments</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-action="system-settings"><i class="fas fa-cogs fa-icon"></i> Settings</a></li>
           </ul>
         </div>
         <div class="d-flex align-items-center">
-          <form class="d-flex me-2"><input class="form-control" type="search" id="globalSearch" placeholder="Search User/Patient/Appointment" aria-label="Search"></form>
+          <form class="d-flex me-2"><input class="form-control" type="search" id="globalSearch" placeholder="Search..." aria-label="Search"></form>
           <div class="dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-icon"></i></a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
@@ -53,9 +97,9 @@
       <div class="container-fluid">
         <div class="d-flex align-items-center me-auto">
           <form class="d-flex me-2"><input class="form-control" type="text" id="sectionFilter" placeholder="Filter" aria-label="Filter"></form>
-          <button class="btn btn-outline-primary btn-circle me-2"><i class="fas fa-filter"></i></button>
+          <button class="btn btn-outline-primary"><i class="fas fa-filter"></i></button>
         </div>
-        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav mx-auto mb-0">
           <li class="nav-item"><a class="nav-link active" href="#" data-section="users">Users</a></li>
           <li class="nav-item"><a class="nav-link" href="#" data-section="patients">Patients</a></li>
           <li class="nav-item"><a class="nav-link" href="#" data-section="appointments">Appointments</a></li>
@@ -65,7 +109,7 @@
         </ul>
         <div class="d-flex align-items-center">
           <input type="text" class="flatpickr-input me-2" id="dateFilter" readonly>
-          <button class="btn btn-outline-primary btn-sm" id="todayBtn">Today</button>
+          <button class="btn btn-outline-primary" id="todayBtn">Today</button>
         </div>
       </div>
     </nav>
@@ -74,71 +118,71 @@
     <div class="container-fluid admin-section">
       <!-- Users Section -->
       <div id="usersSection" class="section active">
-        <h6>Users <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createUserForm">Create User</button></h6>
+        <h6>Users <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createUserForm">Create</button></h6>
         <div id="createUserForm" class="form-section collapse">
           <form id="userForm">
-            <div class="row mb-3">
+            <div class="row mb-2">
               <div class="col-md-3"><label>Username</label><input type="text" class="form-control" name="username" required></div>
               <div class="col-md-3"><label>Email</label><input type="email" class="form-control" name="email" required></div>
               <div class="col-md-3"><label>Password</label><input type="password" class="form-control" name="password" required></div>
-              <div class="col-md-3"><label>User Type</label><select class="form-select" name="user_type" required><option value="" disabled selected>Select</option><option value="Doctor">Doctor</option><option value="Nurse">Nurse</option><option value="Receptionist">Receptionist</option><option value="Admin">Admin</option></select></div>
+              <div class="col-md-3"><label>Type</label><select class="form-select" name="user_type" required><option value="" disabled selected>Select</option><option value="Doctor">Doctor</option><option value="Nurse">Nurse</option><option value="Receptionist">Receptionist</option><option value="Admin">Admin</option></select></div>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-3"><label>Role Level</label><select class="form-select" name="role_level" required><option value="" disabled selected>Select</option><option value="Senior">Senior</option><option value="Medium">Medium</option><option value="Basic">Basic</option></select></div>
+            <div class="row mb-2">
+              <div class="col-md-3"><label>Role</label><select class="form-select" name="role_level" required><option value="" disabled selected>Select</option><option value="Senior">Senior</option><option value="Medium">Medium</option><option value="Basic">Basic</option></select></div>
               <div class="col-md-3"><label>First Name</label><input type="text" class="form-control" name="first_name"></div>
               <div class="col-md-3"><label>Last Name</label><input type="text" class="form-control" name="last_name"></div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save User</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
           </form>
         </div>
         <table class="table table-bordered table-hover">
-          <thead><tr><th>#</th><th>Username</th><th>User Type</th><th>Role Level</th><th>First Name</th><th>Last Name</th><th>Actions</th></tr></thead>
+          <thead><tr><th>#</th><th>Username</th><th>Type</th><th>Role</th><th>First</th><th>Last</th><th>Actions</th></tr></thead>
           <tbody id="usersTableBody"></tbody>
         </table>
       </div>
 
       <!-- Patients Section -->
       <div id="patientsSection" class="section" style="display: none;">
-        <h6>Patients <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createPatientForm">Create Patient</button></h6>
+        <h6>Patients <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createPatientForm">Create</button></h6>
         <div id="createPatientForm" class="form-section collapse">
           <form id="patientForm">
-            <div class="row mb-3">
+            <div class="row mb-2">
               <div class="col-md-3"><label>First Name</label><input type="text" class="form-control" name="first_name" required></div>
               <div class="col-md-3"><label>Last Name</label><input type="text" class="form-control" name="last_name"></div>
-              <div class="col-md-3"><label>Gender</label><select class="form-select" name="gender" required><option value="" disabled selected>Select</option><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select></div>
-              <div class="col-md-3"><label>Date of Birth</label><input type="text" class="form-control flatpickr-input" name="date_of_birth" required></div>
+              <div class="col-md-3"><label>Gender</label><select class="form-select" name="gender" required><option value="" disabled selected>Select</option><option value="M">M</option><option value="F">F</option><option value="O">O</option></select></div>
+              <div class="col-md-3"><label>DOB</label><input type="text" class="form-control flatpickr-input" name="date_of_birth" required></div>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-3"><label>Mobile Number</label><input type="text" class="form-control" name="mobile_number" required></div>
+            <div class="row mb-2">
+              <div class="col-md-3"><label>Phone</label><input type="text" class="form-control" name="mobile_number" required></div>
               <div class="col-md-3"><label>Email</label><input type="email" class="form-control" name="email"></div>
-              <div class="col-md-3"><label>Admission Type</label><select class="form-select" name="admission_type"><option value="OPD">OPD</option><option value="IPD">IPD</option></select></div>
-              <div class="col-md-3"><label>Primary Doctor</label><select class="form-select" name="primary_doctor" id="primaryDoctorSelect"></select></div>
+              <div class="col-md-3"><label>Type</label><select class="form-select" name="admission_type"><option value="OPD">OPD</option><option value="IPD">IPD</option></select></div>
+              <div class="col-md-3"><label>Doctor</label><select class="form-select" name="primary_doctor" id="primaryDoctorSelect"></select></div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save Patient</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
           </form>
         </div>
         <table class="table table-bordered table-hover">
-          <thead><tr><th>#</th><th>Patient ID</th><th>Name</th><th>Gender</th><th>Age</th><th>Phone</th><th>Actions</th></tr></thead>
+          <thead><tr><th>#</th><th>ID</th><th>Name</th><th>Gender</th><th>Age</th><th>Phone</th><th>Actions</th></tr></thead>
           <tbody id="patientsTableBody"></tbody>
         </table>
       </div>
 
       <!-- Appointments Section -->
       <div id="appointmentsSection" class="section" style="display: none;">
-        <h6>Appointments <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createAppointmentForm">Create Appointment</button></h6>
+        <h6>Appointments <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createAppointmentForm">Create</button></h6>
         <div id="createAppointmentForm" class="form-section collapse">
           <form id="appointmentForm">
-            <div class="row mb-3">
+            <div class="row mb-2">
               <div class="col-md-3"><label>Patient</label><select class="form-select" name="patient" id="patientSelect" required></select></div>
               <div class="col-md-3"><label>Doctor</label><select class="form-select" name="doctor" id="doctorSelect" required></select></div>
-              <div class="col-md-3"><label>Date & Time</label><input type="text" class="form-control flatpickr-input" name="appointment_date" required></div>
+              <div class="col-md-3"><label>Date</label><input type="text" class="form-control flatpickr-input" name="appointment_date" required></div>
               <div class="col-md-3"><label>Status</label><select class="form-select" name="status" required><option value="Scheduled">Scheduled</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-3"><label>Is Emergency</label><input type="checkbox" name="is_emergency"></div>
-              <div class="col-md-9"><label>Notes</label><textarea class="form-control" name="notes"></textarea></div>
+            <div class="row mb-2">
+              <div class="col-md-3"><label>Emergency</label><input type="checkbox" name="is_emergency"></div>
+              <div class="col-md-9"><label>Notes</label><textarea class="form-control" name="notes" rows="1"></textarea></div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save Appointment</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
           </form>
         </div>
         <table class="table table-bordered table-hover">
@@ -149,39 +193,39 @@
 
       <!-- Vitals Section -->
       <div id="vitalsSection" class="section" style="display: none;">
-        <h6>Vitals <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createVitalsForm">Add Vitals</button></h6>
+        <h6>Vitals <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createVitalsForm">Add</button></h6>
         <div id="createVitalsForm" class="form-section collapse">
           <form id="vitalsForm">
-            <div class="row mb-3">
-              <div class="col-md-3"><label>Appointment</label><select class="form-select" name="appointment" id="appointmentSelect" required></select></div>
-              <div class="col-md-3"><label>Blood Pressure</label><input type="text" class="form-control" name="blood_pressure"></div>
-              <div class="col-md-3"><label>Heart Rate</label><input type="text" class="form-control" name="heart_rate"></div>
-              <div class="col-md-3"><label>Temperature</label><input type="text" class="form-control" name="temperature"></div>
+            <div class="row mb-2">
+              <div class="col-md-3"><label>Appt</label><select class="form-select" name="appointment" id="appointmentSelect" required></select></div>
+              <div class="col-md-3"><label>BP</label><input type="text" class="form-control" name="blood_pressure"></div>
+              <div class="col-md-3"><label>HR</label><input type="text" class="form-control" name="heart_rate"></div>
+              <div class="col-md-3"><label>Temp</label><input type="text" class="form-control" name="temperature"></div>
             </div>
-            <div class="row mb-3">
+            <div class="row mb-2">
               <div class="col-md-3"><label>Height</label><input type="text" class="form-control" name="height"></div>
               <div class="col-md-3"><label>Weight</label><input type="text" class="form-control" name="weight"></div>
-              <div class="col-md-3"><label>Oxygen Saturation</label><input type="text" class="form-control" name="oxygen_saturation"></div>
+              <div class="col-md-3"><label>O2</label><input type="text" class="form-control" name="oxygen_saturation"></div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save Vitals</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
           </form>
         </div>
         <table class="table table-bordered table-hover">
-          <thead><tr><th>#</th><th>Appointment</th><th>BP</th><th>HR</th><th>Temp</th><th>Height</th><th>Weight</th><th>O2</th><th>Actions</th></tr></thead>
+          <thead><tr><th>#</th><th>Appt</th><th>BP</th><th>HR</th><th>Temp</th><th>Height</th><th>Weight</th><th>O2</th><th>Actions</th></tr></thead>
           <tbody id="vitalsTableBody"></tbody>
         </table>
       </div>
 
       <!-- Groups Section -->
       <div id="groupsSection" class="section" style="display: none;">
-        <h6>Groups <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createGroupForm">Create Group</button></h6>
+        <h6>Groups <button class="btn btn-sm btn-primary float-end" data-toggle="form" data-form="createGroupForm">Create</button></h6>
         <div id="createGroupForm" class="form-section collapse">
           <form id="groupForm">
-            <div class="row mb-3">
+            <div class="row mb-2">
               <div class="col-md-3"><label>Name</label><input type="text" class="form-control" name="name" required></div>
-              <div class="col-md-9"><label>Permissions</label><select class="form-select" name="permissions" multiple></select></div>
+              <div class="col-md-9"><label>Perms</label><select class="form-select" name="permissions" multiple></select></div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save Group</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
           </form>
         </div>
         <table class="table table-bordered table-hover">
@@ -192,9 +236,9 @@
 
       <!-- Logs Section -->
       <div id="logsSection" class="section" style="display: none;">
-        <h6>System Logs</h6>
+        <h6>Logs</h6>
         <table class="table table-bordered table-hover">
-          <thead><tr><th>#</th><th>User</th><th>Action</th><th>Timestamp</th></tr></thead>
+          <thead><tr><th>#</th><th>User</th><th>Action</th><th>Time</th></tr></thead>
           <tbody id="logsTableBody"></tbody>
         </table>
       </div>
