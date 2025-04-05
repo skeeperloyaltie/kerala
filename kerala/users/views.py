@@ -7,15 +7,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail
 from django.utils import timezone
-from .models import User, OTPVerification, Receptionist, Doctor, Nurse
-from .serializers import LoginSerializer, OTPLoginSerializer, UserProfileSerializer
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
-from django.middleware.csrf import get_token
-from rest_framework.generics import RetrieveAPIView  # Add this import
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.generics import RetrieveAPIView
+from .models import User, OTPVerification, Receptionist, Doctor, Nurse
+from .serializers import LoginSerializer, OTPLoginSerializer, UserProfileSerializer
 
 # Get the logger for the application
 logger = logging.getLogger(__name__)
@@ -28,6 +27,16 @@ def get_user_permissions(user):
         "can_edit": user.has_perm('appointments.change_appointment'),
     }
     return permissions
+
+def get_user_role_info(user):
+    """Helper function to return consistent user role info."""
+    return {
+        "user_type": user.user_type,
+        "role_level": user.role_level,
+        "is_superuser": user.is_superuser,
+        "is_staff": user.is_staff,
+        "permissions": get_user_permissions(user)
+    }
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
@@ -48,15 +57,12 @@ class LoginView(APIView):
                         logger.info(f"User {username} authenticated successfully")
                         login(request, user)
                         token, created = Token.objects.get_or_create(user=user)
-                        permissions = get_user_permissions(user)
+                        role_info = get_user_role_info(user)
 
-                        # Return user info with permissions for the dashboard
                         return Response({
                             "message": "Login successful",
-                            "user_type": user.user_type,
-                            "role_level": user.role_level,
                             "token": token.key,
-                            "permissions": permissions
+                            **role_info
                         }, status=status.HTTP_200_OK)
                     else:
                         logger.warning(f"Inactive user attempted login: {username}")
@@ -70,53 +76,6 @@ class LoginView(APIView):
         
         logger.error(f"Login request validation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class OTPLoginView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        logger.info("OTP login request received")
-        serializer = OTPLoginSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data['username']
-            otp = serializer.validated_data['otp']
-            logger.debug(f"Verifying OTP for user: {username}")
-
-            try:
-                user = get_object_or_404(User, username=username)
-                otp_verification = OTPVerification.objects.filter(user=user, verified=False).latest('created_at')
-
-                if otp_verification.is_expired():
-                    logger.warning(f"Expired OTP for user: {username}")
-                    return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
-
-                if otp == otp_verification.otp:
-                    otp_verification.verified = True
-                    otp_verification.save()
-                    logger.info(f"OTP verified successfully for user: {username}")
-                    login(request, user)
-                    token, created = Token.objects.get_or_create(user=user)
-                    permissions = get_user_permissions(user)
-
-                    # Return user info with permissions
-                    return Response({
-                        "message": "OTP verified and login successful",
-                        "user_type": user.user_type,
-                        "role_level": user.role_level,
-                        "token": token.key,
-                        "permissions": permissions
-                    }, status=status.HTTP_200_OK)
-                else:
-                    logger.warning(f"Invalid OTP entered for user: {username}")
-                    return Response({"error": "Invalid OTP"}, status=status.HTTP_401_UNAUTHORIZED)
-            except OTPVerification.DoesNotExist:
-                logger.error(f"No OTP found for user: {username}")
-                return Response({"error": "OTP not found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            logger.error(f"OTP validation failed: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -158,41 +117,47 @@ class SendOTPView(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class OTPVerifyAndLoginView(APIView):
+class OTPLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
-        otp = request.data.get('otp')
+        logger.info("OTP login request received")
+        serializer = OTPLoginSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            otp = serializer.validated_data['otp']
+            logger.debug(f"Verifying OTP for user: {username}")
 
-        if not username or not otp:
-            return Response({"error": "Username and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                user = get_object_or_404(User, username=username)
+                otp_verification = OTPVerification.objects.filter(user=user, verified=False).latest('created_at')
 
-        try:
-            user = get_object_or_404(User, username=username)
-            otp_verification = OTPVerification.objects.filter(user=user, verified=False).latest('created_at')
+                if otp_verification.is_expired():
+                    logger.warning(f"Expired OTP for user: {username}")
+                    return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
 
-            if otp_verification.is_expired():
-                return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
+                if otp == otp_verification.otp:
+                    otp_verification.verified = True
+                    otp_verification.save()
+                    logger.info(f"OTP verified successfully for user: {username}")
+                    login(request, user)
+                    token, created = Token.objects.get_or_create(user=user)
+                    role_info = get_user_role_info(user)
 
-            if otp == otp_verification.otp:
-                otp_verification.verified = True
-                otp_verification.save()
-                login(request, user)
-                token, created = Token.objects.get_or_create(user=user)
-                permissions = get_user_permissions(user)
-
-                return Response({
-                    "message": "OTP verified and login successful",
-                    "token": token.key,
-                    "user_type": user.user_type,
-                    "role_level": user.role_level,
-                    "permissions": permissions
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Invalid OTP"}, status=status.HTTP_401_UNAUTHORIZED)
-        except OTPVerification.DoesNotExist:
-            return Response({"error": "OTP not found"}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({
+                        "message": "OTP verified and login successful",
+                        "token": token.key,
+                        **role_info
+                    }, status=status.HTTP_200_OK)
+                else:
+                    logger.warning(f"Invalid OTP entered for user: {username}")
+                    return Response({"error": "Invalid OTP"}, status=status.HTTP_401_UNAUTHORIZED)
+            except OTPVerification.DoesNotExist:
+                logger.error(f"No OTP found for user: {username}")
+                return Response({"error": "OTP not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            logger.error(f"OTP validation failed: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -209,8 +174,9 @@ class LogoutView(APIView):
         try:
             token = token.split(' ')[1]
             user_token = Token.objects.get(key=token)
+            user = user_token.user
             user_token.delete()
-            logger.info(f"User {request.user.username} logged out successfully, token {token} deleted")
+            logger.info(f"User {user.username} logged out successfully, token {token} deleted")
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
             logger.warning(f"Invalid or expired token provided for logout")
@@ -230,10 +196,8 @@ class UserProfileView(RetrieveAPIView):
         user = self.request.user
         profile_data = {
             "username": user.username,
-            "user_type": user.user_type,
-            "role_level": user.role_level,
             "email": user.email,
-            "permissions": get_user_permissions(user)
+            **get_user_role_info(user)
         }
 
         if user.user_type == "Receptionist":
@@ -282,6 +246,50 @@ class UserProfileView(RetrieveAPIView):
             return profile_data
         logger.info(f"Profile retrieved for user: {request.user.username}")
         return Response(profile_data, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UserListView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not (request.user.is_superuser or request.user.user_type == "Admin"):
+            logger.warning(f"Unauthorized access attempt by {request.user.username}")
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        users = User.objects.all()
+        user_data = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                **get_user_role_info(user)
+            } for user in users
+        ]
+        logger.info(f"User list retrieved by {request.user.username}")
+        return Response(user_data, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UserDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        if not (request.user.is_superuser or request.user.user_type == "Admin"):
+            logger.warning(f"Unauthorized access attempt by {request.user.username}")
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, id=user_id)
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            **get_user_role_info(user)
+        }
+        logger.info(f"User details retrieved for {user.username} by {request.user.username}")
+        return Response(user_data, status=status.HTTP_200_OK)
 
 
 def get_csrf_token(request):
