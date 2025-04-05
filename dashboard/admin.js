@@ -431,7 +431,7 @@ $(document).ready(function () {
         
         log.info(`Submitting user edit for ID=${id}`);
         $.ajax({
-          url: `${API_BASE_URL}/users/${id}/`,
+          url: `${API_BASE_URL}/users/users/${id}/`,
           type: "PATCH",
           headers: getAuthHeaders(),
           data: JSON.stringify(data),
