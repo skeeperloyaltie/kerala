@@ -12,7 +12,23 @@ $(document).ready(function () {
     flatpickr("#dateFilter", { dateFormat: "Y-m-d", defaultDate: new Date(), onChange: fetchDataByDate });
     flatpickr("input[name='date_of_birth']", { dateFormat: "Y-m-d" });
     flatpickr("input[name='appointment_date']", { enableTime: true, dateFormat: "Y-m-d H:i" });
-  
+
+    // Notification Function
+    function showNotification(message, type = 'success') {
+        const notification = $(`
+          <div class="alert alert-${type} alert-dismissible fade show notification" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        `);
+        
+        $('#notificationContainer').append(notification);
+        
+        setTimeout(() => {
+          notification.alert('close');
+        }, 5000);
+    }
+
     // Authentication Headers
     function getAuthHeaders() {
       return { "Authorization": `Token ${localStorage.getItem("token")}` };
@@ -179,7 +195,12 @@ $(document).ready(function () {
   
     // Table Columns
     const userColumns = user => [
-      user.id, user.username, user.user_type || "N/A", user.role_level || "N/A", user.first_name || "N/A", user.last_name || "N/A",
+      user.id, 
+      user.username, 
+      user.user_type || "N/A", 
+      user.role_level || "N/A", 
+      user.first_name || "N/A", 
+      user.last_name || "N/A",
       `<button class="btn btn-sm btn-primary" data-id="${user.id}" data-action="edit-user">Edit</button>`
     ];
   
@@ -287,8 +308,12 @@ $(document).ready(function () {
             fetchUsers();
             $(this)[0].reset();
             $(this).closest(".collapse").collapse("hide");
+            showNotification(`User ${id ? "updated" : "created"} successfully`, "success");
           },
-          error: xhr => log.error(`Failed to ${id ? "update" : "create"} user: ${xhr.responseJSON?.error || xhr.statusText}`)
+          error: xhr => {
+            log.error(`Failed to ${id ? "update" : "create"} user: ${xhr.responseJSON?.error || xhr.statusText}`);
+            showNotification(`Failed to ${id ? "update" : "create"} user`, "danger");
+          }
         });
       });
   
@@ -308,8 +333,12 @@ $(document).ready(function () {
             fetchPatients();
             $(this)[0].reset();
             $(this).closest(".collapse").collapse("hide");
+            showNotification(`Patient ${id ? "updated" : "created"} successfully`, "success");
           },
-          error: xhr => log.error(`Failed to ${id ? "update" : "create"} patient: ${xhr.responseJSON?.error || xhr.statusText}`)
+          error: xhr => {
+            log.error(`Failed to ${id ? "update" : "create"} patient: ${xhr.responseJSON?.error || xhr.statusText}`);
+            showNotification(`Failed to ${id ? "update" : "create"} patient`, "danger");
+          }
         });
       });
   
@@ -330,8 +359,12 @@ $(document).ready(function () {
             fetchAppointments();
             $(this)[0].reset();
             $(this).closest(".collapse").collapse("hide");
+            showNotification(`Appointment ${id ? "updated" : "created"} successfully`, "success");
           },
-          error: xhr => log.error(`Failed to ${id ? "update" : "create"} appointment: ${xhr.responseJSON?.error || xhr.statusText}`)
+          error: xhr => {
+            log.error(`Failed to ${id ? "update" : "create"} appointment: ${xhr.responseJSON?.error || xhr.statusText}`);
+            showNotification(`Failed to ${id ? "update" : "create"} appointment`, "danger");
+          }
         });
       });
   
@@ -351,8 +384,12 @@ $(document).ready(function () {
             fetchVitals();
             $(this)[0].reset();
             $(this).closest(".collapse").collapse("hide");
+            showNotification(`Vitals ${id ? "updated" : "created"} successfully`, "success");
           },
-          error: xhr => log.error(`Failed to ${id ? "update" : "create"} vitals: ${xhr.responseJSON?.error || xhr.statusText}`)
+          error: xhr => {
+            log.error(`Failed to ${id ? "update" : "create"} vitals: ${xhr.responseJSON?.error || xhr.statusText}`);
+            showNotification(`Failed to ${id ? "update" : "create"} vitals`, "danger");
+          }
         });
       });
   
@@ -372,31 +409,76 @@ $(document).ready(function () {
             fetchGroups();
             $(this)[0].reset();
             $(this).closest(".collapse").collapse("hide");
+            showNotification(`Group ${id ? "updated" : "created"} successfully`, "success");
           },
-          error: xhr => log.error(`Failed to ${id ? "update" : "create"} group: ${xhr.responseJSON?.error || xhr.statusText}`)
+          error: xhr => {
+            log.error(`Failed to ${id ? "update" : "create"} group: ${xhr.responseJSON?.error || xhr.statusText}`);
+            showNotification(`Failed to ${id ? "update" : "create"} group`, "danger");
+          }
         });
       });
   
+      $("#editUserForm").submit(function(e) {
+        e.preventDefault();
+        const id = $(this).data("id");
+        const data = $(this).serializeObject();
+        
+        // Remove empty password field if not changed
+        if (!data.password) {
+          delete data.password;
+        }
+        
+        log.info(`Submitting user edit for ID=${id}`);
+        $.ajax({
+          url: `${API_BASE_URL}/users/${id}/`,
+          type: "PATCH",
+          headers: getAuthHeaders(),
+          data: JSON.stringify(data),
+          contentType: "application/json",
+          success: function() {
+            log.info(`User ${id} updated successfully`);
+            $("#editUserModal").modal("hide");
+            fetchUsers();
+            showNotification("User updated successfully", "success");
+          },
+          error: function(xhr) {
+            log.error(`Failed to update user: ${xhr.responseJSON?.error || xhr.statusText}`);
+            showNotification(`Failed to update user: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+          }
+        });
+      });
+
       $(document).on("click", "[data-action]", function () {
         const action = $(this).data("action");
         const id = $(this).data("id");
-        const $form = $(`#${action.split("-")[1]}Form`);
-        if (action.startsWith("edit-")) {
-          log.info(`Editing ${action.split("-")[1]} with ID=${id}`);
+        
+        if (action === "edit-user") {
+          log.info(`Editing user with ID=${id}`);
           $.ajax({
-            url: `${API_BASE_URL}/${action.split("-")[1]}s/${id}/`,
+            url: `${API_BASE_URL}/users/${id}/`,
             headers: getAuthHeaders(),
-            success: data => {
-              $form.data("id", id).find(":input").each(function () {
-                const name = $(this).attr("name");
-                if (data[name]) $(this).val(data[name]);
-              });
-              $form.collapse("show");
-              log.info(`Loaded data for editing ${action.split("-")[1]} ID=${id}`);
+            success: function(data) {
+              const $form = $("#editUserForm");
+              $form.data("id", id);
+              
+              // Populate form fields
+              $form.find("[name='username']").val(data.username);
+              $form.find("[name='email']").val(data.email);
+              $form.find("[name='user_type']").val(data.user_type);
+              $form.find("[name='role_level']").val(data.role_level);
+              $form.find("[name='first_name']").val(data.first_name);
+              $form.find("[name='last_name']").val(data.last_name);
+              
+              $("#editUserModal").modal("show");
+              log.info(`Loaded user data for editing ID=${id}`);
             },
-            error: xhr => log.error(`Failed to load data for editing ${action.split("-")[1]}: ${xhr.status}`)
+            error: xhr => {
+              log.error(`Failed to load user data: ${xhr.status}`);
+              showNotification("Failed to load user data", "danger");
+            }
           });
         }
+        // Add other edit handlers here if needed
       });
     }
   
@@ -425,7 +507,7 @@ $(document).ready(function () {
         if (query.length < 1) return;
         const section = $(".navbar-secondary .nav-link.active").data("section");
         const urlMap = {
-          users: `${API_BASE_URL}/users/search/?query=${query}`,
+          users: `${API_BASE_URL}/patients/search/?query=${query}`,
           patients: `${API_BASE_URL}/patients/search/?query=${query}`,
           appointments: `${API_BASE_URL}/appointments/search/?query=${query}`
         };
@@ -457,7 +539,7 @@ $(document).ready(function () {
       });
     }
   
-    // Serialize Object Helper (Fixed Typo)
+    // Serialize Object Helper
     $.fn.serializeObject = function () {
       const o = {};
       const a = this.serializeArray();
@@ -469,7 +551,7 @@ $(document).ready(function () {
           o[this.name] = this.value || "";
         }
       });
-      return o; // Fixed from 'radiofrequency' to 'o'
+      return o;
     };
   
     // Debounce
@@ -484,4 +566,4 @@ $(document).ready(function () {
     // Initialize
     log.info("Initializing admin dashboard...");
     checkAuthentication();
-  });
+});
