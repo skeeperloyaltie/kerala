@@ -10,7 +10,7 @@ urlpatterns = [
     path('otp/', OTPLoginView.as_view(), name='otp_login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', UserProfileView.as_view(), name='profile'),
-    path('list/', UserListView.as_view(), name='user_list'),
-    path('<int:user_id>/', UserDetailView.as_view(), name='user_detail'),
+    path('users/', UserListView.as_view(), name='user_list'),  # Updated endpoint name
+    path('users/<int:user_id>/', UserDetailView.as_view(), name='user_detail'),
     path('get-csrf-token/', get_csrf_token, name='get_csrf_token'),
 ]

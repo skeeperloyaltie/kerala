@@ -114,7 +114,7 @@ $(document).ready(function () {
     function fetchUsers() {
       log.info("Fetching users...");
       $.ajax({
-        url: `${API_BASE_URL}/users/list/`,
+        url: `${API_BASE_URL}/users/users/`,
         headers: getAuthHeaders(),
         success: data => {
           log.info(`Fetched ${data.length} users.`);
@@ -195,13 +195,14 @@ $(document).ready(function () {
   
     // Table Columns
     const userColumns = user => [
-      user.id, 
-      user.username, 
-      user.user_type || "N/A", 
-      user.role_level || "N/A", 
-      user.first_name || "N/A", 
-      user.last_name || "N/A",
-      `<button class="btn btn-sm btn-primary" data-id="${user.id}" data-action="edit-user">Edit</button>`
+        user.id, 
+        user.username, 
+        user.user_type || "N/A", 
+        user.role_level || "N/A", 
+        user.first_name || "N/A", 
+        user.last_name || "N/A",
+        `<button class="btn btn-sm btn-primary" data-id="${user.id}" data-action="edit-user">Edit</button>
+         <button class="btn btn-sm btn-danger" data-id="${user.id}" data-action="delete-user">Delete</button>`
     ];
   
     const patientColumns = patient => [
@@ -298,7 +299,7 @@ $(document).ready(function () {
         const id = $(this).data("id");
         log.info(`Submitting user form: ${id ? "Update" : "Create"} ID=${id || "new"}`);
         $.ajax({
-          url: id ? `${API_BASE_URL}/users/${id}/` : `${API_BASE_URL}/users/create/`,
+          url: id ? `${API_BASE_URL}/users/${id}/` : `${API_BASE_URL}/users/users/`,
           type: id ? "PATCH" : "POST",
           headers: getAuthHeaders(),
           data: JSON.stringify(data),

@@ -14,7 +14,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.generics import RetrieveAPIView
 from .models import User, OTPVerification, Receptionist, Doctor, Nurse
-from .serializers import LoginSerializer, OTPLoginSerializer, UserProfileSerializer
+from .serializers import LoginSerializer, OTPLoginSerializer, UserProfileSerializer, UserSerializer
+
 
 from django.middleware.csrf import get_token
 
@@ -249,7 +250,6 @@ class UserProfileView(RetrieveAPIView):
         logger.info(f"Profile retrieved for user: {request.user.username}")
         return Response(profile_data, status=status.HTTP_200_OK)
 
-
 @method_decorator(csrf_exempt, name='dispatch')
 class UserListView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -261,17 +261,30 @@ class UserListView(APIView):
             return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
         users = User.objects.all()
-        user_data = [
-            {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                **get_user_role_info(user)
-            } for user in users
-        ]
+        serializer = UserSerializer(users, many=True)
         logger.info(f"User list retrieved by {request.user.username}")
-        return Response(user_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def post(self, request):
+        if not (request.user.is_superuser or request.user.user_type == "Admin"):
+            logger.warning(f"Unauthorized create attempt by {request.user.username}")
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            user = User.objects.create_user(
+                username=serializer.validated_data['username'],
+                email=serializer.validated_data['email'],
+                password=serializer.validated_data.get('password'),
+                first_name=serializer.validated_data.get('first_name', ''),
+                last_name=serializer.validated_data.get('last_name', ''),
+                user_type=serializer.validated_data['user_type'],
+                role_level=serializer.validated_data['role_level']
+            )
+            logger.info(f"User {user.username} created by {request.user.username}")
+            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        logger.error(f"User creation failed: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UserDetailView(APIView):
@@ -284,15 +297,47 @@ class UserDetailView(APIView):
             return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, id=user_id)
-        user_data = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            **get_user_role_info(user)
-        }
+        serializer = UserSerializer(user)
         logger.info(f"User details retrieved for {user.username} by {request.user.username}")
-        return Response(user_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def patch(self, request, user_id):
+        if not (request.user.is_superuser or request.user.user_type == "Admin"):
+            logger.warning(f"Unauthorized update attempt by {request.user.username}")
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, id=user_id)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            # Update basic fields
+            for field, value in serializer.validated_data.items():
+                if field != 'password':
+                    setattr(user, field, value)
+            
+            # Handle password update separately
+            if 'password' in request.data:
+                user.set_password(request.data['password'])
+            
+            user.save()
+            logger.info(f"User {user.username} updated by {request.user.username}")
+            return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        logger.error(f"User update failed: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, user_id):
+        if not (request.user.is_superuser or request.user.user_type == "Admin"):
+            logger.warning(f"Unauthorized delete attempt by {request.user.username}")
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, id=user_id)
+        if user == request.user:
+            logger.warning(f"User {request.user.username} attempted to delete self")
+            return Response({"error": "Cannot delete your own account"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        username = user.username
+        user.delete()
+        logger.info(f"User {username} deleted by {request.user.username}")
+        return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 def get_csrf_token(request):
     return JsonResponse({'csrftoken': get_token(request)})
