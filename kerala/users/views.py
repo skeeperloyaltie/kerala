@@ -16,6 +16,8 @@ from rest_framework.generics import RetrieveAPIView
 from .models import User, OTPVerification, Receptionist, Doctor, Nurse
 from .serializers import LoginSerializer, OTPLoginSerializer, UserProfileSerializer
 
+from django.middleware.csrf import get_token
+
 # Get the logger for the application
 logger = logging.getLogger(__name__)
 
