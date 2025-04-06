@@ -29,12 +29,7 @@ class Appointment(models.Model):
 
     class Meta:
         unique_together = ('patient', 'appointment_date')
-        permissions = [
-            ("view_appointment", "Can view appointments"),
-            ("add_appointment", "Can add a new appointment"),
-            ("change_appointment", "Can change existing appointments"),
-            ("delete_appointment", "Can delete appointments"),
-        ]
+        
 
     def __str__(self):
         return f"Appointment for {self.patient} with {self.doctor} on {self.appointment_date}"
@@ -46,13 +41,7 @@ class AppointmentTests(models.Model):
     weight = models.FloatField(null=True, blank=True, help_text="Weight in kg")
     blood_pressure = models.CharField(max_length=20, null=True, blank=True, help_text="Blood Pressure in mmHg")
 
-    class Meta:
-        permissions = [
-            ("view_appointmenttests", "Can view appointment tests"),
-            ("add_appointmenttests", "Can add appointment tests"),
-            ("change_appointmenttests", "Can change appointment tests"),
-            ("delete_appointmenttests", "Can delete appointment tests"),
-        ]
+    
 
     def __str__(self):
         return f"Tests for Appointment ID {self.appointment.id}"
@@ -62,13 +51,7 @@ class CancellationReason(models.Model):
     reason = models.TextField()
     cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-    class Meta:
-        permissions = [
-            ("view_cancellationreason", "Can view cancellation reasons"),
-            ("add_cancellationreason", "Can add cancellation reasons"),
-            ("change_cancellationreason", "Can change cancellation reasons"),
-            ("delete_cancellationreason", "Can delete cancellation reasons"),
-        ]
+    
 
     def __str__(self):
         return f"Cancellation Reason for Appointment ID {self.appointment.id}"
@@ -88,13 +71,7 @@ class Vitals(models.Model):
     recorded_at = models.DateTimeField(auto_now_add=True)
     recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
-    class Meta:
-        permissions = [
-            ("view_vitals", "Can view vitals"),
-            ("add_vitals", "Can add vitals"),
-            ("change_vitals", "Can change vitals"),
-            ("delete_vitals", "Can delete vitals"),
-        ]
+    
 
     def __str__(self):
         return f"Vitals for Appointment ID {self.appointment.id}"
