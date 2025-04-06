@@ -24,7 +24,7 @@ urlpatterns = [
     path('cookie/', include('cookie.urls')),  # Include the cookie URLs
     path('info/', include('info.urls')),
     path("patients/", include("patients.urls")),
-    path('services/', include('services.urls')),
+    path('service/', include('service.urls')),
 
 
 

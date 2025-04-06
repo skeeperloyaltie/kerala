@@ -88,7 +88,7 @@ INSTALLED_APPS = [
     'cookie',
     'info',
     'monitor',
-    'services',
+    'service',
     'patients',
     'simple_history',
 
