@@ -49,12 +49,14 @@ class CustomUserManager(BaseUserManager):
         """Define permissions based on user type and role level."""
         from django.contrib.contenttypes.models import ContentType
 
-        # Define content types for models
-        appointment_ct = ContentType.objects.get(app_label="appointments", model="appointment")
-        service_ct = ContentType.objects.get(app_label="services", model="service")
-        patient_ct = ContentType.objects.get(app_label="patients", model="patient")
-
         permissions = []
+        try:
+            appointment_ct = ContentType.objects.get(app_label="appointments", model="appointment")
+            service_ct = ContentType.objects.get(app_label="services", model="service")
+            patient_ct = ContentType.objects.get(app_label="patients", model="patient")
+        except ContentType.DoesNotExist as e:
+            logger.warning(f"ContentType missing: {e}. Skipping related permissions.")
+            return permissions  # Return empty list if content types are missing
 
         # Common permissions across all roles
         if user_type in ['Receptionist', 'Nurse', 'Doctor']:
