@@ -68,97 +68,123 @@ $(document).ready(function () {
     });
   }
 
-  // Role-Based UI Adjustments (unchanged)
-  function adjustUIForRole(userType, roleLevel) {
-    console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
-    const navItems = $(".navbar-top .nav-item");
-    const secondaryNavItems = $(".navbar-secondary .nav-item");
-    const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
-    const searchInput = $(".navbar-top .form-control");
-    const dateFilter = $("#dateFilter");
-    const dashboardDropdown = $("#dashboardDropdown").parent();
-    const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
+  // Role-Based UI Adjustments
+function adjustUIForRole(userType, roleLevel) {
+  console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
+  const navItems = $(".navbar-top .nav-item");
+  const secondaryNavItems = $(".navbar-secondary .nav-item");
+  const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
+  const searchInput = $(".navbar-top .form-control");
+  const dateFilter = $("#dateFilter");
+  const dashboardDropdown = $("#dashboardDropdown").parent();
+  const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
 
-    navItems.show();
-    secondaryNavItems.show();
-    buttons.show();
-    searchInput.show();
-    dateFilter.show();
-    dashboardDropdown.show();
-    logoutLink.show();
+  // Modal Tabs
+  const modalTabs = $("#newActionTabs .nav-item");
 
-    const role = `${userType}-${roleLevel}`.toLowerCase();
-    switch (role) {
-      case "doctor-senior":
-        break;
-      case "doctor-medium":
-        navItems.filter(":contains('Add Services')").hide();
-        dashboardDropdown.hide();
-        secondaryNavItems.filter(":contains('Reviewed')").hide();
-        break;
-      case "doctor-basic":
-        navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
-        buttons.filter(":contains('New')").hide();
-        secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
-        $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "nurse-senior":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        buttons.filter(":contains('New')").hide();
-        secondaryNavItems.filter(":contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "nurse-medium":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        buttons.filter(":contains('New'), :contains('Support')").hide();
-        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").hide();
-        dashboardDropdown.hide();
-        break;
-      case "nurse-basic":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        buttons.hide();
-        searchInput.hide();
-        dateFilter.hide();
-        secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "receptionist-senior":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "receptionist-medium":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        buttons.filter(":contains('Support')").hide();
-        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").hide();
-        dashboardDropdown.hide();
-        break;
-      case "receptionist-basic":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        buttons.hide();
-        searchInput.hide();
-        dateFilter.hide();
-        secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
-        dashboardDropdown.hide();
-        break;
-      default:
-        console.warn("⚠️ Unknown role combination:", role);
-        alert("Unknown role detected. Access restricted.");
-        navItems.hide();
-        secondaryNavItems.hide();
-        buttons.hide();
-    }
+  navItems.show();
+  secondaryNavItems.show();
+  buttons.show();
+  searchInput.show();
+  dateFilter.show();
+  dashboardDropdown.show();
+  logoutLink.show();
+  modalTabs.show(); // Show all modal tabs by default
 
-    console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
-    bindLogoutEvent();
-    bindModalActions();
-    setupPatientSearch();
+  const role = `${userType}-${roleLevel}`.toLowerCase();
+  const permissions = JSON.parse(localStorage.getItem("permissions") || "[]"); // Parse permissions if available
+
+  switch (role) {
+    case "doctor-senior":
+      // Full access, including Add Service
+      break;
+    case "doctor-medium":
+      navItems.filter(":contains('Add Services')").hide();
+      dashboardDropdown.hide();
+      secondaryNavItems.filter(":contains('Reviewed')").hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "doctor-basic":
+      navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
+      buttons.filter(":contains('New')").hide();
+      secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
+      $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "nurse-senior":
+      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+      buttons.filter(":contains('New')").hide();
+      secondaryNavItems.filter(":contains('Reviewed')").hide();
+      $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "nurse-medium":
+      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+      buttons.filter(":contains('New'), :contains('Support')").hide();
+      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+      $(".navbar-secondary .btn-circle").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "nurse-basic":
+      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+      buttons.hide();
+      searchInput.hide();
+      dateFilter.hide();
+      secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "receptionist-senior":
+      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+      $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "receptionist-medium":
+      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+      buttons.filter(":contains('Support')").hide();
+      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+      $(".navbar-secondary .btn-circle").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    case "receptionist-basic":
+      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+      buttons.hide();
+      searchInput.hide();
+      dateFilter.hide();
+      secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
+      dashboardDropdown.hide();
+      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
+      break;
+    default:
+      console.warn("⚠️ Unknown role combination:", role);
+      alert("Unknown role detected. Access restricted.");
+      navItems.hide();
+      secondaryNavItems.hide();
+      buttons.hide();
+      modalTabs.hide(); // Hide all tabs for unknown roles
   }
+
+  // Override with Permissions if Available
+  if (permissions.includes("can_add_service")) {
+    modalTabs.filter(":contains('Add Service')").show();
+    console.log("✅ Permission 'can_add_service' granted, showing Add Service tab");
+  } else if (!permissions.includes("can_add_service") && role !== "doctor-senior") {
+    modalTabs.filter(":contains('Add Service')").hide();
+    console.log("❌ No 'can_add_service' permission, hiding Add Service tab");
+  }
+
+  console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
+  console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
+  bindLogoutEvent();
+  bindModalActions();
+  setupPatientSearch();
+}
 
   // Fetch Appointments by Date
   function fetchAppointmentsByDate(dateStr = null) {
@@ -297,38 +323,40 @@ $(document).ready(function () {
   }
 
   // Bind Modal Actions (unchanged)
-  function bindModalActions() {
-    console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
+  // Bind Modal Actions
+function bindModalActions() {
+  console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
 
-    const actionToTabMap = {
-      "new": "addPatientTab",
-      "all-bills": "billsTab",
-      "add-services": "addBillsTab",
-      "patient-q": "addPatientTab",
-      "tele-consults": "visitsTab",
-      "support": "profileTab"
-    };
+  const actionToTabMap = {
+    "new": "addPatientTab",
+    "all-bills": "billsTab",
+    "add-services": "addServiceTab", // Updated to point to Add Service tab
+    "patient-q": "addPatientTab",
+    "tele-consults": "visitsTab",
+    "support": "profileTab"
+  };
 
-    $("[data-action]").off('click').on('click', function (e) {
-      e.preventDefault();
-      const action = $(this).data("action");
-      console.log(`🖱️ Action Triggered: ${action}`);
+  $("[data-action]").off('click').on('click', function (e) {
+    e.preventDefault();
+    const action = $(this).data("action");
+    console.log(`🖱️ Action Triggered: ${action}`);
 
-      const tabId = actionToTabMap[action] || "addPatientTab";
-      console.log(`🎯 Switching to Tab: ${tabId}`);
+    const tabId = actionToTabMap[action] || "addPatientTab";
+    console.log(`🎯 Switching to Tab: ${tabId}`);
 
-      const modal = $('#newActionModal');
-      modal.modal('show');
+    const modal = $('#newActionModal');
+    modal.modal('show');
 
-      const tabElement = $(`#${tabId}`);
-      if (tabElement.length) {
-        tabElement.tab('show');
-        console.log(`✅ Successfully switched to tab: ${tabId}`);
-      } else {
-        console.error(`❌ Tab with ID ${tabId} not found!`);
-      }
-    });
-  }
+    const tabElement = $(`#${tabId}`);
+    if (tabElement.length && tabElement.is(":visible")) { // Check if tab is visible (i.e., user has permission)
+      tabElement.tab('show');
+      console.log(`✅ Successfully switched to tab: ${tabId}`);
+    } else {
+      console.error(`❌ Tab with ID ${tabId} not found or not permitted! Falling back to Add Patient tab`);
+      $("#addPatientTab").tab("show"); // Fallback to Add Patient tab if permission denied
+    }
+  });
+}
 
   // Reset Modal View (unchanged)
   function resetModalView() {
@@ -874,50 +902,169 @@ function populateProfileTab(data) {
   }
 
   // Add Bills Form Submission (unchanged)
+// Add Service Form Submission
+$("#addServiceForm").submit(function (e) {
+  e.preventDefault();
+  const data = $(this).serializeObject();
+  log.info("Submitting add service form...");
+  $.ajax({
+    url: `${API_BASE_URL}/services/create/`, // Adjust this endpoint as per your backend
+    type: "POST",
+    headers: getAuthHeaders(),
+    data: JSON.stringify(data),
+    contentType: "application/json",
+    success: () => {
+      log.info("Service added successfully");
+      $(this)[0].reset();
+      $("#newActionModal").modal("hide");
+      showNotification("Service added successfully", "success");
+    },
+    error: xhr => {
+      log.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`);
+      showNotification(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+    }
+  });
+});
+
+// Add Bills Form Handling
+$(document).ready(function () {
+  // Initialize Flatpickr for Bill Date
+  flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date() });
+
+  // Today Button for Bill Date
+  $("#todayBillBtn").on("click", function () {
+    $("#billDate").val(new Date().toISOString().split("T")[0]);
+    log.info("Bill date set to today");
+  });
+
+  // Service Search Autocomplete
+  let services = []; // Assume this will be populated from an API call
+  $.ajax({
+    url: `${API_BASE_URL}/services/list/`, // Adjust this endpoint
+    headers: getAuthHeaders(),
+    success: data => {
+      services = data;
+      log.info(`Fetched ${services.length} services for autocomplete`);
+    },
+    error: xhr => log.error(`Failed to fetch services: ${xhr.status}`)
+  });
+
+  $(document).on("input", ".service-search", function () {
+    const $input = $(this);
+    const query = $input.val().toLowerCase();
+    const $dropdown = $input.next(".autocomplete-dropdown");
+    
+    $dropdown.empty().hide();
+    if (query.length > 0) {
+      const filteredServices = services.filter(s => s.service_name.toLowerCase().includes(query));
+      if (filteredServices.length) {
+        filteredServices.forEach(service => {
+          $dropdown.append(`<li data-service-id="${service.id}" data-price="${service.service_price}">${service.service_name}</li>`);
+        });
+        $dropdown.show();
+      }
+    }
+  });
+
+  $(document).on("click", ".autocomplete-dropdown li", function () {
+    const $li = $(this);
+    const $input = $li.closest("td").find(".service-search");
+    const $row = $li.closest("tr");
+    $input.val($li.text());
+    $row.find(".unit-price").val($li.data("price"));
+    updateTotalPrice($row);
+    $li.parent().hide();
+  });
+
+  // Add Bill Item
+  let itemCount = 1;
+  $("#addBillItem").on("click", function () {
+    itemCount++;
+    const newRow = `
+      <tr>
+        <td>${itemCount}</td>
+        <td>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
+            <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search Service" required>
+            <ul class="autocomplete-dropdown" style="display: none;"></ul>
+          </div>
+        </td>
+        <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
+        <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
+        <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
+        <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
+        <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
+      </tr>`;
+    $("#billItemsTableBody").append(newRow);
+    log.info(`Added bill item #${itemCount}`);
+  });
+
+  // Update Total Price
+  function updateTotalPrice($row) {
+    const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
+    const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
+    const gst = parseFloat($row.find(".gst").val()) || 0;
+    const discount = parseFloat($row.find(".discount").val()) || 0;
+    const total = (qty * unitPrice * (1 + gst / 100)) - discount;
+    $row.find(".total-price").val(total.toFixed(2));
+    updateDepositColor();
+  }
+
+  $(document).on("input", "[name='quantity[]'], .gst, .discount", function () {
+    updateTotalPrice($(this).closest("tr"));
+  });
+
+  // Update Deposit Amount Color
+  function updateDepositColor() {
+    const total = Array.from($(".total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
+    const deposit = parseFloat($("#depositAmount").val()) || 0;
+    $("#depositAmount").css("color", deposit >= total ? "green" : "red");
+  }
+
+  // Add Bills Form Submission
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
-    console.log("🖱️ Add Bill Submitted");
-  
-    const billData = {
-      patient_id: $("#patientIdForBill").val(),
-      description: $("#billDescription").val(),
-      amount: $("#billAmount").val(),
-      date: $("#billDate").val() || new Date().toISOString().split('T')[0]
-    };
-  
-    let errors = [];
-    if (!billData.patient_id) errors.push("Patient ID is required.");
-    if (!billData.description || billData.description.trim() === "") errors.push("Description is required.");
-    if (!billData.amount || isNaN(billData.amount) || parseFloat(billData.amount) <= 0) errors.push("A valid amount is required.");
-  
-    if (errors.length > 0) {
-      alert("Please fix the following errors:\n- " + errors.join("\n- "));
-      return;
-    }
-  
+    const data = $(this).serializeObject();
+    log.info("Submitting add bills form...");
     $.ajax({
-      url: `${API_BASE_URL}/bills/create/`,
+      url: `${API_BASE_URL}/bills/create/`, // Adjust this endpoint
       type: "POST",
       headers: getAuthHeaders(),
-      data: JSON.stringify(billData),
+      data: JSON.stringify(data),
       contentType: "application/json",
-      success: function (data) {
-        console.log("✅ Bill Added Successfully:", data);
-        alert("Bill added successfully!");
-        $("#addBillsForm")[0].reset();
+      success: () => {
+        log.info("Bill created successfully");
+        $(this)[0].reset();
+        $("#newActionModal").modal("hide");
+        showNotification("Bill created successfully", "success");
       },
-      error: function (xhr) {
-        console.error("❌ Failed to Add Bill:", xhr.status, xhr.responseJSON || xhr.statusText);
-        let errorMessage = "Unknown error";
-        if (xhr.responseJSON) {
-          errorMessage = xhr.responseJSON.detail || JSON.stringify(xhr.responseJSON);
-        } else if (xhr.statusText) {
-          errorMessage = xhr.statusText;
-        }
-        alert(`Failed to add bill: ${errorMessage}`);
+      error: xhr => {
+        log.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+        showNotification(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
       }
     });
   });
+
+  // Cancel and Create Buttons (Right Column)
+  $("#cancelBillBtn").on("click", function () {
+    $("#addBillsForm")[0].reset();
+    log.info("Bill form reset");
+  });
+
+  $("#createBillBtn").on("click", function () {
+    $("#addBillsForm").submit();
+  });
+
+  // Go Back Button
+  $("#goBackBtn").on("click", function () {
+    $("#newActionTabs .nav-link.active").removeClass("active");
+    $("#addPatientTab").addClass("active");
+    $("#newActionTabContent .tab-pane.active").removeClass("show active");
+    $("#addPatient").addClass("show active");
+    log.info("Navigated back to Add Patient tab");
+  });
+});
 
   // Populate Doctor Dropdown (unchanged)
   function populateDoctorDropdown() {

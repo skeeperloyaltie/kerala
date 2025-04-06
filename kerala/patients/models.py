@@ -48,6 +48,12 @@ class Patient(models.Model):
 
     class Meta:
         unique_together = ('first_name', 'mobile_number')
+        permissions = [
+            ("view_patient", "Can view patients"),
+            ("add_patient", "Can add a new patient"),
+            ("change_patient", "Can change existing patients"),
+            ("delete_patient", "Can delete patients"),
+        ]
 
     def __str__(self):
         return f"{self.patient_id} - {self.first_name} {self.last_name}"

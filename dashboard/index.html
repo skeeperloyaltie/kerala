@@ -608,6 +608,7 @@
             <li class="nav-item"><a class="nav-link" id="abhaTab" data-bs-toggle="tab" href="#abha" role="tab" aria-controls="abha" aria-selected="false"><i class="fas fa-id-card"></i> ABHA</a></li>
             <li class="nav-item"><a class="nav-link active" id="addPatientTab" data-bs-toggle="tab" href="#addPatient" role="tab" aria-controls="addPatient" aria-selected="true"><i class="fas fa-calendar-check"></i> Appt</a></li>
             <li class="nav-item"><a class="nav-link" id="addBillsTab" data-bs-toggle="tab" href="#addBills" role="tab" aria-controls="addBills" aria-selected="false"><i class="fas fa-file-invoice-dollar"></i> Add Bills</a></li>
+            <li class="nav-item"><a class="nav-link" id="addServiceTab" data-bs-toggle="tab" href="#addService" role="tab" aria-controls="addService" aria-selected="false"><i class="fas fa-concierge-bell"></i> Add Service</a></li>
             <li class="nav-item"><a class="nav-link" id="billsTab" data-bs-toggle="tab" href="#bills" role="tab" aria-controls="bills" aria-selected="false"><i class="fas fa-file-invoice"></i> Bills</a></li>
             <li class="nav-item"><a class="nav-link" id="paymentsTab" data-bs-toggle="tab" href="#payments" role="tab" aria-controls="payments" aria-selected="false"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
             <li class="nav-item"><a class="nav-link" id="visitsTab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="false"><i class="fas fa-hospital-user"></i> Visits</a></li>
@@ -921,30 +922,169 @@
           </div>
         </form>
       </div>
-      <!-- Add Bills Tab -->
-      <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
-        <form id="addBillsForm">
-          <div class="mb-2">
-            <label for="patientIdForBill" class="form-label">Patient ID</label>
-            <input type="text" class="form-control form-control-sm" id="patientIdForBill" readonly>
-          </div>
-          <div class="mb-2">
-            <label for="billDescription" class="form-label">Description</label>
-            <input type="text" class="form-control form-control-sm" id="billDescription" required>
-          </div>
-          <div class="mb-2">
-            <label for="billAmount" class="form-label">Amount (₹)</label>
-            <input type="number" class="form-control form-control-sm" id="billAmount" required>
-          </div>
-          <div class="mb-2">
-            <label for="billDate" class="form-label">Bill Date</label>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-              <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="billDate" readonly>
+      <!-- Add Service Tab -->
+      <div class="tab-pane fade" id="addService" role="tabpanel" aria-labelledby="addServiceTab">
+        <form id="addServiceForm">
+          <h6 class="mb-3">Add New Service</h6>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="serviceName" class="form-label">Service Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
+                <input type="text" class="form-control" id="serviceName" name="service_name" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="servicePrice" class="form-label">Service Price (₹)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
+                <input type="number" class="form-control" id="servicePrice" name="service_price" min="0" step="0.01" required>
+              </div>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-sm">Add Bill</button>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="serviceCode" class="form-label">Service Code</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                <input type="text" class="form-control" id="serviceCode" name="service_code" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="serviceColorCode" class="form-label">Service Color Code</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-palette"></i></span>
+                <input type="color" class="form-control form-control-color" id="serviceColorCode" name="service_color_code" value="#007bff" required>
+              </div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label for="serviceOwner" class="form-label">Service Owner (Doctor)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+                <select class="form-select" id="serviceOwner" name="service_owner" required>
+                  <option value="" disabled selected>Select Doctor</option>
+                  <!-- Populated dynamically via JS -->
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="sticky-footer">
+            <button type="submit" class="btn btn-primary btn-sm">Add Service</button>
+          </div>
         </form>
+      </div>
+      <!-- Add Bills Tab (Updated with Two Columns) -->
+      <div class="tab-pane fade" id="addBills" role="tabpanel" aria-labelledby="addBillsTab">
+        <div class="row g-0">
+          <!-- Left Column (69%) -->
+          <div class="col-md-8" style="border-right: 1px solid #dee2e6;">
+            <form id="addBillsForm">
+              <div class="row mb-3 align-items-center">
+                <div class="col-md-6">
+                  <label for="billDate" class="form-label">Bill Date</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                    <input type="text" class="form-control flatpickr-input" id="billDate" name="bill_date" readonly required>
+                  </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <button type="button" class="btn btn-outline-primary btn-sm w-100" id="todayBillBtn">Today</button>
+                </div>
+                <div class="col-md-3">
+                  <label for="depositAmount" class="form-label">Deposit Amount (₹)</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
+                    <input type="number" class="form-control" id="depositAmount" name="deposit_amount" min="0" step="0.01" value="0" readonly style="color: red;">
+                  </div>
+                </div>
+              </div>
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Service Name</th>
+                    <th>Qty</th>
+                    <th>Unit Price (₹)</th>
+                    <th>GST%</th>
+                    <th>Discount (₹)</th>
+                    <th>Total Price (₹)</th>
+                  </tr>
+                </thead>
+                <tbody id="billItemsTableBody">
+                  <tr>
+                    <td>1</td>
+                    <td>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
+                        <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search Service" required>
+                        <ul class="autocomplete-dropdown" style="display: none;"></ul>
+                      </div>
+                    </td>
+                    <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
+                    <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
+                    <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
+                    <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
+                    <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
+                  </tr>
+                </tbody>
+              </table>
+              <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="addBillItem">Add Item</button>
+              <div class="sticky-footer">
+                <button type="submit" class="btn btn-primary btn-sm">Create Bill</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column (31%) -->
+          <div class="col-md-4 p-3">
+            <h6 class="mb-3">Bill Details</h6>
+            <div class="mb-3">
+              <label for="billServiceName" class="form-label">Service Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
+                <input type="text" class="form-control" id="billServiceName" readonly>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="billDoctorName" class="form-label">Doctor Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+                <input type="text" class="form-control" id="billDoctorName" readonly>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="billAppointmentDate" class="form-label">Appointment Date & Time</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                <input type="text" class="form-control" id="billAppointmentDate" readonly>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="billDuration" class="form-label">Duration (minutes)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                <input type="number" class="form-control" id="billDuration" min="1" readonly>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="billType" class="form-label">Type</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
+                <select class="form-select" id="billType" disabled>
+                  <option value="in_person" selected>In Person</option>
+                  <option value="teleconsult">Teleconsult</option>
+                </select>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-danger btn-sm" id="cancelBillBtn">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" id="createBillBtn">Create</button>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm mt-3 w-100" id="goBackBtn">Go Back</button>
+          </div>
+        </div>
       </div>
       <!-- Bills Tab -->
       <div class="tab-pane fade" id="bills" role="tabpanel" aria-labelledby="billsTab">
