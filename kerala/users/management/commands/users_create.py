@@ -1,3 +1,4 @@
+import random
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
 from django.utils.timezone import now
@@ -29,6 +30,7 @@ class Command(BaseCommand):
                     "specialization": "Cardiology",
                     "contact_number": "1234567890",
                     "email": "flipsgodfrey@gmail.com",
+                    "doctor_code": "DOC001",  # Explicitly set doctor_code
                 },
             },
             {
@@ -56,6 +58,7 @@ class Command(BaseCommand):
                     "specialization": "Dentistry",
                     "contact_number": "1234567890",
                     "email": "emanuel@gmail.com",
+                    "doctor_code": "DOC002",  # Explicitly set doctor_code
                 },
             },
             {
@@ -64,12 +67,13 @@ class Command(BaseCommand):
                 "last_name": "M",
                 "password": "GopiPass123",
                 "user_type": "Doctor",
-                "role_level": "Senior",  # Basic Doctor
+                "role_level": "Senior",  # Senior Doctor
                 "email": "gopizee007@gmail.com",
                 "extra": {
                     "specialization": "Dentistry",
                     "contact_number": "1234567890",
                     "email": "gopizee007@gmail.com",
+                    "doctor_code": "DOC003",  # Explicitly set doctor_code
                 },
             },
             {
@@ -78,7 +82,7 @@ class Command(BaseCommand):
                 "last_name": "Sekar",
                 "password": "RoshniPass123",
                 "user_type": "Receptionist",
-                "role_level": "Senior",  # Basic Receptionist
+                "role_level": "Senior",  # Senior Receptionist
                 "email": "roshnisekar@gmail.com",
                 "extra": {
                     "contact_number": "1234567890",
@@ -172,15 +176,27 @@ class Command(BaseCommand):
 
             # Handle role-specific profiles
             if user_type == "Doctor":
-                doctor, doctor_created = Doctor.objects.get_or_create(user=user, defaults=extra)
+                doctor_defaults = extra.copy()
+                # Ensure doctor_code is included in defaults
+                if "doctor_code" not in doctor_defaults:
+                    doctor_defaults["doctor_code"] = f"DOC{random.randint(100, 999)}"  # Fallback if not provided
+                doctor, doctor_created = Doctor.objects.get_or_create(user=user, defaults=doctor_defaults)
                 if not doctor_created:
+                    updated_fields = []
                     for key, value in extra.items():
                         if getattr(doctor, key) != value:
                             setattr(doctor, key, value)
-                            doctor.save(update_fields=[key])
-                    self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} updated."))
+                            updated_fields.append(key)
+                    if updated_fields:
+                        doctor.save(update_fields=updated_fields)
+                        self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} updated: {', '.join(updated_fields)}"))
+                    # Ensure doctor_code is set if missing
+                    if not doctor.doctor_code:
+                        doctor.doctor_code = f"DOC{random.randint(100, 999)}"
+                        doctor.save(update_fields=["doctor_code"])
+                        self.stdout.write(self.style.SUCCESS(f"Doctor code assigned to {username}: {doctor.doctor_code}"))
                 else:
-                    self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} created."))
+                    self.stdout.write(self.style.SUCCESS(f"Doctor profile for {username} created with doctor_code: {doctor.doctor_code}"))
 
             elif user_type == "Receptionist":
                 receptionist, rec_created = Receptionist.objects.get_or_create(user=user, defaults=extra)
