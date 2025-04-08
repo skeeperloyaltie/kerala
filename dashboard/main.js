@@ -171,12 +171,10 @@ function adjustUIForRole(userType, roleLevel) {
   }
 
   // Override with Permissions if Available
-  if (permissions.includes("can_add_service")) {
+  if (permissions.can_add_service === true) {
     modalTabs.filter(":contains('Add Service')").show();
-    console.log("✅ Permission 'can_add_service' granted, showing Add Service tab");
-  } else if (!permissions.includes("can_add_service") && role !== "doctor-senior") {
+  } else if (permissions.can_add_service !== true && role !== "doctor-senior") {
     modalTabs.filter(":contains('Add Service')").hide();
-    console.log("❌ No 'can_add_service' permission, hiding Add Service tab");
   }
 
   console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
