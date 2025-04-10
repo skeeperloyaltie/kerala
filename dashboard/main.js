@@ -968,7 +968,7 @@ function populateProfileTab(data) {
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/services/create/`,
+      url: `${API_BASE_URL}/service/create/`,
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(data),
@@ -1025,7 +1025,7 @@ $(document).ready(function () {
     if (query.length < 1) return;
 
     $.ajax({
-      url: `${API_BASE_URL}/services/search/?query=${encodeURIComponent(query)}`,
+      url: `${API_BASE_URL}/service/search/?query=${encodeURIComponent(query)}`,
       type: "GET",
       headers: getAuthHeaders(),
       success: data => {
