@@ -17,11 +17,9 @@ class ServiceCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        # Check user type and role from token or profile
-        user_type = request.user.user_type if hasattr(request.user, 'user_type') else None
-        role_level = request.user.role_level if hasattr(request.user, 'role_level') else None
+        user_type = getattr(request.user, 'user_type', None)
+        role_level = getattr(request.user, 'role_level', None)
 
-        # Allow 'doctor-senior' full access without explicit permission check
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {request.user.username} (doctor-senior) allowed to add service")
         elif not request.user.has_perm('services.add_service'):
@@ -31,7 +29,7 @@ class ServiceCreateView(APIView):
         serializer = ServiceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            logger.info(f"Service {serializer.data['service_name']} created by {request.user.username}")
+            logger.info(f"Service {serializer.data.get('service_name', 'Unnamed')} created by {request.user.username}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         logger.error(f"Service creation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -42,11 +40,9 @@ class ServiceListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Check user type and role from token or profile
-        user_type = request.user.user_type if hasattr(request.user, 'user_type') else None
-        role_level = request.user.role_level if hasattr(request.user, 'role_level') else None
+        user_type = getattr(request.user, 'user_type', None)
+        role_level = getattr(request.user, 'role_level', None)
 
-        # Allow 'doctor-senior' full access without explicit permission check
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {request.user.username} (doctor-senior) allowed to view services")
         elif not request.user.has_perm('services.view_service'):
@@ -55,5 +51,38 @@ class ServiceListView(APIView):
 
         services = Service.objects.all()
         serializer = ServiceSerializer(services, many=True)
-        logger.info(f"Services retrieved by {request.user.username}")
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.info(f"Services retrieved by {request.user.username}: {len(serializer.data)}")
+        return Response({"services": serializer.data}, status=status.HTTP_200_OK)  # Wrapped in "services" key
+    
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ServiceSearchView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        query = request.query_params.get('query', '').strip()
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) searching services with query: '{query}'")
+
+        # Permission check
+        user_type = getattr(user, 'user_type', None)
+        role_level = getattr(user, 'role_level', None)
+        if user_type == 'doctor' and role_level == 'senior':
+            logger.info(f"User {user.username} (doctor-senior) allowed to search services")
+        elif not user.has_perm('services.view_service'):
+            logger.warning(f"Unauthorized service search by {user.username}")
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            if query:
+                services = Service.objects.filter(name__icontains=query)  # Case-insensitive search
+            else:
+                services = Service.objects.all()  # Return all if no query
+
+            serializer = ServiceSerializer(services, many=True)
+            logger.info(f"Fetched {services.count()} services for query '{query}' by {user.username}")
+            return Response({"services": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error searching services: {str(e)}", exc_info=True)
+            return Response({"error": "An error occurred while searching services."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

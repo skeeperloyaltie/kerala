@@ -983,42 +983,50 @@ $(document).ready(function () {
   });
 
   // Service Search Autocomplete
-  let services = [];
+  // Service Search Autocomplete
+  let servicesCache = []; // Cache full list for faster filtering
   $.ajax({
-    url: `${API_BASE_URL}/service/list/`, // Corrected endpoint
-    type: "GET", // Explicitly specify GET
+    url: `${API_BASE_URL}/service/list/`,
+    type: "GET",
     headers: getAuthHeaders(),
     success: data => {
-      services = data; // Assuming response is an array of {id, service_name, service_price}
-      console.log(`Fetched ${services.length} services for autocomplete`, services); // Replaced log.info
+      servicesCache = data.services || [];
+      console.log(`Fetched ${servicesCache.length} services for autocomplete`, servicesCache);
     },
-    error: xhr => {
-      console.error(`Failed to fetch services: ${xhr.status}`, xhr.responseJSON); // Replaced log.error
-    }
+    error: xhr => console.error(`Failed to fetch services: ${xhr.status}`, xhr.responseJSON)
   });
+
 
   $(document).on("input", ".service-search", function () {
     const $input = $(this);
-    const query = $input.val().toLowerCase();
+    const query = $input.val().toLowerCase().trim();
     const $dropdown = $input.next(".autocomplete-dropdown");
 
     $dropdown.empty().hide();
-    if (query.length > 0) {
-      const filteredServices = services.filter(s => s.service_name.toLowerCase().includes(query));
-      if (filteredServices.length) {
-        filteredServices.forEach(service => {
-          $dropdown.append(`<li data-service-id="${service.id}" data-price="${service.service_price}">${service.service_name}</li>`);
-        });
-        $dropdown.show();
-      }
-    }
+    if (query.length < 1) return;  // Require at least 1 character
+
+    $.ajax({
+      url: `${API_BASE_URL}/service/search/?query=${encodeURIComponent(query)}`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: data => {
+        const services = data.services || [];
+        if (services.length) {
+          services.forEach(service => {
+            $dropdown.append(`<li data-service-id="${service.id}" data-price="${service.service_price}">${service.service_name}</li>`);
+          });
+          $dropdown.show();
+        }
+      },
+      error: xhr => console.error(`Failed to search services: ${xhr.status}`, xhr.responseJSON)
+    });
   });
 
   $(document).on("click", ".autocomplete-dropdown li", function () {
     const $li = $(this);
     const $input = $li.closest("td").find(".service-search");
     const $row = $li.closest("tr");
-    $input.val($li.text());
+    $input.val($li.text()).data("service-id", $li.data("service-id"));
     $row.find(".unit-price").val($li.data("price"));
     updateTotalPrice($row);
     $li.parent().hide();
