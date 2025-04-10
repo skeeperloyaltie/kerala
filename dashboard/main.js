@@ -963,7 +963,7 @@ function populateProfileTab(data) {
 
     if (!data.owner_id && localStorage.getItem("user_type") !== "doctor") {
       console.error("No doctor selected and logged-in user is not a doctor.");
-      showNotification("Please select a doctor or log in as a doctor.", "danger");
+      alert("Please select a doctor or log in as a doctor.", "danger");
       return;
     }
 
@@ -977,11 +977,11 @@ function populateProfileTab(data) {
         console.log("Service added successfully");
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
-        showNotification("Service added successfully", "success");
+        alert("Service added successfully", "success");
       },
       error: xhr => {
         console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
-        showNotification(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+        alert(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
       }
     });
   });
@@ -1039,7 +1039,7 @@ $(document).ready(function () {
       },
       error: xhr => {
         console.error(`Failed to search services: ${xhr.status}`, xhr.responseJSON);
-        showNotification(`Failed to search services: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+        alert(`Failed to search services: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
       }
     });
   });
@@ -1138,11 +1138,11 @@ $(document).ready(function () {
         console.log("Bill created successfully"); // Replaced log.info
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
-        showNotification("Bill created successfully", "success");
+        alert("Bill created successfully", "success");
       },
       error: xhr => {
         console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON); // Replaced log.error
-        showNotification(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+        alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
       }
     });
   });
