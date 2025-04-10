@@ -1,3 +1,8 @@
+from users.models import Doctor
+from rest_framework import serializers
+from .models import Service
+from appointments.serializers import DoctorSerializer
+
 class ServiceSerializer(serializers.ModelSerializer):
     owner = DoctorSerializer(read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(
