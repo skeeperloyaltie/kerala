@@ -947,21 +947,21 @@ function populateProfileTab(data) {
 $("#addServiceForm").submit(function (e) {
   e.preventDefault();
   const data = $(this).serializeObject();
-  log.info("Submitting add service form...");
+  console.log("Submitting add service form...", data); // Replaced log.info
   $.ajax({
-    url: `${API_BASE_URL}/service/create/`, // Adjust this endpoint as per your backend
+    url: `${API_BASE_URL}/services/create/`, // Corrected endpoint
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(data),
     contentType: "application/json",
     success: () => {
-      log.info("Service added successfully");
+      console.log("Service added successfully"); // Replaced log.info
       $(this)[0].reset();
       $("#newActionModal").modal("hide");
       showNotification("Service added successfully", "success");
     },
     error: xhr => {
-      log.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`);
+      console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`); // Replaced log.error
       showNotification(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
     }
   });
@@ -970,32 +970,38 @@ $("#addServiceForm").submit(function (e) {
 // Add Bills Form Handling
 $(document).ready(function () {
   // Initialize Flatpickr for Bill Date
-  flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date(),      allowInput: true, // Allow manual input
+  flatpickr("#billDate", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    allowInput: true // Allow manual input
   });
 
   // Today Button for Bill Date
   $("#todayBillBtn").on("click", function () {
     $("#billDate").val(new Date().toISOString().split("T")[0]);
-    log.info("Bill date set to today");
+    console.log("Bill date set to today"); // Replaced log.info
   });
 
   // Service Search Autocomplete
-  let services = []; // Assume this will be populated from an API call
+  let services = [];
   $.ajax({
-    url: `${API_BASE_URL}/service/list/`, // Adjust this endpoint
+    url: `${API_BASE_URL}/services/list/`, // Corrected endpoint
+    type: "GET", // Explicitly specify GET
     headers: getAuthHeaders(),
     success: data => {
-      services = data;
-      log.info(`Fetched ${services.length} services for autocomplete`);
+      services = data; // Assuming response is an array of {id, service_name, service_price}
+      console.log(`Fetched ${services.length} services for autocomplete`, services); // Replaced log.info
     },
-    error: xhr => log.error(`Failed to fetch services: ${xhr.status}`)
+    error: xhr => {
+      console.error(`Failed to fetch services: ${xhr.status}`, xhr.responseJSON); // Replaced log.error
+    }
   });
 
   $(document).on("input", ".service-search", function () {
     const $input = $(this);
     const query = $input.val().toLowerCase();
     const $dropdown = $input.next(".autocomplete-dropdown");
-    
+
     $dropdown.empty().hide();
     if (query.length > 0) {
       const filteredServices = services.filter(s => s.service_name.toLowerCase().includes(query));
@@ -1039,7 +1045,7 @@ $(document).ready(function () {
         <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
       </tr>`;
     $("#billItemsTableBody").append(newRow);
-    log.info(`Added bill item #${itemCount}`);
+    console.log(`Added bill item #${itemCount}`); // Replaced log.info
   });
 
   // Update Total Price
@@ -1067,22 +1073,45 @@ $(document).ready(function () {
   // Add Bills Form Submission
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
-    const data = $(this).serializeObject();
-    log.info("Submitting add bills form...");
+    const formData = $(this).serializeObject();
+    console.log("Submitting add bills form...", formData); // Replaced log.info
+
+    // Transform form data into the expected bill structure
+    const billItems = [];
+    $("#billItemsTableBody tr").each(function () {
+      const $row = $(this);
+      billItems.push({
+        service_id: $row.find(".service-search").data("service-id"), // Add service_id from autocomplete selection
+        service_name: $row.find(".service-search").val(),
+        quantity: parseInt($row.find("[name='quantity[]']").val()) || 1,
+        unit_price: parseFloat($row.find(".unit-price").val()) || 0,
+        gst: parseFloat($row.find(".gst").val()) || 0,
+        discount: parseFloat($row.find(".discount").val()) || 0,
+        total_price: parseFloat($row.find(".total-price").val()) || 0
+      });
+    });
+
+    const billData = {
+      patient_id: $("#patientIdForBill").val(),
+      bill_date: $("#billDate").val(),
+      deposit_amount: parseFloat($("#depositAmount").val()) || 0,
+      items: billItems
+    };
+
     $.ajax({
-      url: `${API_BASE_URL}/bills/create/`, // Adjust this endpoint
+      url: `${API_BASE_URL}/bills/create/`, // Ensure this matches your backend
       type: "POST",
       headers: getAuthHeaders(),
-      data: JSON.stringify(data),
+      data: JSON.stringify(billData),
       contentType: "application/json",
       success: () => {
-        log.info("Bill created successfully");
+        console.log("Bill created successfully"); // Replaced log.info
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
         showNotification("Bill created successfully", "success");
       },
       error: xhr => {
-        log.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+        console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON); // Replaced log.error
         showNotification(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
       }
     });
@@ -1091,7 +1120,7 @@ $(document).ready(function () {
   // Cancel and Create Buttons (Right Column)
   $("#cancelBillBtn").on("click", function () {
     $("#addBillsForm")[0].reset();
-    log.info("Bill form reset");
+    console.log("Bill form reset"); // Replaced log.info
   });
 
   $("#createBillBtn").on("click", function () {
@@ -1104,7 +1133,7 @@ $(document).ready(function () {
     $("#addPatientTab").addClass("active");
     $("#newActionTabContent .tab-pane.active").removeClass("show active");
     $("#addPatient").addClass("show active");
-    log.info("Navigated back to Add Patient tab");
+    console.log("Navigated back to Add Patient tab"); // Replaced log.info
   });
 });
 
