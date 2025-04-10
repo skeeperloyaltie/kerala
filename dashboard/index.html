@@ -630,32 +630,111 @@
         <form id="addPatientForm">
           <!-- Required Fields Section -->
           <h6 class="mb-3">Required Information</h6>
-      
+
           <div class="row mb-3">
-            <div class="col-md-4"><label for="patientFirstName" class="form-label">First Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="patientFirstName" required></div></div>
-            <div class="col-md-4"><label for="patientLastName" class="form-label">Last Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="patientLastName" required></div></div>
-            <div class="col-md-4"><label for="patientPhone" class="form-label">Phone Number</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-phone"></i></span><input type="text" class="form-control" id="patientPhone" required></div></div>
+            <div class="col-md-4">
+              <label for="patientFirstName" class="form-label">First Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" id="patientFirstName" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="patientLastName" class="form-label">Last Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" id="patientLastName" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="patientPhone" class="form-label">Phone Number</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                <input type="text" class="form-control" id="patientPhone" required>
+              </div>
+            </div>
           </div>
+
           <div class="row mb-3">
-            <div class="col-md-4"><label for="patientGender" class="form-label">Gender</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-venus-mars"></i></span><select class="form-select" id="patientGender" required><option value="" disabled selected>Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div></div>
-            <div class="col-md-4"><label for="patientDOB" class="form-label">Date of Birth</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span><input type="text" class="form-control flatpickr-input custom-datetime-picker" id="patientDOB" readonly required></div></div>
-            <div class="col-md-4"><label for="preferredLanguage" class="form-label">Preferred Language</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-language"></i></span><select class="form-select" id="preferredLanguage" required><option value="" disabled selected>Select Language</option><option value="English">English</option><option value="Hindi">Hindi</option><option value="Tamil">Tamil</option><option value="Telugu">Telugu</option><option value="Other">Other</option></select></div></div>
+            <div class="col-md-4">
+              <label for="patientGender" class="form-label">Gender</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
+                <select class="form-select" id="patientGender" required>
+                  <option value="" disabled selected>Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="patientDOB" class="form-label">Date of Birth</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                <input type="text" class="form-control flatpickr-input custom-datetime-picker" id="patientDOB" readonly required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="preferredLanguage" class="form-label">Preferred Language</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-language"></i></span>
+                <select class="form-select" id="preferredLanguage" required>
+                  <option value="" disabled selected>Select Language</option>
+                  <option value="English">English</option>
+                  <option value="Hindi">Hindi</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Telugu">Telugu</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
           </div>
+
           <div class="row mb-3">
-            <div class="col-md-4"><label for="fatherName" class="form-label">Father's Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user-tie"></i></span><input type="text" class="form-control" id="fatherName" required></div></div>
-            <div class="col-md-4"><label for="maritalStatus" class="form-label">Marital Status</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-ring"></i></span><select class="form-select" id="maritalStatus" required><option value="" disabled selected>Select Status</option><option value="Single">Single</option><option value="Married">Married</option><option value="Divorced">Divorced</option><option value="Widowed">Widowed</option></select></div></div>
-            <div class="col-md-4"><label for="paymentPreference" class="form-label">Payment Preference</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-money-bill"></i></span><select class="form-select" id="paymentPreference" required><option value="" disabled selected>Select Preference</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Insurance">Insurance</option></select></div></div>
+            <div class="col-md-4">
+              <label for="fatherName" class="form-label">Father's Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                <input type="text" class="form-control" id="fatherName" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="maritalStatus" class="form-label">Marital Status</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-ring"></i></span>
+                <select class="form-select" id="maritalStatus" required>
+                  <option value="" disabled selected>Select Status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="paymentPreference" class="form-label">Payment Preference</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
+                <select class="form-select" id="paymentPreference" required>
+                  <option value="" disabled selected>Select Preference</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Insurance">Insurance</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <!-- <div class="row mb-3">
-            <div class="col-md-4"><label for="appointmentDate" class="form-label">Appointment Date</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-check"></i></span><input type="text" class="form-control flatpickr-input custom-datetime-picker" id="appointmentDate" readonly></div></div>
-          </div> -->
-          <div class="col-md-4">
-            <label for="doctor" class="form-label">Preffered Doctor</label>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-              <select class="form-select" id="doctor">
-                <option value="" selected>Select Doctor</option>
-              </select>
+
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="doctor" class="form-label">Preferred Doctor</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+                <select class="form-select" id="doctor">
+                  <option value="" selected>Select Doctor</option>
+                </select>
+              </div>
             </div>
             <div class="col-md-4">
               <label for="doctorSpecialty" class="form-label">Specialty</label>
@@ -664,22 +743,24 @@
                 <input type="text" class="form-control" id="doctorSpecialty" readonly>
               </div>
             </div>
-          </div>
-          <div class="row mb-3">
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="mobile2" class="form-label">Mobile 2</label>
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
                 <input type="text" class="form-control" id="mobile2">
               </div>
             </div>
-            <div class="col-md-6">
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-4">
               <label for="aadharNumber" class="form-label">Aadhar Number</label>
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                 <input type="text" class="form-control" id="aadharNumber">
               </div>
             </div>
+            <!-- Add more fields here if needed, or leave empty for future expansion -->
           </div>
           <!-- Optional Fields Section -->
           <h6 class="mb-3 mt-4">Additional Information</h6>
