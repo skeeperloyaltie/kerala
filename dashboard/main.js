@@ -2,6 +2,21 @@
 $(document).ready(function () {
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
+  // Initialize intl-tel-input for phone numbers
+  const phoneInput = document.querySelector("#patientPhone");
+  const mobile2Input = document.querySelector("#mobile2");
+
+  const itiPhone = intlTelInput(phoneInput, {
+    initialCountry: "in", // Default to India
+    separateDialCode: true,
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+  });
+
+  const itiMobile2 = intlTelInput(mobile2Input, {
+    initialCountry: "in", // Default to India
+    separateDialCode: true,
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+  });
   // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
@@ -686,10 +701,10 @@ function populateProfileTab(data) {
     console.log(`✅ Split view toggled for tab: ${tabId}`);
   }
 
-  // Add Patient Form Submission (unchanged)
+  // Add Patient Form Submission
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
-  
+
     const requiredFields = [
       { id: "patientFirstName", name: "First Name" },
       { id: "patientLastName", name: "Last Name" },
@@ -701,41 +716,65 @@ function populateProfileTab(data) {
       { id: "maritalStatus", name: "Marital Status" },
       { id: "paymentPreference", name: "Payment Preference" }
     ];
-  
+
     let errors = [];
+
+    // Validate required fields
     requiredFields.forEach(field => {
-      const value = $(`#${field.id}`).val();
+      const value = field.id === "patientPhone" ? itiPhone.getNumber() : $(`#${field.id}`).val();
       if (!value || value.trim() === "") {
         errors.push(`${field.name} is required.`);
       }
     });
-  
-    const appointmentDateInput = $("#appointmentDate")[0]._flatpickr?.selectedDates[0];
-    const appointmentDate = appointmentDateInput ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30" : null;
-  
+
+    // Validate Aadhar Number (exactly 12 digits if provided)
+    const aadharValue = $("#aadharNumber").val().trim();
+    if (aadharValue && !/^\d{12}$/.test(aadharValue)) {
+      errors.push("Aadhar Number must be exactly 12 digits.");
+    }
+
+    // Validate Phone Number (numeric, up to 13 digits including country code)
+    const phoneValue = itiPhone.getNumber();
+    if (!/^\+?\d+$/.test(phoneValue) || phoneValue.length > 13) {
+      errors.push("Phone Number must be numeric and up to 13 digits (including country code).");
+    }
+
+    // Validate Mobile 2 (numeric, up to 13 digits including country code if provided)
+    const mobile2Value = itiMobile2.getNumber();
+    if (mobile2Value && (!/^\+?\d+$/.test(mobile2Value) || mobile2Value.length > 13)) {
+      errors.push("Mobile 2 must be numeric and up to 13 digits (including country code).");
+    }
+
+    // Appointment Date handling
+    const appointmentDateInput = $("#appointmentDate")[0]?._flatpickr?.selectedDates[0];
+    const appointmentDate = appointmentDateInput
+      ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30"
+      : null;
+
     if ($('#addPatientForm').data('appointment-id') && !appointmentDate) {
       errors.push("Appointment Date is required for editing an appointment.");
     }
-  
+
     const primaryDoctor = $("#doctor").val();
     if (!primaryDoctor) {
       errors.push("Primary Doctor is required.");
     }
-  
+
     if (errors.length > 0) {
       alert("Please fix the following errors:\n- " + errors.join("\n- "));
       return;
     }
-  
+
+    // Prepare patient data
     const patientData = {
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
       gender: $("#patientGender").val(),
       date_of_birth: $("#patientDOB").val(),
       father_name: $("#fatherName").val(),
-      mobile_number: $("#patientPhone").val(),
-      alternate_mobile_number: $("#mobile2").val(),
-      aadhar_number: $("#aadharNumber").val(),
+      mobile_number: itiPhone.getNumber(), // Use full number with country code
+      alternate_mobile_number: mobile2Value || null, // Use full number or null
+      aadhar_number: aadharValue || null,
       preferred_language: $("#preferredLanguage").val(),
       marital_status: $("#maritalStatus").val(),
       marital_since: $("#maritalSince").val() || null,
@@ -762,14 +801,16 @@ function populateProfileTab(data) {
       hospital_code: $("#hospitalCode").val(),
       primary_doctor: $("#doctor").val()
     };
-  
-    const appointmentData = appointmentDate ? {
-      appointment_date: appointmentDate,
-      notes: $("#appointmentNotes").val(),
-      doctor_id: $("#doctor").val() || null, // Rename to doctor_id
-      is_emergency: false
-    } : null;
-  
+
+    const appointmentData = appointmentDate
+      ? {
+          appointment_date: appointmentDate,
+          notes: $("#appointmentNotes").val(),
+          doctor_id: $("#doctor").val() || null,
+          is_emergency: false
+        }
+      : null;
+
     const isEditMode = $('#addPatientForm').data('edit-mode');
     const patientId = $('#addPatientForm').data('patient-id');
     const appointmentId = $('#addPatientForm').data('appointment-id');
@@ -786,7 +827,7 @@ function populateProfileTab(data) {
       }
     }
     console.log(`🖱️ Form submitted by button: ${activeButton}`);
-  
+
     if (isEditMode && patientId) {
       // Update existing patient
       $.ajax({
@@ -818,7 +859,7 @@ function populateProfileTab(data) {
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
               headers: getAuthHeaders(),
-              data: JSON.stringify({ ...appointmentData, patient_id: patientId }), // Rename to patient_id
+              data: JSON.stringify({ ...appointmentData, patient_id: patientId }),
               contentType: "application/json",
               success: function (newAppointment) {
                 const combinedData = { ...updatedPatient, appointments: [newAppointment] };
@@ -851,7 +892,7 @@ function populateProfileTab(data) {
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
               headers: getAuthHeaders(),
-              data: JSON.stringify({ ...appointmentData, patient_id: newPatient.patient_id }), // Rename to patient_id
+              data: JSON.stringify({ ...appointmentData, patient_id: newPatient.patient_id }),
               contentType: "application/json",
               success: function (newAppointment) {
                 const combinedData = { ...newPatient, appointments: [newAppointment] };
