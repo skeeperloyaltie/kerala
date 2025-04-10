@@ -6,6 +6,8 @@ $(document).ready(function () {
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
     defaultDate: new Date(), // Set to today by default
+    allowInput: true, // Allow manual input
+
     onChange: function (selectedDates, dateStr) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
       fetchAppointmentsByDate(dateStr); // Fetch appointments when date changes
@@ -927,7 +929,8 @@ $("#addServiceForm").submit(function (e) {
 // Add Bills Form Handling
 $(document).ready(function () {
   // Initialize Flatpickr for Bill Date
-  flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date() });
+  flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date(), allowInput: true, // Allow manual input
+  });
 
   // Today Button for Bill Date
   $("#todayBillBtn").on("click", function () {

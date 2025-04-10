@@ -649,6 +649,15 @@
           <div class="row mb-3">
             <div class="col-md-4"><label for="appointmentDate" class="form-label">Appointment Date</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-calendar-check"></i></span><input type="text" class="form-control flatpickr-input custom-datetime-picker" id="appointmentDate" readonly></div></div>
           </div>
+          <div class="col-md-4">
+            <label for="doctor" class="form-label">Preffered Doctor</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+              <select class="form-select" id="doctor">
+                <option value="" selected>Select Doctor</option>
+              </select>
+            </div>
+          </div>
           <!-- Optional Fields Section -->
           <h6 class="mb-3 mt-4">Additional Information</h6>
       
@@ -714,15 +723,7 @@
                 <input type="text" class="form-control" id="referredBy">
               </div>
             </div>
-            <div class="col-md-4">
-              <label for="doctor" class="form-label">Doctor</label>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                <select class="form-select" id="doctor">
-                  <option value="" selected>Select Doctor</option>
-                </select>
-              </div>
-            </div>
+            
             <div class="col-md-4">
               <label for="doctorSpecialty" class="form-label">Specialty</label>
               <div class="input-group input-group-sm">

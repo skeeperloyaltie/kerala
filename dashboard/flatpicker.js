@@ -18,6 +18,7 @@ function initializeDatePickers() {
 
     const isDateOnly = ["patientDOB", "maritalSince", "billDate"].includes(inputId);
 
+    // Destroy any existing instance to prevent duplicates
     if ($input[0]._flatpickr) {
       $input[0]._flatpickr.destroy();
       console.log(`Destroyed existing Flatpickr instance for #${inputId}`);
@@ -32,11 +33,10 @@ function initializeDatePickers() {
       time_24hr: false,
       minDate: ["appointmentDate"].includes(inputId) ? new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) : null,
       maxDate: ["patientDOB", "maritalSince"].includes(inputId) ? "today" : null,
-      defaultDate: ["billDate"].includes(inputId) ? "today" : null, // Set default to today for billDate
+      defaultDate: ["billDate"].includes(inputId) ? "today" : null,
       appendTo: document.body,
       position: "auto",
-      allowInput: true, // Allow manual input of dates
-      // clickOpens: false, // Optional: Uncomment if you want to disable click-to-open
+      allowInput: true, // Ensure manual input is allowed
       onOpen: function(selectedDates, dateStr, instance) {
         const calendar = instance.calendarContainer;
         const inputRect = $input[0].getBoundingClientRect();
@@ -95,6 +95,11 @@ function initializeDatePickers() {
         buttonContainer.appendChild(confirmButton);
         buttonContainer.appendChild(clearButton);
         instance.calendarContainer.appendChild(buttonContainer);
+
+        // Ensure the hidden input isn’t readonly unless explicitly set
+        if (!$input.attr("readonly")) {
+          instance.altInput.removeAttribute("readonly");
+        }
       },
       onClose: function(selectedDates, dateStr, instance) {
         if (selectedDates.length === 0) {
@@ -111,9 +116,11 @@ function initializeDatePickers() {
     const instance = flatpickr($input[0], config);
     console.log(`Flatpickr initialized for #${inputId} with config:`, config);
 
-    // Ensure readonly state is respected
+    // Ensure readonly state is respected, but only for the visible altInput
     if ($input.attr("readonly")) {
       $input.next(".flatpickr-input").prop("readonly", true);
+    } else {
+      $input.next(".flatpickr-input").prop("readonly", false); // Explicitly allow editing
     }
   });
 }
