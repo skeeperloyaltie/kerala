@@ -949,7 +949,7 @@ $("#addServiceForm").submit(function (e) {
   const data = $(this).serializeObject();
   console.log("Submitting add service form...", data); // Replaced log.info
   $.ajax({
-    url: `${API_BASE_URL}/services/create/`, // Corrected endpoint
+    url: `${API_BASE_URL}/service/create/`, // Corrected endpoint
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(data),
@@ -985,7 +985,7 @@ $(document).ready(function () {
   // Service Search Autocomplete
   let services = [];
   $.ajax({
-    url: `${API_BASE_URL}/services/list/`, // Corrected endpoint
+    url: `${API_BASE_URL}/service/list/`, // Corrected endpoint
     type: "GET", // Explicitly specify GET
     headers: getAuthHeaders(),
     success: data => {
