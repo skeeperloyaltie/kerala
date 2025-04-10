@@ -4,7 +4,6 @@ function initializeDatePickers() {
     const $input = $(this);
     const inputId = $input.attr("id");
 
-    // Skip if the element doesn't have an id
     if (!inputId) {
       console.warn("Skipping Flatpickr initialization for element without id:", $input);
       return;
@@ -19,7 +18,6 @@ function initializeDatePickers() {
 
     const isDateOnly = ["patientDOB", "maritalSince", "billDate"].includes(inputId);
 
-    // Destroy any existing instance to prevent duplicates
     if ($input[0]._flatpickr) {
       $input[0]._flatpickr.destroy();
       console.log(`Destroyed existing Flatpickr instance for #${inputId}`);
@@ -37,6 +35,8 @@ function initializeDatePickers() {
       defaultDate: ["billDate"].includes(inputId) ? "today" : null, // Set default to today for billDate
       appendTo: document.body,
       position: "auto",
+      allowInput: true, // Allow manual input of dates
+      // clickOpens: false, // Optional: Uncomment if you want to disable click-to-open
       onOpen: function(selectedDates, dateStr, instance) {
         const calendar = instance.calendarContainer;
         const inputRect = $input[0].getBoundingClientRect();
