@@ -946,22 +946,39 @@ function populateProfileTab(data) {
 // Add Service Form Submission
 $("#addServiceForm").submit(function (e) {
   e.preventDefault();
-  const data = $(this).serializeObject();
-  console.log("Submitting add service form...", data); // Replaced log.info
+  const formData = $(this).serializeObject();
+  console.log("Submitting add service form...", formData);
+
+  // Map form fields to API expected fields
+  const data = {
+    service_name: formData.service_name,
+    service_price: parseFloat(formData.service_price),
+    code: formData.service_code,
+    color_code: formData.service_color_code,
+    owner_id: formData.service_owner || localStorage.getItem("doctor_id") || null // Default to logged-in doctor
+  };
+
+  // Validate that owner_id exists if required by backend
+  if (!data.owner_id && localStorage.getItem("user_type") !== "doctor") {
+    console.error("No doctor selected and logged-in user is not a doctor.");
+    showNotification("Please select a doctor or log in as a doctor.", "danger");
+    return;
+  }
+
   $.ajax({
-    url: `${API_BASE_URL}/service/create/`, // Corrected endpoint
+    url: `${API_BASE_URL}/services/create/`, // Corrected endpoint
     type: "POST",
     headers: getAuthHeaders(),
     data: JSON.stringify(data),
     contentType: "application/json",
     success: () => {
-      console.log("Service added successfully"); // Replaced log.info
+      console.log("Service added successfully");
       $(this)[0].reset();
       $("#newActionModal").modal("hide");
       showNotification("Service added successfully", "success");
     },
     error: xhr => {
-      console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`); // Replaced log.error
+      console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
       showNotification(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
     }
   });
@@ -1146,25 +1163,29 @@ $(document).ready(function () {
 });
 
   // Populate Doctor Dropdown (unchanged)
-  function populateDoctorDropdown() {
+  function populateDoctorDropdown(selectId, specialtyId = null) {
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        const doctorSelect = $("#doctor");
+        const doctorSelect = $(`#${selectId}`);
         doctorSelect.empty();
         doctorSelect.append('<option value="" selected>Select Doctor</option>');
         data.doctors.forEach(doctor => {
           doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
         });
-
-        doctorSelect.on('change', function () {
-          const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
-          $("#doctorSpecialty").val(selectedDoctor ? selectedDoctor.specialization : '');
-        });
+  
+        // If specialty field is provided, update it on change
+        if (specialtyId) {
+          doctorSelect.on('change', function () {
+            const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
+            $(`#${specialtyId}`).val(selectedDoctor ? selectedDoctor.specialization : '');
+          });
+        }
       },
-      error: function () {
+      error: function (xhr) {
+        console.error(`Failed to fetch doctors: ${xhr.status}`);
         alert("Failed to fetch doctors.");
       }
     });
@@ -1172,7 +1193,10 @@ $(document).ready(function () {
 
   // Event Listeners (updated)
   $('#newActionModal').on('shown.bs.modal', function () {
-    populateDoctorDropdown();
+    // Populate for patient form (assuming #doctor exists there)
+    populateDoctorDropdown("doctor", "doctorSpecialty");
+    // Populate for service form
+    populateDoctorDropdown("serviceOwner"); // No specialty field for services
     initializeDatePickers(); // Call from flatpicker.js
   });
 
