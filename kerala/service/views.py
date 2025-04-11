@@ -78,7 +78,7 @@ class ServiceSearchView(APIView):
         role_level = getattr(user, 'role_level', None)
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {user.username} (doctor-senior) allowed to search services")
-        elif not user.has_perm('services.view_service'):
+        elif not user.has_perm('service.view_service'):
             error_msg = f"Permission denied: User {user.username} lacks 'services.view_service' permission."
             if not user_type or not role_level:
                 error_msg += " User type or role level missing from profile."
