@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     'monitor',
     'service',
     'patients',
+    "bills",
     'simple_history',
 
 ]

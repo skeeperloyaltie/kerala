@@ -45,8 +45,8 @@ class CustomUserManager(BaseUserManager):
         user.groups.add(group)
         logger.info(f"User {user.username} added to group {group_name}")
 
+    # users/models.py
     def _get_permissions(self, user_type, role_level):
-        """Define permissions based on user type and role level."""
         from django.contrib.contenttypes.models import ContentType
 
         permissions = []
@@ -54,16 +54,18 @@ class CustomUserManager(BaseUserManager):
             appointment_ct = ContentType.objects.get(app_label="appointments", model="appointment")
             service_ct = ContentType.objects.get(app_label="services", model="service")
             patient_ct = ContentType.objects.get(app_label="patients", model="patient")
+            bill_ct = ContentType.objects.get(app_label="bills", model="bill")  # Add bills
         except ContentType.DoesNotExist as e:
             logger.warning(f"ContentType missing: {e}. Skipping related permissions.")
-            return permissions  # Return empty list if content types are missing
+            return permissions
 
-        # Common permissions across all roles
+        # Common permissions
         if user_type in ['Receptionist', 'Nurse', 'Doctor']:
             if role_level == 'Basic':
                 permissions.extend([
                     Permission.objects.get(codename='view_appointment', content_type=appointment_ct),
                     Permission.objects.get(codename='view_patient', content_type=patient_ct),
+                    Permission.objects.get(codename='view_bill', content_type=bill_ct),  # View bills
                 ])
             elif role_level == 'Medium':
                 permissions.extend([
@@ -71,6 +73,8 @@ class CustomUserManager(BaseUserManager):
                     Permission.objects.get(codename='add_appointment', content_type=appointment_ct),
                     Permission.objects.get(codename='view_patient', content_type=patient_ct),
                     Permission.objects.get(codename='change_patient', content_type=patient_ct),
+                    Permission.objects.get(codename='view_bill', content_type=bill_ct),
+                    Permission.objects.get(codename='add_bill', content_type=bill_ct),  # Add bills
                 ])
             elif role_level == 'Senior':
                 permissions.extend([
@@ -81,6 +85,10 @@ class CustomUserManager(BaseUserManager):
                     Permission.objects.get(codename='view_patient', content_type=patient_ct),
                     Permission.objects.get(codename='add_patient', content_type=patient_ct),
                     Permission.objects.get(codename='change_patient', content_type=patient_ct),
+                    Permission.objects.get(codename='view_bill', content_type=bill_ct),
+                    Permission.objects.get(codename='add_bill', content_type=bill_ct),
+                    Permission.objects.get(codename='change_bill', content_type=bill_ct),
+                    Permission.objects.get(codename='delete_bill', content_type=bill_ct),
                 ])
 
         # Role-specific permissions
@@ -104,7 +112,6 @@ class CustomUserManager(BaseUserManager):
             elif role_level == 'Senior':
                 permissions.append(Permission.objects.get(codename='view_service', content_type=service_ct))
 
-        # Admin gets all permissions
         if user_type == 'Admin':
             permissions = Permission.objects.all()
 

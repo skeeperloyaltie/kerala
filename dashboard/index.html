@@ -1076,6 +1076,7 @@
           <!-- Left Column (69%) -->
           <div class="col-md-8" style="border-right: 1px solid #dee2e6;">
             <form id="addBillsForm">
+              <input type="hidden" id="patientIdForBill" name="patient_id">
               <div class="row mb-3 align-items-center">
                 <div class="col-md-6">
                   <label for="billDate" class="form-label">Bill Date</label>
@@ -1091,7 +1092,7 @@
                   <label for="depositAmount" class="form-label">Deposit Amount (₹)</label>
                   <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
-                    <input type="number" class="form-control" id="depositAmount" name="deposit_amount" min="0" step="0.01" value="0" readonly style="color: red;">
+                    <input type="number" class="form-control" id="depositAmount" name="deposit_amount" min="0" step="0.01" value="0">
                   </div>
                 </div>
               </div>
@@ -1114,6 +1115,7 @@
                       <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
                         <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search Service" required>
+                        <input type="hidden" name="service_id[]" class="service-id">
                         <ul class="autocomplete-dropdown" style="display: none;"></ul>
                       </div>
                     </td>
@@ -1126,6 +1128,19 @@
                 </tbody>
               </table>
               <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="addBillItem">Add Item</button>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="totalAmount" class="form-label">Total Amount (₹)</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
+                    <input type="number" class="form-control" id="totalAmount" readonly>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="billNotes" class="form-label">Notes</label>
+                  <textarea class="form-control" id="billNotes" rows="2" placeholder="Bill Notes"></textarea>
+                </div>
+              </div>
               <div class="sticky-footer">
                 <button type="submit" class="btn btn-primary btn-sm">Create Bill</button>
               </div>
