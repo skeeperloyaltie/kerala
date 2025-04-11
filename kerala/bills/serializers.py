@@ -3,7 +3,7 @@ from appointments.models import Appointment
 from rest_framework import serializers
 from .models import Bill, BillItem
 from patients.serializers import PatientSerializer
-from services.models import Service
+from service.models import Service
 from appointments.serializers import AppointmentSerializer
 
 class BillItemSerializer(serializers.ModelSerializer):

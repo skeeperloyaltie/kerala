@@ -987,7 +987,7 @@ function adjustUIForRole(userType, roleLevel) {
   // Service Search Autocomplete
   let services = [];
   $.ajax({
-    url: `${API_BASE_URL}/services/list/`,
+    url: `${API_BASE_URL}/service/list/`,
     headers: getAuthHeaders(),
     success: function (data) {
       services = data.results || data;

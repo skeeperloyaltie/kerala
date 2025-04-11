@@ -1,7 +1,7 @@
 # bills/models.py
 from django.db import models
 from patients.models import Patient
-from services.models import Service
+from service.models import Service
 from appointments.models import Appointment
 from django.conf import settings
 from simple_history.models import HistoricalRecords
