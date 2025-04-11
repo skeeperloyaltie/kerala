@@ -41,7 +41,8 @@ services:
              python manage.py makemigrations cookie &&
              python manage.py migrate cookie &&
              python manage.py makemigrations &&
-             
+             python manage.py makemigrations bills &&
+             python manage.py migrate bills &&
              python manage.py migrate &&
              python manage.py run_admin &&
              python manage.py users_create &&
