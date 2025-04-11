@@ -22,7 +22,7 @@ class ServiceCreateView(APIView):
 
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {request.user.username} (doctor-senior) allowed to add service")
-        elif not request.user.has_perm('services.add_service'):
+        elif not request.user.has_perm('service.add_service'):
             error_msg = f"Permission denied: User {request.user.username} lacks 'services.add_service' permission."
             if not user_type or not role_level:
                 error_msg += " User type or role level missing from profile."
@@ -50,7 +50,7 @@ class ServiceListView(APIView):
 
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {request.user.username} (doctor-senior) allowed to view services")
-        elif not request.user.has_perm('services.view_service'):
+        elif not request.user.has_perm('service.view_service'):
             error_msg = f"Permission denied: User {request.user.username} lacks 'services.view_service' permission."
             if not user_type or not role_level:
                 error_msg += " User type or role level missing from profile."
