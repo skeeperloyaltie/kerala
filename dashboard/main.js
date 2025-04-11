@@ -7,28 +7,35 @@ $(document).ready(function () {
   const mobile2Input = document.querySelector("#mobile2");
 
   const itiPhone = intlTelInput(phoneInput, {
-    initialCountry: "in", // Default to India
+    initialCountry: "in",
     separateDialCode: true,
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
   });
 
   const itiMobile2 = intlTelInput(mobile2Input, {
-    initialCountry: "in", // Default to India
+    initialCountry: "in",
     separateDialCode: true,
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
   });
+
   // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
-    defaultDate: new Date(), // Set to today by default
-    allowInput: true, // Allow manual input
-
+    defaultDate: new Date(),
+    allowInput: true,
     onChange: function (selectedDates, dateStr) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
-      fetchAppointmentsByDate(dateStr); // Fetch appointments when date changes
+      fetchAppointmentsByDate(dateStr);
     }
   });
   console.log("🟢 Flatpickr Initialized for #dateFilter with default date: Today");
+
+  // Initialize Flatpickr for Bill Date
+  flatpickr("#billDate", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    allowInput: true
+  });
 
   // Get Authentication Headers
   function getAuthHeaders() {
@@ -73,7 +80,7 @@ $(document).ready(function () {
           console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
           $(".doctor-code").text(`Doctor Code: ${data.doctor_code}`);
         }
-        fetchAppointmentsByDate(); // Fetch today's appointments on load
+        fetchAppointmentsByDate();
       },
       error: function (xhr) {
         console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
@@ -86,120 +93,116 @@ $(document).ready(function () {
   }
 
   // Role-Based UI Adjustments
-function adjustUIForRole(userType, roleLevel) {
-  console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
-  const navItems = $(".navbar-top .nav-item");
-  const secondaryNavItems = $(".navbar-secondary .nav-item");
-  const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
-  const searchInput = $(".navbar-top .form-control");
-  const dateFilter = $("#dateFilter");
-  const dashboardDropdown = $("#dashboardDropdown").parent();
-  const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
+  function adjustUIForRole(userType, roleLevel) {
+    console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
+    const navItems = $(".navbar-top .nav-item");
+    const secondaryNavItems = $(".navbar-secondary .nav-item");
+    const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
+    const searchInput = $(".navbar-top .form-control");
+    const dateFilter = $("#dateFilter");
+    const dashboardDropdown = $("#dashboardDropdown").parent();
+    const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
+    const modalTabs = $("#newActionTabs .nav-item");
 
-  // Modal Tabs
-  const modalTabs = $("#newActionTabs .nav-item");
+    navItems.show();
+    secondaryNavItems.show();
+    buttons.show();
+    searchInput.show();
+    dateFilter.show();
+    dashboardDropdown.show();
+    logoutLink.show();
+    modalTabs.show();
 
-  navItems.show();
-  secondaryNavItems.show();
-  buttons.show();
-  searchInput.show();
-  dateFilter.show();
-  dashboardDropdown.show();
-  logoutLink.show();
-  modalTabs.show(); // Show all modal tabs by default
+    const role = `${userType}-${roleLevel}`.toLowerCase();
+    const permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
 
-  const role = `${userType}-${roleLevel}`.toLowerCase();
-  const permissions = JSON.parse(localStorage.getItem("permissions") || "[]"); // Parse permissions if available
+    switch (role) {
+      case "doctor-senior":
+        break;
+      case "doctor-medium":
+        navItems.filter(":contains('Add Services')").hide();
+        dashboardDropdown.hide();
+        secondaryNavItems.filter(":contains('Reviewed')").hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "doctor-basic":
+        navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
+        buttons.filter(":contains('New')").hide();
+        secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
+        $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "nurse-senior":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.filter(":contains('New')").hide();
+        secondaryNavItems.filter(":contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "nurse-medium":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.filter(":contains('New'), :contains('Support')").hide();
+        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "nurse-basic":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.hide();
+        searchInput.hide();
+        dateFilter.hide();
+        secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "receptionist-senior":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "receptionist-medium":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.filter(":contains('Support')").hide();
+        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "receptionist-basic":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.hide();
+        searchInput.hide();
+        dateFilter.hide();
+        secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      default:
+        console.warn("⚠️ Unknown role combination:", role);
+        alert("Unknown role detected. Access restricted.");
+        navItems.hide();
+        secondaryNavItems.hide();
+        buttons.hide();
+        modalTabs.hide();
+    }
 
-  switch (role) {
-    case "doctor-senior":
-      // Full access, including Add Service
-      break;
-    case "doctor-medium":
-      navItems.filter(":contains('Add Services')").hide();
-      dashboardDropdown.hide();
-      secondaryNavItems.filter(":contains('Reviewed')").hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "doctor-basic":
-      navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
-      buttons.filter(":contains('New')").hide();
-      secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
-      $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "nurse-senior":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.filter(":contains('New')").hide();
-      secondaryNavItems.filter(":contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "nurse-medium":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.filter(":contains('New'), :contains('Support')").hide();
-      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "nurse-basic":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.hide();
-      searchInput.hide();
-      dateFilter.hide();
-      secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "receptionist-senior":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "receptionist-medium":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.filter(":contains('Support')").hide();
-      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    case "receptionist-basic":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.hide();
-      searchInput.hide();
-      dateFilter.hide();
-      secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide(); // Hide Add Service tab
-      break;
-    default:
-      console.warn("⚠️ Unknown role combination:", role);
-      alert("Unknown role detected. Access restricted.");
-      navItems.hide();
-      secondaryNavItems.hide();
-      buttons.hide();
-      modalTabs.hide(); // Hide all tabs for unknown roles
+    if (permissions.can_add_service === true) {
+      modalTabs.filter(":contains('Add Service')").show();
+    } else if (permissions.can_add_service !== true && role !== "doctor-senior") {
+      modalTabs.filter(":contains('Add Service')").hide();
+    }
+
+    console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
+    console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
+    bindLogoutEvent();
+    bindModalActions();
+    setupPatientSearch();
   }
-
-  // Override with Permissions if Available
-  if (permissions.can_add_service === true) {
-    modalTabs.filter(":contains('Add Service')").show();
-  } else if (permissions.can_add_service !== true && role !== "doctor-senior") {
-    modalTabs.filter(":contains('Add Service')").hide();
-  }
-
-  console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
-  console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
-  bindLogoutEvent();
-  bindModalActions();
-  setupPatientSearch();
-}
 
   // Fetch Appointments by Date
   function fetchAppointmentsByDate(dateStr = null) {
@@ -225,36 +228,33 @@ function adjustUIForRole(userType, roleLevel) {
   function populateAppointmentsTable(appointments, date) {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-  
-    // Log the raw appointments data for debugging
+
     console.log(`📥 Received appointments data:`, appointments);
-  
-    // Normalize appointments to an array
+
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
     } else if (appointments && typeof appointments === 'object' && Array.isArray(appointments.results)) {
       appointmentsArray = appointments.results;
     } else if (appointments && typeof appointments === 'object' && !Array.isArray(appointments)) {
-      // If it's a single object, wrap it in an array
       appointmentsArray = [appointments];
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
-  
+
     if (!appointmentsArray.length) {
       $tbody.append(`<tr><td colspan="7" class="text-center">No appointments found for ${date}</td></tr>`);
       console.log(`ℹ️ No appointments to display for ${date}`);
       return;
     }
-  
+
     appointmentsArray.forEach((appt, index) => {
       const appointmentDate = new Date(appt.appointment_date);
       const timeStr = appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const doctorName = appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A';
       const patientName = `${appt.patient.first_name} ${appt.patient.last_name || ''}`;
       const statusClass = `status-${appt.status.toLowerCase().replace(' ', '-')}`;
-  
+
       const $row = $(`
         <tr>
           <td>${index + 1}</td>
@@ -268,7 +268,7 @@ function adjustUIForRole(userType, roleLevel) {
       `);
       $tbody.append($row);
     });
-  
+
     console.log(`✅ Populated appointments table with ${appointmentsArray.length} entries for ${date}`);
   }
 
@@ -284,12 +284,17 @@ function adjustUIForRole(userType, roleLevel) {
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       console.log("🖱️ Today Clicked:", todayStr);
-      $("#dateFilter").val(todayStr); // Update Flatpickr input
+      $("#dateFilter").val(todayStr);
       fetchAppointmentsByDate(todayStr);
+    });
+
+    $("#todayBillBtn").on("click", function () {
+      $("#billDate").val(new Date().toISOString().split("T")[0]);
+      console.log("Bill date set to today");
     });
   }
 
-  // Logout Function (unchanged)
+  // Logout Function
   function logoutUser() {
     const headers = getAuthHeaders();
     if (!headers['Authorization']) {
@@ -317,7 +322,7 @@ function adjustUIForRole(userType, roleLevel) {
     });
   }
 
-  // Force Logout Fallback (unchanged)
+  // Force Logout Fallback
   function forceLogout() {
     console.log("🔒 Forcing logout...");
     sessionStorage.clear();
@@ -327,7 +332,7 @@ function adjustUIForRole(userType, roleLevel) {
     window.location.href = "../login/login.html";
   }
 
-  // Bind Logout Event (unchanged)
+  // Bind Logout Event
   function bindLogoutEvent() {
     const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
     logoutLink.off('click').on('click', function (e) {
@@ -337,43 +342,42 @@ function adjustUIForRole(userType, roleLevel) {
     });
   }
 
-  // Bind Modal Actions (unchanged)
   // Bind Modal Actions
-function bindModalActions() {
-  console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
+  function bindModalActions() {
+    console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
 
-  const actionToTabMap = {
-    "new": "addPatientTab",
-    "all-bills": "billsTab",
-    "add-services": "addServiceTab", // Updated to point to Add Service tab
-    "patient-q": "addPatientTab",
-    "tele-consults": "visitsTab",
-    "support": "profileTab"
-  };
+    const actionToTabMap = {
+      "new": "addPatientTab",
+      "all-bills": "billsTab",
+      "add-services": "addServiceTab",
+      "patient-q": "addPatientTab",
+      "tele-consults": "visitsTab",
+      "support": "profileTab"
+    };
 
-  $("[data-action]").off('click').on('click', function (e) {
-    e.preventDefault();
-    const action = $(this).data("action");
-    console.log(`🖱️ Action Triggered: ${action}`);
+    $("[data-action]").off('click').on('click', function (e) {
+      e.preventDefault();
+      const action = $(this).data("action");
+      console.log(`🖱️ Action Triggered: ${action}`);
 
-    const tabId = actionToTabMap[action] || "addPatientTab";
-    console.log(`🎯 Switching to Tab: ${tabId}`);
+      const tabId = actionToTabMap[action] || "addPatientTab";
+      console.log(`🎯 Switching to Tab: ${tabId}`);
 
-    const modal = $('#newActionModal');
-    modal.modal('show');
+      const modal = $('#newActionModal');
+      modal.modal('show');
 
-    const tabElement = $(`#${tabId}`);
-    if (tabElement.length && tabElement.is(":visible")) { // Check if tab is visible (i.e., user has permission)
-      tabElement.tab('show');
-      console.log(`✅ Successfully switched to tab: ${tabId}`);
-    } else {
-      console.error(`❌ Tab with ID ${tabId} not found or not permitted! Falling back to Add Patient tab`);
-      $("#addPatientTab").tab("show"); // Fallback to Add Patient tab if permission denied
-    }
-  });
-}
+      const tabElement = $(`#${tabId}`);
+      if (tabElement.length && tabElement.is(":visible")) {
+        tabElement.tab('show');
+        console.log(`✅ Successfully switched to tab: ${tabId}`);
+      } else {
+        console.error(`❌ Tab with ID ${tabId} not found or not permitted! Falling back to Add Patient tab`);
+        $("#addPatientTab").tab("show");
+      }
+    });
+  }
 
-  // Reset Modal View (unchanged)
+  // Reset Modal View
   function resetModalView() {
     console.log("🔄 Resetting modal view...");
     const modalBody = $("#modalBody");
@@ -382,7 +386,7 @@ function bindModalActions() {
     sidebarContentArea.hide();
   }
 
-  // Setup Patient Search with Autocomplete (unchanged)
+  // Setup Patient Search with Autocomplete
   function setupPatientSearch() {
     console.log("🔍 Setting up patient search...");
     const $searchInput = $('.navbar-top .form-control');
@@ -390,7 +394,7 @@ function bindModalActions() {
 
     const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
     $searchInput.after($dropdown);
-  
+
     $searchInput.on('input', debounce(function () {
       console.log("✨ Search input triggered:", $searchInput.val());
       const query = $searchInput.val().trim();
@@ -435,14 +439,14 @@ function bindModalActions() {
         }
       });
     }, 300));
-  
+
     $dropdown.on('click', 'li', function () {
       const patientId = $(this).data('patient-id');
       $searchInput.val($(this).text());
       $dropdown.hide();
       fetchPatientDetails(patientId);
     });
-  
+
     $(document).on('click', function (e) {
       if (!$(e.target).closest('.navbar-top .form-control, .autocomplete-dropdown').length) {
         $dropdown.hide();
@@ -450,7 +454,7 @@ function bindModalActions() {
     });
   }
 
-  // Debounce function (unchanged)
+  // Debounce function
   function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -459,7 +463,7 @@ function bindModalActions() {
     };
   }
 
-  // Fetch Patient Details (unchanged)
+  // Fetch Patient Details
   function fetchPatientDetails(patientId) {
     $.ajax({
       url: `${API_BASE_URL}/patients/patients/${patientId}/`,
@@ -473,14 +477,12 @@ function bindModalActions() {
         console.log(`✅ Fetched details for patient ${patientId}`);
       },
       error: function (xhr) {
-        // Log the full error response for debugging
         console.error(`❌ Failed to fetch patient details for ${patientId}:`, {
           status: xhr.status,
           statusText: xhr.statusText,
           response: xhr.responseJSON
         });
-  
-        // Display the specific error message from the backend, if available
+
         let errorMessage = "Failed to fetch patient details.";
         if (xhr.responseJSON && xhr.responseJSON.error) {
           errorMessage = xhr.responseJSON.error;
@@ -491,107 +493,101 @@ function bindModalActions() {
         } else {
           errorMessage += ` Unknown error (Status: ${xhr.status}).`;
         }
-  
+
         alert(errorMessage);
       }
     });
   }
-// Populate Profile Tab
-function populateProfileTab(data) {
-  // Extract patient data from the nested structure
-  const patient = data.patient || data; // Handle both nested and flat responses
-  console.log("📋 Populating profile tab with data:", patient);
 
-  // Basic patient info
-  $('#profileFirstName').val(patient.first_name || '');
-  $('#profileLastName').val(patient.last_name || '');
-  $('#profilePhone').val(patient.mobile_number || '');
-  $('#profileGender').val(patient.gender || 'N/A');
-  $('#profileDOB').val(patient.date_of_birth || 'N/A');
-  $('#profilePreferredLanguage').val(patient.preferred_language || 'N/A');
-  $('#profileFatherName').val(patient.father_name || 'N/A');
-  $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
-  $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
+  // Populate Profile Tab
+  function populateProfileTab(data) {
+    const patient = data.patient || data;
+    console.log("📋 Populating profile tab with data:", patient);
 
-  // Handle appointment data (use first appointment if available)
-  const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
-  if (appointment && appointment.appointment_date) {
-    const appointmentDate = new Date(appointment.appointment_date);
-    const formattedDate = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${String(appointmentDate.getHours()).padStart(2, '0')}:${String(appointmentDate.getMinutes()).padStart(2, '0')}`;
-    $('#profileAppointmentDate').val(formattedDate);
-  } else {
-    $('#profileAppointmentDate').val('N/A');
+    $('#profileFirstName').val(patient.first_name || '');
+    $('#profileLastName').val(patient.last_name || '');
+    $('#profilePhone').val(patient.mobile_number || '');
+    $('#profileGender').val(patient.gender || 'N/A');
+    $('#profileDOB').val(patient.date_of_birth || 'N/A');
+    $('#profilePreferredLanguage').val(patient.preferred_language || 'N/A');
+    $('#profileFatherName').val(patient.father_name || 'N/A');
+    $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
+    $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
+
+    const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
+    if (appointment && appointment.appointment_date) {
+      const appointmentDate = new Date(appointment.appointment_date);
+      const formattedDate = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${String(appointmentDate.getHours()).padStart(2, '0')}:${String(appointmentDate.getMinutes()).padStart(2, '0')}`;
+      $('#profileAppointmentDate').val(formattedDate);
+    } else {
+      $('#profileAppointmentDate').val('N/A');
+    }
+
+    $('#profileCity').val(patient.city || '');
+    $('#profileAddress').val(patient.address || '');
+    $('#profilePin').val(patient.pincode || '');
+    $('#profileMaritalSince').val(patient.marital_since || '');
+    $('#profileBloodGroup').val(patient.blood_group || '');
+    $('#profileReferredBy').val(patient.referred_by || '');
+
+    const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
+    $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
+    $('#profileDoctorSpecialty').val(doctor.specialization || '');
+
+    $('#profileChannel').val(patient.channel || '');
+    $('#profileCIO').val(patient.cio || '');
+    $('#profileOccupation').val(patient.occupation || '');
+    $('#profileTag').val(patient.tag || '');
+    $('#profileMobile2').val(patient.alternate_mobile_number || '');
+    $('#profileAadharNumber').val(patient.aadhar_number || '');
+    $('#profileKnownAllergies').val(patient.known_allergies || '');
+    $('#profileCurrentMedications').val(patient.current_medications || '');
+    $('#profilePastMedicalHistory').val(patient.past_medical_history || '');
+    $('#profileSpecificNotes').val(patient.specific_notes || '');
+    $('#profileEmergencyContactName').val(patient.emergency_contact_name || '');
+    $('#profileEmergencyContactRelationship').val(patient.emergency_contact_relationship || '');
+    $('#profileEmergencyContactNumber').val(patient.emergency_contact_number || '');
+    $('#profileInsuranceProvider').val(patient.insurance_provider || '');
+    $('#profilePolicyNumber').val(patient.policy_number || '');
+    $('#profileAdmissionType').val(patient.admission_type || '');
+    $('#profileHospitalCode').val(patient.hospital_code || '');
+    $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
+
+    // Assuming initializeDatePickers is defined elsewhere
+    if (typeof initializeDatePickers === 'function') initializeDatePickers();
+
+    $('#editProfileBtn').off('click').on('click', function () {
+      populateAddPatientForm(patient, appointment);
+      $('#addPatientTab').tab('show');
+    });
+
+    $('#viewAppointmentsBtn').off('click').on('click', function () {
+      alert('View Appointments functionality TBD');
+    });
+
+    $('#addBillFromProfileBtn').off('click').on('click', function () {
+      $('#patientIdForBill').val(patient.patient_id || '');
+      $('#addBillsTab').tab('show');
+    });
+
+    console.log("✅ Profile tab populated with patient data:", patient);
   }
 
-  // Additional patient info
-  $('#profileCity').val(patient.city || '');
-  $('#profileAddress').val(patient.address || '');
-  $('#profilePin').val(patient.pincode || '');
-  $('#profileMaritalSince').val(patient.marital_since || '');
-  $('#profileBloodGroup').val(patient.blood_group || '');
-  $('#profileReferredBy').val(patient.referred_by || '');
-
-  // Doctor info (use primary_doctor or appointment doctor)
-  const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
-  $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
-  $('#profileDoctorSpecialty').val(doctor.specialization || '');
-
-  $('#profileChannel').val(patient.channel || '');
-  $('#profileCIO').val(patient.cio || '');
-  $('#profileOccupation').val(patient.occupation || '');
-  $('#profileTag').val(patient.tag || '');
-  $('#profileMobile2').val(patient.alternate_mobile_number || '');
-  $('#profileAadharNumber').val(patient.aadhar_number || '');
-  $('#profileKnownAllergies').val(patient.known_allergies || '');
-  $('#profileCurrentMedications').val(patient.current_medications || '');
-  $('#profilePastMedicalHistory').val(patient.past_medical_history || '');
-  $('#profileSpecificNotes').val(patient.specific_notes || '');
-  $('#profileEmergencyContactName').val(patient.emergency_contact_name || '');
-  $('#profileEmergencyContactRelationship').val(patient.emergency_contact_relationship || '');
-  $('#profileEmergencyContactNumber').val(patient.emergency_contact_number || '');
-  $('#profileInsuranceProvider').val(patient.insurance_provider || '');
-  $('#profilePolicyNumber').val(patient.policy_number || '');
-  $('#profileAdmissionType').val(patient.admission_type || '');
-  $('#profileHospitalCode').val(patient.hospital_code || '');
-  $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
-
-  // Re-initialize Flatpickr after setting values (if needed)
-  initializeDatePickers();
-
-  // Button event handlers
-  $('#editProfileBtn').off('click').on('click', function () {
-    populateAddPatientForm(patient, appointment);
-    $('#addPatientTab').tab('show');
-  });
-
-  $('#viewAppointmentsBtn').off('click').on('click', function () {
-    alert('View Appointments functionality TBD');
-  });
-
-  $('#addBillFromProfileBtn').off('click').on('click', function () {
-    $('#patientIdForBill').val(patient.patient_id || '');
-    $('#addBillsTab').tab('show');
-  });
-
-  console.log("✅ Profile tab populated with patient data:", patient);
-}
-
-
-  // Update Details Section (unchanged)
+  // Update Details Section
   function updateDetailsSection(data) {
     const detailsTitle = document.getElementById('detailsTitle');
     const detailsMeta = document.getElementById('detailsMeta');
     const visitPadBtn = document.getElementById('visitPadBtn');
-  
-    const patient = data && data.patient ? data.patient : data; // Handle nested or flat data
+
+    const patient = data && data.patient ? data.patient : data;
     console.log("📋 Updating details section with data:", patient);
-  
-    if (patient && patient.patient_id) { // Ensure patient data exists
+
+    if (patient && patient.patient_id) {
       const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
       const dob = patient.date_of_birth ? new Date(patient.date_of_birth) : null;
       const age = dob ? Math.floor((new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25)) : 'N/A';
       const patientId = patient.patient_id || 'N/A';
-  
+
       detailsTitle.textContent = `${fullName}`;
       detailsMeta.textContent = `${patient.gender || 'N/A'} | ${age} Years | ${patientId}`;
       visitPadBtn.style.display = 'inline-block';
@@ -604,7 +600,7 @@ function populateProfileTab(data) {
     }
   }
 
-
+  // Populate Add Patient Form
   function populateAddPatientForm(patient, appointment = null) {
     $('#patientFirstName').val(patient.first_name || '');
     $('#patientLastName').val(patient.last_name || '');
@@ -648,6 +644,7 @@ function populateProfileTab(data) {
     $('#addPatientForm').data('appointment-id', appointment ? appointment.id : null);
   }
 
+  // Show Create Patient Prompt
   function showCreatePatientPrompt(query) {
     const [firstName, ...lastNameParts] = query.split(' ');
     const lastName = lastNameParts.join(' ');
@@ -683,7 +680,7 @@ function populateProfileTab(data) {
     });
   }
 
-  // Toggle Split View (unchanged)
+  // Toggle Split View
   function toggleSplitView(tabId) {
     const modalBody = document.getElementById('modalBody');
     const sidebarContentArea = document.getElementById('sidebarContentArea');
@@ -719,7 +716,6 @@ function populateProfileTab(data) {
 
     let errors = [];
 
-    // Validate required fields
     requiredFields.forEach(field => {
       const value = field.id === "patientPhone" ? itiPhone.getNumber() : $(`#${field.id}`).val();
       if (!value || value.trim() === "") {
@@ -727,25 +723,21 @@ function populateProfileTab(data) {
       }
     });
 
-    // Validate Aadhar Number (exactly 12 digits if provided)
     const aadharValue = $("#aadharNumber").val().trim();
     if (aadharValue && !/^\d{12}$/.test(aadharValue)) {
       errors.push("Aadhar Number must be exactly 12 digits.");
     }
 
-    // Validate Phone Number (numeric, up to 13 digits including country code)
     const phoneValue = itiPhone.getNumber();
     if (!/^\+?\d+$/.test(phoneValue) || phoneValue.length > 13) {
       errors.push("Phone Number must be numeric and up to 13 digits (including country code).");
     }
 
-    // Validate Mobile 2 (numeric, up to 13 digits including country code if provided)
     const mobile2Value = itiMobile2.getNumber();
     if (mobile2Value && (!/^\+?\d+$/.test(mobile2Value) || mobile2Value.length > 13)) {
       errors.push("Mobile 2 must be numeric and up to 13 digits (including country code).");
     }
 
-    // Appointment Date handling
     const appointmentDateInput = $("#appointmentDate")[0]?._flatpickr?.selectedDates[0];
     const appointmentDate = appointmentDateInput
       ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30"
@@ -765,15 +757,14 @@ function populateProfileTab(data) {
       return;
     }
 
-    // Prepare patient data
     const patientData = {
       first_name: $("#patientFirstName").val(),
       last_name: $("#patientLastName").val(),
       gender: $("#patientGender").val(),
       date_of_birth: $("#patientDOB").val(),
       father_name: $("#fatherName").val(),
-      mobile_number: itiPhone.getNumber(), // Use full number with country code
-      alternate_mobile_number: mobile2Value || null, // Use full number or null
+      mobile_number: itiPhone.getNumber(),
+      alternate_mobile_number: mobile2Value || null,
       aadhar_number: aadharValue || null,
       preferred_language: $("#preferredLanguage").val(),
       marital_status: $("#maritalStatus").val(),
@@ -820,16 +811,11 @@ function populateProfileTab(data) {
     } else {
       console.warn("⚠️ Submitter not available, checking form buttons...");
       const $submitButtons = $('#addPatientForm').find('button[type="submit"]');
-      if ($submitButtons.length === 1) {
-        activeButton = $submitButtons.attr('id');
-      } else {
-        activeButton = 'savePatient';
-      }
+      activeButton = $submitButtons.length === 1 ? $submitButtons.attr('id') : 'savePatient';
     }
     console.log(`🖱️ Form submitted by button: ${activeButton}`);
 
     if (isEditMode && patientId) {
-      // Update existing patient
       $.ajax({
         url: `${API_BASE_URL}/patients/patients/${patientId}/`,
         type: "PATCH",
@@ -838,7 +824,6 @@ function populateProfileTab(data) {
         contentType: "application/json",
         success: function (updatedPatient) {
           if (appointmentId && appointmentData) {
-            // Update existing appointment
             $.ajax({
               url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
               type: "PATCH",
@@ -854,7 +839,6 @@ function populateProfileTab(data) {
               }
             });
           } else if (appointmentData) {
-            // Create new appointment for existing patient
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
@@ -878,7 +862,6 @@ function populateProfileTab(data) {
         }
       });
     } else {
-      // Create new patient
       $.ajax({
         url: `${API_BASE_URL}/patients/patients/create/`,
         type: "POST",
@@ -887,7 +870,6 @@ function populateProfileTab(data) {
         contentType: "application/json",
         success: function (newPatient) {
           if (appointmentData) {
-            // Create appointment along with patient
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
@@ -942,13 +924,6 @@ function populateProfileTab(data) {
     $('#addPatientForm').removeData('edit-mode').removeData('appointment-id');
   }
 
-  // Add Bills Form Submission (unchanged)
-// Add Service Form Submission
-
-  // Populate doctor dropdowns
-  populateDoctorDropdown("doctor", "doctorSpecialty");
-  populateDoctorDropdown("serviceOwner");
-
   // Add Service Form Submission
   $("#addServiceForm").submit(function (e) {
     e.preventDefault();
@@ -963,12 +938,12 @@ function populateProfileTab(data) {
 
     if (!data.owner_id && localStorage.getItem("user_type") !== "doctor") {
       console.error("No doctor selected and logged-in user is not a doctor.");
-      alert("Please select a doctor or log in as a doctor.", "danger");
+      alert("Please select a doctor or log in as a doctor.");
       return;
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/service/create/`,
+      url: `${API_BASE_URL}/services/create/`, // Corrected endpoint
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(data),
@@ -977,34 +952,19 @@ function populateProfileTab(data) {
         console.log("Service added successfully");
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
-        alert("Service added successfully", "success");
+        alert("Service added successfully");
       },
       error: xhr => {
         console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
-        alert(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+        alert(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
   });
 
-// Add Bills Form Handling
-  // Initialize Flatpickr for Bill Date
-  flatpickr("#billDate", {
-    dateFormat: "Y-m-d",
-    defaultDate: new Date(),
-    allowInput: true // Allow manual input
-  });
-
-  // Today Button for Bill Date
-  $("#todayBillBtn").on("click", function () {
-    $("#billDate").val(new Date().toISOString().split("T")[0]);
-    console.log("Bill date set to today"); // Replaced log.info
-  });
-
-  // Service Search Autocomplete
-  // Service Search Autocomplete
-  let servicesCache = []; // Cache full list for faster filtering
+  // Add Bills Form Handling
+  let servicesCache = [];
   $.ajax({
-    url: `${API_BASE_URL}/service/list/`,
+    url: `${API_BASE_URL}/services/list/`, // Corrected endpoint
     type: "GET",
     headers: getAuthHeaders(),
     success: data => {
@@ -1013,7 +973,6 @@ function populateProfileTab(data) {
     },
     error: xhr => console.error(`Failed to fetch services: ${xhr.status}`, xhr.responseJSON)
   });
-
 
   $(document).on("input", ".service-search", function () {
     const $input = $(this);
@@ -1024,7 +983,7 @@ function populateProfileTab(data) {
     if (query.length < 1) return;
 
     $.ajax({
-      url: `${API_BASE_URL}/service/search/?query=${encodeURIComponent(query)}`,
+      url: `${API_BASE_URL}/services/search/?query=${encodeURIComponent(query)}`, // Corrected endpoint
       type: "GET",
       headers: getAuthHeaders(),
       success: data => {
@@ -1038,7 +997,7 @@ function populateProfileTab(data) {
       },
       error: xhr => {
         console.error(`Failed to search services: ${xhr.status}`, xhr.responseJSON);
-        alert(`Failed to search services: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+        alert(`Failed to search services: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
   });
@@ -1053,7 +1012,6 @@ function populateProfileTab(data) {
     $li.parent().hide();
   });
 
-  // Add Bill Item
   let itemCount = 1;
   $("#addBillItem").on("click", function () {
     itemCount++;
@@ -1074,10 +1032,9 @@ function populateProfileTab(data) {
         <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
       </tr>`;
     $("#billItemsTableBody").append(newRow);
-    console.log(`Added bill item #${itemCount}`); // Replaced log.info
+    console.log(`Added bill item #${itemCount}`);
   });
 
-  // Update Total Price
   function updateTotalPrice($row) {
     const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
     const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
@@ -1092,25 +1049,20 @@ function populateProfileTab(data) {
     updateTotalPrice($(this).closest("tr"));
   });
 
-  // Update Deposit Amount Color
   function updateDepositColor() {
     const total = Array.from($(".total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
     const deposit = parseFloat($("#depositAmount").val()) || 0;
     $("#depositAmount").css("color", deposit >= total ? "green" : "red");
   }
 
-  // Add Bills Form Submission
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
-    const formData = $(this).serializeObject();
-    console.log("Submitting add bills form...", formData); // Replaced log.info
-
-    // Transform form data into the expected bill structure
+    // Removed unnecessary serializeObject call since billData is built manually
     const billItems = [];
     $("#billItemsTableBody tr").each(function () {
       const $row = $(this);
       billItems.push({
-        service_id: $row.find(".service-search").data("service-id"), // Add service_id from autocomplete selection
+        service_id: $row.find(".service-search").data("service-id"),
         service_name: $row.find(".service-search").val(),
         quantity: parseInt($row.find("[name='quantity[]']").val()) || 1,
         unit_price: parseFloat($row.find(".unit-price").val()) || 0,
@@ -1126,47 +1078,45 @@ function populateProfileTab(data) {
       deposit_amount: parseFloat($("#depositAmount").val()) || 0,
       items: billItems
     };
+    console.log("Submitting add bills form...", billData);
 
     $.ajax({
-      url: `${API_BASE_URL}/bills/create/`, // Ensure this matches your backend
+      url: `${API_BASE_URL}/bills/create/`,
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(billData),
       contentType: "application/json",
       success: () => {
-        console.log("Bill created successfully"); // Replaced log.info
+        console.log("Bill created successfully");
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
-        alert("Bill created successfully", "success");
+        alert("Bill created successfully");
       },
       error: xhr => {
-        console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON); // Replaced log.error
-        alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`, "danger");
+        console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
+        alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
   });
 
-  // Cancel and Create Buttons (Right Column)
   $("#cancelBillBtn").on("click", function () {
     $("#addBillsForm")[0].reset();
-    console.log("Bill form reset"); // Replaced log.info
+    console.log("Bill form reset");
   });
 
   $("#createBillBtn").on("click", function () {
     $("#addBillsForm").submit();
   });
 
-  // Go Back Button
   $("#goBackBtn").on("click", function () {
     $("#newActionTabs .nav-link.active").removeClass("active");
     $("#addPatientTab").addClass("active");
     $("#newActionTabContent .tab-pane.active").removeClass("show active");
     $("#addPatient").addClass("show active");
-    console.log("Navigated back to Add Patient tab"); // Replaced log.info
+    console.log("Navigated back to Add Patient tab");
   });
 
-
-  // Populate Doctor Dropdown (unchanged)
+  // Populate Doctor Dropdown
   function populateDoctorDropdown(selectId, specialtyId = null) {
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
@@ -1179,8 +1129,7 @@ function populateProfileTab(data) {
         data.doctors.forEach(doctor => {
           doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
         });
-  
-        // If specialty field is provided, update it on change
+
         if (specialtyId) {
           doctorSelect.on('change', function () {
             const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
@@ -1189,16 +1138,19 @@ function populateProfileTab(data) {
         }
       },
       error: function (xhr) {
-        console.error(`Failed to fetch doctors: ${xhr.status}`);
+        console.error(`Failed to fetch doctors: ${xhr.status}`, xhr.responseJSON);
         alert("Failed to fetch doctors.");
       }
     });
   }
 
-  // Event Listeners (updated)
+  // Populate doctor dropdowns
+  populateDoctorDropdown("doctor", "doctorSpecialty");
+  populateDoctorDropdown("serviceOwner");
+
+  // Event Listeners
   $('#newActionModal').on('shown.bs.modal', function () {
-    // No specialty field for services
-    initializeDatePickers(); // Call from flatpicker.js
+    if (typeof initializeDatePickers === 'function') initializeDatePickers();
   });
 
   $('#newActionModal').on('hidden.bs.modal', function () {
@@ -1209,6 +1161,6 @@ function populateProfileTab(data) {
   // Initialize
   console.log("🚀 Initializing Dashboard...");
   checkAuthentication();
-  bindDateFilterButtons(); // Bind buttons after DOM is ready
+  bindDateFilterButtons();
   console.log("✅ Dashboard Initialization Complete");
 });
