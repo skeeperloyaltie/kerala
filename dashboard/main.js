@@ -987,7 +987,6 @@ function populateProfileTab(data) {
   });
 
 // Add Bills Form Handling
-$(document).ready(function () {
   // Initialize Flatpickr for Bill Date
   flatpickr("#billDate", {
     dateFormat: "Y-m-d",
@@ -1165,7 +1164,7 @@ $(document).ready(function () {
     $("#addPatient").addClass("show active");
     console.log("Navigated back to Add Patient tab"); // Replaced log.info
   });
-});
+
 
   // Populate Doctor Dropdown (unchanged)
   function populateDoctorDropdown(selectId, specialtyId = null) {
