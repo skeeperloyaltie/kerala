@@ -943,7 +943,7 @@ $(document).ready(function () {
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/services/create/`, // Corrected endpoint
+      url: `${API_BASE_URL}/service/create/`, // Corrected endpoint
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(data),
@@ -964,7 +964,7 @@ $(document).ready(function () {
   // Add Bills Form Handling
   let servicesCache = [];
   $.ajax({
-    url: `${API_BASE_URL}/services/list/`, // Corrected endpoint
+    url: `${API_BASE_URL}/service/list/`, // Corrected endpoint
     type: "GET",
     headers: getAuthHeaders(),
     success: data => {
@@ -983,7 +983,7 @@ $(document).ready(function () {
     if (query.length < 1) return;
 
     $.ajax({
-      url: `${API_BASE_URL}/services/search/?query=${encodeURIComponent(query)}`, // Corrected endpoint
+      url: `${API_BASE_URL}/service/search/?query=${encodeURIComponent(query)}`, // Corrected endpoint
       type: "GET",
       headers: getAuthHeaders(),
       success: data => {
