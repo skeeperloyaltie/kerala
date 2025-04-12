@@ -1079,7 +1079,7 @@ $(document).ready(function () {
               <td>${index + 1}</td>
               <td>${service.service_name || service.name || 'Unknown Service'}</td>
               <td>${service.code || 'N/A'}</td>
-              <td>₹${(service.service_price || service.price || 0).toFixed(2)}</td>
+<td>₹${parseFloat(service.service_price || service.price || 0) || 0.00}</td>
               <td>
                 <span style="display: inline-block; width: 20px; height: 20px; background-color: ${service.color_code || '#000000'}; border: 1px solid #ccc;"></span>
               </td>
