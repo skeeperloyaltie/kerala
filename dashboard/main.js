@@ -934,6 +934,8 @@ $(document).ready(function () {
   }
 
   // Add Service Form Submission
+  
+// Update Add Service Form Submission to refresh table
   $("#addServiceForm").submit(function (e) {
     e.preventDefault();
     const data = {
@@ -962,7 +964,8 @@ $(document).ready(function () {
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
         alert("Service added successfully");
-        fetchServices(); // Refresh services list
+        fetchServices(); // Refresh services list for bill items
+        populateServicesTable(); // Refresh services table
       },
       error: xhr => {
         console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
@@ -996,7 +999,7 @@ $(document).ready(function () {
     isFetchingServices = true;
     $(".service-search, .dropdown-toggle").prop("disabled", true);
     $.ajax({
-      url: `${API_BASE_URL}/service/list/`, // Corrected endpoint
+      url: `${API_BASE_URL}/service/list/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
@@ -1016,7 +1019,8 @@ $(document).ready(function () {
         services = rawServices.map(service => ({
           id: service.id,
           name: service.service_name || service.name || "Unknown Service",
-          price: service.service_price || service.price || 0
+          price: service.service_price || service.price || 0,
+          code: service.code || "" // Include service code
         }));
         console.log(`Fetched ${services.length} services for autocomplete`, services);
       },
@@ -1038,6 +1042,61 @@ $(document).ready(function () {
 
   // Fetch services on page load
   fetchServices();
+
+  function populateServicesTable() {
+    $.ajax({
+      url: `${API_BASE_URL}/service/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        let rawServices = [];
+        if (Array.isArray(data.results)) {
+          rawServices = data.results;
+        } else if (Array.isArray(data)) {
+          rawServices = data;
+        } else if (data && Array.isArray(data.services)) {
+          rawServices = data.services;
+        } else {
+          console.error("Unexpected service data format:", data);
+          rawServices = [];
+        }
+  
+        const $tbody = $("#servicesTableBody");
+        $tbody.empty();
+  
+        if (!rawServices.length) {
+          $tbody.append('<tr><td colspan="6" class="text-center">No services found.</td></tr>');
+          console.log("No services to display in table");
+          return;
+        }
+  
+        rawServices.forEach((service, index) => {
+          const ownerName = service.owner
+            ? `${service.owner.first_name || ''} ${service.owner.last_name || ''}`.trim() || 'N/A'
+            : 'N/A';
+          const $row = $(`
+            <tr>
+              <td>${index + 1}</td>
+              <td>${service.service_name || service.name || 'Unknown Service'}</td>
+              <td>${service.code || 'N/A'}</td>
+              <td>₹${(service.service_price || service.price || 0).toFixed(2)}</td>
+              <td>
+                <span style="display: inline-block; width: 20px; height: 20px; background-color: ${service.color_code || '#000000'}; border: 1px solid #ccc;"></span>
+              </td>
+              <td>${ownerName}</td>
+            </tr>
+          `);
+          $tbody.append($row);
+        });
+  
+        console.log(`Populated services table with ${rawServices.length} entries`);
+      },
+      error: function (xhr) {
+        console.error(`Failed to fetch services for table: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
+        $("#servicesTableBody").empty().append('<tr><td colspan="6" class="text-center">Failed to load services.</td></tr>');
+      }
+    });
+  }
 
   function populateServiceDropdown($dropdown, servicesToShow) {
     $dropdown.empty();
@@ -1092,15 +1151,24 @@ $(document).ready(function () {
     }
   });
 
+  // Call populateServicesTable when Add Service tab is shown
+  $("#addServiceTab").on("shown.bs.tab", function () {
+    populateServicesTable();
+  });
+
   // Handle service selection
+  // Update service selection to populate service code
   $(document).on("click", ".autocomplete-dropdown .dropdown-item:not(.disabled)", function (e) {
     e.preventDefault();
     const $li = $(this);
     const $input = $li.closest(".input-group").find(".service-search");
     const $row = $li.closest("tr");
-    $input.val($li.text()).data("service-id", $li.data("service-id"));
+    const serviceId = $li.data("service-id");
+    const service = services.find(s => s.id == serviceId);
+    $input.val($li.text()).data("service-id", serviceId);
     $row.find(".unit-price").val($li.data("price"));
-    $row.find(".service-id").val($li.data("service-id"));
+    $row.find(".service-id").val(serviceId);
+    $row.find(".service-code").val(service ? service.code : ""); // Set service code
     updateTotalPrice($row);
     $li.closest(".autocomplete-dropdown").removeClass("show");
   });
@@ -1134,11 +1202,12 @@ $(document).ready(function () {
 
   // Add Bill Item
   let itemCount = 0;
+  // Add Bill Item
   $("#addBillItem").on("click", function () {
     itemCount++;
     const newRow = `
       <tr>
-        <td>${itemCount}</td>
+        <td class="item-number">${itemCount}</td>
         <td>
           <div class="input-group input-group-sm">
             <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
@@ -1148,15 +1217,34 @@ $(document).ready(function () {
             <input type="hidden" name="service_id[]" class="service-id">
           </div>
         </td>
+        <td><input type="text" class="form-control form-control-sm service-code" name="service_code[]" readonly></td>
         <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
         <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
         <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
         <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
         <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-bill-item"><i class="fas fa-trash"></i></button></td>
       </tr>`;
     $("#billItemsTableBody").append(newRow);
     console.log(`Added bill item #${itemCount}`);
   });
+
+  // Remove Bill Item and Re-number
+  $(document).on("click", ".remove-bill-item", function () {
+    $(this).closest("tr").remove();
+    itemCount--;
+    renumberBillItems();
+    updateTotalBillAmount();
+    updateDepositColor();
+    console.log(`Removed bill item. New count: ${itemCount}`);
+  });
+
+  // Re-number Bill Items
+  function renumberBillItems() {
+    $("#billItemsTableBody tr").each(function (index) {
+      $(this).find(".item-number").text(index + 1);
+    });
+  }
 
   function updateTotalPrice($row) {
     const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
@@ -1197,7 +1285,7 @@ $(document).ready(function () {
             <div class="modal-body">
               <div class="mb-3">
                 <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
-                <input type="text" class="form-control" id="appointmentDateInput" readonly>
+                <input type="text" class="form-control custom-datetime-picker" id="appointmentDateInput">
               </div>
               <div class="mb-3">
                 <label for="billDoctor" class="form-label">Doctor</label>
@@ -1212,13 +1300,62 @@ $(document).ready(function () {
         </div>
       </div>
     `);
-
+  
     $('body').append(modal);
     const bsModal = new bootstrap.Modal(modal[0]);
     bsModal.show();
-
+  
+    // Initialize Flatpickr for the appointment date input
+    const appointmentDatePicker = flatpickr("#appointmentDateInput", {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+      altInput: true,
+      altFormat: "F j, Y, h:i K",
+      minDate: "today",
+      defaultDate: new Date(),
+      time_24hr: false,
+      allowInput: true,
+      onReady: function(selectedDates, dateStr, instance) {
+        const buttonContainer = document.createElement("div");
+        buttonContainer.style.display = "flex";
+        buttonContainer.style.justifyContent = "center";
+        buttonContainer.style.gap = "10px";
+        buttonContainer.style.padding = "5px";
+  
+        const confirmButton = document.createElement("button");
+        confirmButton.innerText = "OK";
+        confirmButton.className = "flatpickr-confirm";
+        confirmButton.onclick = function() {
+          if (selectedDates.length > 0) {
+            instance.close();
+            $("#appointmentDateInput").removeClass("is-invalid");
+          }
+        };
+  
+        const clearButton = document.createElement("button");
+        clearButton.innerText = "Clear";
+        clearButton.className = "flatpickr-clear";
+        clearButton.onclick = function() {
+          instance.clear();
+          $("#appointmentDateInput").val("");
+          $("#appointmentDateInput").removeClass("is-invalid");
+          instance.close();
+        };
+  
+        buttonContainer.appendChild(confirmButton);
+        buttonContainer.appendChild(clearButton);
+        instance.calendarContainer.appendChild(buttonContainer);
+      },
+      onClose: function(selectedDates, dateStr, instance) {
+        if (selectedDates.length === 0) {
+          $("#appointmentDateInput").val("");
+          console.log("Cleared #appointmentDateInput on close due to no selection");
+        }
+      }
+    });
+  
     populateDoctorDropdownForBill();
-
+  
     $("#confirmAppointmentDate").on("click", function () {
       const date = appointmentDatePicker.selectedDates[0];
       const doctorId = $("#billDoctor").val();
@@ -1232,8 +1369,9 @@ $(document).ready(function () {
       bsModal.hide();
       modal.remove();
     });
-
+  
     modal.on('hidden.bs.modal', function () {
+      appointmentDatePicker.destroy(); // Clean up Flatpickr instance
       modal.remove();
     });
   }
