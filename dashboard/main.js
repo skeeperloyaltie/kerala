@@ -472,10 +472,14 @@ $(document).ready(function () {
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
+        selectedPatientId = (data.patient || data).patient_id; // Store patient ID globally
         populateProfileTab(data);
         $('#newActionModal').modal('show');
         $('#profileTab').tab('show');
         updateDetailsSection(data);
+        // Pre-set bill patient ID for seamless transition to bill tab
+        $("#patientIdForBill").val(selectedPatientId);
+        sessionStorage.setItem("billPatientId", selectedPatientId);
         console.log(`✅ Fetched details for patient ${patientId}`);
       },
       error: function (xhr) {
@@ -484,7 +488,7 @@ $(document).ready(function () {
           statusText: xhr.statusText,
           response: xhr.responseJSON
         });
-
+  
         let errorMessage = "Failed to fetch patient details.";
         if (xhr.responseJSON && xhr.responseJSON.error) {
           errorMessage = xhr.responseJSON.error;
@@ -495,7 +499,7 @@ $(document).ready(function () {
         } else {
           errorMessage += ` Unknown error (Status: ${xhr.status}).`;
         }
-
+  
         alert(errorMessage);
       }
     });
@@ -505,7 +509,7 @@ $(document).ready(function () {
   function populateProfileTab(data) {
     const patient = data.patient || data;
     console.log("📋 Populating profile tab with data:", patient);
-
+  
     $('#profileFirstName').val(patient.first_name || '');
     $('#profileLastName').val(patient.last_name || '');
     $('#profilePhone').val(patient.mobile_number || '');
@@ -515,7 +519,7 @@ $(document).ready(function () {
     $('#profileFatherName').val(patient.father_name || 'N/A');
     $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
     $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
-
+  
     const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
     if (appointment && appointment.appointment_date) {
       const appointmentDate = new Date(appointment.appointment_date);
@@ -524,18 +528,18 @@ $(document).ready(function () {
     } else {
       $('#profileAppointmentDate').val('N/A');
     }
-
+  
     $('#profileCity').val(patient.city || '');
     $('#profileAddress').val(patient.address || '');
     $('#profilePin').val(patient.pincode || '');
     $('#profileMaritalSince').val(patient.marital_since || '');
     $('#profileBloodGroup').val(patient.blood_group || '');
     $('#profileReferredBy').val(patient.referred_by || '');
-
+  
     const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
     $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
     $('#profileDoctorSpecialty').val(doctor.specialization || '');
-
+  
     $('#profileChannel').val(patient.channel || '');
     $('#profileCIO').val(patient.cio || '');
     $('#profileOccupation').val(patient.occupation || '');
@@ -554,25 +558,26 @@ $(document).ready(function () {
     $('#profileAdmissionType').val(patient.admission_type || '');
     $('#profileHospitalCode').val(patient.hospital_code || '');
     $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
-
+  
     // Assuming initializeDatePickers is defined elsewhere
     if (typeof initializeDatePickers === 'function') initializeDatePickers();
-
+  
     $('#editProfileBtn').off('click').on('click', function () {
       populateAddPatientForm(patient, appointment);
       $('#addPatientTab').tab('show');
     });
-
+  
     $('#viewAppointmentsBtn').off('click').on('click', function () {
       alert('View Appointments functionality TBD');
     });
-
+  
     $('#addBillFromProfileBtn').off('click').on('click', function () {
+      selectedPatientId = patient.patient_id; // Update global variable
       $('#patientIdForBill').val(patient.patient_id || '');
       sessionStorage.setItem("billPatientId", patient.patient_id || '');
       $('#addBillsTab').tab('show');
     });
-
+  
     console.log("✅ Profile tab populated with patient data:", patient);
   }
 
@@ -1346,9 +1351,27 @@ $(document).ready(function () {
     console.log("Navigated back to Add Patient tab");
   });
 
+  // Add a global variable to store the selected patient ID
+  let selectedPatientId = null;
+
   function updateBillDetails(patientId) {
+    // Use provided patientId, global selectedPatientId, input field, or sessionStorage
+    const effectivePatientId = patientId || selectedPatientId || $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+
+    if (!effectivePatientId) {
+      console.warn("No patient ID found for bill details update");
+      // Reset bill form fields to avoid stale data
+      $("#billServiceName").val("");
+      $("#billDoctorName").val("");
+      $("#billAppointmentDate").val("");
+      $("#billDuration").val("");
+      return;
+    }
+
+    console.log(`Fetching bill details for patient ID: ${effectivePatientId}`);
+
     $.ajax({
-      url: `${API_BASE_URL}/patients/patients/${patientId}/`,
+      url: `${API_BASE_URL}/patients/patients/${effectivePatientId}/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
@@ -1362,22 +1385,24 @@ $(document).ready(function () {
         );
         $("#billAppointmentDate").val("");
         $("#billDuration").val("30");
-        $("#patientIdForBill").val(patientId); // Ensure patientId is set
-        sessionStorage.setItem("billPatientId", patientId);
-        console.log(`Updated bill details for patient ${patientId}`);
+        $("#patientIdForBill").val(patient.patient_id); // Ensure patientId is set
+        sessionStorage.setItem("billPatientId", patient.patient_id);
+        selectedPatientId = patient.patient_id; // Update global variable
+        console.log(`Updated bill details for patient ${patient.patient_id}`);
       },
-      error: function () {
-        console.error("Failed to fetch patient for bill details");
+      error: function (xhr) {
+        console.error(`Failed to fetch patient for bill details: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
         $("#billServiceName").val("");
         $("#billDoctorName").val("");
         $("#billAppointmentDate").val("");
         $("#billDuration").val("");
+        alert(`Failed to fetch patient details: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
   }
 
   $("#addBillsTab").on("shown.bs.tab", function () {
-    const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+    const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId") || selectedPatientId;
     const $form = $("#addBillsForm");
     const $alert = $form.find(".alert-warning");
 
@@ -1387,6 +1412,7 @@ $(document).ready(function () {
     if (patientId) {
       $("#patientIdForBill").val(patientId);
       sessionStorage.setItem("billPatientId", patientId);
+      selectedPatientId = patientId; // Update global variable
       updateBillDetails(patientId);
       $form.find("input, button, select").prop("disabled", false);
       $("#createBillBtn, #addBillItem").prop("disabled", false);
