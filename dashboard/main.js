@@ -987,7 +987,7 @@ $("#todayBillBtn").on("click", function () {
 let services = [];
 function fetchServices() {
   $.ajax({
-    url: `${API_BASE_URL}/services/list/`, // Verify this endpoint
+    url: `${API_BASE_URL}/service/list/`, // Verify this endpoint
     type: "GET",
     headers: getAuthHeaders(),
     success: function (data) {
