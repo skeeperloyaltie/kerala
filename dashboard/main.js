@@ -998,32 +998,73 @@ function adjustUIForRole(userType, roleLevel) {
     }
   });
 
-  $(document).on("input", ".service-search", function () {
-    const $input = $(this);
-    const query = $input.val().toLowerCase().trim();
-    const $dropdown = $input.next(".autocomplete-dropdown");
-
-    $dropdown.empty().hide();
-    if (query.length > 0) {
-      const filteredServices = services.filter(s => s.name.toLowerCase().includes(query));
-      if (filteredServices.length) {
-        filteredServices.forEach(service => {
-          $dropdown.append(`<li data-service-id="${service.id}" data-price="${service.price}">${service.name}</li>`);
-        });
-        $dropdown.show();
+function fetchServices() {
+  $.ajax({
+    url: `${API_BASE_URL}/service/list/`, // Corrected to plural, verify with your API
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      // Ensure services is an array
+      if (Array.isArray(data.results)) {
+        services = data.results;
+      } else if (Array.isArray(data)) {
+        services = data;
+      } else if (data && Array.isArray(data.services)) {
+        services = data.services; // Handle alternative structure
+      } else {
+        services = [];
+        console.error("Unexpected service data format:", data);
       }
+      console.log(`Fetched ${services.length} services for autocomplete`, services);
+    },
+    error: function (xhr) {
+      console.error(`Failed to fetch services: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
+      services = []; // Ensure services remains an array
+      alert("Failed to load services. Please try again later.");
     }
   });
+}
 
-  $(document).on("click", ".autocomplete-dropdown li", function () {
-    const $li = $(this);
-    const $input = $li.closest("td").find(".service-search");
-    const $row = $li.closest("tr");
-    $input.val($li.text()).data("service-id", $li.data("service-id"));
-    $row.find(".unit-price").val($li.data("price"));
-    updateTotalPrice($row);
-    $li.parent().hide();
-  });
+// Fetch services on page load
+fetchServices();
+
+$(document).on("input", ".service-search", function () {
+  const $input = $(this);
+  const query = $input.val().toLowerCase().trim();
+  const $dropdown = $input.next(".autocomplete-dropdown");
+
+  $dropdown.empty().hide();
+  if (query.length < 1) return; // Skip empty queries
+
+  if (!services.length) {
+    $dropdown.append('<li class="disabled">No services available</li>');
+    $dropdown.show();
+    console.warn("No services loaded for autocomplete");
+    return;
+  }
+
+  const filteredServices = services.filter(s => s.name && s.name.toLowerCase().includes(query));
+  if (filteredServices.length) {
+    filteredServices.forEach(service => {
+      $dropdown.append(`<li data-service-id="${service.id}" data-price="${service.price}">${service.name}</li>`);
+    });
+    $dropdown.show();
+  } else {
+    $dropdown.append('<li class="disabled">No matching services</li>');
+    $dropdown.show();
+  }
+});
+
+$(document).on("click", ".autocomplete-dropdown li:not(.disabled)", function () {
+  const $li = $(this);
+  const $input = $li.closest("td").find(".service-search");
+  const $row = $li.closest("tr");
+  $input.val($li.text()).data("service-id", $li.data("service-id"));
+  $row.find(".unit-price").val($li.data("price"));
+  $row.find(".service-id").val($li.data("service-id")); // Update hidden input
+  updateTotalPrice($row);
+  $li.parent().hide();
+});
 
   // Populate Doctor Dropdown for Bills
   function populateDoctorDropdownForBill() {
