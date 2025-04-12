@@ -259,24 +259,46 @@ $(document).ready(function () {
     }
   
     appointmentsArray.forEach((appt, index) => {
-      const appointmentDate = new Date(appt.appointment_date);
-      const timeStr = appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const doctorName = appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A';
-      const patientName = `${appt.patient.first_name} ${appt.patient.last_name || ''}`;
-      const statusClass = `status-${appt.status.toLowerCase().replace(' ', '-')}`;
+      // Defensive checks for patient and doctor objects
+      const patientName = appt.patient && appt.patient.first_name 
+        ? `${appt.patient.first_name} ${appt.patient.last_name || ''}` 
+        : 'Unknown Patient';
+      
+      const doctorName = appt.doctor && appt.doctor.first_name 
+        ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` 
+        : 'N/A';
+  
+      const appointmentDate = appt.appointment_date 
+        ? new Date(appt.appointment_date) 
+        : null;
+      const timeStr = appointmentDate && !isNaN(appointmentDate) 
+        ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+        : 'N/A';
+  
+      const statusClass = appt.status 
+        ? `status-${appt.status.toLowerCase().replace(' ', '-')}` 
+        : 'status-unknown';
   
       const $row = $(`
         <tr>
           <td>${index + 1}</td>
-          <td>${appt.id}</td>
+          <td>${appt.id || 'N/A'}</td>
           <td>${patientName}</td>
           <td>${timeStr}</td>
-          <td><span class="${statusClass}">${appt.status.toUpperCase()}</span></td>
+          <td><span class="${statusClass}">${appt.status ? appt.status.toUpperCase() : 'UNKNOWN'}</span></td>
           <td>${doctorName}</td>
           <td>${appt.notes || 'N/A'}</td>
         </tr>
       `);
       $tbody.append($row);
+  
+      // Log warning if patient or doctor data is incomplete
+      if (!appt.patient || !appt.patient.first_name) {
+        console.warn(`⚠️ Appointment ID ${appt.id || 'unknown'} has incomplete patient data:`, appt.patient);
+      }
+      if (!appt.doctor) {
+        console.warn(`⚠️ Appointment ID ${appt.id || 'unknown'} has no doctor data:`, appt.doctor);
+      }
     });
   
     console.log(`✅ Populated appointments table with ${appointmentsArray.length} entries for ${date}`);
