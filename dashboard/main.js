@@ -212,7 +212,6 @@ $(document).ready(function () {
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
   
-    // Update the date filter input to reflect the selected date
     if (dateStr) {
       $("#dateFilter").val(selectedDate);
       flatpickr("#dateFilter").setDate(selectedDate, false);
@@ -224,7 +223,8 @@ $(document).ready(function () {
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        populateAppointmentsTable(data.results || data, selectedDate);
+        console.log(`📥 Raw API response for ${selectedDate}:`, data);
+        populateAppointmentsTable(data, selectedDate);
         console.log(`✅ Fetched appointments for ${selectedDate}`);
       },
       error: function (xhr) {
@@ -244,10 +244,14 @@ $(document).ready(function () {
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
-    } else if (appointments && typeof appointments === 'object' && Array.isArray(appointments.results)) {
-      appointmentsArray = appointments.results;
-    } else if (appointments && typeof appointments === 'object' && !Array.isArray(appointments)) {
-      appointmentsArray = [appointments];
+    } else if (appointments && typeof appointments === 'object') {
+      if (Array.isArray(appointments.appointments)) {
+        appointmentsArray = appointments.appointments; // Handle {appointments: [...]}
+      } else if (Array.isArray(appointments.results)) {
+        appointmentsArray = appointments.results; // Handle {results: [...]}
+      } else if (!Array.isArray(appointments)) {
+        appointmentsArray = [appointments]; // Handle single object
+      }
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
@@ -258,31 +262,46 @@ $(document).ready(function () {
       return;
     }
   
+    let validAppointments = 0;
     appointmentsArray.forEach((appt, index) => {
+      // Skip malformed appointments
+      if (!appt || typeof appt !== 'object' || !appt.id) {
+        console.warn(`⚠️ Skipping invalid appointment at index ${index}:`, appt);
+        return;
+      }
+  
       // Defensive checks for patient and doctor objects
-      const patientName = appt.patient && appt.patient.first_name 
-        ? `${appt.patient.first_name} ${appt.patient.last_name || ''}` 
+      const patientName = appt.patient && appt.patient.first_name
+        ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
         : 'Unknown Patient';
-      
-      const doctorName = appt.doctor && appt.doctor.first_name 
-        ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` 
+  
+      const doctorName = appt.doctor && appt.doctor.first_name
+        ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
         : 'N/A';
   
-      const appointmentDate = appt.appointment_date 
-        ? new Date(appt.appointment_date) 
+      const appointmentDate = appt.appointment_date
+        ? new Date(appt.appointment_date)
         : null;
-      const timeStr = appointmentDate && !isNaN(appointmentDate) 
-        ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      const timeStr = appointmentDate && !isNaN(appointmentDate)
+        ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : 'N/A';
   
-      const statusClass = appt.status 
-        ? `status-${appt.status.toLowerCase().replace(' ', '-')}` 
+      const statusClass = appt.status
+        ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
         : 'status-unknown';
+  
+      // Check if appointment matches the requested date
+      const apptDateStr = appointmentDate
+        ? `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')}`
+        : null;
+      if (apptDateStr && apptDateStr !== date) {
+        console.warn(`⚠️ Appointment ID ${appt.id} date (${apptDateStr}) does not match filter date (${date})`);
+      }
   
       const $row = $(`
         <tr>
-          <td>${index + 1}</td>
-          <td>${appt.id || 'N/A'}</td>
+          <td>${validAppointments + 1}</td>
+          <td>${appt.id}</td>
           <td>${patientName}</td>
           <td>${timeStr}</td>
           <td><span class="${statusClass}">${appt.status ? appt.status.toUpperCase() : 'UNKNOWN'}</span></td>
@@ -291,8 +310,9 @@ $(document).ready(function () {
         </tr>
       `);
       $tbody.append($row);
+      validAppointments++;
   
-      // Log warning if patient or doctor data is incomplete
+      // Log warnings for incomplete data
       if (!appt.patient || !appt.patient.first_name) {
         console.warn(`⚠️ Appointment ID ${appt.id || 'unknown'} has incomplete patient data:`, appt.patient);
       }
@@ -301,7 +321,12 @@ $(document).ready(function () {
       }
     });
   
-    console.log(`✅ Populated appointments table with ${appointmentsArray.length} entries for ${date}`);
+    if (validAppointments === 0) {
+      $tbody.append(`<tr><td colspan="7" class="text-center">No valid appointments found for ${date}</td></tr>`);
+      console.log(`ℹ️ No valid appointments to display for ${date}`);
+    } else {
+      console.log(`✅ Populated appointments table with ${validAppointments} entries for ${date}`);
+    }
   }
 
   // Bind Date Filter Buttons
