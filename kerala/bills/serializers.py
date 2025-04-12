@@ -1,46 +1,47 @@
 # bills/serializers.py
-from appointments.models import Appointment
 from rest_framework import serializers
 from .models import Bill, BillItem
-from patients.serializers import PatientSerializer
-from service.models import Service
-from appointments.serializers import AppointmentSerializer
+from patients.models import Patient
+from appointments.models import Appointment
 
 class BillItemSerializer(serializers.ModelSerializer):
-    service_id = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all(), source='service')
-
     class Meta:
         model = BillItem
-        fields = ['id', 'service_id', 'quantity', 'unit_price', 'gst', 'discount', 'total_price']
+        fields = ['service_id', 'quantity', 'unit_price', 'gst', 'discount', 'total_price']
 
 class BillSerializer(serializers.ModelSerializer):
-    patient_id = serializers.CharField(source='patient.patient_id')
     items = BillItemSerializer(many=True)
-    appointment_id = serializers.PrimaryKeyRelatedField(
-        queryset=Appointment.objects.all(), source='appointment', required=False, allow_null=True
-    )
+    patient_id = serializers.CharField(write_only=True)  # Accept patient_id in input
+    appointment_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = Bill
-        fields = [
-            'bill_id', 'patient_id', 'appointment_id', 'total_amount', 'deposit_amount',
-            'status', 'created_by', 'created_at', 'updated_at', 'notes', 'items'
-        ]
-        read_only_fields = ['bill_id', 'created_by', 'created_at', 'updated_at']
+        fields = ['patient_id', 'total_amount', 'deposit_amount', 'status', 'notes', 'items', 'appointment_id']
+        read_only_fields = ['status']
+
+    def validate_patient_id(self, value):
+        try:
+            patient = Patient.objects.get(patient_id=value)
+            return patient
+        except Patient.DoesNotExist:
+            raise serializers.ValidationError("Patient with this ID does not exist.")
 
     def validate(self, data):
-        items = data.get('items', [])
-        if not items:
-            raise serializers.ValidationError("At least one bill item is required.")
-        total_amount = sum(item['quantity'] * item['unit_price'] * (1 + item['gst'] / 100) - item['discount'] for item in items)
-        if data.get('total_amount') != total_amount:
-            data['total_amount'] = total_amount
+        patient = data.get('patient_id')
+        if not isinstance(patient, Patient):
+            raise serializers.ValidationError("Patient must be a valid Patient instance.")
+        data['patient'] = patient  # Replace patient_id with patient instance
         return data
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        validated_data['created_by'] = self.context['request'].user
+        validated_data.pop('patient_id')  # Remove patient_id since patient is set
         bill = Bill.objects.create(**validated_data)
         for item_data in items_data:
             BillItem.objects.create(bill=bill, **item_data)
         return bill
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['patient_id'] = instance.patient.patient_id
+        return representation

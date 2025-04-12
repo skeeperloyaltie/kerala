@@ -1305,14 +1305,14 @@ $(document).ready(function () {
     const bsModal = new bootstrap.Modal(modal[0]);
     bsModal.show();
   
-    // Initialize Flatpickr for the appointment date input
+    // Initialize Flatpickr with future date enforcement
     const appointmentDatePicker = flatpickr("#appointmentDateInput", {
       enableTime: true,
       dateFormat: "Y-m-d H:i",
       altInput: true,
       altFormat: "F j, Y, h:i K",
-      minDate: "today",
-      defaultDate: new Date(),
+      minDate: "today", // Prevent past dates
+      defaultDate: new Date(Date.now() + 30 * 60 * 1000), // Default to 30 minutes from now
       time_24hr: false,
       allowInput: true,
       onReady: function(selectedDates, dateStr, instance) {
@@ -1351,6 +1351,15 @@ $(document).ready(function () {
           $("#appointmentDateInput").val("");
           console.log("Cleared #appointmentDateInput on close due to no selection");
         }
+      },
+      onChange: function(selectedDates, dateStr, instance) {
+        const selectedDate = selectedDates[0];
+        const now = new Date();
+        if (selectedDate && selectedDate < now) {
+          alert("Please select a future date and time.");
+          instance.clear();
+          $("#appointmentDateInput").val("");
+        }
       }
     });
   
@@ -1363,6 +1372,11 @@ $(document).ready(function () {
         alert("Please select both an appointment date and a doctor.");
         return;
       }
+      const now = new Date();
+      if (date < now) {
+        alert("Selected date is in the past. Please choose a future date.");
+        return;
+      }
       const formattedDate = flatpickr.formatDate(date, "Y-m-d H:i");
       $("#billAppointmentDate").val(formattedDate);
       callback(formattedDate, doctorId);
@@ -1371,7 +1385,7 @@ $(document).ready(function () {
     });
   
     modal.on('hidden.bs.modal', function () {
-      appointmentDatePicker.destroy(); // Clean up Flatpickr instance
+      appointmentDatePicker.destroy();
       modal.remove();
     });
   }
