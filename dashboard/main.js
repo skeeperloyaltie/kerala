@@ -966,51 +966,37 @@ function adjustUIForRole(userType, roleLevel) {
   });
 
 // Add Bills Form Handling
-  // Initialize Flatpickr for Bill Date
-  flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date() });
+// Add Bills Form Handling
+flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date(), allowInput: true });
 
-  // Initialize Flatpickr for Appointment Date Popup
-  const appointmentDatePicker = flatpickr("#appointmentDateInput", {
-    enableTime: true,
-    dateFormat: "Y-m-d H:i",
-    minDate: "today",
-    defaultDate: new Date(),
-    time_24hr: true
-  });
+const appointmentDatePicker = flatpickr("#appointmentDateInput", {
+  enableTime: true,
+  dateFormat: "Y-m-d H:i",
+  minDate: "today",
+  defaultDate: new Date(),
+  time_24hr: true,
+  allowInput: true
+});
 
-  // Today Button for Bill Date
-  $("#todayBillBtn").on("click", function () {
-    $("#billDate").val(new Date().toISOString().split("T")[0]);
-    console.log("Bill date set to today");
-  });
+$("#todayBillBtn").on("click", function () {
+  $("#billDate").val(new Date().toISOString().split("T")[0]);
+  console.log("Bill date set to today");
+});
 
-  // Service Search Autocomplete
-  let services = [];
-  $.ajax({
-    url: `${API_BASE_URL}/service/list/`,
-    headers: getAuthHeaders(),
-    success: function (data) {
-      services = data.results || data;
-      console.log(`Fetched ${services.length} services for autocomplete`);
-    },
-    error: function (xhr) {
-      console.error(`Failed to fetch services: ${xhr.status}`);
-    }
-  });
-
+// Service Search and Dropdown
+let services = [];
 function fetchServices() {
   $.ajax({
-    url: `${API_BASE_URL}/service/list/`, // Corrected to plural, verify with your API
+    url: `${API_BASE_URL}/services/list/`, // Verify this endpoint
     type: "GET",
     headers: getAuthHeaders(),
     success: function (data) {
-      // Ensure services is an array
       if (Array.isArray(data.results)) {
         services = data.results;
       } else if (Array.isArray(data)) {
         services = data;
       } else if (data && Array.isArray(data.services)) {
-        services = data.services; // Handle alternative structure
+        services = data.services;
       } else {
         services = [];
         console.error("Unexpected service data format:", data);
@@ -1019,7 +1005,7 @@ function fetchServices() {
     },
     error: function (xhr) {
       console.error(`Failed to fetch services: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
-      services = []; // Ensure services remains an array
+      services = [];
       alert("Failed to load services. Please try again later.");
     }
   });
@@ -1028,298 +1014,301 @@ function fetchServices() {
 // Fetch services on page load
 fetchServices();
 
+// Populate dropdown with services
+function populateServiceDropdown($dropdown, servicesToShow) {
+  $dropdown.empty();
+  if (!servicesToShow.length) {
+    $dropdown.append('<li><a class="dropdown-item disabled">No services available</a></li>');
+    return;
+  }
+  servicesToShow.forEach(service => {
+    $dropdown.append(
+      `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
+    );
+  });
+}
+
+// Handle service search input
 $(document).on("input", ".service-search", function () {
   const $input = $(this);
   const query = $input.val().toLowerCase().trim();
-  const $dropdown = $input.next(".autocomplete-dropdown");
+  const $dropdown = $input.closest(".input-group").find(".autocomplete-dropdown");
 
-  $dropdown.empty().hide();
-  if (query.length < 1) return; // Skip empty queries
+  populateServiceDropdown($dropdown, query ? services.filter(s => s.name && s.name.toLowerCase().includes(query)) : services);
+  $dropdown.addClass("show"); // Show dropdown when typing
+});
 
-  if (!services.length) {
-    $dropdown.append('<li class="disabled">No services available</li>');
-    $dropdown.show();
-    console.warn("No services loaded for autocomplete");
-    return;
-  }
+// Handle dropdown toggle button click
+$(document).on("click", ".input-group .dropdown-toggle", function (e) {
+  e.preventDefault();
+  const $button = $(this);
+  const $dropdown = $button.closest(".input-group").find(".autocomplete-dropdown");
+  const $input = $button.closest(".input-group").find(".service-search");
 
-  const filteredServices = services.filter(s => s.name && s.name.toLowerCase().includes(query));
-  if (filteredServices.length) {
-    filteredServices.forEach(service => {
-      $dropdown.append(`<li data-service-id="${service.id}" data-price="${service.price}">${service.name}</li>`);
-    });
-    $dropdown.show();
+  // If dropdown is not shown, populate with all services
+  if (!$dropdown.hasClass("show")) {
+    populateServiceDropdown($dropdown, services);
+    $dropdown.addClass("show");
+    $input.focus(); // Keep input focused
   } else {
-    $dropdown.append('<li class="disabled">No matching services</li>');
-    $dropdown.show();
+    $dropdown.removeClass("show");
   }
 });
 
-$(document).on("click", ".autocomplete-dropdown li:not(.disabled)", function () {
+// Handle service selection
+$(document).on("click", ".autocomplete-dropdown .dropdown-item:not(.disabled)", function (e) {
+  e.preventDefault();
   const $li = $(this);
-  const $input = $li.closest("td").find(".service-search");
+  const $input = $li.closest(".input-group").find(".service-search");
   const $row = $li.closest("tr");
   $input.val($li.text()).data("service-id", $li.data("service-id"));
   $row.find(".unit-price").val($li.data("price"));
-  $row.find(".service-id").val($li.data("service-id")); // Update hidden input
+  $row.find(".service-id").val($li.data("service-id"));
   updateTotalPrice($row);
-  $li.parent().hide();
+  $li.closest(".autocomplete-dropdown").removeClass("show");
 });
 
-  // Populate Doctor Dropdown for Bills
-  function populateDoctorDropdownForBill() {
-    $.ajax({
-      url: `${API_BASE_URL}/appointments/doctors/list/`,
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function (data) {
-        const doctorSelect = $("#billDoctor");
-        doctorSelect.empty();
-        doctorSelect.append('<option value="" selected>Select Doctor</option>');
-        data.doctors.forEach(doctor => {
-          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
-        });
-      },
-      error: function () {
-        alert("Failed to fetch doctors.");
-      }
-    });
+// Hide dropdown when clicking outside
+$(document).on("click", function (e) {
+  if (!$(e.target).closest(".input-group, .autocomplete-dropdown").length) {
+    $(".autocomplete-dropdown").removeClass("show");
   }
+});
 
-  // Add Bill Item
-  let itemCount = 1;
-  $("#addBillItem").on("click", function () {
-    itemCount++;
-    const newRow = `
-      <tr>
-        <td>${itemCount}</td>
-        <td>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
-            <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search Service" required>
-            <ul class="autocomplete-dropdown" style="display: none;"></ul>
-          </div>
+// Populate Doctor Dropdown for Bills
+function populateDoctorDropdownForBill() {
+  $.ajax({
+    url: `${API_BASE_URL}/appointments/doctors/list/`,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      const doctorSelect = $("#billDoctor");
+      doctorSelect.empty();
+      doctorSelect.append('<option value="" selected>Select Doctor</option>');
+      data.doctors.forEach(doctor => {
+        doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
+      });
+    },
+    error: function () {
+      alert("Failed to fetch doctors.");
+    }
+  });
+}
+
+// Add Bill Item
+let itemCount = 1;
+$("#addBillItem").on("click", function () {
+  itemCount++;
+  const newRow = `
+    <tr>
+      <td>${itemCount}</td>
+      <td>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
+          <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search or select service" required autocomplete="off">
+          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+          <ul class="dropdown-menu autocomplete-dropdown" style="width: 100%; max-height: 200px; overflow-y: auto;"></ul>
           <input type="hidden" name="service_id[]" class="service-id">
-        </td>
-        <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
-        <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
-        <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
-        <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
-        <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
-      </tr>`;
-    $("#billItemsTableBody").append(newRow);
-    console.log(`Added bill item #${itemCount}`);
-  });
+        </div>
+      </td>
+      <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
+      <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
+      <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
+      <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
+      <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
+    </tr>`;
+  $("#billItemsTableBody").append(newRow);
+  console.log(`Added bill item #${itemCount}`);
+});
 
-  function updateTotalPrice($row) {
-    const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
-    const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
-    const gst = parseFloat($row.find(".gst").val()) || 0;
-    const discount = parseFloat($row.find(".discount").val()) || 0;
-    const total = (qty * unitPrice * (1 + gst / 100)) - discount;
-    $row.find(".total-price").val(total.toFixed(2));
-    updateTotalBillAmount();
-    updateDepositColor();
-  }
+function updateTotalPrice($row) {
+  const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
+  const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
+  const gst = parseFloat($row.find(".gst").val()) || 0;
+  const discount = parseFloat($row.find(".discount").val()) || 0;
+  const total = (qty * unitPrice * (1 + gst / 100)) - discount;
+  $row.find(".total-price").val(total.toFixed(2));
+  updateTotalBillAmount();
+  updateDepositColor();
+}
 
-  // Update Total Bill Amount
-  function updateTotalBillAmount() {
-    const total = Array.from($(".total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
-    $("#totalAmount").val(total.toFixed(2));
-  }
+function updateTotalBillAmount() {
+  const total = Array.from($(".total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
+  $("#totalAmount").val(total.toFixed(2));
+}
 
-  // Update Deposit Amount Color
-  function updateDepositColor() {
-    const total = parseFloat($("#totalAmount").val()) || 0;
-    const deposit = parseFloat($("#depositAmount").val()) || 0;
-    $("#depositAmount").css("color", deposit >= total ? "green" : "red");
-  }
+function updateDepositColor() {
+  const total = parseFloat($("#totalAmount").val()) || 0;
+  const deposit = parseFloat($("#depositAmount").val()) || 0;
+  $("#depositAmount").css("color", deposit >= total ? "green" : "red");
+}
 
-  $(document).on("input", "[name='quantity[]'], .gst, .discount, #depositAmount", function () {
-    updateTotalPrice($(this).closest("tr"));
-    updateDepositColor();
-  });
+$(document).on("input", "[name='quantity[]'], .gst, .discount, #depositAmount", function () {
+  updateTotalPrice($(this).closest("tr"));
+  updateDepositColor();
+});
 
-  // Show Appointment Date Popup
-  function showAppointmentDatePopup(callback) {
-    const modal = $(`
-      <div class="modal fade" id="appointmentDateModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Select Appointment Date</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+function showAppointmentDatePopup(callback) {
+  const modal = $(`
+    <div class="modal fade" id="appointmentDateModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Select Appointment Date</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
+              <input type="text" class="form-control" id="appointmentDateInput" readonly>
             </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
-                <input type="text" class="form-control" id="appointmentDateInput" readonly>
-              </div>
-              <div class="mb-3">
-                <label for="billDoctor" class="form-label">Doctor</label>
-                <select class="form-select" id="billDoctor" name="doctor_id"></select>
-              </div>
+            <div class="mb-3">
+              <label for="billDoctor" class="form-label">Doctor</label>
+              <select class="form-select" id="billDoctor" name="doctor_id"></select>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-primary" id="confirmAppointmentDate">Confirm</button>
-            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmAppointmentDate">Confirm</button>
           </div>
         </div>
       </div>
-    `);
+    </div>
+  `);
 
-    $('body').append(modal);
-    const bsModal = new bootstrap.Modal(modal[0]);
-    bsModal.show();
+  $('body').append(modal);
+  const bsModal = new bootstrap.Modal(modal[0]);
+  bsModal.show();
 
-    populateDoctorDropdownForBill();
+  populateDoctorDropdownForBill();
 
-    $("#confirmAppointmentDate").on("click", function () {
-      const date = appointmentDatePicker.selectedDates[0];
-      const doctorId = $("#billDoctor").val();
-      if (!date) {
-        alert("Please select an appointment date.");
-        return;
-      }
-      if (!doctorId) {
-        alert("Please select a doctor.");
-        return;
-      }
-      const formattedDate = flatpickr.formatDate(date, "Y-m-d H:i");
-      callback(formattedDate, doctorId);
-      bsModal.hide();
-      modal.remove();
-    });
+  $("#confirmAppointmentDate").on("click", function () {
+    const date = appointmentDatePicker.selectedDates[0];
+    const doctorId = $("#billDoctor").val();
+    if (!date || !doctorId) {
+      alert("Please select both an appointment date and a doctor.");
+      return;
+    }
+    const formattedDate = flatpickr.formatDate(date, "Y-m-d H:i");
+    $("#billAppointmentDate").val(formattedDate); // Update right-column field
+    callback(formattedDate, doctorId);
+    bsModal.hide();
+    modal.remove();
+  });
 
-    modal.on('hidden.bs.modal', function () {
-      modal.remove();
-    });
+  modal.on('hidden.bs.modal', function () {
+    modal.remove();
+  });
+}
+
+// Add Bills Form Submission
+$("#addBillsForm").submit(function (e) {
+  e.preventDefault();
+
+  const patientId = $("#patientIdForBill").val();
+  if (!patientId) {
+    alert("Please select a patient.");
+    return;
   }
 
-  // Add Bills Form Submission
-  $("#addBillsForm").submit(function (e) {
-    e.preventDefault();
+  const items = [];
+  let hasErrors = false;
+  $("#billItemsTableBody tr").each(function () {
+    const $row = $(this);
+    const serviceId = $row.find(".service-id").val();
+    const serviceName = $row.find(".service-search").val();
+    const quantity = parseInt($row.find("[name='quantity[]']").val()) || 0;
+    const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
+    const gst = parseFloat($row.find(".gst").val()) || 0;
+    const discount = parseFloat($row.find(".discount").val()) || 0;
+    const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
 
-    const patientId = $("#patientIdForBill").val();
-    if (!patientId) {
-      alert("Please select a patient.");
-      return;
+    if (!serviceId || !serviceName) {
+      alert("Please select a valid service for all items.");
+      hasErrors = true;
+      return false;
+    }
+    if (quantity <= 0) {
+      alert("Quantity must be greater than zero.");
+      hasErrors = true;
+      return false;
+    }
+    if (unitPrice <= 0) {
+      alert("Unit price must be greater than zero.");
+      hasErrors = true;
+      return false;
     }
 
-    // Prepare bill items
-    const items = [];
-    let hasErrors = false;
-    $("#billItemsTableBody tr").each(function () {
-      const $row = $(this);
-      const serviceId = $row.find(".service-id").val();
-      const serviceName = $row.find(".service-search").val();
-      const quantity = parseInt($row.find("[name='quantity[]']").val()) || 0;
-      const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
-      const gst = parseFloat($row.find(".gst").val()) || 0;
-      const discount = parseFloat($row.find(".discount").val()) || 0;
-      const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
-
-      if (!serviceId || !serviceName) {
-        alert("Please select a valid service for all items.");
-        hasErrors = true;
-        return false;
-      }
-      if (quantity <= 0) {
-        alert("Quantity must be greater than zero.");
-        hasErrors = true;
-        return false;
-      }
-      if (unitPrice <= 0) {
-        alert("Unit price must be greater than zero.");
-        hasErrors = true;
-        return false;
-      }
-
-      items.push({
-        service_id: serviceId,
-        quantity: quantity,
-        unit_price: unitPrice,
-        gst: gst,
-        discount: discount,
-        total_price: totalPrice
-      });
-    });
-
-    if (hasErrors) {
-      return;
-    }
-
-    const totalAmount = parseFloat($("#totalAmount").val()) || 0;
-    const depositAmount = parseFloat($("#depositAmount").val()) || 0;
-    const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
-    const notes = $("#billNotes").val();
-
-    const billData = {
-      patient_id: patientId,
-      total_amount: totalAmount,
-      deposit_amount: depositAmount,
-      status: status,
-      notes: notes,
-      items: items
-    };
-
-    // Prompt for appointment date
-    showAppointmentDatePopup(function (appointmentDate, doctorId) {
-      billData.appointment_date = appointmentDate;
-      billData.doctor_id = doctorId;
-
-      $.ajax({
-        url: `${API_BASE_URL}/bills/create/`,
-        type: "POST",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(billData),
-        contentType: "application/json",
-        success: function (response) {
-          console.log("Bill created successfully:", response);
-          $("#addBillsForm")[0].reset();
-          $("#newActionModal").modal("hide");
-          alert("Bill and appointment created successfully!");
-          fetchAppointmentsByDate(); // Refresh appointments table
-        },
-        error: function (xhr) {
-          console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
-          alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
-        }
-      });
+    items.push({
+      service_id: serviceId,
+      quantity: quantity,
+      unit_price: unitPrice,
+      gst: gst,
+      discount: discount,
+      total_price: totalPrice
     });
   });
 
-  // Cancel and Create Buttons
-  $("#cancelBillBtn").on("click", function () {
-    $("#addBillsForm")[0].reset();
-    console.log("Bill form reset");
-  });
+  if (hasErrors) {
+    return;
+  }
 
-  $("#createBillBtn").on("click", function () {
-    $("#addBillsForm").submit();
-  });
+  const totalAmount = parseFloat($("#totalAmount").val()) || 0;
+  const depositAmount = parseFloat($("#depositAmount").val()) || 0;
+  const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
+  const notes = $("#billNotes").val();
 
-  $("#goBackBtn").on("click", function () {
-    $("#newActionTabs .nav-link.active").removeClass("active");
-    $("#addPatientTab").addClass("active");
-    $("#newActionTabContent .tab-pane.active").removeClass("show active");
-    $("#addPatient").addClass("show active");
-    console.log("Navigated back to Add Patient tab");
-  });
+  const billData = {
+    patient_id: patientId,
+    total_amount: totalAmount,
+    deposit_amount: depositAmount,
+    status: status,
+    notes: notes,
+    items: items
+  };
 
-  // Update service selection to store service_id
-  $(document).on("click", ".autocomplete-dropdown li", function () {
-    const $li = $(this);
-    const $input = $li.closest("td").find(".service-search");
-    const $row = $li.closest("tr");
-    $input.val($li.text());
-    $row.find(".unit-price").val($li.data("price"));
-    $row.find(".service-id").val($li.data("service-id"));
-    updateTotalPrice($row);
-    $li.parent().hide();
-  });
+  showAppointmentDatePopup(function (appointmentDate, doctorId) {
+    billData.appointment_date = appointmentDate;
+    billData.doctor_id = doctorId;
 
+    $.ajax({
+      url: `${API_BASE_URL}/bills/create/`,
+      type: "POST",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(billData),
+      contentType: "application/json",
+      success: function (response) {
+        console.log("Bill created successfully:", response);
+        $("#addBillsForm")[0].reset();
+        $("#newActionModal").modal("hide");
+        alert("Bill and appointment created successfully!");
+        fetchAppointmentsByDate();
+      },
+      error: function (xhr) {
+        console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+        alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+      }
+    });
+  });
+});
+
+// Cancel and Create Buttons
+$("#cancelBillBtn").on("click", function () {
+  $("#addBillsForm")[0].reset();
+  console.log("Bill form reset");
+});
+
+$("#createBillBtn").on("click", function () {
+  $("#addBillsForm").submit();
+});
+
+$("#goBackBtn").on("click", function () {
+  $("#newActionTabs .nav-link.active").removeClass("active");
+  $("#addPatientTab").addClass("active");
+  $("#newActionTabContent .tab-pane.active").removeClass("show active");
+  $("#addPatient").addClass("show active");
+  console.log("Navigated back to Add Patient tab");
+});
 
 function updateBillDetails(patientId) {
   $.ajax({
@@ -1330,8 +1319,8 @@ function updateBillDetails(patientId) {
       const patient = data.patient || data;
       $("#billServiceName").val($("#billItemsTableBody tr:first .service-search").val() || "N/A");
       $("#billDoctorName").val(patient.primary_doctor ? `${patient.primary_doctor.first_name} ${patient.primary_doctor.last_name || ''}` : "N/A");
-      $("#billAppointmentDate").val("TBD"); // Update after appointment selection
-      $("#billDuration").val(30); // Default or fetch from service
+      $("#billAppointmentDate").val("TBD");
+      $("#billDuration").val(30);
     },
     error: function () {
       console.error("Failed to fetch patient for bill details");
@@ -1341,7 +1330,15 @@ function updateBillDetails(patientId) {
 
 $("#addBillsTab").on("shown.bs.tab", function () {
   const patientId = $("#patientIdForBill").val();
-  if (patientId) updateBillDetails(patientId);
+  if (patientId) {
+    updateBillDetails(patientId);
+  } else {
+    console.warn("No patient ID found for bill details update");
+    $("#billServiceName").val("N/A");
+    $("#billDoctorName").val("N/A");
+    $("#billAppointmentDate").val("TBD");
+    $("#billDuration").val(30);
+  }
 });
 
   // Populate Doctor Dropdown (unchanged)
