@@ -211,13 +211,21 @@ $(document).ready(function () {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
-
+  
+    // Update the date filter input to reflect the selected date
+    if (dateStr) {
+      $("#dateFilter").val(selectedDate);
+      flatpickr("#dateFilter").setDate(selectedDate, false);
+      console.log(`📅 Updated #dateFilter to: ${selectedDate}`);
+    }
+  
     $.ajax({
       url: `${API_BASE_URL}/appointments/list/?date=${selectedDate}`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
         populateAppointmentsTable(data.results || data, selectedDate);
+        console.log(`✅ Fetched appointments for ${selectedDate}`);
       },
       error: function (xhr) {
         alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
@@ -230,9 +238,9 @@ $(document).ready(function () {
   function populateAppointmentsTable(appointments, date) {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-
+  
     console.log(`📥 Received appointments data:`, appointments);
-
+  
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
@@ -243,20 +251,20 @@ $(document).ready(function () {
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
-
+  
     if (!appointmentsArray.length) {
       $tbody.append(`<tr><td colspan="7" class="text-center">No appointments found for ${date}</td></tr>`);
       console.log(`ℹ️ No appointments to display for ${date}`);
       return;
     }
-
+  
     appointmentsArray.forEach((appt, index) => {
       const appointmentDate = new Date(appt.appointment_date);
       const timeStr = appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const doctorName = appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A';
       const patientName = `${appt.patient.first_name} ${appt.patient.last_name || ''}`;
       const statusClass = `status-${appt.status.toLowerCase().replace(' ', '-')}`;
-
+  
       const $row = $(`
         <tr>
           <td>${index + 1}</td>
@@ -270,7 +278,7 @@ $(document).ready(function () {
       `);
       $tbody.append($row);
     });
-
+  
     console.log(`✅ Populated appointments table with ${appointmentsArray.length} entries for ${date}`);
   }
 
@@ -1393,13 +1401,13 @@ $(document).ready(function () {
   // Add Bills Form Submission
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
-
+  
     const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
     if (!patientId) {
       alert("Please select a patient.");
       return;
     }
-
+  
     const items = [];
     let hasErrors = false;
     $("#billItemsTableBody tr").each(function () {
@@ -1411,7 +1419,7 @@ $(document).ready(function () {
       const gst = parseFloat($row.find(".gst").val()) || 0;
       const discount = parseFloat($row.find(".discount").val()) || 0;
       const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
-
+  
       if (!serviceId || !serviceName) {
         alert("Please select a valid service for all items.");
         hasErrors = true;
@@ -1427,7 +1435,7 @@ $(document).ready(function () {
         hasErrors = true;
         return false;
       }
-
+  
       items.push({
         service_id: serviceId,
         quantity: quantity,
@@ -1437,16 +1445,16 @@ $(document).ready(function () {
         total_price: totalPrice
       });
     });
-
+  
     if (hasErrors) {
       return;
     }
-
+  
     const totalAmount = parseFloat($("#totalAmount").val()) || 0;
     const depositAmount = parseFloat($("#depositAmount").val()) || 0;
     const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
     const notes = $("#billNotes").val();
-
+  
     const billData = {
       patient_id: patientId,
       total_amount: totalAmount,
@@ -1455,11 +1463,11 @@ $(document).ready(function () {
       notes: notes,
       items: items
     };
-
+  
     showAppointmentDatePopup(function (appointmentDate, doctorId) {
       billData.appointment_date = appointmentDate;
       billData.doctor_id = doctorId;
-
+  
       $.ajax({
         url: `${API_BASE_URL}/bills/create/`,
         type: "POST",
@@ -1472,7 +1480,25 @@ $(document).ready(function () {
           $("#newActionModal").modal("hide");
           sessionStorage.removeItem("billPatientId");
           alert("Bill and appointment created successfully!");
-          fetchAppointmentsByDate();
+  
+          // Extract appointment date from response or input
+          let appointmentDateStr = null;
+          if (response.appointment && response.appointment.appointment_date) {
+            const apptDate = new Date(response.appointment.appointment_date);
+            appointmentDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+          } else if (appointmentDate) {
+            // Fallback to the appointmentDate from the popup
+            appointmentDateStr = appointmentDate.split(' ')[0]; // Extract YYYY-MM-DD
+          }
+  
+          // Refresh appointments table with the appointment date
+          if (appointmentDateStr) {
+            console.log(`📅 Refreshing appointments for date: ${appointmentDateStr}`);
+            fetchAppointmentsByDate(appointmentDateStr);
+          } else {
+            console.warn("⚠️ No appointment date found, refreshing with current filter");
+            fetchAppointmentsByDate();
+          }
         },
         error: function (xhr) {
           console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
