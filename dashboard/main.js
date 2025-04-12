@@ -991,7 +991,7 @@ $(document).ready(function () {
     isFetchingServices = true;
     $(".service-search, .dropdown-toggle").prop("disabled", true);
     $.ajax({
-      url: `${API_BASE_URL}/services/`, // Corrected endpoint
+      url: `${API_BASE_URL}/service/list/`, // Corrected endpoint
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
