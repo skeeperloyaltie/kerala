@@ -985,28 +985,44 @@ $("#todayBillBtn").on("click", function () {
 
 // Service Search and Dropdown
 let services = [];
+// Service Search and Dropdown
+let isFetchingServices = false;
 function fetchServices() {
+  if (isFetchingServices) return;
+  isFetchingServices = true;
+  $(".service-search, .dropdown-toggle").prop("disabled", true); // Disable inputs
   $.ajax({
-    url: `${API_BASE_URL}/service/list/`, // Verify this endpoint
+    url: `${API_BASE_URL}/service/list/`,
     type: "GET",
     headers: getAuthHeaders(),
     success: function (data) {
+      let rawServices = [];
       if (Array.isArray(data.results)) {
-        services = data.results;
+        rawServices = data.results;
       } else if (Array.isArray(data)) {
-        services = data;
+        rawServices = data;
       } else if (data && Array.isArray(data.services)) {
-        services = data.services;
+        rawServices = data.services;
       } else {
-        services = [];
         console.error("Unexpected service data format:", data);
+        services = [];
+        return;
       }
+      services = rawServices.map(service => ({
+        id: service.id,
+        name: service.service_name || service.name,
+        price: service.service_price || service.price
+      }));
       console.log(`Fetched ${services.length} services for autocomplete`, services);
     },
     error: function (xhr) {
       console.error(`Failed to fetch services: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
       services = [];
       alert("Failed to load services. Please try again later.");
+    },
+    complete: function () {
+      isFetchingServices = false;
+      $(".service-search, .dropdown-toggle").prop("disabled", false); // Re-enable inputs
     }
   });
 }
@@ -1014,14 +1030,27 @@ function fetchServices() {
 // Fetch services on page load
 fetchServices();
 
-// Populate dropdown with services
 function populateServiceDropdown($dropdown, servicesToShow) {
   $dropdown.empty();
-  if (!servicesToShow.length) {
-    $dropdown.append('<li><a class="dropdown-item disabled">No services available</a></li>');
+  if (isFetchingServices) {
+    $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
     return;
   }
-  servicesToShow.forEach(service => {
+  const validServices = servicesToShow.filter(
+    s => s.id && s.name && typeof s.price !== "undefined"
+  );
+  if (!validServices.length) {
+    $dropdown.append(
+      '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
+    );
+    $dropdown.on("click", ".add-service-link", function (e) {
+      e.preventDefault();
+      $("#addServiceTab").tab("show");
+      $dropdown.removeClass("show");
+    });
+    return;
+  }
+  validServices.forEach(service => {
     $dropdown.append(
       `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
     );
@@ -1317,27 +1346,69 @@ function updateBillDetails(patientId) {
     headers: getAuthHeaders(),
     success: function (data) {
       const patient = data.patient || data;
-      $("#billServiceName").val($("#billItemsTableBody tr:first .service-search").val() || "N/A");
-      $("#billDoctorName").val(patient.primary_doctor ? `${patient.primary_doctor.first_name} ${patient.primary_doctor.last_name || ''}` : "N/A");
-      $("#billAppointmentDate").val("TBD");
-      $("#billDuration").val(30);
+      const firstRowService = $("#billItemsTableBody tr:first .service-search");
+      $("#billServiceName").val(firstRowService.length ? firstRowService.val() || "" : "");
+      $("#billDoctorName").val(
+        patient.primary_doctor
+          ? `${patient.primary_doctor.first_name} ${patient.primary_doctor.last_name || ""}`
+          : ""
+      );
+      $("#billAppointmentDate").val(""); // Leave empty until confirmed
+      $("#billDuration").val("30");
     },
     error: function () {
       console.error("Failed to fetch patient for bill details");
+      $("#billServiceName").val("");
+      $("#billDoctorName").val("");
+      $("#billAppointmentDate").val("");
+      $("#billDuration").val("");
     }
   });
 }
 
 $("#addBillsTab").on("shown.bs.tab", function () {
   const patientId = $("#patientIdForBill").val();
+  const $form = $("#addBillsForm");
+  const $alert = $form.find(".alert-warning");
+
+  // Remove any existing alerts
+  $alert.remove();
+
   if (patientId) {
+    // Patient ID exists, enable form and fetch details
     updateBillDetails(patientId);
+    $form.find("input, button, select").prop("disabled", false);
+    $("#createBillBtn, #addBillItem").prop("disabled", false);
   } else {
+    // No patient ID, disable form and show guidance
     console.warn("No patient ID found for bill details update");
-    $("#billServiceName").val("N/A");
-    $("#billDoctorName").val("N/A");
-    $("#billAppointmentDate").val("TBD");
-    $("#billDuration").val(30);
+    
+    // Disable all form inputs and buttons to prevent interaction
+    $form.find("input, button, select").prop("disabled", true);
+    $("#createBillBtn, #addBillItem").prop("disabled", true);
+    
+    // Add an alert to guide the user
+    $form.prepend(
+      '<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+      'Please select a patient before creating a bill. ' +
+      '<a href="#" class="alert-link select-patient">Select a patient now</a>.' +
+      '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+      '</div>'
+    );
+
+    // Bind click event to redirect to Add Patient tab
+    $form.find(".select-patient").on("click", function (e) {
+      e.preventDefault();
+      $("#addPatientTab").tab("show");
+    });
+
+    // Reset form fields to avoid stale data
+    $form[0].reset();
+    $("#billServiceName").val("");
+    $("#billDoctorName").val("");
+    $("#billAppointmentDate").val("");
+    $("#billDuration").val("");
+    $("#billItemsTableBody").empty(); // Clear any existing bill items
   }
 });
 
