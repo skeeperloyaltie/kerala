@@ -93,120 +93,118 @@ $(document).ready(function () {
   }
 
   // Role-Based UI Adjustments
-// Update adjustUIForRole to include bills permissions
-function adjustUIForRole(userType, roleLevel) {
-  console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
-  const navItems = $(".navbar-top .nav-item");
-  const secondaryNavItems = $(".navbar-secondary .nav-item");
-  const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
-  const searchInput = $(".navbar-top .form-control");
-  const dateFilter = $("#dateFilter");
-  const dashboardDropdown = $("#dashboardDropdown").parent();
-  const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
-  const modalTabs = $("#newActionTabs .nav-item");
+  function adjustUIForRole(userType, roleLevel) {
+    console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
+    const navItems = $(".navbar-top .nav-item");
+    const secondaryNavItems = $(".navbar-secondary .nav-item");
+    const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
+    const searchInput = $(".navbar-top .form-control");
+    const dateFilter = $("#dateFilter");
+    const dashboardDropdown = $("#dashboardDropdown").parent();
+    const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
+    const modalTabs = $("#newActionTabs .nav-item");
 
-  navItems.show();
-  secondaryNavItems.show();
-  buttons.show();
-  searchInput.show();
-  dateFilter.show();
-  dashboardDropdown.show();
-  logoutLink.show();
-  modalTabs.show();
+    navItems.show();
+    secondaryNavItems.show();
+    buttons.show();
+    searchInput.show();
+    dateFilter.show();
+    dashboardDropdown.show();
+    logoutLink.show();
+    modalTabs.show();
 
-  const role = `${userType}-${roleLevel}`.toLowerCase();
-  const permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
+    const role = `${userType}-${roleLevel}`.toLowerCase();
+    const permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
 
-  switch (role) {
-    case "doctor-senior":
-      // Full access
-      break;
-    case "doctor-medium":
-      navItems.filter(":contains('Add Services')").hide();
-      dashboardDropdown.hide();
-      secondaryNavItems.filter(":contains('Reviewed')").hide();
-      modalTabs.filter(":contains('Add Service')").hide();
-      break;
-    case "doctor-basic":
-      navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
-      buttons.filter(":contains('New')").hide();
-      secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
-      $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-      break;
-    case "nurse-senior":
-      navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.filter(":contains('New')").hide();
-      secondaryNavItems.filter(":contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide();
-      break;
-    case "nurse-medium":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.filter(":contains('New'), :contains('Support')").hide();
-      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-      break;
-    case "nurse-basic":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.hide();
-      searchInput.hide();
-      dateFilter.hide();
-      secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-      break;
-    case "receptionist-senior":
-      navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
-      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service')").hide();
-      break;
-    case "receptionist-medium":
-      navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.filter(":contains('Support')").hide();
-      secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-      $(".navbar-secondary .btn-circle").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-      break;
-    case "receptionist-basic":
-      navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-      buttons.hide();
-      searchInput.hide();
-      dateFilter.hide();
-      secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
-      dashboardDropdown.hide();
-      modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-      break;
-    default:
-      console.warn("⚠️ Unknown role combination:", role);
-      alert("Unknown role detected. Access restricted.");
-      navItems.hide();
-      secondaryNavItems.hide();
-      buttons.hide();
-      modalTabs.hide();
+    switch (role) {
+      case "doctor-senior":
+        // Full access
+        break;
+      case "doctor-medium":
+        navItems.filter(":contains('Add Services')").hide();
+        dashboardDropdown.hide();
+        secondaryNavItems.filter(":contains('Reviewed')").hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "doctor-basic":
+        navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
+        buttons.filter(":contains('New')").hide();
+        secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
+        $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+        break;
+      case "nurse-senior":
+        navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.filter(":contains('New')").hide();
+        secondaryNavItems.filter(":contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "nurse-medium":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.filter(":contains('New'), :contains('Support')").hide();
+        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+        break;
+      case "nurse-basic":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.hide();
+        searchInput.hide();
+        dateFilter.hide();
+        secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+        break;
+      case "receptionist-senior":
+        navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
+        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service')").hide();
+        break;
+      case "receptionist-medium":
+        navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.filter(":contains('Support')").hide();
+        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+        $(".navbar-secondary .btn-circle").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+        break;
+      case "receptionist-basic":
+        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+        buttons.hide();
+        searchInput.hide();
+        dateFilter.hide();
+        secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
+        dashboardDropdown.hide();
+        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+        break;
+      default:
+        console.warn("⚠️ Unknown role combination:", role);
+        alert("Unknown role detected. Access restricted.");
+        navItems.hide();
+        secondaryNavItems.hide();
+        buttons.hide();
+        modalTabs.hide();
+    }
+
+    // Override with permissions
+    if (permissions.can_add_bill === true) {
+      modalTabs.filter(":contains('Add Bills')").show();
+    } else if (permissions.can_add_bill !== true && role !== "doctor-senior" && role !== "receptionist-senior") {
+      modalTabs.filter(":contains('Add Bills')").hide();
+    }
+
+    console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
+    console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
+    bindLogoutEvent();
+    bindModalActions();
+    setupPatientSearch();
   }
-
-  // Override with permissions
-  if (permissions.can_add_bill === true) {
-    modalTabs.filter(":contains('Add Bills')").show();
-  } else if (permissions.can_add_bill !== true && role !== "doctor-senior" && role !== "receptionist-senior") {
-    modalTabs.filter(":contains('Add Bills')").hide();
-  }
-
-  console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
-  console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
-  bindLogoutEvent();
-  bindModalActions();
-  setupPatientSearch();
-}
-
 
   // Fetch Appointments by Date
   function fetchAppointmentsByDate(dateStr = null) {
@@ -571,6 +569,7 @@ function adjustUIForRole(userType, roleLevel) {
 
     $('#addBillFromProfileBtn').off('click').on('click', function () {
       $('#patientIdForBill').val(patient.patient_id || '');
+      sessionStorage.setItem("billPatientId", patient.patient_id || '');
       $('#addBillsTab').tab('show');
     });
 
@@ -908,6 +907,7 @@ function adjustUIForRole(userType, roleLevel) {
       toggleSplitView('addBills');
       $('#addBillsTab').tab('show');
       $('#patientIdForBill').val(data.patient_id);
+      sessionStorage.setItem("billPatientId", data.patient_id);
     } else if (activeButton === 'addAndCreateAppointment') {
       toggleSplitView('addPatient');
       $('#addPatientTab').tab('show');
@@ -947,7 +947,7 @@ function adjustUIForRole(userType, roleLevel) {
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/service/create/`, // Corrected endpoint
+      url: `${API_BASE_URL}/service/create/`,
       type: "POST",
       headers: getAuthHeaders(),
       data: JSON.stringify(data),
@@ -957,6 +957,7 @@ function adjustUIForRole(userType, roleLevel) {
         $(this)[0].reset();
         $("#newActionModal").modal("hide");
         alert("Service added successfully");
+        fetchServices(); // Refresh services list
       },
       error: xhr => {
         console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
@@ -965,455 +966,461 @@ function adjustUIForRole(userType, roleLevel) {
     });
   });
 
-// Add Bills Form Handling
-// Add Bills Form Handling
-flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date(), allowInput: true });
+  // Add Bills Form Handling
+  flatpickr("#billDate", { dateFormat: "Y-m-d", defaultDate: new Date(), allowInput: true });
 
-const appointmentDatePicker = flatpickr("#appointmentDateInput", {
-  enableTime: true,
-  dateFormat: "Y-m-d H:i",
-  minDate: "today",
-  defaultDate: new Date(),
-  time_24hr: true,
-  allowInput: true
-});
+  const appointmentDatePicker = flatpickr("#appointmentDateInput", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    minDate: "today",
+    defaultDate: new Date(),
+    time_24hr: true,
+    allowInput: true
+  });
 
-$("#todayBillBtn").on("click", function () {
-  $("#billDate").val(new Date().toISOString().split("T")[0]);
-  console.log("Bill date set to today");
-});
+  $("#todayBillBtn").on("click", function () {
+    $("#billDate").val(new Date().toISOString().split("T")[0]);
+    console.log("Bill date set to today");
+  });
 
-// Service Search and Dropdown
-let services = [];
-// Service Search and Dropdown
-let isFetchingServices = false;
-function fetchServices() {
-  if (isFetchingServices) return;
-  isFetchingServices = true;
-  $(".service-search, .dropdown-toggle").prop("disabled", true); // Disable inputs
-  $.ajax({
-    url: `${API_BASE_URL}/service/list/`,
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function (data) {
-      let rawServices = [];
-      if (Array.isArray(data.results)) {
-        rawServices = data.results;
-      } else if (Array.isArray(data)) {
-        rawServices = data;
-      } else if (data && Array.isArray(data.services)) {
-        rawServices = data.services;
-      } else {
-        console.error("Unexpected service data format:", data);
-        services = [];
-        return;
+  // Service Search and Dropdown
+  let services = [];
+  let isFetchingServices = false;
+  function fetchServices(attempt = 1, maxAttempts = 3) {
+    if (isFetchingServices) return;
+    isFetchingServices = true;
+    $(".service-search, .dropdown-toggle").prop("disabled", true);
+    $.ajax({
+      url: `${API_BASE_URL}/services/`, // Corrected endpoint
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        console.log("Raw API response for services:", data);
+        let rawServices = [];
+        if (Array.isArray(data.results)) {
+          rawServices = data.results;
+        } else if (Array.isArray(data)) {
+          rawServices = data;
+        } else if (data && Array.isArray(data.services)) {
+          rawServices = data.services;
+        } else {
+          console.error("Unexpected service data format:", data);
+          services = [];
+          return;
+        }
+        services = rawServices.map(service => ({
+          id: service.id,
+          name: service.service_name || service.name || "Unknown Service",
+          price: service.service_price || service.price || 0
+        }));
+        console.log(`Fetched ${services.length} services for autocomplete`, services);
+      },
+      error: function (xhr) {
+        console.error(`Failed to fetch services (attempt ${attempt}): ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
+        if (attempt < maxAttempts) {
+          setTimeout(() => fetchServices(attempt + 1, maxAttempts), 1000);
+        } else {
+          services = [];
+          alert("Failed to load services after multiple attempts. Please try again later.");
+        }
+      },
+      complete: function () {
+        isFetchingServices = false;
+        $(".service-search, .dropdown-toggle").prop("disabled", false);
       }
-      services = rawServices.map(service => ({
-        id: service.id,
-        name: service.service_name || service.name,
-        price: service.service_price || service.price
-      }));
-      console.log(`Fetched ${services.length} services for autocomplete`, services);
-    },
-    error: function (xhr) {
-      console.error(`Failed to fetch services: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
-      services = [];
-      alert("Failed to load services. Please try again later.");
-    },
-    complete: function () {
-      isFetchingServices = false;
-      $(".service-search, .dropdown-toggle").prop("disabled", false); // Re-enable inputs
-    }
-  });
-}
-
-// Fetch services on page load
-fetchServices();
-
-function populateServiceDropdown($dropdown, servicesToShow) {
-  $dropdown.empty();
-  if (isFetchingServices) {
-    $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
-    return;
-  }
-  const validServices = servicesToShow.filter(
-    s => s.id && s.name && typeof s.price !== "undefined"
-  );
-  if (!validServices.length) {
-    $dropdown.append(
-      '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
-    );
-    $dropdown.on("click", ".add-service-link", function (e) {
-      e.preventDefault();
-      $("#addServiceTab").tab("show");
-      $dropdown.removeClass("show");
     });
-    return;
   }
-  validServices.forEach(service => {
-    $dropdown.append(
-      `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
-    );
-  });
-}
 
-// Handle service search input
-$(document).on("input", ".service-search", function () {
-  const $input = $(this);
-  const query = $input.val().toLowerCase().trim();
-  const $dropdown = $input.closest(".input-group").find(".autocomplete-dropdown");
+  // Fetch services on page load
+  fetchServices();
 
-  populateServiceDropdown($dropdown, query ? services.filter(s => s.name && s.name.toLowerCase().includes(query)) : services);
-  $dropdown.addClass("show"); // Show dropdown when typing
-});
-
-// Handle dropdown toggle button click
-$(document).on("click", ".input-group .dropdown-toggle", function (e) {
-  e.preventDefault();
-  const $button = $(this);
-  const $dropdown = $button.closest(".input-group").find(".autocomplete-dropdown");
-  const $input = $button.closest(".input-group").find(".service-search");
-
-  // If dropdown is not shown, populate with all services
-  if (!$dropdown.hasClass("show")) {
-    populateServiceDropdown($dropdown, services);
-    $dropdown.addClass("show");
-    $input.focus(); // Keep input focused
-  } else {
-    $dropdown.removeClass("show");
-  }
-});
-
-// Handle service selection
-$(document).on("click", ".autocomplete-dropdown .dropdown-item:not(.disabled)", function (e) {
-  e.preventDefault();
-  const $li = $(this);
-  const $input = $li.closest(".input-group").find(".service-search");
-  const $row = $li.closest("tr");
-  $input.val($li.text()).data("service-id", $li.data("service-id"));
-  $row.find(".unit-price").val($li.data("price"));
-  $row.find(".service-id").val($li.data("service-id"));
-  updateTotalPrice($row);
-  $li.closest(".autocomplete-dropdown").removeClass("show");
-});
-
-// Hide dropdown when clicking outside
-$(document).on("click", function (e) {
-  if (!$(e.target).closest(".input-group, .autocomplete-dropdown").length) {
-    $(".autocomplete-dropdown").removeClass("show");
-  }
-});
-
-// Populate Doctor Dropdown for Bills
-function populateDoctorDropdownForBill() {
-  $.ajax({
-    url: `${API_BASE_URL}/appointments/doctors/list/`,
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function (data) {
-      const doctorSelect = $("#billDoctor");
-      doctorSelect.empty();
-      doctorSelect.append('<option value="" selected>Select Doctor</option>');
-      data.doctors.forEach(doctor => {
-        doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
-      });
-    },
-    error: function () {
-      alert("Failed to fetch doctors.");
-    }
-  });
-}
-
-// Add Bill Item
-let itemCount = 1;
-$("#addBillItem").on("click", function () {
-  itemCount++;
-  const newRow = `
-    <tr>
-      <td>${itemCount}</td>
-      <td>
-        <div class="input-group input-group-sm">
-          <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
-          <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search or select service" required autocomplete="off">
-          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-          <ul class="dropdown-menu autocomplete-dropdown" style="width: 100%; max-height: 200px; overflow-y: auto;"></ul>
-          <input type="hidden" name="service_id[]" class="service-id">
-        </div>
-      </td>
-      <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
-      <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
-      <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
-      <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
-      <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
-    </tr>`;
-  $("#billItemsTableBody").append(newRow);
-  console.log(`Added bill item #${itemCount}`);
-});
-
-function updateTotalPrice($row) {
-  const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
-  const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
-  const gst = parseFloat($row.find(".gst").val()) || 0;
-  const discount = parseFloat($row.find(".discount").val()) || 0;
-  const total = (qty * unitPrice * (1 + gst / 100)) - discount;
-  $row.find(".total-price").val(total.toFixed(2));
-  updateTotalBillAmount();
-  updateDepositColor();
-}
-
-function updateTotalBillAmount() {
-  const total = Array.from($(".total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
-  $("#totalAmount").val(total.toFixed(2));
-}
-
-function updateDepositColor() {
-  const total = parseFloat($("#totalAmount").val()) || 0;
-  const deposit = parseFloat($("#depositAmount").val()) || 0;
-  $("#depositAmount").css("color", deposit >= total ? "green" : "red");
-}
-
-$(document).on("input", "[name='quantity[]'], .gst, .discount, #depositAmount", function () {
-  updateTotalPrice($(this).closest("tr"));
-  updateDepositColor();
-});
-
-function showAppointmentDatePopup(callback) {
-  const modal = $(`
-    <div class="modal fade" id="appointmentDateModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Select Appointment Date</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
-              <input type="text" class="form-control" id="appointmentDateInput" readonly>
-            </div>
-            <div class="mb-3">
-              <label for="billDoctor" class="form-label">Doctor</label>
-              <select class="form-select" id="billDoctor" name="doctor_id"></select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="confirmAppointmentDate">Confirm</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `);
-
-  $('body').append(modal);
-  const bsModal = new bootstrap.Modal(modal[0]);
-  bsModal.show();
-
-  populateDoctorDropdownForBill();
-
-  $("#confirmAppointmentDate").on("click", function () {
-    const date = appointmentDatePicker.selectedDates[0];
-    const doctorId = $("#billDoctor").val();
-    if (!date || !doctorId) {
-      alert("Please select both an appointment date and a doctor.");
+  function populateServiceDropdown($dropdown, servicesToShow) {
+    $dropdown.empty();
+    if (isFetchingServices) {
+      $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
       return;
     }
-    const formattedDate = flatpickr.formatDate(date, "Y-m-d H:i");
-    $("#billAppointmentDate").val(formattedDate); // Update right-column field
-    callback(formattedDate, doctorId);
-    bsModal.hide();
-    modal.remove();
-  });
-
-  modal.on('hidden.bs.modal', function () {
-    modal.remove();
-  });
-}
-
-// Add Bills Form Submission
-$("#addBillsForm").submit(function (e) {
-  e.preventDefault();
-
-  const patientId = $("#patientIdForBill").val();
-  if (!patientId) {
-    alert("Please select a patient.");
-    return;
+    const validServices = servicesToShow.filter(
+      s => s.id && s.name && typeof s.price !== "undefined"
+    );
+    if (!validServices.length) {
+      $dropdown.append(
+        '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
+      );
+      $dropdown.on("click", ".add-service-link", function (e) {
+        e.preventDefault();
+        $("#addServiceTab").tab("show");
+        $dropdown.removeClass("show");
+      });
+      return;
+    }
+    validServices.forEach(service => {
+      $dropdown.append(
+        `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
+      );
+    });
   }
 
-  const items = [];
-  let hasErrors = false;
-  $("#billItemsTableBody tr").each(function () {
-    const $row = $(this);
-    const serviceId = $row.find(".service-id").val();
-    const serviceName = $row.find(".service-search").val();
-    const quantity = parseInt($row.find("[name='quantity[]']").val()) || 0;
+  // Handle service search input
+  $(document).on("input", ".service-search", function () {
+    const $input = $(this);
+    const query = $input.val().toLowerCase().trim();
+    const $dropdown = $input.closest(".input-group").find(".autocomplete-dropdown");
+
+    populateServiceDropdown($dropdown, query ? services.filter(s => s.name && s.name.toLowerCase().includes(query)) : services);
+    $dropdown.addClass("show");
+  });
+
+  // Handle dropdown toggle button click
+  $(document).on("click", ".input-group .dropdown-toggle", function (e) {
+    e.preventDefault();
+    const $button = $(this);
+    const $dropdown = $button.closest(".input-group").find(".autocomplete-dropdown");
+    const $input = $button.closest(".input-group").find(".service-search");
+
+    if (!$dropdown.hasClass("show")) {
+      populateServiceDropdown($dropdown, services);
+      $dropdown.addClass("show");
+      $input.focus();
+    } else {
+      $dropdown.removeClass("show");
+    }
+  });
+
+  // Handle service selection
+  $(document).on("click", ".autocomplete-dropdown .dropdown-item:not(.disabled)", function (e) {
+    e.preventDefault();
+    const $li = $(this);
+    const $input = $li.closest(".input-group").find(".service-search");
+    const $row = $li.closest("tr");
+    $input.val($li.text()).data("service-id", $li.data("service-id"));
+    $row.find(".unit-price").val($li.data("price"));
+    $row.find(".service-id").val($li.data("service-id"));
+    updateTotalPrice($row);
+    $li.closest(".autocomplete-dropdown").removeClass("show");
+  });
+
+  // Hide dropdown when clicking outside
+  $(document).on("click", function (e) {
+    if (!$(e.target).closest(".input-group, .autocomplete-dropdown").length) {
+      $(".autocomplete-dropdown").removeClass("show");
+    }
+  });
+
+  // Populate Doctor Dropdown for Bills
+  function populateDoctorDropdownForBill() {
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        const doctorSelect = $("#billDoctor");
+        doctorSelect.empty();
+        doctorSelect.append('<option value="" selected>Select Doctor</option>');
+        data.doctors.forEach(doctor => {
+          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
+        });
+      },
+      error: function () {
+        alert("Failed to fetch doctors.");
+      }
+    });
+  }
+
+  // Add Bill Item
+  let itemCount = 0;
+  $("#addBillItem").on("click", function () {
+    itemCount++;
+    const newRow = `
+      <tr>
+        <td>${itemCount}</td>
+        <td>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
+            <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search or select service" required autocomplete="off">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+            <ul class="dropdown-menu autocomplete-dropdown" style="width: 100%; max-height: 200px; overflow-y: auto;"></ul>
+            <input type="hidden" name="service_id[]" class="service-id">
+          </div>
+        </td>
+        <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
+        <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
+        <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
+        <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
+        <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
+      </tr>`;
+    $("#billItemsTableBody").append(newRow);
+    console.log(`Added bill item #${itemCount}`);
+  });
+
+  function updateTotalPrice($row) {
+    const qty = parseFloat($row.find("[name='quantity[]']").val()) || 0;
     const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
     const gst = parseFloat($row.find(".gst").val()) || 0;
     const discount = parseFloat($row.find(".discount").val()) || 0;
-    const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
-
-    if (!serviceId || !serviceName) {
-      alert("Please select a valid service for all items.");
-      hasErrors = true;
-      return false;
-    }
-    if (quantity <= 0) {
-      alert("Quantity must be greater than zero.");
-      hasErrors = true;
-      return false;
-    }
-    if (unitPrice <= 0) {
-      alert("Unit price must be greater than zero.");
-      hasErrors = true;
-      return false;
-    }
-
-    items.push({
-      service_id: serviceId,
-      quantity: quantity,
-      unit_price: unitPrice,
-      gst: gst,
-      discount: discount,
-      total_price: totalPrice
-    });
-  });
-
-  if (hasErrors) {
-    return;
+    const total = (qty * unitPrice * (1 + gst / 100)) - discount;
+    $row.find(".total-price").val(total.toFixed(2));
+    updateTotalBillAmount();
+    updateDepositColor();
   }
 
-  const totalAmount = parseFloat($("#totalAmount").val()) || 0;
-  const depositAmount = parseFloat($("#depositAmount").val()) || 0;
-  const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
-  const notes = $("#billNotes").val();
+  function updateTotalBillAmount() {
+    const total = Array.from($(".total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
+    $("#totalAmount").val(total.toFixed(2));
+  }
 
-  const billData = {
-    patient_id: patientId,
-    total_amount: totalAmount,
-    deposit_amount: depositAmount,
-    status: status,
-    notes: notes,
-    items: items
-  };
+  function updateDepositColor() {
+    const total = parseFloat($("#totalAmount").val()) || 0;
+    const deposit = parseFloat($("#depositAmount").val()) || 0;
+    $("#depositAmount").css("color", deposit >= total ? "green" : "red");
+  }
 
-  showAppointmentDatePopup(function (appointmentDate, doctorId) {
-    billData.appointment_date = appointmentDate;
-    billData.doctor_id = doctorId;
+  $(document).on("input", "[name='quantity[]'], .gst, .discount, #depositAmount", function () {
+    updateTotalPrice($(this).closest("tr"));
+    updateDepositColor();
+  });
 
-    $.ajax({
-      url: `${API_BASE_URL}/bills/create/`,
-      type: "POST",
-      headers: getAuthHeaders(),
-      data: JSON.stringify(billData),
-      contentType: "application/json",
-      success: function (response) {
-        console.log("Bill created successfully:", response);
-        $("#addBillsForm")[0].reset();
-        $("#newActionModal").modal("hide");
-        alert("Bill and appointment created successfully!");
-        fetchAppointmentsByDate();
-      },
-      error: function (xhr) {
-        console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
-        alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+  function showAppointmentDatePopup(callback) {
+    const modal = $(`
+      <div class="modal fade" id="appointmentDateModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Select Appointment Date</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
+                <input type="text" class="form-control" id="appointmentDateInput" readonly>
+              </div>
+              <div class="mb-3">
+                <label for="billDoctor" class="form-label">Doctor</label>
+                <select class="form-select" id="billDoctor" name="doctor_id"></select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="confirmAppointmentDate">Confirm</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    $('body').append(modal);
+    const bsModal = new bootstrap.Modal(modal[0]);
+    bsModal.show();
+
+    populateDoctorDropdownForBill();
+
+    $("#confirmAppointmentDate").on("click", function () {
+      const date = appointmentDatePicker.selectedDates[0];
+      const doctorId = $("#billDoctor").val();
+      if (!date || !doctorId) {
+        alert("Please select both an appointment date and a doctor.");
+        return;
       }
+      const formattedDate = flatpickr.formatDate(date, "Y-m-d H:i");
+      $("#billAppointmentDate").val(formattedDate);
+      callback(formattedDate, doctorId);
+      bsModal.hide();
+      modal.remove();
+    });
+
+    modal.on('hidden.bs.modal', function () {
+      modal.remove();
+    });
+  }
+
+  // Add Bills Form Submission
+  $("#addBillsForm").submit(function (e) {
+    e.preventDefault();
+
+    const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+    if (!patientId) {
+      alert("Please select a patient.");
+      return;
+    }
+
+    const items = [];
+    let hasErrors = false;
+    $("#billItemsTableBody tr").each(function () {
+      const $row = $(this);
+      const serviceId = $row.find(".service-id").val();
+      const serviceName = $row.find(".service-search").val();
+      const quantity = parseInt($row.find("[name='quantity[]']").val()) || 0;
+      const unitPrice = parseFloat($row.find(".unit-price").val()) || 0;
+      const gst = parseFloat($row.find(".gst").val()) || 0;
+      const discount = parseFloat($row.find(".discount").val()) || 0;
+      const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
+
+      if (!serviceId || !serviceName) {
+        alert("Please select a valid service for all items.");
+        hasErrors = true;
+        return false;
+      }
+      if (quantity <= 0) {
+        alert("Quantity must be greater than zero.");
+        hasErrors = true;
+        return false;
+      }
+      if (unitPrice <= 0) {
+        alert("Unit price must be greater than zero.");
+        hasErrors = true;
+        return false;
+      }
+
+      items.push({
+        service_id: serviceId,
+        quantity: quantity,
+        unit_price: unitPrice,
+        gst: gst,
+        discount: discount,
+        total_price: totalPrice
+      });
+    });
+
+    if (hasErrors) {
+      return;
+    }
+
+    const totalAmount = parseFloat($("#totalAmount").val()) || 0;
+    const depositAmount = parseFloat($("#depositAmount").val()) || 0;
+    const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
+    const notes = $("#billNotes").val();
+
+    const billData = {
+      patient_id: patientId,
+      total_amount: totalAmount,
+      deposit_amount: depositAmount,
+      status: status,
+      notes: notes,
+      items: items
+    };
+
+    showAppointmentDatePopup(function (appointmentDate, doctorId) {
+      billData.appointment_date = appointmentDate;
+      billData.doctor_id = doctorId;
+
+      $.ajax({
+        url: `${API_BASE_URL}/bills/create/`,
+        type: "POST",
+        headers: getAuthHeaders(),
+        data: JSON.stringify(billData),
+        contentType: "application/json",
+        success: function (response) {
+          console.log("Bill created successfully:", response);
+          $("#addBillsForm")[0].reset();
+          $("#newActionModal").modal("hide");
+          sessionStorage.removeItem("billPatientId");
+          alert("Bill and appointment created successfully!");
+          fetchAppointmentsByDate();
+        },
+        error: function (xhr) {
+          console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+          alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+        }
+      });
     });
   });
-});
 
-// Cancel and Create Buttons
-$("#cancelBillBtn").on("click", function () {
-  $("#addBillsForm")[0].reset();
-  console.log("Bill form reset");
-});
+  // Cancel and Create Buttons
+  $("#cancelBillBtn").on("click", function () {
+    $("#addBillsForm")[0].reset();
+    $("#billItemsTableBody").empty();
+    itemCount = 0;
+    sessionStorage.removeItem("billPatientId");
+    console.log("Bill form reset");
+  });
 
-$("#createBillBtn").on("click", function () {
-  $("#addBillsForm").submit();
-});
+  $("#createBillBtn").on("click", function () {
+    $("#addBillsForm").submit();
+  });
 
-$("#goBackBtn").on("click", function () {
-  $("#newActionTabs .nav-link.active").removeClass("active");
-  $("#addPatientTab").addClass("active");
-  $("#newActionTabContent .tab-pane.active").removeClass("show active");
-  $("#addPatient").addClass("show active");
-  console.log("Navigated back to Add Patient tab");
-});
+  $("#goBackBtn").on("click", function () {
+    $("#newActionTabs .nav-link.active").removeClass("active");
+    $("#addPatientTab").addClass("active");
+    $("#newActionTabContent .tab-pane.active").removeClass("show active");
+    $("#addPatient").addClass("show active");
+    console.log("Navigated back to Add Patient tab");
+  });
 
-function updateBillDetails(patientId) {
-  $.ajax({
-    url: `${API_BASE_URL}/patients/patients/${patientId}/`,
-    type: "GET",
-    headers: getAuthHeaders(),
-    success: function (data) {
-      const patient = data.patient || data;
-      const firstRowService = $("#billItemsTableBody tr:first .service-search");
-      $("#billServiceName").val(firstRowService.length ? firstRowService.val() || "" : "");
-      $("#billDoctorName").val(
-        patient.primary_doctor
-          ? `${patient.primary_doctor.first_name} ${patient.primary_doctor.last_name || ""}`
-          : ""
+  function updateBillDetails(patientId) {
+    $.ajax({
+      url: `${API_BASE_URL}/patients/patients/${patientId}/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        const patient = data.patient || data;
+        const firstRowService = $("#billItemsTableBody tr:first .service-search");
+        $("#billServiceName").val(firstRowService.length ? firstRowService.val() || "" : "");
+        $("#billDoctorName").val(
+          patient.primary_doctor
+            ? `${patient.primary_doctor.first_name} ${patient.primary_doctor.last_name || ""}`
+            : ""
+        );
+        $("#billAppointmentDate").val("");
+        $("#billDuration").val("30");
+        $("#patientIdForBill").val(patientId); // Ensure patientId is set
+        sessionStorage.setItem("billPatientId", patientId);
+        console.log(`Updated bill details for patient ${patientId}`);
+      },
+      error: function () {
+        console.error("Failed to fetch patient for bill details");
+        $("#billServiceName").val("");
+        $("#billDoctorName").val("");
+        $("#billAppointmentDate").val("");
+        $("#billDuration").val("");
+      }
+    });
+  }
+
+  $("#addBillsTab").on("shown.bs.tab", function () {
+    const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+    const $form = $("#addBillsForm");
+    const $alert = $form.find(".alert-warning");
+
+    // Remove any existing alerts
+    $alert.remove();
+
+    if (patientId) {
+      $("#patientIdForBill").val(patientId);
+      sessionStorage.setItem("billPatientId", patientId);
+      updateBillDetails(patientId);
+      $form.find("input, button, select").prop("disabled", false);
+      $("#createBillBtn, #addBillItem").prop("disabled", false);
+      // Initialize at least one bill item if none exist
+      if (!$("#billItemsTableBody tr").length) {
+        $("#addBillItem").click();
+      }
+    } else {
+      console.warn("No patient ID found for bill details update");
+      $form.find("input, button, select").prop("disabled", true);
+      $("#createBillBtn, #addBillItem").prop("disabled", true);
+      $form.prepend(
+        '<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+        'Please select a patient before creating a bill. ' +
+        '<a href="#" class="alert-link select-patient">Select a patient now</a>.' +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+        '</div>'
       );
-      $("#billAppointmentDate").val(""); // Leave empty until confirmed
-      $("#billDuration").val("30");
-    },
-    error: function () {
-      console.error("Failed to fetch patient for bill details");
+      $form.find(".select-patient").on("click", function (e) {
+        e.preventDefault();
+        $("#addPatientTab").tab("show");
+      });
+      $form[0].reset();
       $("#billServiceName").val("");
       $("#billDoctorName").val("");
       $("#billAppointmentDate").val("");
       $("#billDuration").val("");
+      $("#billItemsTableBody").empty();
+      itemCount = 0;
     }
   });
-}
 
-$("#addBillsTab").on("shown.bs.tab", function () {
-  const patientId = $("#patientIdForBill").val();
-  const $form = $("#addBillsForm");
-  const $alert = $form.find(".alert-warning");
-
-  // Remove any existing alerts
-  $alert.remove();
-
-  if (patientId) {
-    // Patient ID exists, enable form and fetch details
-    updateBillDetails(patientId);
-    $form.find("input, button, select").prop("disabled", false);
-    $("#createBillBtn, #addBillItem").prop("disabled", false);
-  } else {
-    // No patient ID, disable form and show guidance
-    console.warn("No patient ID found for bill details update");
-    
-    // Disable all form inputs and buttons to prevent interaction
-    $form.find("input, button, select").prop("disabled", true);
-    $("#createBillBtn, #addBillItem").prop("disabled", true);
-    
-    // Add an alert to guide the user
-    $form.prepend(
-      '<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
-      'Please select a patient before creating a bill. ' +
-      '<a href="#" class="alert-link select-patient">Select a patient now</a>.' +
-      '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-      '</div>'
-    );
-
-    // Bind click event to redirect to Add Patient tab
-    $form.find(".select-patient").on("click", function (e) {
-      e.preventDefault();
-      $("#addPatientTab").tab("show");
-    });
-
-    // Reset form fields to avoid stale data
-    $form[0].reset();
-    $("#billServiceName").val("");
-    $("#billDoctorName").val("");
-    $("#billAppointmentDate").val("");
-    $("#billDuration").val("");
-    $("#billItemsTableBody").empty(); // Clear any existing bill items
-  }
-});
-
-  // Populate Doctor Dropdown (unchanged)
-  function populateDoctorDropdown() {
+  // Populate Doctor Dropdown
+  function populateDoctorDropdown(selectId, specialtyId) {
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
       type: "GET",
@@ -1452,6 +1459,7 @@ $("#addBillsTab").on("shown.bs.tab", function () {
   $('#newActionModal').on('hidden.bs.modal', function () {
     resetModalView();
     updateDetailsSection(null);
+    sessionStorage.removeItem("billPatientId");
   });
 
   // Initialize
