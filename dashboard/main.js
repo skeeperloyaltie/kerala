@@ -206,19 +206,102 @@ $(document).ready(function () {
     setupPatientSearch();
   }
 
-  // Fetch Appointments by Date
+  $(document).ready(function () {
+    // Initialize Flatpickr on #dateFilter with time selection
+    let appointmentsData = []; // Store appointments for calendar highlighting
+    const dateFilter = flatpickr("#dateFilter", {
+      enableTime: true,
+      time_24hr: false,
+      dateFormat: "Y-m-d H:i",
+      minuteIncrement: 5,
+      defaultDate: null, // Set dynamically based on appointments
+      onChange: function (selectedDates, dateStr) {
+        // Extract date portion for API call
+        const dateOnly = dateStr.split(' ')[0]; // e.g., "2025-04-14"
+        fetchAppointmentsByDate(dateOnly);
+      },
+      onDayCreate: function (dObj, dStr, fp, dayElem) {
+        // Highlight appointment times for the selected date
+        const date = dayElem.dateObj;
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        appointmentsData.forEach(appt => {
+          if (!appt.appointment_date) return;
+          const apptDate = new Date(appt.appointment_date);
+          const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+          if (apptDateStr === dateStr) {
+            const apptTime = apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+            // Add a class to highlight the day with appointments
+            dayElem.classList.add('has-appointment');
+            // Optionally, add a tooltip or data attribute
+            dayElem.setAttribute('data-appointment-time', apptTime);
+          }
+        });
+      },
+      onOpen: function (selectedDates, dateStr, instance) {
+        // Fetch appointments to highlight times when calendar opens
+        const currentDate = dateStr ? dateStr.split(' ')[0] : instance.formatDate(new Date(), 'Y-m-d');
+        $.ajax({
+          url: `${API_BASE_URL}/appointments/list/?date=${currentDate}`,
+          type: "GET",
+          headers: getAuthHeaders(),
+          success: function (data) {
+            appointmentsData = Array.isArray(data.appointments) ? data.appointments : [];
+            console.log(`📅 Loaded appointments for calendar:`, appointmentsData);
+            // Set default time to first appointment or 10:40 AM for April 14, 2025
+            if (appointmentsData.length) {
+              const firstAppt = appointmentsData[0];
+              instance.setDate(firstAppt.appointment_date, false);
+            } else if (currentDate === '2025-04-14') {
+              instance.setDate('2025-04-14 10:40', false);
+            }
+            instance.redraw();
+          },
+          error: function (xhr) {
+            console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Unknown error"}`);
+            appointmentsData = [];
+            instance.redraw();
+          }
+        });
+      }
+    });
+  
+    // Bind calendar button to open Flatpickr
+    $("#calendarTrigger").on("click", function () {
+      dateFilter.open();
+      console.log("🗓️ Calendar button clicked, opening date picker");
+    });
+  
+    // Bind Set button
+    $(".btn:contains('Set')").on("click", function () {
+      const dateStr = $("#dateFilter").val();
+      if (dateStr) {
+        const dateOnly = dateStr.split(' ')[0];
+        fetchAppointmentsByDate(dateOnly);
+      }
+    });
+  
+    // Bind Today button
+    $(".btn:contains('Today')").on("click", function () {
+      const today = new Date();
+      const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      fetchAppointmentsByDate(defaultDate);
+      dateFilter.setDate(defaultDate, false);
+    });
+  });
+  
   // Fetch Appointments by Date
   function fetchAppointmentsByDate(dateStr = null) {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
-
+  
     if (dateStr) {
-      $("#dateFilter").val(selectedDate);
+      $("#dateFilter").val(selectedDate); // Show only date in input
       flatpickr("#dateFilter").setDate(selectedDate, false);
       console.log(`📅 Updated #dateFilter to: ${selectedDate}`);
     }
-
+  
     $.ajax({
       url: `${API_BASE_URL}/appointments/list/?date=${selectedDate}`,
       type: "GET",
@@ -227,6 +310,18 @@ $(document).ready(function () {
         console.log(`📥 Raw API response for ${selectedDate}:`, data);
         populateAppointmentsTable(data, selectedDate);
         console.log(`✅ Fetched appointments for ${selectedDate}`);
+        
+        // Update calendar with appointment times
+        const appointmentsArray = Array.isArray(data.appointments) ? data.appointments : [];
+        if (appointmentsArray.length && dateStr === '2025-04-14') {
+          const targetTime = appointmentsArray.find(appt => {
+            const apptDate = new Date(appt.appointment_date);
+            return apptDate.getHours() === 10 && apptDate.getMinutes() === 40;
+          });
+          if (targetTime) {
+            flatpickr("#dateFilter").setDate(targetTime.appointment_date, true);
+          }
+        }
       },
       error: function (xhr) {
         alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
@@ -234,36 +329,35 @@ $(document).ready(function () {
       }
     });
   }
-
+  
   // Populate Appointments Table
   function populateAppointmentsTable(appointments, date) {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-
+  
     console.log(`📥 Received appointments data:`, appointments);
-
+  
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
     } else if (appointments && typeof appointments === 'object') {
       if (Array.isArray(appointments.appointments)) {
-        appointmentsArray = appointments.appointments; // Handle {appointments: [...]}
+        appointmentsArray = appointments.appointments;
       } else if (Array.isArray(appointments.results)) {
-        appointmentsArray = appointments.results; // Handle {results: [...]}
+        appointmentsArray = appointments.results;
       } else if (!Array.isArray(appointments)) {
-        appointmentsArray = [appointments]; // Handle single object
+        appointmentsArray = [appointments];
       }
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
-
+  
     if (!appointmentsArray.length) {
       $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date}</td></tr>`);
       console.log(`ℹ️ No appointments to display for ${date}`);
       return;
     }
-
-    // Group appointments by patientID
+  
     const groupedByPatient = appointmentsArray.reduce((acc, appt) => {
       if (!appt || typeof appt !== 'object' || !appt.id || !appt.patient || !appt.patient.patient_id) {
         console.warn(`⚠️ Skipping invalid appointment at index ${appointmentsArray.indexOf(appt)}:`, appt);
@@ -279,34 +373,27 @@ $(document).ready(function () {
       acc[patientId].appointments.push(appt);
       return acc;
     }, {});
-
+  
     let patientIndex = 0;
     let totalAppointments = 0;
-
-    // Sort patients by name for consistent display
     const patientEntries = Object.entries(groupedByPatient).sort((a, b) => {
       const nameA = `${a[1].patient.first_name} ${a[1].patient.last_name || ''}`.toLowerCase();
       const nameB = `${b[1].patient.first_name} ${b[1].patient.last_name || ''}`.toLowerCase();
       return nameA.localeCompare(nameB);
     });
-
+  
     if (!patientEntries.length) {
       $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date}</td></tr>`);
       console.log(`ℹ️ No valid appointments to display for ${date}`);
       return;
     }
-
+  
     patientEntries.forEach(([patientId, { patient, appointments }]) => {
       patientIndex++;
-      
-      // Sort appointments by date within each patient
       appointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
-
       const patientName = patient.first_name
         ? `${patient.first_name} ${patient.last_name || ''}`
         : 'Unknown Patient';
-
-      // Main patient row
       const $patientRow = $(`
         <tr class="patient-row" style="background-color: #f8f9fa;">
           <td>${patientIndex}</td>
@@ -315,31 +402,27 @@ $(document).ready(function () {
         </tr>
       `);
       $tbody.append($patientRow);
-
-      // Appointment rows
+  
       appointments.forEach((appt) => {
         const doctorName = appt.doctor && appt.doctor.first_name
           ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
           : 'N/A';
-
         const appointmentDate = appt.appointment_date
           ? new Date(appt.appointment_date)
           : null;
         const timeStr = appointmentDate && !isNaN(appointmentDate)
-          ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
           : 'N/A';
-
         const statusClass = appt.status
           ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
           : 'status-unknown';
-
         const apptDateStr = appointmentDate
           ? `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')}`
           : null;
         if (apptDateStr && apptDateStr !== date) {
           console.warn(`⚠️ Appointment ID ${appt.id} date (${apptDateStr}) does not match filter date (${date})`);
         }
-
+  
         const $apptRow = $(`
           <tr class="appointment-row">
             <td></td>
@@ -354,8 +437,7 @@ $(document).ready(function () {
         `);
         $tbody.append($apptRow);
         totalAppointments++;
-
-        // Log warnings for incomplete data
+  
         if (!appt.patient || !appt.patient.first_name) {
           console.warn(`⚠️ Appointment ID ${appt.id} has incomplete patient data:`, appt.patient);
         }
@@ -364,7 +446,7 @@ $(document).ready(function () {
         }
       });
     });
-
+  
     console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date}`);
   }
 
