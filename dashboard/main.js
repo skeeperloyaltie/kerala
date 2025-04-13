@@ -208,38 +208,32 @@ $(document).ready(function () {
 
   $(document).ready(function () {
     // Initialize Flatpickr on #dateFilter with time selection
-    let appointmentsData = []; // Store appointments for calendar highlighting
+    let appointmentsData = [];
     const dateFilter = flatpickr("#dateFilter", {
       enableTime: true,
       time_24hr: false,
       dateFormat: "Y-m-d H:i",
       minuteIncrement: 5,
-      defaultDate: null, // Set dynamically based on appointments
+      defaultDate: null,
       onChange: function (selectedDates, dateStr) {
-        // Extract date portion for API call
-        const dateOnly = dateStr.split(' ')[0]; // e.g., "2025-04-14"
+        const dateOnly = dateStr.split(' ')[0];
         fetchAppointmentsByDate(dateOnly);
       },
       onDayCreate: function (dObj, dStr, fp, dayElem) {
-        // Highlight appointment times for the selected date
         const date = dayElem.dateObj;
         const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        
         appointmentsData.forEach(appt => {
           if (!appt.appointment_date) return;
           const apptDate = new Date(appt.appointment_date);
           const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
           if (apptDateStr === dateStr) {
             const apptTime = apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-            // Add a class to highlight the day with appointments
             dayElem.classList.add('has-appointment');
-            // Optionally, add a tooltip or data attribute
             dayElem.setAttribute('data-appointment-time', apptTime);
           }
         });
       },
       onOpen: function (selectedDates, dateStr, instance) {
-        // Fetch appointments to highlight times when calendar opens
         const currentDate = dateStr ? dateStr.split(' ')[0] : instance.formatDate(new Date(), 'Y-m-d');
         $.ajax({
           url: `${API_BASE_URL}/appointments/list/?date=${currentDate}`,
@@ -248,12 +242,8 @@ $(document).ready(function () {
           success: function (data) {
             appointmentsData = Array.isArray(data.appointments) ? data.appointments : [];
             console.log(`📅 Loaded appointments for calendar:`, appointmentsData);
-            // Set default time to first appointment or 10:40 AM for April 14, 2025
             if (appointmentsData.length) {
-              const firstAppt = appointmentsData[0];
-              instance.setDate(firstAppt.appointment_date, false);
-            } else if (currentDate === '2025-04-14') {
-              instance.setDate('2025-04-14 10:40', false);
+              instance.setDate(appointmentsData[0].appointment_date, false);
             }
             instance.redraw();
           },
@@ -265,13 +255,13 @@ $(document).ready(function () {
         });
       }
     });
-  
-    // Bind calendar button to open Flatpickr
+
+    // Bind calendar button
     $("#calendarTrigger").on("click", function () {
       dateFilter.open();
       console.log("🗓️ Calendar button clicked, opening date picker");
     });
-  
+
     // Bind Set button
     $(".btn:contains('Set')").on("click", function () {
       const dateStr = $("#dateFilter").val();
@@ -280,7 +270,7 @@ $(document).ready(function () {
         fetchAppointmentsByDate(dateOnly);
       }
     });
-  
+
     // Bind Today button
     $(".btn:contains('Today')").on("click", function () {
       const today = new Date();
@@ -288,16 +278,41 @@ $(document).ready(function () {
       fetchAppointmentsByDate(defaultDate);
       dateFilter.setDate(defaultDate, false);
     });
+
+    // Bind navigation filters
+    function bindNavFilters() {
+      $('.navbar-secondary .nav-item a').on('click', function (e) {
+        e.preventDefault();
+        const section = $(this).data('section');
+        console.log(`🖱️ Filter clicked: ${section}`);
+        
+        // Update active class
+        $('.navbar-secondary .nav-item a').removeClass('active');
+        $(this).addClass('active');
+        
+        // Get current date from #dateFilter
+        const dateStr = $("#dateFilter").val();
+        const dateOnly = dateStr ? dateStr.split(' ')[0] : null;
+        fetchAppointmentsByDate(dateOnly, section);
+      });
+    }
+
+    // Call existing initialization functions
+    console.log("🚀 Initializing Dashboard...");
+    checkAuthentication();
+    bindDateFilterButtons();
+    bindNavFilters(); // Add filter binding
+    console.log("✅ Dashboard Initialization Complete");
   });
   
   // Fetch Appointments by Date
-  function fetchAppointmentsByDate(dateStr = null) {
+  function fetchAppointmentsByDate(dateStr = null, filter = 'all') {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
   
     if (dateStr) {
-      $("#dateFilter").val(selectedDate); // Show only date in input
+      $("#dateFilter").val(selectedDate);
       flatpickr("#dateFilter").setDate(selectedDate, false);
       console.log(`📅 Updated #dateFilter to: ${selectedDate}`);
     }
@@ -308,35 +323,47 @@ $(document).ready(function () {
       headers: getAuthHeaders(),
       success: function (data) {
         console.log(`📥 Raw API response for ${selectedDate}:`, data);
-        populateAppointmentsTable(data, selectedDate);
-        console.log(`✅ Fetched appointments for ${selectedDate}`);
-        
-        // Update calendar with appointment times
-        const appointmentsArray = Array.isArray(data.appointments) ? data.appointments : [];
-        if (appointmentsArray.length && dateStr === '2025-04-14') {
-          const targetTime = appointmentsArray.find(appt => {
-            const apptDate = new Date(appt.appointment_date);
-            return apptDate.getHours() === 10 && apptDate.getMinutes() === 40;
-          });
-          if (targetTime) {
-            flatpickr("#dateFilter").setDate(targetTime.appointment_date, true);
-          }
-        }
+        populateAppointmentsTable(data, selectedDate, filter);
+        console.log(`✅ Fetched appointments for ${selectedDate} with filter ${filter}`);
       },
       error: function (xhr) {
         alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
-        populateAppointmentsTable([], selectedDate);
+        populateAppointmentsTable([], selectedDate, filter);
+      }
+    });
+  }
+
+  function updateAppointmentStatus(appointmentId, newStatus, $row, selectedDate) {
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+      type: "PATCH",
+      headers: getAuthHeaders(),
+      data: JSON.stringify({ status: newStatus }),
+      contentType: "application/json",
+      success: function (updatedAppointment) {
+        console.log(`✅ Updated appointment ${appointmentId} to status ${newStatus}`);
+        // Update the row's status display
+        const statusClass = newStatus ? `status-${newStatus.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+        $row.find('.status-select').val(newStatus);
+        $row.find('.status-cell').html(`<span class="${statusClass}">${newStatus.toUpperCase()}</span>`);
+      },
+      error: function (xhr) {
+        console.error(`❌ Failed to update appointment ${appointmentId}:`, xhr.responseJSON || xhr.statusText);
+        alert(`Failed to update status: ${xhr.responseJSON?.error || "Unknown error"}`);
+        // Revert dropdown to original value
+        $row.find('.status-select').val($row.find('.status-select').data('original-status'));
       }
     });
   }
   
   // Populate Appointments Table
-  function populateAppointmentsTable(appointments, date) {
+  // Populate Appointments Table
+  function populateAppointmentsTable(appointments, date, filter = 'all') {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-  
+
     console.log(`📥 Received appointments data:`, appointments);
-  
+
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
@@ -351,13 +378,29 @@ $(document).ready(function () {
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
-  
+
+    // Map filter to statuses
+    const statusMap = {
+      'all': ['waiting', 'scheduled', 'pending', 'active', 'completed', 'canceled', 'rescheduled'],
+      'booked': ['scheduled', 'pending'],
+      'arrived': ['waiting'],
+      'on-going': ['active'],
+      'reviewed': ['completed']
+    };
+    const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
+
+    // Filter appointments by status
+    appointmentsArray = appointmentsArray.filter(appt => {
+      if (!appt || !appt.status) return false;
+      return allowedStatuses.includes(appt.status.toLowerCase());
+    });
+
     if (!appointmentsArray.length) {
-      $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date}</td></tr>`);
-      console.log(`ℹ️ No appointments to display for ${date}`);
+      $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date} (${filter})</td></tr>`);
+      console.log(`ℹ️ No appointments to display for ${date} with filter ${filter}`);
       return;
     }
-  
+
     const groupedByPatient = appointmentsArray.reduce((acc, appt) => {
       if (!appt || typeof appt !== 'object' || !appt.id || !appt.patient || !appt.patient.patient_id) {
         console.warn(`⚠️ Skipping invalid appointment at index ${appointmentsArray.indexOf(appt)}:`, appt);
@@ -373,7 +416,7 @@ $(document).ready(function () {
       acc[patientId].appointments.push(appt);
       return acc;
     }, {});
-  
+
     let patientIndex = 0;
     let totalAppointments = 0;
     const patientEntries = Object.entries(groupedByPatient).sort((a, b) => {
@@ -381,13 +424,24 @@ $(document).ready(function () {
       const nameB = `${b[1].patient.first_name} ${b[1].patient.last_name || ''}`.toLowerCase();
       return nameA.localeCompare(nameB);
     });
-  
+
     if (!patientEntries.length) {
-      $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date}</td></tr>`);
-      console.log(`ℹ️ No valid appointments to display for ${date}`);
+      $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date} (${filter})</td></tr>`);
+      console.log(`ℹ️ No valid appointments to display for ${date} with filter ${filter}`);
       return;
     }
-  
+
+    // Define STATUS_CHOICES from Django model
+    const STATUS_CHOICES = [
+      { value: 'waiting', label: 'Waiting' },
+      { value: 'scheduled', label: 'Scheduled' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'active', label: 'Active' },
+      { value: 'completed', label: 'Completed' },
+      { value: 'canceled', label: 'Canceled' },
+      { value: 'rescheduled', label: 'Rescheduled' }
+    ];
+
     patientEntries.forEach(([patientId, { patient, appointments }]) => {
       patientIndex++;
       appointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
@@ -402,7 +456,7 @@ $(document).ready(function () {
         </tr>
       `);
       $tbody.append($patientRow);
-  
+
       appointments.forEach((appt) => {
         const doctorName = appt.doctor && appt.doctor.first_name
           ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
@@ -411,7 +465,7 @@ $(document).ready(function () {
           ? new Date(appt.appointment_date)
           : null;
         const timeStr = appointmentDate && !isNaN(appointmentDate)
-          ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+          ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
           : 'N/A';
         const statusClass = appt.status
           ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
@@ -422,7 +476,11 @@ $(document).ready(function () {
         if (apptDateStr && apptDateStr !== date) {
           console.warn(`⚠️ Appointment ID ${appt.id} date (${apptDateStr}) does not match filter date (${date})`);
         }
-  
+
+        // Create status dropdown
+        let statusOptions = STATUS_CHOICES.map(choice => 
+          `<option value="${choice.value}" ${appt.status === choice.value ? 'selected' : ''}>${choice.label}</option>`
+        ).join('');
         const $apptRow = $(`
           <tr class="appointment-row">
             <td></td>
@@ -430,14 +488,18 @@ $(document).ready(function () {
             <td></td>
             <td>${appt.id}</td>
             <td>${timeStr}</td>
-            <td><span class="${statusClass}">${appt.status ? appt.status.toUpperCase() : 'UNKNOWN'}</span></td>
+            <td class="status-cell">
+              <select class="form-select form-select-sm status-select" data-appointment-id="${appt.id}" data-original-status="${appt.status}">
+                ${statusOptions}
+              </select>
+            </td>
             <td>${doctorName}</td>
             <td>${appt.notes || 'N/A'}</td>
           </tr>
         `);
         $tbody.append($apptRow);
         totalAppointments++;
-  
+
         if (!appt.patient || !appt.patient.first_name) {
           console.warn(`⚠️ Appointment ID ${appt.id} has incomplete patient data:`, appt.patient);
         }
@@ -446,8 +508,18 @@ $(document).ready(function () {
         }
       });
     });
-  
-    console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date}`);
+
+    // Bind status change event
+    $('.status-select').off('change').on('change', function () {
+      const $select = $(this);
+      const appointmentId = $select.data('appointment-id');
+      const newStatus = $select.val();
+      const $row = $select.closest('tr');
+      console.log(`🖱️ Status change for appointment ${appointmentId} to ${newStatus}`);
+      updateAppointmentStatus(appointmentId, newStatus, $row, date);
+    });
+
+    console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date} (${filter})`);
   }
 
   // Bind Date Filter Buttons
