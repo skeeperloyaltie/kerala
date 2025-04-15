@@ -1730,6 +1730,8 @@ $(document).ready(function () {
             // Fallback to the appointmentDate from the popup
             appointmentDateStr = appointmentDate.split(' ')[0]; // Extract YYYY-MM-DD
           }
+          fetchBills();
+
   
           // Refresh appointments table with the appointment date
           if (appointmentDateStr) {
