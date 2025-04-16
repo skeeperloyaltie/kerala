@@ -23,6 +23,17 @@ $(document).ready(function () {
     dateFormat: "Y-m-d",
     defaultDate: new Date(),
     allowInput: true,
+    minDate: "1900-01-01", // Optional
+    onReady: function(selectedDates, dateStr, instance) {
+      const currentYear = new Date().getFullYear();
+      const years = [];
+      for (let year = currentYear; year >= 1900; year--) {
+        years.push(year);
+      }
+      instance.yearElements[0].innerHTML = years.map(year => 
+        `<option value="${year}" ${year === currentYear ? "selected" : ""}>${year}</option>`
+      ).join("");
+    },
     onChange: function (selectedDates, dateStr) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
       fetchAppointmentsByDate(dateStr);
