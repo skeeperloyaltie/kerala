@@ -36,8 +36,10 @@ function initializeDatePickers() {
       defaultDate: ["billDate"].includes(inputId) ? "today" : null,
       appendTo: document.body,
       position: "auto",
-      allowInput: true, // Ensure manual input is allowed
-      onOpen: function(selectedDates, dateStr, instance) {
+      allowInput: true,
+      // Add year range for patientDOB and maritalSince
+      yearRange: ["patientDOB", "maritalSince"].includes(inputId) ? [1900, new Date().getFullYear()] : undefined,
+      onReady: function(selectedDates, dateStr, instance) {
         const calendar = instance.calendarContainer;
         const inputRect = $input[0].getBoundingClientRect();
         const calendarRect = calendar.getBoundingClientRect();
@@ -64,8 +66,25 @@ function initializeDatePickers() {
           calendar.style.left = inputRect.left + "px";
           calendar.style.right = "auto";
         }
-      },
-      onReady: function(selectedDates, dateStr, instance) {
+
+        // Customize year dropdown for patientDOB and maritalSince
+        if (["patientDOB", "maritalSince"].includes(inputId)) {
+          const yearElement = instance.yearElements[0];
+          yearElement.classList.add("flatpickr-year");
+          // Clear existing options
+          yearElement.innerHTML = "";
+          // Populate years from current year to 1900 (descending)
+          const currentYear = new Date().getFullYear();
+          for (let year = currentYear; year >= 1900; year--) {
+            const option = document.createElement("option");
+            option.value = year;
+            option.text = year;
+            yearElement.appendChild(option);
+          }
+          // Ensure the selected year is in view
+          yearElement.value = instance.currentYear || currentYear;
+        }
+
         const buttonContainer = document.createElement("div");
         buttonContainer.style.display = "flex";
         buttonContainer.style.justifyContent = "center";
@@ -101,6 +120,13 @@ function initializeDatePickers() {
           instance.altInput.removeAttribute("readonly");
         }
       },
+      onOpen: function(selectedDates, dateStr, instance) {
+        // Ensure year dropdown is updated when picker opens
+        if (["patientDOB", "maritalSince"].includes(inputId)) {
+          const yearElement = instance.yearElements[0];
+          yearElement.value = instance.currentYear || new Date().getFullYear();
+        }
+      },
       onClose: function(selectedDates, dateStr, instance) {
         if (selectedDates.length === 0) {
           $input.val("");
@@ -120,7 +146,7 @@ function initializeDatePickers() {
     if ($input.attr("readonly")) {
       $input.next(".flatpickr-input").prop("readonly", true);
     } else {
-      $input.next(".flatpickr-input").prop("readonly", false); // Explicitly allow editing
+      $input.next(".flatpickr-input").prop("readonly", false);
     }
   });
 }
