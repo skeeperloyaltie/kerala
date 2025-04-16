@@ -92,6 +92,96 @@ $(document).ready(function () {
     });
   }
 
+  // Fetch Indian Cities for Autocomplete
+  let indianCities = [];
+
+  function fetchIndianCities() {
+      console.log("🌍 Fetching Indian cities...");
+      $.ajax({
+          url: "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/cities.json",
+          // url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
+          type: "GET",
+          cache: true,
+          success: function (data) {
+              indianCities = data.filter(city => city.country_code === "IN").map(city => ({
+                name: city.name,
+                state: city.state_name
+              }));
+              console.log(`✅ Loaded ${indianCities.length} Indian cities`);
+          },
+          error: function (xhr) {
+              console.error("❌ Failed to fetch Indian cities:", xhr.statusText);
+              indianCities = []; // Fallback to empty list
+              alert("Failed to load city suggestions. Please type manually.");
+          }
+      });
+  }
+
+  // Setup City Autocomplete
+  function setupCityAutocomplete(inputId) {
+      const $input = $(`#${inputId}`);
+      const $dropdown = $('<ul class="autocomplete-dropdown city-autocomplete"></ul>').hide();
+      $input.after($dropdown);
+
+      $input.on("input", debounce(function () {
+          const query = $input.val().trim().toLowerCase();
+          console.log(`🔍 City search for ${inputId}: ${query}`);
+          $dropdown.empty();
+
+          if (query.length < 1) {
+              $dropdown.hide();
+              return;
+          }
+
+          const filteredCities = indianCities.filter(city =>
+              city.name.toLowerCase().startsWith(query)
+          );
+
+          if (filteredCities.length === 0) {
+              $dropdown.append('<li class="dropdown-item disabled">No cities found</li>');
+          } else {
+              filteredCities.slice(0, 10).forEach(city => { // Limit to 10 suggestions
+                  $dropdown.append(
+                      `<li class="dropdown-item" data-city="${city.name}">${city.name}, ${city.state}</li>`
+                  );
+              });
+          }
+          $dropdown.show();
+      }, 300));
+
+      // Handle city selection
+      $dropdown.on("click", "li:not(.disabled)", function () {
+          const cityName = $(this).data("city");
+          $input.val(cityName);
+          $dropdown.hide();
+          console.log(`✅ Selected city for ${inputId}: ${cityName}`);
+      });
+
+      // Hide dropdown on outside click
+      $(document).on("click", function (e) {
+          if (!$(e.target).closest(`#${inputId}, .city-autocomplete`).length) {
+              $dropdown.hide();
+          }
+      });
+
+      // Handle Enter key to select first suggestion
+      $input.on("keydown", function (e) {
+          if (e.key === "Enter" && $dropdown.is(":visible")) {
+              const $firstItem = $dropdown.find("li:not(.disabled):first");
+              if ($firstItem.length) {
+                  $input.val($firstItem.data("city"));
+                  $dropdown.hide();
+                  e.preventDefault();
+              }
+          }
+      });
+  }
+
+    // Initialize City Autocomplete
+  fetchIndianCities();
+  setupCityAutocomplete("patientCity");
+  setupCityAutocomplete("profileCity");
+
   // Role-Based UI Adjustments
   function adjustUIForRole(userType, roleLevel) {
     console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
@@ -757,7 +847,6 @@ $(document).ready(function () {
   function populateProfileTab(data) {
     const patient = data.patient || data;
     console.log("📋 Populating profile tab with data:", patient);
-  
     $('#profileFirstName').val(patient.first_name || '');
     $('#profileLastName').val(patient.last_name || '');
     $('#profilePhone').val(patient.mobile_number || '');
@@ -767,27 +856,26 @@ $(document).ready(function () {
     $('#profileFatherName').val(patient.father_name || 'N/A');
     $('#profileMaritalStatus').val(patient.marital_status || 'N/A');
     $('#profilePaymentPreference').val(patient.payment_preference || 'N/A');
-  
     const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
     if (appointment && appointment.appointment_date) {
       const appointmentDate = new Date(appointment.appointment_date);
       const formattedDate = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${String(appointmentDate.getHours()).padStart(2, '0')}:${String(appointmentDate.getMinutes()).padStart(2, '0')}`;
       $('#profileAppointmentDate').val(formattedDate);
     } else {
-      $('#profileAppointmentDate').val('N/A');
+        $('#profileAppointmentDate').val('N/A');
     }
-  
+
     $('#profileCity').val(patient.city || '');
     $('#profileAddress').val(patient.address || '');
     $('#profilePin').val(patient.pincode || '');
     $('#profileMaritalSince').val(patient.marital_since || '');
     $('#profileBloodGroup').val(patient.blood_group || '');
     $('#profileReferredBy').val(patient.referred_by || '');
-  
+
     const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
     $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
     $('#profileDoctorSpecialty').val(doctor.specialization || '');
-  
+
     $('#profileChannel').val(patient.channel || '');
     $('#profileCIO').val(patient.cio || '');
     $('#profileOccupation').val(patient.occupation || '');
@@ -806,28 +894,72 @@ $(document).ready(function () {
     $('#profileAdmissionType').val(patient.admission_type || '');
     $('#profileHospitalCode').val(patient.hospital_code || '');
     $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
-  
-    // Assuming initializeDatePickers is defined elsewhere
-    if (typeof initializeDatePickers === 'function') initializeDatePickers();
-  
+
+    // Toggle readonly for profile fields
+    const $profileFields = $('#profileCity, #profileAddress, #profilePin');
+    $profileFields.prop('readonly', true);
+
+    // Add edit toggle button if not already present
+    if (!$('#toggleProfileEdit').length) {
+        const $editButton = $('<button class="btn btn-sm btn-outline-primary ms-2" id="toggleProfileEdit">Edit</button>');
+        $('#profileCity').closest('.input-group').append($editButton);
+
+        $editButton.on('click', function () {
+            const isReadonly = $profileFields.prop('readonly');
+            $profileFields.prop('readonly', !isReadonly);
+            $(this).text(isReadonly ? 'Save' : 'Edit');
+            if (!isReadonly) {
+                // Save changes
+                const patientId = selectedPatientId || patient.patient_id;
+                if (!patientId) {
+                    alert("No patient ID found. Please select a patient.");
+                    return;
+                }
+                const updatedData = {
+                    city: $('#profileCity').val(),
+                    address: $('#profileAddress').val(),
+                    pincode: $('#profilePin').val()
+                };
+                $.ajax({
+                    url: `${API_BASE_URL}/patients/patients/${patientId}/`,
+                    type: "PATCH",
+                    headers: getAuthHeaders(),
+                    data: JSON.stringify(updatedData),
+                    contentType: "application/json",
+                    success: function () {
+                        console.log(`✅ Updated patient ${patientId} address details`);
+                        alert("Address details updated successfully!");
+                    },
+                    error: function (xhr) {
+                        console.error(`❌ Failed to update patient ${patientId}:`, xhr.responseJSON || xhr.statusText);
+                        alert(`Failed to update address: ${xhr.responseJSON?.error || "Unknown error"}`);
+                    }
+                });
+            }
+        });
+    }
+
+    // Reinitialize autocomplete for profileCity
+    setupCityAutocomplete("profileCity");
+
     $('#editProfileBtn').off('click').on('click', function () {
-      populateAddPatientForm(patient, appointment);
-      $('#addPatientTab').tab('show');
+        populateAddPatientForm(patient, appointment);
+        $('#addPatientTab').tab('show');
     });
-  
+
     $('#viewAppointmentsBtn').off('click').on('click', function () {
-      alert('View Appointments functionality TBD');
+        alert('View Appointments functionality TBD');
     });
-  
+
     $('#addBillFromProfileBtn').off('click').on('click', function () {
-      selectedPatientId = patient.patient_id; // Update global variable
-      $('#patientIdForBill').val(patient.patient_id || '');
-      sessionStorage.setItem("billPatientId", patient.patient_id || '');
-      $('#addBillsTab').tab('show');
+        selectedPatientId = patient.patient_id;
+        $('#patientIdForBill').val(patient.patient_id || '');
+        sessionStorage.setItem("billPatientId", patient.patient_id || '');
+        $('#addBillsTab').tab('show');
     });
-  
+
     console.log("✅ Profile tab populated with patient data:", patient);
-  }
+}
 
   // Update Details Section
   function updateDetailsSection(data) {
