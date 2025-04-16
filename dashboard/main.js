@@ -1106,30 +1106,47 @@ $(document).ready(function () {
   }
 
   // Show Create Patient Prompt
+  // Show Create Patient Prompt
   function showCreatePatientPrompt(query) {
     const [firstName, ...lastNameParts] = query.split(' ');
     const lastName = lastNameParts.join(' ');
 
-    const promptModal = new bootstrap.Modal(document.createElement('div'));
-    $(promptModal._element).html(`
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Patient Not Found</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <p>No patient found matching "${query}". Would you like to create a new patient?</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Search Again</button>
-            <button type="button" class="btn btn-primary" id="createPatientBtn">Create Patient</button>
+    // Create modal with proper Bootstrap classes and centered positioning
+    const modalHtml = `
+      <div class="modal fade" id="noPatientFoundModal" tabindex="-1" aria-labelledby="noPatientFoundModalLabel" aria-hidden="true" style="z-index: 1055;">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="noPatientFoundModalLabel">Patient Not Found</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>No patient found matching "${query}". Would you like to create a new patient?</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Search Again</button>
+              <button type="button" class="btn btn-primary" id="createPatientBtn">Create Patient</button>
+            </div>
           </div>
         </div>
       </div>
-    `);
+    `;
+
+    // Append modal to body
+    const $modal = $(modalHtml);
+    $('body').append($modal);
+
+    // Initialize Bootstrap modal
+    const promptModal = new bootstrap.Modal($modal[0], {
+      backdrop: 'static', // Prevent closing by clicking outside
+      keyboard: true, // Allow closing with ESC key
+      focus: true // Ensure modal is focused
+    });
+
+    // Show the modal
     promptModal.show();
 
+    // Handle Create Patient button click
     $('#createPatientBtn').on('click', function () {
       promptModal.hide();
       $('#newActionModal').modal('show');
@@ -1138,6 +1155,11 @@ $(document).ready(function () {
       $('#patientLastName').val(lastName);
       resetModalView();
       updateDetailsSection(null);
+    });
+
+    // Clean up modal after it is hidden
+    $modal.on('hidden.bs.modal', function () {
+      $modal.remove(); // Remove modal from DOM
     });
   }
 
