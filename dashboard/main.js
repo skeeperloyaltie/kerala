@@ -909,18 +909,18 @@ $(document).ready(function () {
     } else {
       $('#profileAppointmentDate').val('N/A');
     }
-
+  
     $('#profileCity').val(patient.city || '');
     $('#profileAddress').val(patient.address || '');
     $('#profilePin').val(patient.pincode || '');
     $('#profileMaritalSince').val(patient.marital_since || '');
     $('#profileBloodGroup').val(patient.blood_group || '');
     $('#profileReferredBy').val(patient.referred_by || '');
-
+  
     const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
     $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
     $('#profileDoctorSpecialty').val(doctor.specialization || '');
-
+  
     $('#profileChannel').val(patient.channel || '');
     $('#profileCIO').val(patient.cio || '');
     $('#profileOccupation').val(patient.occupation || '');
@@ -939,18 +939,22 @@ $(document).ready(function () {
     $('#profileAdmissionType').val(patient.admission_type || '');
     $('#profileHospitalCode').val(patient.hospital_code || '');
     $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
-
+  
     const $profileFields = $('#profileCity, #profileAddress, #profilePin');
     $profileFields.prop('readonly', true);
-
+  
     if (!$('#toggleProfileEdit').length) {
       const $editButton = $('<button class="btn btn-sm btn-outline-primary ms-2" id="toggleProfileEdit">Edit</button>');
       $('#profileCity').closest('.input-group').append($editButton);
-
-      $editButton.on('click', function () {
+  
+      $editButton.on('click', function (e) {
+        e.preventDefault(); // Prevent default behavior
+        e.stopPropagation(); // Stop event from bubbling to modal
+  
         const isReadonly = $profileFields.prop('readonly');
         $profileFields.prop('readonly', !isReadonly);
         $(this).text(isReadonly ? 'Save' : 'Edit');
+  
         if (!isReadonly) {
           const patientId = selectedPatientId || patient.patient_id;
           if (!patientId) {
@@ -980,25 +984,25 @@ $(document).ready(function () {
         }
       });
     }
-
+  
     setupCityAutocomplete("profileCity");
-
+  
     $('#editProfileBtn').off('click').on('click', function () {
       populateAddPatientForm(patient, appointment);
       $('#addPatientTab').tab('show');
     });
-
+  
     $('#viewAppointmentsBtn').off('click').on('click', function () {
       alert('View Appointments functionality TBD');
     });
-
+  
     $('#addBillFromProfileBtn').off('click').on('click', function () {
       selectedPatientId = patient.patient_id;
       $('#patientIdForBill').val(patient.patient_id || '');
       sessionStorage.setItem("billPatientId", patient.patient_id || '');
       $('#addBillsTab').tab('show');
     });
-
+  
     console.log("✅ Profile tab populated with patient data:", patient);
   }
 
@@ -1812,6 +1816,10 @@ $(document).ready(function () {
     const activeButton = e.originalEvent?.submitter?.id || "saveBill";
     console.log(`🖱️ Bill form submitted by button: ${activeButton}`);
   
+    // Disable submit buttons to prevent multiple submissions
+    const $submitButtons = $("#saveBill, #saveAndCreateAppointment");
+    $submitButtons.prop("disabled", true);
+  
     $.ajax({
       url: `${API_BASE_URL}/billing/bills/create/`,
       type: "POST",
@@ -1821,6 +1829,12 @@ $(document).ready(function () {
       success: function (response) {
         console.log("✅ Bill created successfully:", response);
         alert("Bill created successfully!");
+  
+        // Reset form and clear items
+        $("#addBillForm")[0].reset();
+        $("#billItemsTableBody").empty();
+        itemCount = 0;
+        sessionStorage.removeItem("billPatientId");
   
         if (activeButton === "saveAndCreateAppointment") {
           showAppointmentDatePopup(function (appointmentDate) {
@@ -1841,11 +1855,7 @@ $(document).ready(function () {
               success: function (apptResponse) {
                 console.log("✅ Appointment created successfully:", apptResponse);
                 alert("Appointment created successfully!");
-                $("#addBillForm")[0].reset();
-                $("#billItemsTableBody").empty();
-                itemCount = 0;
                 $("#newActionModal").modal("hide");
-                sessionStorage.removeItem("billPatientId");
                 fetchAppointmentsByDate();
               },
               error: function (xhr) {
@@ -1855,16 +1865,17 @@ $(document).ready(function () {
             });
           });
         } else {
-          $("#addBillForm")[0].reset();
-          $("#billItemsTableBody").empty();
-          itemCount = 0;
+          // Close modal for saveBill
           $("#newActionModal").modal("hide");
-          sessionStorage.removeItem("billPatientId");
         }
       },
       error: function (xhr) {
         console.error("❌ Failed to create bill:", xhr.responseJSON || xhr.statusText);
         alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+      },
+      complete: function () {
+        // Re-enable submit buttons
+        $submitButtons.prop("disabled", false);
       }
     });
   });
