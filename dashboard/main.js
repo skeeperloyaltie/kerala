@@ -1,9 +1,6 @@
 // main.js
 $(document).ready(function () {
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
-  fetchIndianCities();
-  setupCityAutocomplete("patientCity");
-  setupCityAutocomplete("profileCity");
 
   // Initialize intl-tel-input for phone numbers
   const phoneInput = document.querySelector("#patientPhone");
@@ -203,7 +200,9 @@ $(document).ready(function () {
   }
 
     // Initialize City Autocomplete
-  
+  fetchIndianCities();
+  setupCityAutocomplete("patientCity");
+  setupCityAutocomplete("profileCity");
 
   // Role-Based UI Adjustments
   function adjustUIForRole(userType, roleLevel) {
