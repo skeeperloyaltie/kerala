@@ -917,8 +917,9 @@ $(document).ready(function () {
     $('#profileBloodGroup').val(patient.blood_group || '');
     $('#profileReferredBy').val(patient.referred_by || '');
   
+    // Populate doctor dropdown
     const doctor = patient.primary_doctor || (appointment && appointment.doctor) || {};
-    $('#profileDoctor').val(doctor.first_name ? `${doctor.first_name} ${doctor.last_name || ''}` : 'N/A');
+    populateDoctorDropdownForProfile(doctor.id || null);
     $('#profileDoctorSpecialty').val(doctor.specialization || '');
   
     $('#profileChannel').val(patient.channel || '');
@@ -940,19 +941,21 @@ $(document).ready(function () {
     $('#profileHospitalCode').val(patient.hospital_code || '');
     $('#profileAppointmentNotes').val(appointment ? appointment.notes || '' : '');
   
-    const $profileFields = $('#profileCity, #profileAddress, #profilePin');
+    const $profileFields = $('#profileCity, #profileAddress, #profilePin, #profileDoctor');
     $profileFields.prop('readonly', true);
+    $('#profileDoctor').prop('disabled', true); // Ensure dropdown aligns with readonly state
   
     if (!$('#toggleProfileEdit').length) {
       const $editButton = $('<button class="btn btn-sm btn-outline-primary ms-2" id="toggleProfileEdit">Edit</button>');
       $('#profileCity').closest('.input-group').append($editButton);
   
       $editButton.on('click', function (e) {
-        e.preventDefault(); // Prevent default behavior
-        e.stopPropagation(); // Stop event from bubbling to modal
+        e.preventDefault();
+        e.stopPropagation();
   
-        const isReadonly = $profileFields.prop('readonly');
+        const isReadonly = $profileFields.prop('readonly') || $('#profileDoctor').prop('disabled');
         $profileFields.prop('readonly', !isReadonly);
+        $('#profileDoctor').prop('disabled', !isReadonly);
         $(this).text(isReadonly ? 'Save' : 'Edit');
   
         if (!isReadonly) {
@@ -964,7 +967,8 @@ $(document).ready(function () {
           const updatedData = {
             city: $('#profileCity').val(),
             address: $('#profileAddress').val(),
-            pincode: $('#profilePin').val()
+            pincode: $('#profilePin').val(),
+            primary_doctor: $('#profileDoctor').val() || null
           };
           $.ajax({
             url: `${API_BASE_URL}/patients/patients/${patientId}/`,
@@ -973,12 +977,12 @@ $(document).ready(function () {
             data: JSON.stringify(updatedData),
             contentType: "application/json",
             success: function () {
-              console.log(`✅ Updated patient ${patientId} address details`);
-              alert("Address details updated successfully!");
+              console.log(`✅ Updated patient ${patientId} address and doctor details`);
+              alert("Details updated successfully!");
             },
             error: function (xhr) {
               console.error(`❌ Failed to update patient ${patientId}:`, xhr.responseJSON || xhr.statusText);
-              alert(`Failed to update address: ${xhr.responseJSON?.error || "Unknown error"}`);
+              alert(`Failed to update details: ${xhr.responseJSON?.error || "Unknown error"}`);
             }
           });
         }
@@ -1030,6 +1034,50 @@ $(document).ready(function () {
       visitPadBtn.style.display = 'none';
       console.log("✅ Reset patient details section");
     }
+  }
+
+  function populateDoctorDropdownForProfile(selectedDoctorId = null) {
+    const $doctorSelect = $("#profileDoctor");
+    
+    // Ensure the field is a select element
+    if (!$doctorSelect.is("select")) {
+      $doctorSelect.replaceWith(
+        '<select class="form-control form-control-sm" id="profileDoctor" readonly></select>'
+      );
+    }
+  
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        const $select = $("#profileDoctor");
+        $select.empty();
+        $select.append('<option value="" selected>Select Doctor</option>');
+  
+        if (data.doctors && Array.isArray(data.doctors)) {
+          data.doctors.forEach(doctor => {
+            const isSelected = selectedDoctorId && doctor.id === selectedDoctorId ? "selected" : "";
+            $select.append(
+              `<option value="${doctor.id}" ${isSelected}>${doctor.first_name} ${doctor.last_name || ''}</option>`
+            );
+          });
+        } else {
+          console.warn("⚠️ No doctors found in response:", data);
+          $select.append('<option value="">No doctors available</option>');
+        }
+  
+        // Set readonly state to match profile fields
+        $select.prop("disabled", $("#profileCity").prop("readonly"));
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to fetch doctors for profile:", xhr.responseJSON || xhr.statusText);
+        $("#profileDoctor")
+          .empty()
+          .append('<option value="">Failed to load doctors</option>')
+          .prop("disabled", true);
+      }
+    });
   }
 
   function populateAddPatientForm(patient, appointment = null) {
