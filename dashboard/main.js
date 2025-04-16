@@ -98,14 +98,14 @@ $(document).ready(function () {
   function fetchIndianCities() {
       console.log("🌍 Fetching Indian cities...");
       $.ajax({
-          url: "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/cities.json",
-          // url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
+          // url: "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/cities.json",
+          url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
           type: "GET",
           cache: true,
           success: function (data) {
-              indianCities = data.filter(city => city.country_code === "IN").map(city => ({
-                name: city.name,
-                state: city.state_name
+              indianCities = data.map(city => ({
+                  name: city.name,
+                  state: city.state
               }));
               console.log(`✅ Loaded ${indianCities.length} Indian cities`);
           },
