@@ -98,10 +98,10 @@ $(document).ready(function () {
   let isFetchingCities = false;
 
   // Fetch Indian Cities for Autocomplete
-  function fetchIndianCities() {
+  function fetchIndianCities(attempt = 1, maxAttempts = 3) {
       if (isFetchingCities) return;
       isFetchingCities = true;
-      console.log("🌍 Fetching Indian cities...");
+      console.log(`🌍 Fetching Indian cities (attempt ${attempt})...`);
       $.ajax({
           url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
           type: "GET",
@@ -111,14 +111,19 @@ $(document).ready(function () {
                   name: city.name,
                   state: city.state
               }));
-              console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 5)); // Log first 5 for verification
+              console.log(`✅ Loaded ${indianCities.length} Indian cities`);
               isFetchingCities = false;
           },
           error: function (xhr) {
-              console.error("❌ Failed to fetch Indian cities:", xhr.statusText);
-              indianCities = []; // Fallback to empty list
-              alert("Failed to load city suggestions. Please type manually.");
+              console.error(`❌ Failed to fetch Indian cities (attempt ${attempt}):`, xhr.statusText);
               isFetchingCities = false;
+              if (attempt < maxAttempts) {
+                  console.log(`🔄 Retrying fetch (attempt ${attempt + 1})...`);
+                  setTimeout(() => fetchIndianCities(attempt + 1, maxAttempts), 1000);
+              } else {
+                  indianCities = [];
+                  alert("Failed to load city suggestions after multiple attempts. Please type manually.");
+              }
           }
       });
   }
@@ -135,10 +140,12 @@ $(document).ready(function () {
           console.log(`🔍 indianCities length: ${indianCities.length}`);
           $dropdown.empty();
 
-          if (query.length < 1) {
-              $dropdown.hide();
-              return;
-          }
+          if (query.length < 2) {
+            $dropdown.append('<li class="dropdown-item disabled">Type at least 2 characters</li>');
+            $dropdown.show();
+            return;
+          };
+        
 
           if (isFetchingCities) {
               $dropdown.append('<li class="dropdown-item disabled">Loading cities...</li>');
@@ -154,7 +161,7 @@ $(document).ready(function () {
 
           // Use includes for partial matches instead of startsWith
           const filteredCities = indianCities.filter(city =>
-              city.name.toLowerCase().includes(query)
+            city.name.toLowerCase().startsWith(query)
           );
 
           console.log(`🔍 Filtered cities:`, filteredCities);
