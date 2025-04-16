@@ -94,16 +94,19 @@ $(document).ready(function () {
 
   // Fetch Indian Cities for Autocomplete
     /// Global variable to track city fetch status
+  // Global variable to track city fetch status
   let indianCities = [];
   let isFetchingCities = false;
 
-  // Fallback city list for offline or failed fetch
+  // Fallback city list for testing
   const fallbackCities = [
       { name: "Mumbai", state: "Maharashtra" },
       { name: "Delhi", state: "Delhi" },
       { name: "Bengaluru", state: "Karnataka" },
       { name: "Chennai", state: "Tamil Nadu" },
-      { name: "Kolkata", state: "West Bengal" }
+      { name: "Kolkata", state: "West Bengal" },
+      { name: "Rajkot", state: "Gujarat" },
+      { name: "Bhopal", state: "Madhya Pradesh" }
   ];
 
   // Fetch Indian Cities for Autocomplete
@@ -118,15 +121,23 @@ $(document).ready(function () {
           url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
           type: "GET",
           cache: true,
-          timeout: 5000, // 5-second timeout
+          timeout: 5000,
           dataType: "json",
           success: function (data) {
-              indianCities = data.map(city => ({
-                  name: city.name,
-                  state: city.state
-              }));
-              console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 5));
+              indianCities = data
+                  .filter(city => city.name && typeof city.name === "string") // Ensure valid names
+                  .map(city => ({
+                      name: city.name.trim().replace(/\s+/g, " "), // Normalize whitespace
+                      state: city.state ? city.state.trim() : ""
+                  }));
+              console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 10)); // Log first 10
               isFetchingCities = false;
+              // Verify common cities
+              const testCities = ["Mumbai", "Delhi", "Bengaluru", "Rajkot", "Bhopal"];
+              testCities.forEach(city => {
+                  const found = indianCities.some(c => c.name.toLowerCase() === city.toLowerCase());
+                  console.log(`🔍 Test for ${city}: ${found ? "Found" : "Not found"}`);
+              });
           },
           error: function (xhr, status, error) {
               console.error(`❌ Failed to fetch Indian cities (attempt ${attempt}):`, { status, error, xhr });
@@ -137,6 +148,7 @@ $(document).ready(function () {
               } else {
                   console.warn("⚠️ Using fallback city list");
                   indianCities = fallbackCities;
+                  console.log(`✅ Loaded ${indianCities.length} fallback cities`, indianCities);
                   alert("Failed to load city suggestions. Using a basic city list.");
               }
           }
@@ -168,7 +180,6 @@ $(document).ready(function () {
               return;
           }
 
-          // Trigger fetch if cities are not loaded
           if (indianCities.length === 0) {
               console.log("⚠️ No cities loaded, attempting to fetch...");
               fetchIndianCities();
@@ -177,10 +188,14 @@ $(document).ready(function () {
               return;
           }
 
-          // Filter cities (using startsWith for now, can switch to includes)
-          const filteredCities = indianCities.filter(city =>
-              city.name.toLowerCase().startsWith(query)
-          );
+          // Filter cities with includes for broader matching
+          const filteredCities = indianCities.filter(city => {
+              const matches = city.name.toLowerCase().includes(query);
+              if (matches) {
+                  console.log(`✅ Match found: ${city.name} for query "${query}"`);
+              }
+              return matches;
+          });
 
           console.log(`🔍 Filtered cities:`, filteredCities);
 
