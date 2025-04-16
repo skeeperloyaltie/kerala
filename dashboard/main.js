@@ -93,36 +93,51 @@ $(document).ready(function () {
   }
 
   // Fetch Indian Cities for Autocomplete
-  // Global variable to track city fetch status
+    /// Global variable to track city fetch status
   let indianCities = [];
   let isFetchingCities = false;
 
+  // Fallback city list for offline or failed fetch
+  const fallbackCities = [
+      { name: "Mumbai", state: "Maharashtra" },
+      { name: "Delhi", state: "Delhi" },
+      { name: "Bengaluru", state: "Karnataka" },
+      { name: "Chennai", state: "Tamil Nadu" },
+      { name: "Kolkata", state: "West Bengal" }
+  ];
+
   // Fetch Indian Cities for Autocomplete
   function fetchIndianCities(attempt = 1, maxAttempts = 3) {
-      if (isFetchingCities) return;
+      if (isFetchingCities) {
+          console.log("⏳ Fetch already in progress, skipping...");
+          return;
+      }
       isFetchingCities = true;
       console.log(`🌍 Fetching Indian cities (attempt ${attempt})...`);
       $.ajax({
           url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
           type: "GET",
           cache: true,
+          timeout: 5000, // 5-second timeout
+          dataType: "json",
           success: function (data) {
               indianCities = data.map(city => ({
                   name: city.name,
                   state: city.state
               }));
-              console.log(`✅ Loaded ${indianCities.length} Indian cities`);
+              console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 5));
               isFetchingCities = false;
           },
-          error: function (xhr) {
-              console.error(`❌ Failed to fetch Indian cities (attempt ${attempt}):`, xhr.statusText);
+          error: function (xhr, status, error) {
+              console.error(`❌ Failed to fetch Indian cities (attempt ${attempt}):`, { status, error, xhr });
               isFetchingCities = false;
               if (attempt < maxAttempts) {
                   console.log(`🔄 Retrying fetch (attempt ${attempt + 1})...`);
                   setTimeout(() => fetchIndianCities(attempt + 1, maxAttempts), 1000);
               } else {
-                  indianCities = [];
-                  alert("Failed to load city suggestions after multiple attempts. Please type manually.");
+                  console.warn("⚠️ Using fallback city list");
+                  indianCities = fallbackCities;
+                  alert("Failed to load city suggestions. Using a basic city list.");
               }
           }
       });
@@ -138,14 +153,14 @@ $(document).ready(function () {
           const query = $input.val().trim().toLowerCase();
           console.log(`🔍 City search for ${inputId}: "${query}"`);
           console.log(`🔍 indianCities length: ${indianCities.length}`);
+
           $dropdown.empty();
 
           if (query.length < 2) {
-            $dropdown.append('<li class="dropdown-item disabled">Type at least 2 characters</li>');
-            $dropdown.show();
-            return;
-          };
-        
+              $dropdown.append('<li class="dropdown-item disabled">Type at least 2 characters</li>');
+              $dropdown.show();
+              return;
+          }
 
           if (isFetchingCities) {
               $dropdown.append('<li class="dropdown-item disabled">Loading cities...</li>');
@@ -153,15 +168,18 @@ $(document).ready(function () {
               return;
           }
 
+          // Trigger fetch if cities are not loaded
           if (indianCities.length === 0) {
-              $dropdown.append('<li class="dropdown-item disabled">Cities not loaded. Please try again.</li>');
+              console.log("⚠️ No cities loaded, attempting to fetch...");
+              fetchIndianCities();
+              $dropdown.append('<li class="dropdown-item disabled">Loading cities...</li>');
               $dropdown.show();
               return;
           }
 
-          // Use includes for partial matches instead of startsWith
+          // Filter cities (using startsWith for now, can switch to includes)
           const filteredCities = indianCities.filter(city =>
-            city.name.toLowerCase().startsWith(query)
+              city.name.toLowerCase().startsWith(query)
           );
 
           console.log(`🔍 Filtered cities:`, filteredCities);
@@ -169,7 +187,7 @@ $(document).ready(function () {
           if (filteredCities.length === 0) {
               $dropdown.append('<li class="dropdown-item disabled">No cities found</li>');
           } else {
-              filteredCities.slice(0, 10).forEach(city => { // Limit to 10 suggestions
+              filteredCities.slice(0, 10).forEach(city => {
                   $dropdown.append(
                       `<li class="dropdown-item" data-city="${city.name}">${city.name}, ${city.state}</li>`
                   );
