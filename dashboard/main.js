@@ -93,12 +93,16 @@ $(document).ready(function () {
   }
 
   // Fetch Indian Cities for Autocomplete
+  // Global variable to track city fetch status
   let indianCities = [];
+  let isFetchingCities = false;
 
+  // Fetch Indian Cities for Autocomplete
   function fetchIndianCities() {
+      if (isFetchingCities) return;
+      isFetchingCities = true;
       console.log("🌍 Fetching Indian cities...");
       $.ajax({
-          // url: "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/cities.json",
           url: "https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json",
           type: "GET",
           cache: true,
@@ -107,12 +111,14 @@ $(document).ready(function () {
                   name: city.name,
                   state: city.state
               }));
-              console.log(`✅ Loaded ${indianCities.length} Indian cities`);
+              console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 5)); // Log first 5 for verification
+              isFetchingCities = false;
           },
           error: function (xhr) {
               console.error("❌ Failed to fetch Indian cities:", xhr.statusText);
               indianCities = []; // Fallback to empty list
               alert("Failed to load city suggestions. Please type manually.");
+              isFetchingCities = false;
           }
       });
   }
@@ -125,7 +131,8 @@ $(document).ready(function () {
 
       $input.on("input", debounce(function () {
           const query = $input.val().trim().toLowerCase();
-          console.log(`🔍 City search for ${inputId}: ${query}`);
+          console.log(`🔍 City search for ${inputId}: "${query}"`);
+          console.log(`🔍 indianCities length: ${indianCities.length}`);
           $dropdown.empty();
 
           if (query.length < 1) {
@@ -133,9 +140,24 @@ $(document).ready(function () {
               return;
           }
 
+          if (isFetchingCities) {
+              $dropdown.append('<li class="dropdown-item disabled">Loading cities...</li>');
+              $dropdown.show();
+              return;
+          }
+
+          if (indianCities.length === 0) {
+              $dropdown.append('<li class="dropdown-item disabled">Cities not loaded. Please try again.</li>');
+              $dropdown.show();
+              return;
+          }
+
+          // Use includes for partial matches instead of startsWith
           const filteredCities = indianCities.filter(city =>
-              city.name.toLowerCase().startsWith(query)
+              city.name.toLowerCase().includes(query)
           );
+
+          console.log(`🔍 Filtered cities:`, filteredCities);
 
           if (filteredCities.length === 0) {
               $dropdown.append('<li class="dropdown-item disabled">No cities found</li>');
