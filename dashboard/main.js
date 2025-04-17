@@ -1358,8 +1358,15 @@ $(document).ready(function () {
   function populateDoctorDropdownForAddPatient(selectedDoctorId = null) {
     const $doctorSelect = $("#doctor");
   
+    // Verify the element exists
+    if (!$doctorSelect.length) {
+      console.error("❌ #doctor element not found in DOM");
+      return;
+    }
+  
     // Ensure the field is a select element
     if (!$doctorSelect.is("select")) {
+      console.log("🔄 Replacing #doctor with a select element");
       $doctorSelect.replaceWith(
         '<select class="form-control form-control-sm" id="doctor"></select>'
       );
@@ -1369,29 +1376,63 @@ $(document).ready(function () {
       url: `${API_BASE_URL}/appointments/doctors/list/`,
       type: "GET",
       headers: getAuthHeaders(),
+      beforeSend: function () {
+        console.log("📤 Fetching doctors for Add Patient dropdown...");
+        $doctorSelect.empty().append('<option value="" selected>Loading doctors...</option>');
+      },
       success: function (data) {
-        const $select = $("#doctor");
-        $select.empty();
-        $select.append('<option value="" selected>Select Doctor</option>');
+        console.log("🔍 Doctor list response:", data);
+        $doctorSelect.empty();
+        $doctorSelect.append('<option value="" selected>Select Doctor</option>');
   
-        if (data.doctors && Array.isArray(data.doctors)) {
-          data.doctors.forEach(doctor => {
-            const isSelected = selectedDoctorId && doctor.id === selectedDoctorId ? "selected" : "";
-            $select.append(
-              `<option value="${doctor.id}" ${isSelected}>${doctor.first_name} ${doctor.last_name || ''}</option>`
-            );
-          });
+        let doctors = [];
+        if (Array.isArray(data)) {
+          doctors = data; // Direct array
+        } else if (data.doctors && Array.isArray(data.doctors)) {
+          doctors = data.doctors;
+        } else if (data.results && Array.isArray(data.results)) {
+          doctors = data.results;
         } else {
           console.warn("⚠️ No doctors found in response:", data);
-          $select.append('<option value="">No doctors available</option>');
+          $doctorSelect.append('<option value="">No doctors available</option>');
+          return;
         }
+  
+        if (doctors.length === 0) {
+          console.warn("⚠️ Doctor list is empty");
+          $doctorSelect.append('<option value="">No doctors available</option>');
+          return;
+        }
+  
+        doctors.forEach(doctor => {
+          // Validate doctor ID and name
+          if (!doctor.id || (!doctor.first_name && !doctor.last_name)) {
+            console.warn("⚠️ Invalid doctor data:", doctor);
+            return;
+          }
+  
+          const isSelected = selectedDoctorId && doctor.id === selectedDoctorId ? "selected" : "";
+          const doctorName = `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim() || 'Unnamed Doctor';
+          $doctorSelect.append(
+            `<option value="${doctor.id}" ${isSelected}>${doctorName}</option>`
+          );
+        });
+  
+        console.log(`✅ Populated ${doctors.length} doctors in #doctor dropdown`);
       },
       error: function (xhr) {
         console.error("❌ Failed to fetch doctors for Add Patient form:", xhr.responseJSON || xhr.statusText);
-        $("#doctor")
+        $doctorSelect
           .empty()
           .append('<option value="">Failed to load doctors</option>')
           .prop("disabled", true);
+  
+        if (xhr.status === 401 || xhr.status === 403) {
+          alert("Authentication error. Please log in again.");
+          window.location.href = "../login/login.html";
+        } else {
+          alert(`Failed to fetch doctors: ${xhr.responseJSON?.error || "Unknown error"}`);
+        }
       }
     });
   }
@@ -2134,9 +2175,15 @@ $(document).ready(function () {
   }
   
   $("#newActionModal").on("show.bs.modal", function () {
+    // Reset modal view and other initializations already exist here
     resetModalView();
     updateDetailsSection(null);
     populateDoctorDropdownForBill();
+    // Add this to ensure the doctor dropdown is populated if Add Patient tab is the default
+    if ($('#addPatientTab').hasClass('active')) {
+      console.log("📋 Modal shown with Add Patient tab active, populating doctor dropdown...");
+      populateDoctorDropdownForAddPatient();
+    }
   });
   
   $("#newActionModal").on("hidden.bs.modal", function () {
