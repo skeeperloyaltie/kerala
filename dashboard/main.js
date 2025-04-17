@@ -1355,6 +1355,47 @@ $(document).ready(function () {
     console.log(`✅ Split view toggled for tab: ${tabId}`);
   }
 
+  function populateDoctorDropdownForAddPatient(selectedDoctorId = null) {
+    const $doctorSelect = $("#doctor");
+  
+    // Ensure the field is a select element
+    if (!$doctorSelect.is("select")) {
+      $doctorSelect.replaceWith(
+        '<select class="form-control form-control-sm" id="doctor"></select>'
+      );
+    }
+  
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        const $select = $("#doctor");
+        $select.empty();
+        $select.append('<option value="" selected>Select Doctor</option>');
+  
+        if (data.doctors && Array.isArray(data.doctors)) {
+          data.doctors.forEach(doctor => {
+            const isSelected = selectedDoctorId && doctor.id === selectedDoctorId ? "selected" : "";
+            $select.append(
+              `<option value="${doctor.id}" ${isSelected}>${doctor.first_name} ${doctor.last_name || ''}</option>`
+            );
+          });
+        } else {
+          console.warn("⚠️ No doctors found in response:", data);
+          $select.append('<option value="">No doctors available</option>');
+        }
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to fetch doctors for Add Patient form:", xhr.responseJSON || xhr.statusText);
+        $("#doctor")
+          .empty()
+          .append('<option value="">Failed to load doctors</option>')
+          .prop("disabled", true);
+      }
+    });
+  }
+
   $("#addPatientForm").submit(function (e) {
     e.preventDefault();
 
@@ -2147,6 +2188,11 @@ $(document).ready(function () {
       });
     }
     populateDoctorDropdownForBill();
+  });
+
+  $("#addPatientTab").on("shown.bs.tab", function () {
+    console.log("📋 Add Patient tab shown, populating doctor dropdown...");
+    populateDoctorDropdownForAddPatient();
   });
   
   checkAuthentication();
