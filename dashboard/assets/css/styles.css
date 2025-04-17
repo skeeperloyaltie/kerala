@@ -615,19 +615,112 @@ height: 100%;
 }
 
 .appointments-view {
-transition: opacity 0.3s ease;
-}
-#appointmentsCalendarView {
-padding: 15px;
-}
-#appointmentsCalendar {
-max-width: 900px;
-margin: 0 auto;
-}
-.fc-daygrid-day.has-appointment {
-background-color: #e3f2fd !important;
-}
-.fc-daygrid-day.has-appointment .fc-daygrid-day-number {
-color: #1976d2;
-font-weight: bold;
-}
+    transition: opacity 0.3s ease;
+  }
+  
+  #appointmentsCalendarView {
+    padding: 15px;
+    background-color: #1c2526; /* Dark background like Google Calendar */
+    border-radius: 8px;
+  }
+  
+  #appointmentsCalendar {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: #1c2526;
+    color: #e0e0e0; /* Light text for dark theme */
+  }
+  
+  /* Style for FullCalendar */
+  .fc {
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Header toolbar (prev, next, today) */
+  .fc .fc-toolbar {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 10px;
+    border-radius: 5px 5px 0 0;
+  }
+  
+  .fc .fc-toolbar-title {
+    font-size: 1.5em;
+    font-weight: bold;
+  }
+  
+  .fc .fc-button {
+    background-color: #3498db;
+    border: none;
+    color: white;
+  }
+  
+  .fc .fc-button:hover {
+    background-color: #2980b9;
+  }
+  
+  /* Day view styling */
+  .fc-timegrid {
+    background-color: #1c2526;
+  }
+  
+  .fc-timegrid-slot {
+    border-color: #34495e;
+    background-color: #1c2526;
+    color: #95a5a6;
+  }
+  
+  .fc-timegrid-slot-label {
+    color: #ecf0f1;
+    font-size: 0.9em;
+  }
+  
+  /* Event (appointment) styling */
+  .fc-event {
+    background-color: #3498db; /* Blue blocks like Google Calendar */
+    border: 1px solid #2980b9;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.9em;
+    padding: 2px 5px;
+  }
+  
+  .fc-event:hover {
+    background-color: #2980b9;
+  }
+  
+  /* Highlight current time line (like the red line in Google Calendar) */
+  .fc .fc-timegrid-now-indicator-line {
+    border-color: #e74c3c; /* Red line for current time */
+    border-width: 2px;
+  }
+  
+  /* Month view styling */
+  .fc-daygrid-day {
+    background-color: #2c3e50;
+    border-color: #34495e;
+  }
+  
+  .fc-daygrid-day-number {
+    color: #ecf0f1;
+  }
+  
+  .fc-daygrid-day.has-appointment {
+    background-color: #34495e !important;
+  }
+  
+  .fc-daygrid-day-number:hover {
+    background-color: #3498db;
+    border-radius: 50%;
+    color: white;
+  }
+  
+  /* Today’s date in month view */
+  .fc-daygrid-day.fc-day-today {
+    background-color: #3498db !important;
+  }
+  
+  .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    color: white;
+    font-weight: bold;
+  }

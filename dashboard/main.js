@@ -32,6 +32,7 @@ $(document).ready(function () {
       if (isCalendarView) {
         const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
         if (calendar) {
+          calendar.changeView('timeGridDay', dateStr); // Switch to day view
           calendar.gotoDate(dateStr);
         }
       }
@@ -472,7 +473,8 @@ $(document).ready(function () {
         if (isCalendarView) {
           const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
           if (calendar) {
-            calendar.refetchEvents();
+            calendar.gotoDate(selectedDate); // Sync calendar to the selected date
+            calendar.refetchEvents(); // Refresh events
           }
         }
         console.log(`✅ Fetched appointments for ${selectedDate} with filter ${filter}`);
@@ -1115,13 +1117,16 @@ $(document).ready(function () {
     }
   
     const calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
+      initialView: 'dayGridMonth', // Start with month view
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        right: 'dayGridMonth,timeGridDay' // Month and Day views only
       },
       height: 'auto',
+      nowIndicator: true, // Show red line for current time like Google Calendar
+      slotMinTime: '08:00:00', // Start at 8 AM
+      slotMaxTime: '20:00:00', // End at 8 PM
       events: function(fetchInfo, successCallback, failureCallback) {
         const startDate = fetchInfo.startStr.split('T')[0];
         const endDate = fetchInfo.endStr.split('T')[0];
@@ -1135,17 +1140,24 @@ $(document).ready(function () {
             let appointments = Array.isArray(data.appointments) ? data.appointments : [];
             const events = appointments
               .filter(appt => appt.appointment_date)
-              .map(appt => ({
-                id: appt.id,
-                title: `${appt.patient.first_name} ${appt.patient.last_name || ''}`,
-                start: appt.appointment_date,
-                className: `status-${appt.status.toLowerCase().replace(' ', '-')}`,
-                extendedProps: {
-                  patientId: appt.patient.patient_id,
-                  status: appt.status,
-                  doctor: appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'
-                }
-              }));
+              .map(appt => {
+                const startDateTime = new Date(appt.appointment_date);
+                // Assume a default duration of 30 minutes if end time isn't provided
+                const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000);
+                return {
+                  id: appt.id,
+                  title: `${appt.patient.first_name} ${appt.patient.last_name || ''} - ${appt.status}`,
+                  start: startDateTime,
+                  end: endDateTime, // Add end time for block display
+                  className: `status-${appt.status.toLowerCase().replace(' ', '-')}`,
+                  extendedProps: {
+                    patientId: appt.patient.patient_id,
+                    status: appt.status,
+                    doctor: appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A',
+                    notes: appt.notes || 'N/A'
+                  }
+                };
+              });
             console.log(`✅ Loaded ${events.length} events for calendar`, events);
             successCallback(events);
           },
@@ -1166,21 +1178,39 @@ $(document).ready(function () {
       },
       dateClick: function(info) {
         console.log(`🖱️ Calendar date clicked: ${info.dateStr}`);
-        fetchAppointmentsByDate(info.dateStr);
-        toggleAppointmentsView(false); // Switch to table view
-        $("#dateFilter").val(info.dateStr);
-        flatpickr("#dateFilter").setDate(info.dateStr, false);
+        const dateStr = info.dateStr;
+        calendar.changeView('timeGridDay', dateStr); // Switch to day view for the clicked date
+        fetchAppointmentsByDate(dateStr);
+        $("#dateFilter").val(dateStr);
+        flatpickr("#dateFilter").setDate(dateStr, false);
       },
       eventDidMount: function(info) {
         const dayEl = info.el.closest('.fc-daygrid-day');
         if (dayEl) {
           dayEl.classList.add('has-appointment');
         }
+        // Add tooltip with more details
+        const event = info.event;
+        const tooltipContent = `
+          Patient: ${event.title}<br>
+          Doctor: ${event.extendedProps.doctor}<br>
+          Status: ${event.extendedProps.status}<br>
+          Notes: ${event.extendedProps.notes}
+        `;
+        $(info.el).tooltip({
+          title: tooltipContent,
+          html: true,
+          placement: 'top',
+          trigger: 'hover'
+        });
+      },
+      viewDidMount: function(view) {
+        console.log(`📅 Switched to view: ${view.view.type}`);
       }
     });
   
     calendar.render();
-    console.log('🗓️ FullCalendar initialized');
+    console.log('🗓️ FullCalendar initialized with Google Calendar-like features');
     return calendar;
   }
 
