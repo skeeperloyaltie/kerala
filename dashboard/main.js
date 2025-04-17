@@ -48,6 +48,30 @@ $(document).ready(function () {
     allowInput: true
   });
 
+  // Initialize Flatpickr for Add Patient Form
+  flatpickr("#patientDOB", {
+    dateFormat: "Y-m-d",
+    maxDate: "today",
+    allowInput: true,
+    defaultDate: null
+  });
+
+  flatpickr("#maritalSince", {
+    dateFormat: "Y-m-d",
+    maxDate: "today",
+    allowInput: true,
+    defaultDate: null
+  });
+
+  flatpickr("#appointmentDate", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    minDate: "today",
+    time_24hr: true,
+    allowInput: true,
+    defaultDate: null
+  });
+
   // Get Authentication Headers
   function getAuthHeaders() {
     const token = localStorage.getItem("token");
@@ -1684,6 +1708,17 @@ $(document).ready(function () {
     populateProfileTab(data);
     $('#profileTab').tab('show');
 
+    // Helper function to safely clear a Flatpickr instance
+    function clearFlatpickr(selector) {
+      const instance = document.querySelector(selector)?._flatpickr;
+      if (instance && typeof instance.setDate === 'function') {
+        instance.setDate(null);
+        console.log(`✅ Cleared Flatpickr for ${selector}`);
+      } else {
+        console.warn(`⚠️ No valid Flatpickr instance found for ${selector}`);
+      }
+    }
+
     if (activeButton === 'addAndCreateBill') {
       toggleSplitView('addBills');
       $('#addBillsTab').tab('show');
@@ -1694,9 +1729,9 @@ $(document).ready(function () {
       toggleSplitView('addPatient');
       $('#addPatientTab').tab('show');
       $('#addPatientForm')[0].reset();
-      flatpickr("#patientDOB").clear();
-      flatpickr("#maritalSince").clear();
-      flatpickr("#appointmentDate").clear();
+      clearFlatpickr("#patientDOB");
+      clearFlatpickr("#maritalSince");
+      clearFlatpickr("#appointmentDate");
       $('#addPatientForm').data('patient-id', data.patient_id);
       selectedPatientId = data.patient_id; // Ensure global variable is updated
     }
@@ -1704,9 +1739,9 @@ $(document).ready(function () {
     alert(`Patient ${$('#addPatientForm').data('edit-mode') ? 'updated' : 'created'} successfully!`);
     if (activeButton !== 'addAndCreateAppointment') {
       $("#addPatientForm")[0].reset();
-      flatpickr("#patientDOB").clear();
-      flatpickr("#maritalSince").clear();
-      flatpickr("#appointmentDate").clear();
+      clearFlatpickr("#patientDOB");
+      clearFlatpickr("#maritalSince");
+      clearFlatpickr("#appointmentDate");
     }
     $('#addPatientForm').removeData('edit-mode').removeData('appointment-id');
   }
@@ -2034,19 +2069,30 @@ $(document).ready(function () {
     updateDepositColor();
   });
 
+  // Show Appointment Date Popup
   function showAppointmentDatePopup(callback) {
     const modal = $(`
-      <div class="modal fade" id="appointmentDateModal" tabindex="-1">
-        <div class="modal-dialog">
+      <div class="modal fade" id="appointmentDateModal" tabindex="-1" aria-labelledby="appointmentDateModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Select Appointment Date</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              <h5 class="modal-title" id="appointmentDateModalLabel">Create Appointment</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <div class="mb-3">
                 <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
                 <input type="text" class="form-control" id="appointmentDateInput" required>
+              </div>
+              <div class="mb-3">
+                <label for="appointmentDoctorInput" class="form-label">Select Doctor</label>
+                <select class="form-control" id="appointmentDoctorInput" required>
+                  <option value="" selected>Select Doctor</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="appointmentNotesInput" class="form-label">Notes (Optional)</label>
+                <textarea class="form-control" id="appointmentNotesInput" rows="3"></textarea>
               </div>
             </div>
             <div class="modal-footer">
@@ -2057,8 +2103,10 @@ $(document).ready(function () {
         </div>
       </div>
     `);
-  
+
     $('body').append(modal);
+
+    // Initialize Flatpickr for appointment date
     const appointmentDatePicker = flatpickr("#appointmentDateInput", {
       enableTime: true,
       dateFormat: "Y-m-d H:i",
@@ -2067,43 +2115,75 @@ $(document).ready(function () {
       time_24hr: true,
       allowInput: true
     });
-  
+
+    // Populate doctor dropdown
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        const $doctorSelect = $("#appointmentDoctorInput");
+        let doctors = Array.isArray(data) ? data : (Array.isArray(data.doctors) ? data.doctors : (Array.isArray(data.results) ? data.results : []));
+        doctors.forEach(doctor => {
+          $doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name || ''}</option>`);
+        });
+        // Pre-select the doctor from the bill form if available
+        const billDoctorId = $("#billDoctor").val();
+        if (billDoctorId) {
+          $doctorSelect.val(billDoctorId);
+        }
+      },
+      error: function (xhr) {
+        console.error("❌ Failed to fetch doctors for appointment modal:", xhr.responseJSON || xhr.statusText);
+        $("#appointmentDoctorInput").append('<option value="">Failed to load doctors</option>');
+      }
+    });
+
     const bsModal = new bootstrap.Modal(modal[0], {
       backdrop: 'static',
       keyboard: true
     });
     bsModal.show();
-  
+
     $('#confirmAppointmentDate').on('click', function () {
       const selectedDate = appointmentDatePicker.selectedDates[0];
-      if (selectedDate) {
-        const formattedDate = flatpickr.formatDate(selectedDate, "Y-m-d H:i") + ":00+05:30";
-        callback(formattedDate);
-        bsModal.hide();
-      } else {
+      const doctorId = $("#appointmentDoctorInput").val();
+      const notes = $("#appointmentNotesInput").val().trim();
+
+      if (!selectedDate) {
         alert("Please select a valid date and time.");
+        return;
       }
+      if (!doctorId) {
+        alert("Please select a doctor.");
+        return;
+      }
+
+      const formattedDate = flatpickr.formatDate(selectedDate, "Y-m-d H:i") + ":00+05:30";
+      callback({ appointmentDate: formattedDate, doctorId: doctorId, notes: notes });
+      bsModal.hide();
     });
-  
+
     modal.on('hidden.bs.modal', function () {
       appointmentDatePicker.destroy();
       modal.remove();
     });
   }
-  
+
+  // Add Bill Form Submission
   $("#addBillForm").submit(function (e) {
     e.preventDefault();
     console.log("📋 Submitting Add Bill Form...");
-  
+
     const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
     if (!patientId) {
       alert("Please select a patient before creating a bill.");
       return;
     }
-  
+
     const billDateInput = $("#billDate")[0]?._flatpickr?.selectedDates[0];
     const billDate = billDateInput ? flatpickr.formatDate(billDateInput, "Y-m-d") : new Date().toISOString().split("T")[0];
-  
+
     const items = [];
     $("#billItemsTableBody tr").each(function () {
       const $row = $(this);
@@ -2113,7 +2193,7 @@ $(document).ready(function () {
       const gst = parseFloat($row.find(".gst").val()) || 0;
       const discount = parseFloat($row.find(".discount").val()) || 0;
       const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
-  
+
       if (serviceId) {
         items.push({
           service_id: serviceId,
@@ -2125,12 +2205,12 @@ $(document).ready(function () {
         });
       }
     });
-  
+
     if (items.length === 0) {
       alert("Please add at least one service to the bill.");
       return;
     }
-  
+
     const billData = {
       patient_id: patientId,
       doctor_id: $("#billDoctor").val() || null,
@@ -2141,16 +2221,16 @@ $(document).ready(function () {
       notes: $("#billNotes").val(),
       items: items
     };
-  
+
     console.log("📦 Bill Data to Submit:", billData);
-  
+
     const activeButton = e.originalEvent?.submitter?.id || "saveBill";
     console.log(`🖱️ Bill form submitted by button: ${activeButton}`);
-  
+
     // Disable submit buttons to prevent multiple submissions
     const $submitButtons = $("#saveBill, #saveAndCreateAppointment");
     $submitButtons.prop("disabled", true);
-  
+
     $.ajax({
       url: `${API_BASE_URL}/billing/bills/create/`,
       type: "POST",
@@ -2160,23 +2240,23 @@ $(document).ready(function () {
       success: function (response) {
         console.log("✅ Bill created successfully:", response);
         alert("Bill created successfully!");
-  
+
         // Reset form and clear items
         $("#addBillForm")[0].reset();
         $("#billItemsTableBody").empty();
         itemCount = 0;
         sessionStorage.removeItem("billPatientId");
-  
+
         if (activeButton === "saveAndCreateAppointment") {
-          showAppointmentDatePopup(function (appointmentDate) {
+          showAppointmentDatePopup(function (appointmentDetails) {
             const appointmentData = {
               patient_id: patientId,
-              doctor_id: $("#billDoctor").val() || null,
-              appointment_date: appointmentDate,
-              notes: $("#billNotes").val(),
+              doctor_id: appointmentDetails.doctorId,
+              appointment_date: appointmentDetails.appointmentDate,
+              notes: appointmentDetails.notes || "",
               is_emergency: false
             };
-  
+
             $.ajax({
               url: `${API_BASE_URL}/appointments/create/`,
               type: "POST",
@@ -2186,8 +2266,15 @@ $(document).ready(function () {
               success: function (apptResponse) {
                 console.log("✅ Appointment created successfully:", apptResponse);
                 alert("Appointment created successfully!");
-                $("#newActionModal").modal("hide");
-                fetchAppointmentsByDate();
+                // Refresh appointments table
+                const dateStr = $("#dateFilter").val() || new Date().toISOString().split("T")[0];
+                fetchAppointmentsByDate(dateStr);
+                // Keep the #newActionModal open and switch to Add Patient tab
+                $('#addPatientTab').tab('show');
+                // Optionally reset the bill form again for consistency
+                $("#addBillForm")[0].reset();
+                $("#patientIdForBill").val(patientId); // Retain patient ID
+                sessionStorage.setItem("billPatientId", patientId);
               },
               error: function (xhr) {
                 console.error("❌ Failed to create appointment:", xhr.responseJSON || xhr.statusText);
