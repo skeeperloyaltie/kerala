@@ -1357,10 +1357,15 @@ $(document).ready(function () {
 
   function populateDoctorDropdownForAddPatient(selectedDoctorId = null) {
     const $doctorSelect = $("#doctor");
+    const $doctorSpecialty = $("#doctorSpecialty");
   
-    // Verify the element exists
+    // Verify the elements exist
     if (!$doctorSelect.length) {
       console.error("❌ #doctor element not found in DOM");
+      return;
+    }
+    if (!$doctorSpecialty.length) {
+      console.error("❌ #doctorSpecialty element not found in DOM");
       return;
     }
   
@@ -1379,6 +1384,7 @@ $(document).ready(function () {
       beforeSend: function () {
         console.log("📤 Fetching doctors for Add Patient dropdown...");
         $doctorSelect.empty().append('<option value="" selected>Loading doctors...</option>');
+        $doctorSpecialty.val(""); // Clear specialty while loading
       },
       success: function (data) {
         console.log("🔍 Doctor list response:", data);
@@ -1395,15 +1401,21 @@ $(document).ready(function () {
         } else {
           console.warn("⚠️ No doctors found in response:", data);
           $doctorSelect.append('<option value="">No doctors available</option>');
+          $doctorSpecialty.val("N/A");
           return;
         }
   
         if (doctors.length === 0) {
           console.warn("⚠️ Doctor list is empty");
           $doctorSelect.append('<option value="">No doctors available</option>');
+          $doctorSpecialty.val("N/A");
           return;
         }
   
+        // Store the doctors data for use in the onchange event
+        const doctorData = doctors;
+  
+        // Populate the dropdown
         doctors.forEach(doctor => {
           // Validate doctor ID and name
           if (!doctor.id || (!doctor.first_name && !doctor.last_name)) {
@@ -1418,6 +1430,38 @@ $(document).ready(function () {
           );
         });
   
+        // If a doctor is pre-selected, set the specialty
+        if (selectedDoctorId) {
+          const selectedDoctor = doctorData.find(doctor => doctor.id === selectedDoctorId);
+          if (selectedDoctor && selectedDoctor.specialization) {
+            $doctorSpecialty.val(selectedDoctor.specialization);
+            console.log(`✅ Set specialty for pre-selected doctor ID ${selectedDoctorId}: ${selectedDoctor.specialization}`);
+          } else {
+            $doctorSpecialty.val("N/A");
+            console.warn(`⚠️ No specialization found for pre-selected doctor ID ${selectedDoctorId}`);
+          }
+        } else {
+          $doctorSpecialty.val(""); // Clear specialty if no doctor is pre-selected
+        }
+  
+        // Add onchange event to update specialty dynamically
+        $doctorSelect.off("change").on("change", function () {
+          const selectedId = $(this).val();
+          if (selectedId) {
+            const doctor = doctorData.find(d => d.id == selectedId);
+            if (doctor && doctor.specialization) {
+              $doctorSpecialty.val(doctor.specialization);
+              console.log(`✅ Updated specialty for doctor ID ${selectedId}: ${doctor.specialization}`);
+            } else {
+              $doctorSpecialty.val("N/A");
+              console.log(`⚠️ No specialization found for doctor ID ${selectedId}`);
+            }
+          } else {
+            $doctorSpecialty.val("");
+            console.log("ℹ️ Cleared specialty (no doctor selected)");
+          }
+        });
+  
         console.log(`✅ Populated ${doctors.length} doctors in #doctor dropdown`);
       },
       error: function (xhr) {
@@ -1426,6 +1470,7 @@ $(document).ready(function () {
           .empty()
           .append('<option value="">Failed to load doctors</option>')
           .prop("disabled", true);
+        $doctorSpecialty.val("N/A");
   
         if (xhr.status === 401 || xhr.status === 403) {
           alert("Authentication error. Please log in again.");
