@@ -1,6 +1,9 @@
 $(document).ready(function () {
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
+  let isCalendarView = false; // Track current view (false = table, true = calendar)
+
+
   // Initialize intl-tel-input for phone numbers
   const phoneInput = document.querySelector("#patientPhone");
   const mobile2Input = document.querySelector("#mobile2");
@@ -23,21 +26,18 @@ $(document).ready(function () {
     defaultDate: new Date(),
     allowInput: true,
     minDate: "1900-01-01",
-    onReady: function(selectedDates, dateStr, instance) {
-      const currentYear = new Date().getFullYear();
-      const years = [];
-      for (let year = currentYear; year >= 1900; year--) {
-        years.push(year);
-      }
-      instance.yearElements[0].innerHTML = years.map(year => 
-        `<option value="${year}" ${year === currentYear ? "selected" : ""}>${year}</option>`
-      ).join("");
-    },
     onChange: function (selectedDates, dateStr) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
       fetchAppointmentsByDate(dateStr);
+      if (isCalendarView) {
+        const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
+        if (calendar) {
+          calendar.gotoDate(dateStr);
+        }
+      }
     }
   });
+
   console.log("🟢 Flatpickr Initialized for #dateFilter with default date: Today");
 
   // Initialize Flatpickr for Bill Date
@@ -403,8 +403,8 @@ $(document).ready(function () {
   });
 
   $("#calendarTrigger").on("click", function () {
-    dateFilter.open();
-    console.log("🗓️ Calendar button clicked, opening date picker");
+    toggleAppointmentsView(!isCalendarView);
+    console.log(`🖱️ Calendar trigger clicked, switching to ${isCalendarView ? 'calendar' : 'table'} view`);
   });
 
   $(".btn:contains('Set')").on("click", function () {
@@ -434,6 +434,14 @@ $(document).ready(function () {
       const dateStr = $("#dateFilter").val();
       const dateOnly = dateStr ? dateStr.split(' ')[0] : null;
       fetchAppointmentsByDate(dateOnly, section);
+      
+      // Refresh calendar if in calendar view
+      if (isCalendarView) {
+        const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
+        if (calendar) {
+          calendar.refetchEvents();
+        }
+      }
     });
   }
 
@@ -441,13 +449,18 @@ $(document).ready(function () {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
-
+  
     if (dateStr) {
       $("#dateFilter").val(selectedDate);
       flatpickr("#dateFilter").setDate(selectedDate, false);
       console.log(`📅 Updated #dateFilter to: ${selectedDate}`);
     }
-
+  
+    // Ensure table view is shown when fetching appointments, unless explicitly in calendar view
+    if (!isCalendarView) {
+      toggleAppointmentsView(false);
+    }
+  
     $.ajax({
       url: `${API_BASE_URL}/appointments/list/?date=${selectedDate}`,
       type: "GET",
@@ -455,6 +468,13 @@ $(document).ready(function () {
       success: function (data) {
         console.log(`📥 Raw API response for ${selectedDate}:`, data);
         populateAppointmentsTable(data, selectedDate, filter);
+        // Update calendar events if in calendar view
+        if (isCalendarView) {
+          const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
+          if (calendar) {
+            calendar.refetchEvents();
+          }
+        }
         console.log(`✅ Fetched appointments for ${selectedDate} with filter ${filter}`);
       },
       error: function (xhr) {
@@ -476,6 +496,13 @@ $(document).ready(function () {
         const statusClass = newStatus ? `status-${newStatus.toLowerCase().replace(' ', '-')}` : 'status-unknown';
         $row.find('.status-select').val(newStatus);
         $row.find('.status-cell').html(`<span class="${statusClass}">${newStatus.toUpperCase()}</span>`);
+        // Refresh calendar if in calendar view
+        if (isCalendarView) {
+          const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
+          if (calendar) {
+            calendar.refetchEvents();
+          }
+        }
       },
       error: function (xhr) {
         console.error(`❌ Failed to update appointment ${appointmentId}:`, xhr.responseJSON || xhr.statusText);
@@ -1078,6 +1105,105 @@ $(document).ready(function () {
           .prop("disabled", true);
       }
     });
+  }
+
+  function initializeCalendar() {
+    const calendarEl = document.getElementById('appointmentsCalendar');
+    if (!calendarEl) {
+      console.error('❌ Calendar element #appointmentsCalendar not found');
+      return;
+    }
+  
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      height: 'auto',
+      events: function(fetchInfo, successCallback, failureCallback) {
+        const startDate = fetchInfo.startStr.split('T')[0];
+        const endDate = fetchInfo.endStr.split('T')[0];
+        console.log(`📅 Fetching appointments for calendar from ${startDate} to ${endDate}`);
+  
+        $.ajax({
+          url: `${API_BASE_URL}/appointments/list/?start_date=${startDate}&end_date=${endDate}`,
+          type: 'GET',
+          headers: getAuthHeaders(),
+          success: function(data) {
+            let appointments = Array.isArray(data.appointments) ? data.appointments : [];
+            const events = appointments
+              .filter(appt => appt.appointment_date)
+              .map(appt => ({
+                id: appt.id,
+                title: `${appt.patient.first_name} ${appt.patient.last_name || ''}`,
+                start: appt.appointment_date,
+                className: `status-${appt.status.toLowerCase().replace(' ', '-')}`,
+                extendedProps: {
+                  patientId: appt.patient.patient_id,
+                  status: appt.status,
+                  doctor: appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'
+                }
+              }));
+            console.log(`✅ Loaded ${events.length} events for calendar`, events);
+            successCallback(events);
+          },
+          error: function(xhr) {
+            console.error('❌ Failed to fetch appointments for calendar:', xhr.responseJSON || xhr.statusText);
+            failureCallback(xhr);
+          }
+        });
+      },
+      eventClick: function(info) {
+        console.log(`🖱️ Calendar event clicked:`, info.event);
+        const date = info.event.start;
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        fetchAppointmentsByDate(dateStr);
+        toggleAppointmentsView(false); // Switch to table view
+        $("#dateFilter").val(dateStr);
+        flatpickr("#dateFilter").setDate(dateStr, false);
+      },
+      dateClick: function(info) {
+        console.log(`🖱️ Calendar date clicked: ${info.dateStr}`);
+        fetchAppointmentsByDate(info.dateStr);
+        toggleAppointmentsView(false); // Switch to table view
+        $("#dateFilter").val(info.dateStr);
+        flatpickr("#dateFilter").setDate(info.dateStr, false);
+      },
+      eventDidMount: function(info) {
+        const dayEl = info.el.closest('.fc-daygrid-day');
+        if (dayEl) {
+          dayEl.classList.add('has-appointment');
+        }
+      }
+    });
+  
+    calendar.render();
+    console.log('🗓️ FullCalendar initialized');
+    return calendar;
+  }
+
+  function toggleAppointmentsView(showCalendar) {
+    isCalendarView = showCalendar;
+    const $tableView = $('#appointmentsTableView');
+    const $calendarView = $('#appointmentsCalendarView');
+    
+    if (showCalendar) {
+      $tableView.fadeOut(200, function() {
+        $calendarView.fadeIn(200);
+        const calendar = FullCalendar.getCalendar(document.getElementById('appointmentsCalendar'));
+        if (calendar) {
+          calendar.render();
+        }
+      });
+      console.log('✅ Switched to calendar view');
+    } else {
+      $calendarView.fadeOut(200, function() {
+        $tableView.fadeIn(200);
+      });
+      console.log('✅ Switched to table view');
+    }
   }
 
   function populateAddPatientForm(patient, appointment = null) {
@@ -1996,4 +2122,5 @@ $(document).ready(function () {
   checkAuthentication();
   bindNavFilters();
   bindDateFilterButtons();
+  initializeCalendar(); // Initialize FullCalendar
   });
