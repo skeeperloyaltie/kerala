@@ -785,14 +785,36 @@ $(document).ready(function () {
       console.log(`🎯 Switching to Tab: ${tabId}`);
   
       const modal = $('#newActionModal');
-      modal.modal('show');
-  
       const tabElement = $(`#${tabId}`);
-      if (tabElement.length && tabElement.is(":visible")) {
+  
+      // Check if the clicked nav item is visible (indicates user has access)
+      const navItem = $(this).closest(".nav-item");
+      if (navItem.length && !navItem.is(":visible")) {
+        console.error(`❌ Nav item for action ${action} is not visible. User lacks access.`);
+        alert("You do not have permission to access this feature.");
+        return;
+      }
+  
+      // Check modal existence
+      if (!modal.length) {
+        console.error("❌ Modal #newActionModal not found in DOM");
+        alert("Error: Modal not found.");
+        return;
+      }
+  
+      // Show modal
+      console.log("🔍 Modal Element:", modal.length ? "Found" : "Not Found");
+      modal.modal('show');
+      console.log("🔍 Modal Opened");
+  
+      // Switch tab
+      if (tabElement.length) {
+        console.log(`🔍 Tab Element: ${tabId} found, Visible: ${tabElement.is(":visible")}`);
+        tabElement.closest(".nav-item").show(); // Ensure tab is visible
         tabElement.tab('show');
         console.log(`✅ Successfully switched to tab: ${tabId}`);
       } else {
-        console.error(`❌ Tab with ID ${tabId} not found or not permitted! Falling back to Add Patient tab`);
+        console.error(`❌ Tab with ID ${tabId} not found! Falling back to Add Patient tab`);
         $("#addPatientTab").tab("show");
       }
     });
