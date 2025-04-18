@@ -528,12 +528,13 @@ $(document).ready(function () {
   }
   
   // Populate Appointments Table
+  // Populate Appointments Table
   function populateAppointmentsTable(appointments, date, filter = 'all') {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-  
+
     console.log(`📥 Processing appointments for ${date}, filter: ${filter}`);
-  
+
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
@@ -548,7 +549,7 @@ $(document).ready(function () {
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
-  
+
     // Filter appointments by exact date
     appointmentsArray = appointmentsArray.filter(appt => {
       if (!appt || !appt.appointment_date) return false;
@@ -556,29 +557,29 @@ $(document).ready(function () {
       const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
       return apptDateStr === date;
     });
-  
+
     // Map filter to statuses
     const statusMap = {
-      'all': ['waiting', 'scheduled', 'pending', 'active', 'completed', 'canceled', 'rescheduled'],
-      'booked': ['scheduled', 'pending'],
-      'arrived': ['waiting'],
-      'on-going': ['active'],
-      'reviewed': ['completed']
+      'all': ['booked', 'arrived', 'on-going', 'reviewed'],
+      'booked': ['booked'],
+      'arrived': ['arrived'],
+      'on-going': ['on-going'],
+      'reviewed': ['reviewed']
     };
     const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
-  
+
     // Filter appointments by status
     appointmentsArray = appointmentsArray.filter(appt => {
       if (!appt || !appt.status) return false;
       return allowedStatuses.includes(appt.status.toLowerCase());
     });
-  
+
     if (!appointmentsArray.length) {
       $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date} (${filter})</td></tr>`);
       console.log(`ℹ️ No appointments to display for ${date} with filter ${filter}`);
       return;
     }
-  
+
     const groupedByPatient = appointmentsArray.reduce((acc, appt) => {
       if (!appt || typeof appt !== 'object' || !appt.id || !appt.patient || !appt.patient.patient_id) {
         console.warn(`⚠️ Skipping invalid appointment at index ${appointmentsArray.indexOf(appt)}:`, appt);
@@ -594,7 +595,7 @@ $(document).ready(function () {
       acc[patientId].appointments.push(appt);
       return acc;
     }, {});
-  
+
     let patientIndex = 0;
     let totalAppointments = 0;
     const patientEntries = Object.entries(groupedByPatient).sort((a, b) => {
@@ -602,24 +603,21 @@ $(document).ready(function () {
       const nameB = `${b[1].patient.first_name} ${b[1].patient.last_name || ''}`.toLowerCase();
       return nameA.localeCompare(nameB);
     });
-  
+
     if (!patientEntries.length) {
       $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date} (${filter})</td></tr>`);
       console.log(`ℹ️ No valid appointments to display for ${date} with filter ${filter}`);
       return;
     }
-  
-    // Define STATUS_CHOICES from Django model
+
+    // Define STATUS_CHOICES aligned with Django model
     const STATUS_CHOICES = [
-      { value: 'waiting', label: 'Waiting' },
-      { value: 'scheduled', label: 'Scheduled' },
-      { value: 'pending', label: 'Pending' },
-      { value: 'active', label: 'Active' },
-      { value: 'completed', label: 'Completed' },
-      { value: 'canceled', label: 'Canceled' },
-      { value: 'rescheduled', label: 'Rescheduled' }
+      { value: 'booked', label: 'Booked' },
+      { value: 'arrived', label: 'Arrived' },
+      { value: 'on-going', label: 'On-Going' },
+      { value: 'reviewed', label: 'Reviewed' }
     ];
-  
+
     patientEntries.forEach(([patientId, { patient, appointments }]) => {
       patientIndex++;
       appointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
@@ -634,7 +632,7 @@ $(document).ready(function () {
         </tr>
       `);
       $tbody.append($patientRow);
-  
+
       appointments.forEach((appt) => {
         const doctorName = appt.doctor && appt.doctor.first_name
           ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
@@ -648,10 +646,10 @@ $(document).ready(function () {
         const statusClass = appt.status
           ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
           : 'status-unknown';
-  
+
         // Create status dropdown
         let statusOptions = STATUS_CHOICES.map(choice => 
-          `<option value="${choice.value}" ${appt.status === choice.value ? 'selected' : ''}>${choice.label}</option>`
+          `<option value="${choice.value}" ${appt.status.toLowerCase() === choice.value ? 'selected' : ''}>${choice.label}</option>`
         ).join('');
         const $apptRow = $(`
           <tr class="appointment-row">
@@ -671,7 +669,7 @@ $(document).ready(function () {
         `);
         $tbody.append($apptRow);
         totalAppointments++;
-  
+
         if (!appt.patient || !appt.patient.first_name) {
           console.warn(`⚠️ Appointment ID ${appt.id} has incomplete patient data:`, appt.patient);
         }
@@ -680,7 +678,7 @@ $(document).ready(function () {
         }
       });
     });
-  
+
     // Bind status change event
     $('.status-select').off('change').on('change', function () {
       const $select = $(this);
@@ -690,7 +688,7 @@ $(document).ready(function () {
       console.log(`🖱️ Status change for appointment ${appointmentId} to ${newStatus}`);
       updateAppointmentStatus(appointmentId, newStatus, $row, date);
     });
-  
+
     console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date} (${filter})`);
   }
 
