@@ -504,7 +504,7 @@ $(document).ready(function () {
   // Fetch Appointments by Date
   
 
-  function updateAppointmentStatus(appointmentId, newStatus, $row, selectedDate) {
+   function updateAppointmentStatus(appointmentId, newStatus, $row, selectedDate) {
     $.ajax({
       url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
       type: "PATCH",
