@@ -1,5 +1,11 @@
 // main.js
 $(document).ready(function () {
+  if (!sessionStorage.getItem("token")) {
+    console.warn("⚠️ No session token found. Redirecting to login...");
+    window.location.href = "../login/login.html";
+    return;
+  }
+  
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
   // Initialize intl-tel-input for phone numbers
@@ -50,26 +56,26 @@ $(document).ready(function () {
 
   // Get Authentication Headers
   function getAuthHeaders() {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     return token ? { "Authorization": `Token ${token}` } : {};
   }
 
   // Authentication Check
   function checkAuthentication() {
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("user_type");
-    const roleLevel = localStorage.getItem("role_level");
-    const permissions = localStorage.getItem("permissions");
-
+    const token = sessionStorage.getItem("token");
+    const userType = sessionStorage.getItem("user_type");
+    const roleLevel = sessionStorage.getItem("role_level");
+    const permissions = sessionStorage.getItem("permissions");
+  
     console.log("🔍 Checking Authentication - Stored Data:", {
       token: token ? "Present" : "Missing",
       userType: userType || "Missing",
       roleLevel: roleLevel || "Missing",
       permissions: permissions ? "Present" : "Missing"
     });
-
+  
     if (!token || !userType || !roleLevel || !permissions) {
-      console.error("❌ Missing authentication data in localStorage:", {
+      console.error("❌ Missing authentication data in sessionStorage:", {
         token: !!token,
         userType: !!userType,
         roleLevel: !!roleLevel,
@@ -79,13 +85,17 @@ $(document).ready(function () {
       window.location.href = "../login/login.html";
       return;
     }
-
+  
     $.ajax({
       url: `${API_BASE_URL}/users/profile/`,
       type: "GET",
       headers: { "Authorization": `Token ${token}` },
       success: function (data) {
         console.log("🟢 User Profile Fetched Successfully:", data);
+        if (data.doctor_id) {
+          sessionStorage.setItem("doctor_id", data.doctor_id);
+          console.log(`👨‍⚕️ Stored Doctor ID: ${data.doctor_id}`);
+        }
         adjustUIForRole(userType, roleLevel);
         if (data.doctor_code) {
           console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
@@ -95,8 +105,8 @@ $(document).ready(function () {
       },
       error: function (xhr) {
         console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
-        localStorage.clear();
-        console.log("🗑️ Cleared localStorage due to authentication failure");
+        sessionStorage.clear();
+        console.log("🗑️ Cleared sessionStorage due to authentication failure");
         alert("Authentication failed: Invalid token. Please log in again.");
         window.location.href = "../login/login.html";
       }
@@ -277,7 +287,7 @@ $(document).ready(function () {
     modalTabs.show();
 
     const role = `${userType}-${roleLevel}`.toLowerCase();
-    const permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
+    const permissions = JSON.parse(sessionStorage.getItem("permissions") || "[]");
 
     switch (role) {
       case "doctor-senior":
@@ -715,7 +725,7 @@ $(document).ready(function () {
       forceLogout();
       return;
     }
-
+  
     $.ajax({
       url: `${API_BASE_URL}/users/logout/`,
       type: "POST",
@@ -723,7 +733,6 @@ $(document).ready(function () {
       success: function () {
         console.log("✅ Logout successful");
         sessionStorage.clear();
-        localStorage.clear();
         document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         alert("Logged out successfully.");
         window.location.href = "../login/login.html";
@@ -739,7 +748,6 @@ $(document).ready(function () {
   function forceLogout() {
     console.log("🔒 Forcing logout...");
     sessionStorage.clear();
-    localStorage.clear();
     document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     alert("Logged out successfully (forced).");
     window.location.href = "../login/login.html";
@@ -1418,11 +1426,11 @@ $(document).ready(function () {
       service_price: parseFloat($("#servicePrice").val()),
       code: $("#serviceCode").val(),
       color_code: $("#serviceColorCode").val(),
-      owner_id: $("#serviceOwner").val() || localStorage.getItem("doctor_id") || null
+      owner_id: $("#serviceOwner").val() || sessionStorage.getItem("doctor_id") || null
     };
     console.log("Submitting add service form...", data);
 
-    if (!data.owner_id && localStorage.getItem("user_type") !== "doctor") {
+    if (!data.owner_id && sessionStorage.getItem("user_type") !== "doctor") {
       console.error("No doctor selected and logged-in user is not a doctor.");
       alert("Please select a doctor or log in as a doctor.");
       return;
