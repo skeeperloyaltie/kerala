@@ -80,7 +80,9 @@ $(document).ready(function () {
           console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
           $(".doctor-code").text(`Doctor Code: ${data.doctor_code}`);
         }
-        fetchAppointmentsByDate();
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        fetchAppointmentsByDate(todayStr); // Explicitly fetch today's appointments
       },
       error: function (xhr) {
         console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
@@ -441,11 +443,11 @@ $(document).ready(function () {
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
   
-    if (dateStr) {
-      $("#dateFilter").val(selectedDate);
-      flatpickr("#dateFilter").setDate(selectedDate, false);
-      console.log(`📅 Updated #dateFilter to: ${selectedDate}`);
-    }
+    console.log(`📅 Fetching appointments for date: ${selectedDate}, filter: ${filter}`);
+  
+    // Update #dateFilter to reflect the selected date
+    $("#dateFilter").val(selectedDate);
+    flatpickr("#dateFilter").setDate(selectedDate, false);
   
     $.ajax({
       url: `${API_BASE_URL}/appointments/list/?date=${selectedDate}`,
@@ -526,13 +528,12 @@ $(document).ready(function () {
   }
   
   // Populate Appointments Table
-  // Populate Appointments Table
   function populateAppointmentsTable(appointments, date, filter = 'all') {
     const $tbody = $('.table-appointments tbody');
     $tbody.empty();
-
-    console.log(`📥 Received appointments data:`, appointments);
-
+  
+    console.log(`📥 Processing appointments for ${date}, filter: ${filter}`);
+  
     let appointmentsArray = [];
     if (Array.isArray(appointments)) {
       appointmentsArray = appointments;
@@ -547,7 +548,15 @@ $(document).ready(function () {
     } else {
       console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
     }
-
+  
+    // Filter appointments by exact date
+    appointmentsArray = appointmentsArray.filter(appt => {
+      if (!appt || !appt.appointment_date) return false;
+      const apptDate = new Date(appt.appointment_date);
+      const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+      return apptDateStr === date;
+    });
+  
     // Map filter to statuses
     const statusMap = {
       'all': ['waiting', 'scheduled', 'pending', 'active', 'completed', 'canceled', 'rescheduled'],
@@ -557,19 +566,19 @@ $(document).ready(function () {
       'reviewed': ['completed']
     };
     const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
-
+  
     // Filter appointments by status
     appointmentsArray = appointmentsArray.filter(appt => {
       if (!appt || !appt.status) return false;
       return allowedStatuses.includes(appt.status.toLowerCase());
     });
-
+  
     if (!appointmentsArray.length) {
       $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date} (${filter})</td></tr>`);
       console.log(`ℹ️ No appointments to display for ${date} with filter ${filter}`);
       return;
     }
-
+  
     const groupedByPatient = appointmentsArray.reduce((acc, appt) => {
       if (!appt || typeof appt !== 'object' || !appt.id || !appt.patient || !appt.patient.patient_id) {
         console.warn(`⚠️ Skipping invalid appointment at index ${appointmentsArray.indexOf(appt)}:`, appt);
@@ -585,7 +594,7 @@ $(document).ready(function () {
       acc[patientId].appointments.push(appt);
       return acc;
     }, {});
-
+  
     let patientIndex = 0;
     let totalAppointments = 0;
     const patientEntries = Object.entries(groupedByPatient).sort((a, b) => {
@@ -593,13 +602,13 @@ $(document).ready(function () {
       const nameB = `${b[1].patient.first_name} ${b[1].patient.last_name || ''}`.toLowerCase();
       return nameA.localeCompare(nameB);
     });
-
+  
     if (!patientEntries.length) {
       $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date} (${filter})</td></tr>`);
       console.log(`ℹ️ No valid appointments to display for ${date} with filter ${filter}`);
       return;
     }
-
+  
     // Define STATUS_CHOICES from Django model
     const STATUS_CHOICES = [
       { value: 'waiting', label: 'Waiting' },
@@ -610,7 +619,7 @@ $(document).ready(function () {
       { value: 'canceled', label: 'Canceled' },
       { value: 'rescheduled', label: 'Rescheduled' }
     ];
-
+  
     patientEntries.forEach(([patientId, { patient, appointments }]) => {
       patientIndex++;
       appointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
@@ -625,7 +634,7 @@ $(document).ready(function () {
         </tr>
       `);
       $tbody.append($patientRow);
-
+  
       appointments.forEach((appt) => {
         const doctorName = appt.doctor && appt.doctor.first_name
           ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
@@ -633,19 +642,13 @@ $(document).ready(function () {
         const appointmentDate = appt.appointment_date
           ? new Date(appt.appointment_date)
           : null;
-        const timeStr = appointmentDate && !isNaN(appointmentDate)
-          ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+        const dateTimeStr = appointmentDate && !isNaN(appointmentDate)
+          ? `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`
           : 'N/A';
         const statusClass = appt.status
           ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
           : 'status-unknown';
-        const apptDateStr = appointmentDate
-          ? `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')}`
-          : null;
-        if (apptDateStr && apptDateStr !== date) {
-          console.warn(`⚠️ Appointment ID ${appt.id} date (${apptDateStr}) does not match filter date (${date})`);
-        }
-
+  
         // Create status dropdown
         let statusOptions = STATUS_CHOICES.map(choice => 
           `<option value="${choice.value}" ${appt.status === choice.value ? 'selected' : ''}>${choice.label}</option>`
@@ -656,7 +659,7 @@ $(document).ready(function () {
             <td></td>
             <td></td>
             <td>${appt.id}</td>
-            <td>${timeStr}</td>
+            <td>${dateTimeStr}</td>
             <td class="status-cell">
               <select class="form-select form-select-sm status-select" data-appointment-id="${appt.id}" data-original-status="${appt.status}">
                 ${statusOptions}
@@ -668,7 +671,7 @@ $(document).ready(function () {
         `);
         $tbody.append($apptRow);
         totalAppointments++;
-
+  
         if (!appt.patient || !appt.patient.first_name) {
           console.warn(`⚠️ Appointment ID ${appt.id} has incomplete patient data:`, appt.patient);
         }
@@ -677,7 +680,7 @@ $(document).ready(function () {
         }
       });
     });
-
+  
     // Bind status change event
     $('.status-select').off('change').on('change', function () {
       const $select = $(this);
@@ -687,7 +690,7 @@ $(document).ready(function () {
       console.log(`🖱️ Status change for appointment ${appointmentId} to ${newStatus}`);
       updateAppointmentStatus(appointmentId, newStatus, $row, date);
     });
-
+  
     console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date} (${filter})`);
   }
 
@@ -2140,9 +2143,13 @@ $(document).ready(function () {
     sessionStorage.removeItem("billPatientId");
   });
 
-  // Initialize
   console.log("🚀 Initializing Dashboard...");
   checkAuthentication();
   bindDateFilterButtons();
+  bindNavFilters();
+  // Fetch today's appointments on page load
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  fetchAppointmentsByDate(todayStr);
   console.log("✅ Dashboard Initialization Complete");
 });

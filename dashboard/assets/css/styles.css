@@ -497,6 +497,10 @@ display: none;
   font-size: 10px;
   padding: 4px;
 }
+.table-appointments th:nth-child(5),
+.table-appointments td:nth-child(5) {
+    min-width: 180px; /* Adjust as needed for date and time */
+  }
 
 .navbar-top .form-control {
   width: 100px;
@@ -724,3 +728,4 @@ height: 100%;
     color: white;
     font-weight: bold;
   }
+
