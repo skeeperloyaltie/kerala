@@ -24,28 +24,7 @@ $(document).ready(function () {
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
   });
 
-  // Initialize Flatpickr for Date Filter
-  flatpickr("#dateFilter", {
-    dateFormat: "Y-m-d",
-    defaultDate: new Date(),
-    allowInput: true,
-    minDate: "1900-01-01", // Optional
-    onReady: function(selectedDates, dateStr, instance) {
-      const currentYear = new Date().getFullYear();
-      const years = [];
-      for (let year = currentYear; year >= 1900; year--) {
-        years.push(year);
-      }
-      instance.yearElements[0].innerHTML = years.map(year => 
-        `<option value="${year}" ${year === currentYear ? "selected" : ""}>${year}</option>`
-      ).join("");
-    },
-    onChange: function (selectedDates, dateStr) {
-      console.log("📅 Date Filter Changed - Selected date:", dateStr);
-      fetchAppointmentsByDate(dateStr);
-    }
-  });
-  console.log("🟢 Flatpickr Initialized for #dateFilter with default date: Today");
+  
 
   // Initialize Flatpickr for Bill Date
   flatpickr("#billDate", {
@@ -379,106 +358,84 @@ $(document).ready(function () {
     setupPatientSearch();
   }
 
-  $(document).ready(function () {
-    // Initialize Flatpickr on #dateFilter with time selection
-    let appointmentsData = [];
-    const dateFilter = flatpickr("#dateFilter", {
-      enableTime: true,
-      time_24hr: false,
-      dateFormat: "Y-m-d H:i",
-      minuteIncrement: 5,
-      defaultDate: null,
-      onChange: function (selectedDates, dateStr) {
-        const dateOnly = dateStr.split(' ')[0];
-        fetchAppointmentsByDate(dateOnly);
-      },
-      onDayCreate: function (dObj, dStr, fp, dayElem) {
-        const date = dayElem.dateObj;
-        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        appointmentsData.forEach(appt => {
-          if (!appt.appointment_date) return;
-          const apptDate = new Date(appt.appointment_date);
-          const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
-          if (apptDateStr === dateStr) {
-            const apptTime = apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-            dayElem.classList.add('has-appointment');
-            dayElem.setAttribute('data-appointment-time', apptTime);
-          }
-        });
-      },
-      onOpen: function (selectedDates, dateStr, instance) {
-        const currentDate = dateStr ? dateStr.split(' ')[0] : instance.formatDate(new Date(), 'Y-m-d');
-        $.ajax({
-          url: `${API_BASE_URL}/appointments/list/?date=${currentDate}`,
-          type: "GET",
-          headers: getAuthHeaders(),
-          success: function (data) {
-            appointmentsData = Array.isArray(data.appointments) ? data.appointments : [];
-            console.log(`📅 Loaded appointments for calendar:`, appointmentsData);
-            if (appointmentsData.length) {
-              instance.setDate(appointmentsData[0].appointment_date, false);
-            }
-            instance.redraw();
-          },
-          error: function (xhr) {
-            console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Unknown error"}`);
-            appointmentsData = [];
-            instance.redraw();
-          }
-        });
-      }
-    });
+  // main.js (replace relevant sections)
 
-    // Bind calendar button
-    $("#calendarTrigger").on("click", function () {
-      dateFilter.open();
-      console.log("🗓️ Calendar button clicked, opening date picker");
-    });
-
-    // Bind Set button
-    $(".btn:contains('Set')").on("click", function () {
-      const dateStr = $("#dateFilter").val();
+  // Initialize Flatpickr for Date Filter
+  flatpickr("#dateFilter", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(), // Default to today
+    allowInput: true,
+    minDate: "1900-01-01",
+    altInput: true,
+    altFormat: "F j, Y", // Readable format for display
+    onChange: function (selectedDates, dateStr) {
+      console.log("📅 Date Filter Changed - Selected date:", dateStr);
       if (dateStr) {
-        const dateOnly = dateStr.split(' ')[0];
-        fetchAppointmentsByDate(dateOnly);
+        fetchAppointmentsByDate(dateStr); // Fetch appointments immediately
       }
-    });
-
-    // Bind Today button
-    $(".btn:contains('Today')").on("click", function () {
-      const today = new Date();
-      const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      fetchAppointmentsByDate(defaultDate);
-      dateFilter.setDate(defaultDate, false);
-    });
-
-    // Bind navigation filters
-    function bindNavFilters() {
-      $('.navbar-secondary .nav-item a').on('click', function (e) {
-        e.preventDefault();
-        const section = $(this).data('section');
-        console.log(`🖱️ Filter clicked: ${section}`);
-        
-        // Update active class
-        $('.navbar-secondary .nav-item a').removeClass('active');
-        $(this).addClass('active');
-        
-        // Get current date from #dateFilter
-        const dateStr = $("#dateFilter").val();
-        const dateOnly = dateStr ? dateStr.split(' ')[0] : null;
-        fetchAppointmentsByDate(dateOnly, section);
+    },
+    onOpen: function (selectedDates, dateStr, instance) {
+      const currentDate = dateStr || instance.formatDate(new Date(), "Y-m-d");
+      $.ajax({
+        url: `${API_BASE_URL}/appointments/list/?date=${currentDate}`,
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function (data) {
+          appointmentsData = Array.isArray(data.appointments) ? data.appointments : [];
+          console.log(`📅 Loaded appointments for calendar:`, appointmentsData);
+          instance.redraw();
+        },
+        error: function (xhr) {
+          console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Unknown error"}`);
+          appointmentsData = [];
+          instance.redraw();
+        }
+      });
+    },
+    onDayCreate: function (dObj, dStr, fp, dayElem) {
+      const date = dayElem.dateObj;
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      appointmentsData.forEach(appt => {
+        if (!appt.appointment_date) return;
+        const apptDate = new Date(appt.appointment_date);
+        const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, "0")}-${String(apptDate.getDate()).padStart(2, "0")}`;
+        if (apptDateStr === dateStr) {
+          const apptTime = apptDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+          dayElem.classList.add("has-appointment");
+          dayElem.setAttribute("data-appointment-time", apptTime);
+        }
       });
     }
-
-    // Call existing initialization functions
-    console.log("🚀 Initializing Dashboard...");
-    checkAuthentication();
-    bindDateFilterButtons();
-    bindNavFilters(); // Add filter binding
-    console.log("✅ Dashboard Initialization Complete");
   });
-  
-  // Fetch Appointments by Date
+  console.log("🟢 Flatpickr Initialized for #dateFilter with default date: Today");
+
+  // Bind Date Filter Buttons
+  function bindDateFilterButtons() {
+    $(".btn:contains('Set')").on("click", function () {
+      const dateStr = $("#dateFilter").val();
+      console.log("🖱️ Set Date Clicked:", dateStr);
+      if (dateStr) {
+        fetchAppointmentsByDate(dateStr);
+      } else {
+        alert("Please select a date.");
+      }
+    });
+
+    $(".btn:contains('Today')").on("click", function () {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      console.log("🖱️ Today Clicked:", todayStr);
+      $("#dateFilter").val(todayStr);
+      flatpickr("#dateFilter").setDate(todayStr, false);
+      fetchAppointmentsByDate(todayStr);
+    });
+
+    $("#calendarTrigger").on("click", function () {
+      flatpickr("#dateFilter").open();
+      console.log("🗓️ Calendar button clicked, opening date picker");
+    });
+  }
+
   function fetchAppointmentsByDate(dateStr = null, filter = 'all') {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -500,11 +457,50 @@ $(document).ready(function () {
         console.log(`✅ Fetched appointments for ${selectedDate} with filter ${filter}`);
       },
       error: function (xhr) {
+        console.error(`❌ Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
         alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
         populateAppointmentsTable([], selectedDate, filter);
       }
     });
   }
+
+  // Bind Navigation Filters
+  function bindNavFilters() {
+    $(".navbar-secondary .nav-item a").on("click", function (e) {
+      e.preventDefault();
+      const section = $(this).data("section");
+      console.log(`🖱️ Filter clicked: ${section}`);
+
+      // Update active class
+      $(".navbar-secondary .nav-item a").removeClass("active");
+      $(this).addClass("active");
+
+      // Get current date from #dateFilter
+      const dateStr = $("#dateFilter").val();
+      if (dateStr) {
+        fetchAppointmentsByDate(dateStr, section);
+      } else {
+        console.warn("No date selected, fetching for today");
+        fetchAppointmentsByDate(null, section);
+      }
+    });
+  }
+
+  // Initialize Dashboard
+  $(document).ready(function () {
+    console.log("🚀 Initializing Dashboard...");
+    checkAuthentication();
+    bindDateFilterButtons();
+    bindNavFilters();
+    // Fetch today's appointments on page load
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    fetchAppointmentsByDate(todayStr);
+    console.log("✅ Dashboard Initialization Complete");
+  });
+  
+  // Fetch Appointments by Date
+  
 
   function updateAppointmentStatus(appointmentId, newStatus, $row, selectedDate) {
     $.ajax({
@@ -695,27 +691,6 @@ $(document).ready(function () {
     console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date} (${filter})`);
   }
 
-  // Bind Date Filter Buttons
-  function bindDateFilterButtons() {
-    $('.btn:contains("Set")').on('click', function () {
-      const dateStr = $("#dateFilter").val();
-      console.log("🖱️ Set Date Clicked:", dateStr);
-      fetchAppointmentsByDate(dateStr);
-    });
-
-    $('.btn:contains("Today")').on('click', function () {
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      console.log("🖱️ Today Clicked:", todayStr);
-      $("#dateFilter").val(todayStr);
-      fetchAppointmentsByDate(todayStr);
-    });
-
-    $("#todayBillBtn").on("click", function () {
-      $("#billDate").val(new Date().toISOString().split("T")[0]);
-      console.log("Bill date set to today");
-    });
-  }
 
   // Logout Function
   function logoutUser() {
