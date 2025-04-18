@@ -1,10 +1,10 @@
 // main.js
 $(document).ready(function () {
-  if (!sessionStorage.getItem("token")) {
-    console.warn("⚠️ No session token found. Redirecting to login...");
-    window.location.href = "../login/login.html";
-    return;
-  }
+  // if (!sessionStorage.getItem("token")) {
+  //   console.warn("⚠️ No session token found. Redirecting to login...");
+  //   window.location.href = "../login/login.html";
+  //   return;
+  // }
   
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
