@@ -361,7 +361,7 @@ $(document).ready(function () {
   }
 
   // main.js (replace relevant sections)
-
+  let appointmentsData = [];
   // Initialize Flatpickr for Date Filter
   flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
