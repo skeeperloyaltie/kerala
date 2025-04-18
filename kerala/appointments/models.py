@@ -6,20 +6,17 @@ from patients.models import Patient  # Import Patient from patients app
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
-        ('waiting', 'Waiting'),
-        ('scheduled', 'Scheduled'),
-        ('pending', 'Pending'),
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-        ('canceled', 'Canceled'),
-        ('rescheduled', 'Rescheduled'),
+        ('booked', 'Booked'),
+        ('arrived', 'Arrived'),
+        ('on-going', 'On-Going'),
+        ('reviewed', 'Reviewed'),
     ]
     history = HistoricalRecords()
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='booked')
     appointment_date = models.DateTimeField()
     notes = models.TextField(null=True, blank=True)
     is_emergency = models.BooleanField(default=False)
@@ -29,7 +26,6 @@ class Appointment(models.Model):
 
     class Meta:
         unique_together = ('patient', 'appointment_date')
-        
 
     def __str__(self):
         return f"Appointment for {self.patient} with {self.doctor} on {self.appointment_date}"
