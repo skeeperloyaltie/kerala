@@ -729,3 +729,20 @@ height: 100%;
     font-weight: bold;
   }
 
+.status-booked {
+  color: #007bff;
+  font-weight: bold;
+}
+.status-arrived {
+  color: #28a745;
+  font-weight: bold;
+}
+.status-on-going {
+  color: #ffc107;
+  font-weight: bold;
+}
+.status-reviewed {
+  color: #6c757d;
+  font-weight: bold;
+}
+
