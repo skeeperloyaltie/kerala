@@ -2178,9 +2178,12 @@ $(document).ready(function () {
   });
 
   $('#newActionModal').on('hidden.bs.modal', function () {
+    console.log("🔄 Modal hidden, resetting view and search input...");
     resetModalView();
     updateDetailsSection(null);
     sessionStorage.removeItem("billPatientId");
+    // Clear the search input
+    $('.navbar-top .form-control').val('');
   });
 
   console.log("🚀 Initializing Dashboard...");
