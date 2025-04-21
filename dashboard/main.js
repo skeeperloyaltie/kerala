@@ -784,21 +784,26 @@ $(document).ready(function () {
       modal.modal('show');
       console.log("🔍 Modal Opened");
   
+      // Reset tab visibility based on role permissions
+      const permittedTabs = $("#newActionTabs .nav-item:visible");
+      permittedTabs.show();
+      // Hide Add Service tab by default unless explicitly triggered
+      $("#addServiceTab").closest(".nav-item").hide();
+  
       // Handle Add Service action exclusively
       if (action === "add-services") {
-        // Hide all tabs except Add Service
+        // Show only Add Service tab
         $("#newActionTabs .nav-item").hide();
         $(`#${tabId}`).closest(".nav-item").show();
-        // Hide all tab content
+        // Activate Add Service tab content
         $("#newActionTabContent .tab-pane").removeClass("show active");
-        // Show only Add Service tab content
-        $(`#${tabId}`).closest(".tab-pane").addClass("show active");
+        $(`#${tabId}`).tab('show');
+        $(`#addService`).addClass("show active");
         console.log(`✅ Exclusively showing Add Service tab: ${tabId}`);
       } else {
-        // For other actions, show all permitted tabs based on role
-        const permittedTabs = $("#newActionTabs .nav-item:visible");
+        // For other actions, show all permitted tabs except Add Service
         permittedTabs.show();
-        // Ensure Add Service tab is hidden unless explicitly allowed
+        // Ensure Add Service tab remains hidden unless permitted
         if (!$(`#addServiceTab`).closest(".nav-item").is(":visible")) {
           $(`#addServiceTab`).closest(".nav-item").hide();
         }
@@ -2163,9 +2168,11 @@ $(document).ready(function () {
     console.log("🔍 Modal shown, ensuring tab visibility...");
     const permittedTabs = $("#newActionTabs .nav-item:visible");
     permittedTabs.show();
-    // Explicitly hide Add Service tab if not permitted
-    if (!$("#addServiceTab").closest(".nav-item").is(":visible")) {
-      $("#addServiceTab").closest(".nav-item").hide();
+    // Explicitly hide Add Service tab by default
+    $("#addServiceTab").closest(".nav-item").hide();
+    // If Add Service tab is active (from add-services action), show it
+    if ($("#addServiceTab").hasClass("active")) {
+      $("#addServiceTab").closest(".nav-item").show();
     }
     if (typeof initializeDatePickers === 'function') initializeDatePickers();
   });
