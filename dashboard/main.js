@@ -790,6 +790,22 @@ $(document).ready(function () {
       // Hide Add Service tab by default unless explicitly triggered
       $("#addServiceTab").closest(".nav-item").hide();
   
+      // Handle specific actions
+      if (action === "new") {
+        // Reset Add Patient form and show only Personal Details
+        $('#addPatientForm')[0].reset();
+        $('#patientPhone').val('').trigger('change'); // Reset intlTelInput
+        $('#mobile2').val('').trigger('change'); // Reset intlTelInput
+        flatpickr("#patientDOB").clear();
+        flatpickr("#maritalSince").clear();
+        flatpickr("#appointmentDate").clear();
+        $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
+        $('#personalDetailsCollapse').addClass('show');
+        $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
+        updateDetailsSection(null); // Clear patient details
+        // selectedPatientId = null; // Clear global patient ID
+      }
+  
       // Handle Add Service action exclusively
       if (action === "add-services") {
         // Show only Add Service tab
@@ -928,9 +944,20 @@ $(document).ready(function () {
       headers: getAuthHeaders(),
       success: function (data) {
         selectedPatientId = (data.patient || data).patient_id; // Store patient ID globally
-        populateProfileTab(data);
+        const patient = data.patient || data;
+        const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
+        
+        // Populate both Profile and Add Patient forms
+        populateProfileTab(patient);
+        populateAddPatientForm(patient, appointment);
+        
+        // Show all sections in Add Patient form
+        $('#personalDetailsCollapse, #contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').addClass('show');
+        
+        // Open modal to Add Patient tab
         $('#newActionModal').modal('show');
-        $('#profileTab').tab('show');
+        $('#addPatientTab').tab('show');
+        
         updateDetailsSection(data);
         // Pre-set bill patient ID for seamless transition to bill tab
         $("#patientIdForBill").val(selectedPatientId);
@@ -2179,18 +2206,38 @@ $(document).ready(function () {
     if ($("#addServiceTab").hasClass("active")) {
       $("#addServiceTab").closest(".nav-item").show();
     }
+    // If Add Patient tab is active and no patient is selected, show only Personal Details
+    if ($("#addPatientTab").hasClass("active") && !selectedPatientId) {
+      $('#addPatientForm')[0].reset();
+      $('#patientPhone').val('').trigger('change'); // Reset intlTelInput
+      $('#mobile2').val('').trigger('change'); // Reset intlTelInput
+      flatpickr("#patientDOB").clear();
+      flatpickr("#maritalSince").clear();
+      flatpickr("#appointmentDate").clear();
+      $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
+      $('#personalDetailsCollapse').addClass('show');
+      $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
+      updateDetailsSection(null); // Clear patient details
+    }
     if (typeof initializeDatePickers === 'function') initializeDatePickers();
   });
 
-  $$('#newActionModal').on('hidden.bs.modal', function () {
+  $('#newActionModal').on('hidden.bs.modal', function () {
     console.log("🔄 Modal hidden, resetting view and search input...");
     resetModalView();
     updateDetailsSection(null);
     sessionStorage.removeItem("billPatientId");
+    selectedPatientId = null; // Clear global patient ID
     // Clear the search input
     $('.navbar-top .form-control.patient-search').val('');
     // Reset the Add Patient form to show only Personal Details
     $('#addPatientForm')[0].reset();
+    $('#patientPhone').val('').trigger('change'); // Reset intlTelInput
+    $('#mobile2').val('').trigger('change'); // Reset intlTelInput
+    flatpickr("#patientDOB").clear();
+    flatpickr("#maritalSince").clear();
+    flatpickr("#appointmentDate").clear();
+    $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
     $('#personalDetailsCollapse').addClass('show');
     $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
   });
