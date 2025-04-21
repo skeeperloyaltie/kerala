@@ -23,7 +23,7 @@ class ServiceCreateView(APIView):
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {request.user.username} (doctor-senior) allowed to add service")
         elif not request.user.has_perm('service.add_service'):
-            error_msg = f"Permission denied: User {request.user.username} lacks 'services.add_service' permission."
+            error_msg = f"Permission denied: User {request.user.username} lacks 'service.add_service' permission."
             if not user_type or not role_level:
                 error_msg += " User type or role level missing from profile."
             else:
@@ -31,10 +31,11 @@ class ServiceCreateView(APIView):
             logger.warning(error_msg)
             return Response({"error": error_msg}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = ServiceSerializer(data=request.data)
+        # Pass request to serializer context to access all_doctors flag
+        serializer = ServiceSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
-            logger.info(f"Service {serializer.data.get('service_name', 'Unnamed')} created by {request.user.username}")
+            service = serializer.save()
+            logger.info(f"Service {service.name} created by {request.user.username} with doctors: {list(service.doctors.values_list('id', flat=True))}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         logger.error(f"Service creation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -51,7 +52,7 @@ class ServiceListView(APIView):
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {request.user.username} (doctor-senior) allowed to view services")
         elif not request.user.has_perm('service.view_service'):
-            error_msg = f"Permission denied: User {request.user.username} lacks 'services.view_service' permission."
+            error_msg = f"Permission denied: User {request.user.username} lacks 'service.view_service' permission."
             if not user_type or not role_level:
                 error_msg += " User type or role level missing from profile."
             else:
@@ -79,7 +80,7 @@ class ServiceSearchView(APIView):
         if user_type == 'doctor' and role_level == 'senior':
             logger.info(f"User {user.username} (doctor-senior) allowed to search services")
         elif not user.has_perm('service.view_service'):
-            error_msg = f"Permission denied: User {user.username} lacks 'services.view_service' permission."
+            error_msg = f"Permission denied: User {user.username} lacks 'service.view_service' permission."
             if not user_type or not role_level:
                 error_msg += " User type or role level missing from profile."
             else:

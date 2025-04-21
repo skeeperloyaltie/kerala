@@ -1484,20 +1484,19 @@ $(document).ready(function () {
 // Update Add Service Form Submission to refresh table
   $("#addServiceForm").submit(function (e) {
     e.preventDefault();
+    const selectedDoctors = $("#serviceDoctors").val();
+    const allDoctors = selectedDoctors.includes("all");
+    const doctorIds = allDoctors ? [] : selectedDoctors.filter(id => id !== "all").map(id => parseInt(id));
+
     const data = {
       service_name: $("#serviceName").val(),
       service_price: parseFloat($("#servicePrice").val()),
       code: $("#serviceCode").val(),
       color_code: $("#serviceColorCode").val(),
-      owner_id: $("#serviceOwner").val() || sessionStorage.getItem("doctor_id") || null
+      doctors: doctorIds,
+      all_doctors: allDoctors
     };
     console.log("Submitting add service form...", data);
-
-    if (!data.owner_id && sessionStorage.getItem("user_type") !== "doctor") {
-      console.error("No doctor selected and logged-in user is not a doctor.");
-      alert("Please select a doctor or log in as a doctor.");
-      return;
-    }
 
     $.ajax({
       url: `${API_BASE_URL}/service/create/`,
@@ -1508,6 +1507,7 @@ $(document).ready(function () {
       success: () => {
         console.log("Service added successfully");
         $(this)[0].reset();
+        $("#serviceDoctors").val(null).trigger('change'); // Reset Select2
         $("#newActionModal").modal("hide");
         alert("Service added successfully");
         fetchServices(); // Refresh services list for bill items
@@ -1566,7 +1566,8 @@ $(document).ready(function () {
           id: service.id,
           name: service.service_name || service.name || "Unknown Service",
           price: service.service_price || service.price || 0,
-          code: service.code || "" // Include service code
+          code: service.code || "",
+          doctor_details: service.doctor_details || []
         }));
         console.log(`Fetched ${services.length} services for autocomplete`, services);
       },
@@ -1617,19 +1618,19 @@ $(document).ready(function () {
         }
   
         rawServices.forEach((service, index) => {
-          const ownerName = service.owner
-            ? `${service.owner.first_name || ''} ${service.owner.last_name || ''}`.trim() || 'N/A'
+          const doctorNames = service.doctor_details && service.doctor_details.length
+            ? service.doctor_details.map(d => `${d.first_name} ${d.last_name || ''}`.trim()).join(', ') || 'All Doctors'
             : 'N/A';
           const $row = $(`
             <tr>
               <td>${index + 1}</td>
               <td>${service.service_name || service.name || 'Unknown Service'}</td>
               <td>${service.code || 'N/A'}</td>
-<td>₹${parseFloat(service.service_price || service.price || 0) || 0.00}</td>
+              <td>₹${parseFloat(service.service_price || service.price || 0).toFixed(2)}</td>
               <td>
                 <span style="display: inline-block; width: 20px; height: 20px; background-color: ${service.color_code || '#000000'}; border: 1px solid #ccc;"></span>
               </td>
-              <td>${ownerName}</td>
+              <td>${doctorNames}</td>
             </tr>
           `);
           $tbody.append($row);
@@ -1727,20 +1728,41 @@ $(document).ready(function () {
   });
 
   // Populate Doctor Dropdown for Bills
-  function populateDoctorDropdownForBill() {
+  function populateDoctorDropdown(selectId, specialtyId) {
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        const doctorSelect = $("#billDoctor");
+        const doctorSelect = $(`#${selectId}`);
         doctorSelect.empty();
-        doctorSelect.append('<option value="" selected>Select Doctor</option>');
+        if (selectId === "serviceDoctors") {
+          doctorSelect.append('<option value="all">All Doctors</option>');
+        } else {
+          doctorSelect.append('<option value="" selected>Select Doctor</option>');
+        }
         data.doctors.forEach(doctor => {
           doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
         });
+  
+        if (selectId === "serviceDoctors") {
+          // Initialize Select2 for multi-select
+          doctorSelect.select2({
+            placeholder: "Select doctors or All Doctors",
+            allowClear: true,
+            width: '100%'
+          });
+        }
+  
+        if (specialtyId) {
+          doctorSelect.on('change', function () {
+            const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
+            $(`#${specialtyId}`).val(selectedDoctor ? selectedDoctor.specialization : '');
+          });
+        }
       },
-      error: function () {
+      error: function (xhr) {
+        console.error(`Failed to fetch doctors: ${xhr.status}`, xhr.responseJSON);
         alert("Failed to fetch doctors.");
       }
     });
@@ -2246,6 +2268,15 @@ $(document).ready(function () {
   checkAuthentication();
   bindDateFilterButtons();
   bindNavFilters();
+  // Populate doctor dropdowns
+  populateDoctorDropdown("doctor", "doctorSpecialty");
+  populateDoctorDropdown("serviceDoctors");
+
+  $('#serviceDoctors').select2({
+    placeholder: "Select doctors or All Doctors",
+    allowClear: true,
+    width: '100%'
+  });
   // Fetch today's appointments on page load
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;

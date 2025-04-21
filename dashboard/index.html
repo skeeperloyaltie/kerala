@@ -630,11 +630,11 @@
           </div>
           <div class="row mb-3">
             <div class="col-md-12">
-              <label for="serviceOwner" class="form-label">Service Owner (Doctor)</label>
+              <label for="serviceDoctors" class="form-label">Doctors</label>
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                <select class="form-select" id="serviceOwner" name="service_owner" required>
-                  <option value="" disabled selected>Select Doctor</option>
+                <select class="form-select" id="serviceDoctors" name="doctors" multiple>
+                  <option value="all">All Doctors</option>
                   <!-- Populated dynamically via JS -->
                 </select>
               </div>
@@ -1133,6 +1133,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.js"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="flatpicker.js"></script>
