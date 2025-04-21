@@ -841,12 +841,11 @@ $(document).ready(function () {
   // Setup Patient Search with Autocomplete
   function setupPatientSearch() {
     console.log("🔍 Setting up patient search...");
-    const $searchInput = $('.navbar-top .form-control');
+    const $searchInput = $('.navbar-top .form-control.patient-search');
     console.log("🔍 Search input found:", $searchInput.length ? "Yes" : "No", $searchInput);
-
+  
     const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
     $searchInput.after($dropdown);
-
     $searchInput.on('input', debounce(function () {
       console.log("✨ Search input triggered:", $searchInput.val());
       const query = $searchInput.val().trim();
@@ -856,7 +855,7 @@ $(document).ready(function () {
         return;
       }
       console.log("🚀 Proceeding with search for query:", query);
-
+  
       $.ajax({
         url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
         type: "GET",
@@ -881,7 +880,7 @@ $(document).ready(function () {
             console.log("👀 Dropdown should be visible now");
           } else {
             $dropdown.show();
-            console.log("🕳️ No patients found, hiding dropdown");
+            console.log("🕳️ No patients found, showing create patient prompt");
             showCreatePatientPrompt(query);
           }
         },
@@ -891,16 +890,22 @@ $(document).ready(function () {
         }
       });
     }, 300));
-
+  
     $dropdown.on('click', 'li', function () {
       const patientId = $(this).data('patient-id');
       $searchInput.val($(this).text());
       $dropdown.hide();
+      console.log("👤 Patient selected, ID:", patientId);
       fetchPatientDetails(patientId);
+      // Show all sections in Add Patient form
+      $('#personalDetailsCollapse, #contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').addClass('show');
+      // Open modal to Add Patient tab
+      $('#newActionModal').modal('show');
+      $('#addPatientTab').tab('show');
     });
-
+  
     $(document).on('click', function (e) {
-      if (!$(e.target).closest('.navbar-top .form-control, .autocomplete-dropdown').length) {
+      if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
         $dropdown.hide();
       }
     });
@@ -2177,13 +2182,17 @@ $(document).ready(function () {
     if (typeof initializeDatePickers === 'function') initializeDatePickers();
   });
 
-  $('#newActionModal').on('hidden.bs.modal', function () {
+  $$('#newActionModal').on('hidden.bs.modal', function () {
     console.log("🔄 Modal hidden, resetting view and search input...");
     resetModalView();
     updateDetailsSection(null);
     sessionStorage.removeItem("billPatientId");
     // Clear the search input
-    $('.navbar-top .form-control').val('');
+    $('.navbar-top .form-control.patient-search').val('');
+    // Reset the Add Patient form to show only Personal Details
+    $('#addPatientForm')[0].reset();
+    $('#personalDetailsCollapse').addClass('show');
+    $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
   });
 
   console.log("🚀 Initializing Dashboard...");
