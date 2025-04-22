@@ -1767,6 +1767,24 @@ $(document).ready(function () {
       }
     });
   }
+  function populateDoctorDropdownForBill() {
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        const doctorSelect = $("#billDoctor");
+        doctorSelect.empty();
+        doctorSelect.append('<option value="" selected>Select Doctor</option>');
+        data.doctors.forEach(doctor => {
+          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
+        });
+      },
+      error: function () {
+        alert("Failed to fetch doctors.");
+      }
+    });
+  }
 
   // Add Bill Item
   let itemCount = 0;
