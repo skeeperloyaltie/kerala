@@ -1700,7 +1700,9 @@ $(document).ready(function () {
 
   // Call populateServicesTable when Add Service tab is shown
   $("#addServiceTab").on("shown.bs.tab", function () {
-    populateServicesTable();
+    console.log("Add Service tab shown, populating doctors...");
+    populateDoctorDropdown("serviceDoctors"); // Re-populate doctors
+    populateServicesTable(); // Existing call to populate services table
   });
 
   // Handle service selection
@@ -1768,20 +1770,50 @@ $(document).ready(function () {
     });
   }
   function populateDoctorDropdownForBill() {
+    const doctorSelect = $("#billDoctor");
+    doctorSelect.empty().append('<option value="" selected>Select Doctor</option>');
+    doctorSelect.append('<option value="" disabled>Loading doctors...</option>');
+  
     $.ajax({
       url: `${API_BASE_URL}/appointments/doctors/list/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        const doctorSelect = $("#billDoctor");
-        doctorSelect.empty();
-        doctorSelect.append('<option value="" selected>Select Doctor</option>');
-        data.doctors.forEach(doctor => {
-          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
-        });
+        console.log("Doctor API response for billDoctor:", data); // Log for debugging
+        doctorSelect.empty().append('<option value="" selected>Select Doctor</option>');
+  
+        const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+        if (doctors.length === 0) {
+          console.warn("No doctors returned from API");
+          doctorSelect.append('<option value="" disabled>No doctors available</option>');
+        } else {
+          doctors.forEach(doctor => {
+            if (doctor.id && doctor.first_name) {
+              doctorSelect.append(
+                `<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name || ''}</option>`
+              );
+            } else {
+              console.warn("Skipping invalid doctor entry:", doctor);
+            }
+          });
+        }
+  
+        // Optionally initialize Select2 for consistency (uncomment if needed)
+        
+        if (!doctorSelect.hasClass('select2-hidden-accessible')) {
+          doctorSelect.select2({
+            placeholder: "Select Doctor",
+            allowClear: true,
+            width: '100%'
+          });
+        }
+        
       },
-      error: function () {
-        alert("Failed to fetch doctors.");
+      error: function (xhr) {
+        console.error(`Failed to fetch doctors for billDoctor: ${xhr.status}`, xhr.responseJSON);
+        doctorSelect.empty().append('<option value="" selected>Select Doctor</option>');
+        doctorSelect.append('<option value="" disabled>Failed to load doctors</option>');
+        alert("Failed to fetch doctors. Please check your connection or try again.");
       }
     });
   }
@@ -2210,23 +2242,56 @@ $(document).ready(function () {
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
+        console.log("Doctor API response:", data); // Log the response for debugging
         const doctorSelect = $(`#${selectId}`);
         doctorSelect.empty();
-        doctorSelect.append('<option value="" selected>Select Doctor</option>');
-        data.doctors.forEach(doctor => {
-          doctorSelect.append(`<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name}</option>`);
-        });
-
+  
+        // Handle different selectId cases
+        if (selectId === "serviceDoctors") {
+          doctorSelect.append('<option value="all">All Doctors</option>');
+        } else {
+          doctorSelect.append('<option value="" selected>Select Doctor</option>');
+        }
+  
+        // Validate and populate doctor options
+        const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+        if (doctors.length === 0) {
+          console.warn("No doctors returned from API");
+          doctorSelect.append('<option value="" disabled>No doctors available</option>');
+        } else {
+          doctors.forEach(doctor => {
+            if (doctor.id && doctor.first_name) {
+              doctorSelect.append(
+                `<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name || ''}</option>`
+              );
+            } else {
+              console.warn("Skipping invalid doctor entry:", doctor);
+            }
+          });
+        }
+  
+        // Initialize Select2 for serviceDoctors only if not already initialized
+        if (selectId === "serviceDoctors" && !doctorSelect.hasClass('select2-hidden-accessible')) {
+          doctorSelect.select2({
+            placeholder: "Select doctors or All Doctors",
+            allowClear: true,
+            width: '100%'
+          });
+        }
+  
+        // Handle specialty field updates
         if (specialtyId) {
-          doctorSelect.on('change', function () {
-            const selectedDoctor = data.doctors.find(d => d.id == $(this).val());
+          doctorSelect.off('change.specialty').on('change.specialty', function () {
+            const selectedDoctor = doctors.find(d => d.id == $(this).val());
             $(`#${specialtyId}`).val(selectedDoctor ? selectedDoctor.specialization : '');
           });
         }
       },
       error: function (xhr) {
         console.error(`Failed to fetch doctors: ${xhr.status}`, xhr.responseJSON);
-        alert("Failed to fetch doctors.");
+        const doctorSelect = $(`#${selectId}`);
+        doctorSelect.empty().append('<option value="" disabled>Failed to load doctors</option>');
+        alert("Failed to fetch doctors. Please check your connection or try again.");
       }
     });
   }
@@ -2290,11 +2355,7 @@ $(document).ready(function () {
   populateDoctorDropdown("doctor", "doctorSpecialty");
   populateDoctorDropdown("serviceDoctors");
 
-  $('#serviceDoctors').select2({
-    placeholder: "Select doctors or All Doctors",
-    allowClear: true,
-    width: '100%'
-  });
+  
   // Fetch today's appointments on page load
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
