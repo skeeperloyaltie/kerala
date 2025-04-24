@@ -7,7 +7,11 @@ from rest_framework import serializers
 from .models import Service
 from users.models import Doctor
 
+
 class DoctorSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+
     class Meta:
         model = Doctor
         fields = ['id', 'first_name', 'last_name', 'specialization']
@@ -23,7 +27,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'price', 'code', 'color_code', 'doctors', 'doctor_details', 'created_at', 'updated_at']
 
     def validate(self, data):
-        # Ensure at least one doctor or all_doctors flag is provided
         all_doctors = self.context['request'].data.get('all_doctors', False)
         if not all_doctors and not data.get('doctors'):
             raise serializers.ValidationError("At least one doctor must be specified or 'all_doctors' must be true.")
