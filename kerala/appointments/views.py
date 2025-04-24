@@ -132,8 +132,12 @@ class AppointmentListView(APIView):
 
         try:
             appointments = Appointment.objects.all()
+            filtered_appointments = []
+            status_success = False
+            date_success = False
+            doctor_success = False
 
-            # Apply status filter
+            # Define status map
             status_map = {
                 'all': ['booked', 'arrived', 'on-going', 'reviewed', 'scheduled'],
                 'booked': ['booked'],
@@ -143,9 +147,42 @@ class AppointmentListView(APIView):
                 'scheduled': ['scheduled']
             }
             allowed_statuses = status_map.get(status_filter, status_map['all'])
-            appointments = appointments.filter(status__in=allowed_statuses)
-            logger.debug(f"After status filter: {appointments.count()} appointments")
 
+            # Apply status filter
+            if allowed_statuses:
+                appointments = appointments.filter(status__in=allowed_statuses)
+                if appointments.exists():
+                    status_success = True
+                    filtered_appointments = list(appointments)
+                    logger.debug(f"Status filter successful: {appointments.count()} appointments")
+                else:
+                    logger.debug(f"Status filter returned 0 appointments")
+
+            # For Receptionists: Skip date filter, apply only status and doctor filters
+            if user.user_type == "Receptionist":
+                if doctor_id and doctor_id != 'all':
+                    try:
+                        appointments = appointments.filter(doctor__id=doctor_id)
+                        if appointments.exists():
+                            doctor_success = True
+                            filtered_appointments = list(appointments)
+                            logger.debug(f"Doctor filter successful for receptionist: {appointments.count()} appointments")
+                        else:
+                            logger.debug(f"Doctor filter returned 0 appointments for receptionist")
+                    except ValueError:
+                        logger.error(f"Invalid doctor_id: {doctor_id}")
+                        return Response({"error": "Invalid doctor_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Return appointments if either status or doctor filter is successful
+                if status_success or doctor_success:
+                    serializer = AppointmentSerializer(filtered_appointments, many=True)
+                    logger.info(f"Appointments returned for receptionist {user.username}: {len(serializer.data)}")
+                    return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+                else:
+                    logger.info(f"No appointments returned for receptionist {user.username}")
+                    return Response({"appointments": []}, status=status.HTTP_200_OK)
+
+            # For Doctors: Apply date and doctor filters, return if any filter is successful
             # Apply date range filter
             if start_date_str and end_date_str:
                 try:
@@ -155,10 +192,15 @@ class AppointmentListView(APIView):
                         start_date = KOLKATA_TZ.localize(start_date)
                         end_date = KOLKATA_TZ.localize(end_date)
                     appointments = appointments.filter(appointment_date__range=[start_date, end_date])
-                    logger.debug(f"After date filter: {appointments.count()} appointments")
-                    # Debug: Print the appointment dates
-                    for appt in appointments:
-                        logger.debug(f"Appointment {appt.id}: {appt.appointment_date}")
+                    if appointments.exists():
+                        date_success = True
+                        filtered_appointments = list(appointments)
+                        logger.debug(f"Date filter successful: {appointments.count()} appointments")
+                        # Debug: Print the appointment dates
+                        for appt in appointments:
+                            logger.debug(f"Appointment {appt.id}: {appt.appointment_date}")
+                    else:
+                        logger.debug(f"Date filter returned 0 appointments")
                 except ValueError:
                     logger.error(f"Invalid date format: start_date={start_date_str}, end_date={end_date_str}")
                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
@@ -167,22 +209,36 @@ class AppointmentListView(APIView):
             if doctor_id and doctor_id != 'all':
                 try:
                     appointments = appointments.filter(doctor__id=doctor_id)
-                    logger.debug(f"After doctor_id filter: {appointments.count()} appointments")
+                    if appointments.exists():
+                        doctor_success = True
+                        filtered_appointments = list(appointments)
+                        logger.debug(f"Doctor filter successful: {appointments.count()} appointments")
+                    else:
+                        logger.debug(f"Doctor filter returned 0 appointments")
                 except ValueError:
                     logger.error(f"Invalid doctor_id: {doctor_id}")
                     return Response({"error": "Invalid doctor_id."}, status=status.HTTP_400_BAD_REQUEST)
             elif user.user_type == "Doctor":
                 appointments = appointments.filter(doctor=user.doctor)
-                logger.debug(f"After user.doctor filter: {appointments.count()} appointments")
+                if appointments.exists():
+                    doctor_success = True
+                    filtered_appointments = list(appointments)
+                    logger.debug(f"User.doctor filter successful: {appointments.count()} appointments")
+                else:
+                    logger.debug(f"User.doctor filter returned 0 appointments")
 
-            # Serialize and return
-            serializer = AppointmentSerializer(appointments, many=True)
-            logger.info(f"Appointments returned for {user.username}: {len(serializer.data)}")
-            return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+            # Return appointments if any filter was successful
+            if status_success or date_success or doctor_success:
+                serializer = AppointmentSerializer(filtered_appointments, many=True)
+                logger.info(f"Appointments returned for {user.username}: {len(serializer.data)}")
+                return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
+            else:
+                logger.info(f"No appointments returned for {user.username}")
+                return Response({"appointments": []}, status=status.HTTP_200_OK)
+
         except Exception as e:
             logger.error(f"Error fetching appointments for {user.username}: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while retrieving appointments."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class VitalsAPIView(APIView):
     permission_classes = [IsAuthenticated]
