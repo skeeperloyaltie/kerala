@@ -16,6 +16,8 @@ from .serializers import AppointmentSerializer, DoctorSerializer, VitalsSerializ
 from patients.models import Patient  # Import Patient from patients app
 from patients.serializers import PatientSerializer  # Import PatientSerializer
 from users.models import Doctor, Receptionist, Nurse
+from datetime import timedelta
+
 
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
