@@ -117,7 +117,6 @@ class AppointmentListView(APIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        # Get query parameters
         status_filter = request.query_params.get('status', 'all').lower()
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
@@ -130,22 +129,20 @@ class AppointmentListView(APIView):
             raise PermissionDenied("You do not have permission to view appointments.")
 
         try:
-            # Initialize queryset
             appointments = Appointment.objects.all()
 
             # Apply status filter
             status_map = {
-                'all': ['booked', 'arrived', 'on-going', 'reviewed'],
+                'all': ['booked', 'arrived', 'on-going', 'reviewed', 'scheduled'],
                 'booked': ['booked'],
                 'arrived': ['arrived'],
                 'on-going': ['on-going'],
-                'reviewed': ['reviewed']
+                'reviewed': ['reviewed'],
+                'scheduled': ['scheduled']
             }
             allowed_statuses = status_map.get(status_filter, status_map['all'])
-            if status_filter != 'all':
-                appointments = appointments.filter(status__in=allowed_statuses)
-            else:
-                appointments = appointments.filter(status__in=allowed_statuses)
+            appointments = appointments.filter(status__in=allowed_statuses)
+            logger.debug(f"After status filter: {appointments.count()} appointments")
 
             # Apply date range filter
             if start_date_str and end_date_str:
@@ -155,6 +152,7 @@ class AppointmentListView(APIView):
                     start_date = KOLKATA_TZ.localize(start_date)
                     end_date = KOLKATA_TZ.localize(end_date)
                     appointments = appointments.filter(appointment_date__range=[start_date, end_date])
+                    logger.debug(f"After date filter: {appointments.count()} appointments")
                 except ValueError:
                     logger.error(f"Invalid date format: start_date={start_date_str}, end_date={end_date_str}")
                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
@@ -163,12 +161,13 @@ class AppointmentListView(APIView):
             if doctor_id and doctor_id != 'all':
                 try:
                     appointments = appointments.filter(doctor__id=doctor_id)
+                    logger.debug(f"After doctor_id filter: {appointments.count()} appointments")
                 except ValueError:
                     logger.error(f"Invalid doctor_id: {doctor_id}")
                     return Response({"error": "Invalid doctor_id."}, status=status.HTTP_400_BAD_REQUEST)
             elif user.user_type == "Doctor":
-                # Restrict doctors to their own appointments
                 appointments = appointments.filter(doctor=user.doctor)
+                logger.debug(f"After user.doctor filter: {appointments.count()} appointments")
 
             # Serialize and return
             serializer = AppointmentSerializer(appointments, many=True)
