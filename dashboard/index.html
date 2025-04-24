@@ -97,27 +97,27 @@
   <!-- Appointments Section -->
   <div class="container-fluid mt-3">
     <div id="appointmentsSection" class="section active">
-      <!-- Table View -->
-      <div id="appointmentsTableView" class="appointments-view">
-        <table class="table table-appointments table-bordered table-hover">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Patient ID</th>
-              <th>Name</th>
-              <th>Token</th>
-              <th>Time</th>
-              <th>Status</th>
-              <th>Doctor</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
       <!-- Calendar View -->
-      <div id="appointmentsCalendarView" class="appointments-view" style="display: none;">
-        <div id="appointmentsCalendar"></div>
+      <div id="appointmentsCalendarView" class="appointments-view">
+        <div id="appointmentsCalendar">
+          <div class="calendar-grid">
+            <div class="calendar-header">
+              <div>Time</div>
+              <!-- Days will be dynamically populated -->
+            </div>
+            <div class="calendar-body" id="calendarBody">
+              <!-- JavaScript will insert time rows and appointments here -->
+            </div>
+          </div>
+        </div>
+        <!-- Doctor Filter -->
+        <div class="mt-3">
+          <label for="doctorFilter" class="form-label">Filter by Doctor:</label>
+          <select class="form-select" id="doctorFilter">
+            <option value="all">All Doctors</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
       </div>
     </div>
   </div>

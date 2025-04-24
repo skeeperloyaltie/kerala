@@ -439,34 +439,79 @@ $(document).ready(function () {
     });
   }
 
-  function fetchAppointmentsByDate(dateStr = null, filter = 'all') {
+  function fetchAppointmentsByDate(dateStr = null, filter = 'all', doctorId = 'all') {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
   
-    console.log(`📅 Fetching appointments for date: ${selectedDate}, filter: ${filter}`);
+    console.log(`📅 Fetching appointments for date: ${selectedDate}, filter: ${filter}, doctorId: ${doctorId}`);
   
     // Update #dateFilter to reflect the selected date
     $("#dateFilter").val(selectedDate);
     flatpickr("#dateFilter").setDate(selectedDate, false);
   
+    // Calculate the start and end of the week
+    const startDate = new Date(selectedDate);
+    startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6); // End on Saturday
+  
+    const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+    const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+  
+    // Build the API URL with date range and optional doctor filter
+    let url = `${API_BASE_URL}/appointments/list/?start_date=${startDateStr}&end_date=${endDateStr}`;
+    if (doctorId !== 'all') {
+      url += `&doctor_id=${doctorId}`;
+    }
+  
     $.ajax({
-      url: `${API_BASE_URL}/appointments/list/?date=${selectedDate}`,
+      url: url,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        console.log(`📥 Raw API response for ${selectedDate}:`, data);
-        populateAppointmentsTable(data, selectedDate, filter);
-        console.log(`✅ Fetched appointments for ${selectedDate} with filter ${filter}`);
+        console.log(`📥 Raw API response for ${startDateStr} to ${endDateStr}:`, data);
+  
+        // Normalize appointments data
+        let appointmentsArray = [];
+        if (Array.isArray(data)) {
+          appointmentsArray = data;
+        } else if (data && Array.isArray(data.appointments)) {
+          appointmentsArray = data.appointments;
+        } else if (data && Array.isArray(data.results)) {
+          appointmentsArray = data.results;
+        } else {
+          console.warn(`⚠️ Unexpected response format:`, data);
+          appointmentsArray = [];
+        }
+  
+        // Filter by status
+        const statusMap = {
+          'all': ['booked', 'arrived', 'on-going', 'reviewed'],
+          'booked': ['booked'],
+          'arrived': ['arrived'],
+          'on-going': ['on-going'],
+          'reviewed': ['reviewed']
+        };
+        const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
+  
+        appointmentsArray = appointmentsArray.filter(appt => {
+          if (!appt || !appt.status) return false;
+          return allowedStatuses.includes(appt.status.toLowerCase());
+        });
+  
+        // Populate calendar view
+        populateAppointmentsCalendar(appointmentsArray, startDateStr, doctorId);
+  
+        console.log(`✅ Fetched ${appointmentsArray.length} appointments for ${startDateStr} to ${endDateStr} with filter ${filter} and doctorId ${doctorId}`);
       },
       error: function (xhr) {
         console.error(`❌ Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
         alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
-        populateAppointmentsTable([], selectedDate, filter);
+        populateAppointmentsCalendar([], startDateStr, doctorId); // Show empty calendar
       }
     });
-  }
-
+  }  
   // Bind Navigation Filters
   function bindNavFilters() {
     $(".navbar-secondary .nav-item a").on("click", function (e) {
@@ -503,9 +548,52 @@ $(document).ready(function () {
   });
   
   // Fetch Appointments by Date
+  function populateDoctorDropdownForFilter() {
+    const doctorSelect = $("#doctorFilter");
+    doctorSelect.empty().append('<option value="all">All Doctors</option>');
   
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        console.log("Doctor API response for filter:", data);
+        const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+        if (doctors.length === 0) {
+          console.warn("No doctors returned from API");
+          doctorSelect.append('<option value="" disabled>No doctors available</option>');
+        } else {
+          doctors.forEach(doctor => {
+            if (doctor.id && doctor.first_name) {
+              doctorSelect.append(
+                `<option value="${doctor.id}">${doctor.first_name} ${doctor.last_name || ''}</option>`
+              );
+            } else {
+              console.warn("Skipping invalid doctor entry:", doctor);
+            }
+          });
+        }
+      },
+      error: function (xhr) {
+        console.error(`Failed to fetch doctors for filter: ${xhr.status}`, xhr.responseJSON);
+        doctorSelect.empty().append('<option value="" disabled>Failed to load doctors</option>');
+        alert("Failed to fetch doctors for filter.");
+      }
+    });
+  }
 
-   function updateAppointmentStatus(appointmentId, newStatus, $row, selectedDate) {
+
+  function bindDoctorFilter() {
+    $("#doctorFilter").on("change", function () {
+      const doctorId = $(this).val();
+      const dateStr = $("#dateFilter").val();
+      const filter = $(".navbar-secondary .nav-item a.active").data("section") || "all";
+      console.log(`🖱️ Doctor filter changed to: ${doctorId}`);
+      fetchAppointmentsByDate(dateStr, filter, doctorId);
+    });
+  }
+
+  function updateAppointmentStatus(appointmentId, newStatus, $row = null, selectedDate = null, callback = null) {
     $.ajax({
       url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
       type: "PATCH",
@@ -514,184 +602,369 @@ $(document).ready(function () {
       contentType: "application/json",
       success: function (updatedAppointment) {
         console.log(`✅ Updated appointment ${appointmentId} to status ${newStatus}`);
-        // Update the row's status display
-        const statusClass = newStatus ? `status-${newStatus.toLowerCase().replace(' ', '-')}` : 'status-unknown';
-        $row.find('.status-select').val(newStatus);
-        $row.find('.status-cell').html(`<span class="${statusClass}">${newStatus.toUpperCase()}</span>`);
+        if ($row) {
+          // Update table row if provided (for backward compatibility)
+          const statusClass = newStatus ? `status-${newStatus.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+          $row.find('.status-select').val(newStatus);
+          $row.find('.status-cell').html(`<span class="${statusClass}">${newStatus.toUpperCase()}</span>`);
+        }
+        if (callback) {
+          callback(); // Execute callback to refresh UI
+        }
       },
       error: function (xhr) {
         console.error(`❌ Failed to update appointment ${appointmentId}:`, xhr.responseJSON || xhr.statusText);
         alert(`Failed to update status: ${xhr.responseJSON?.error || "Unknown error"}`);
-        // Revert dropdown to original value
-        $row.find('.status-select').val($row.find('.status-select').data('original-status'));
+        if ($row) {
+          $row.find('.status-select').val($row.find('.status-select').data('original-status'));
+        }
+      }
+    });
+  }
+
+
+  function showAppointmentDetails(appointmentId) {
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (appt) {
+        console.log(`📋 Fetched appointment details for ID ${appointmentId}:`, appt);
+        const patientName = appt.patient && appt.patient.first_name
+          ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
+          : 'Unnamed';
+        const doctorName = appt.doctor && appt.doctor.first_name
+          ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
+          : 'N/A';
+        const apptDate = appt.appointment_date
+          ? new Date(appt.appointment_date).toLocaleString()
+          : 'N/A';
+  
+        // Create modal
+        const modal = $(`
+          <div class="modal fade" id="appointmentDetailsModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Appointment Details</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p><strong>Patient:</strong> ${patientName}</p>
+                  <p><strong>Doctor:</strong> ${doctorName}</p>
+                  <p><strong>Date & Time:</strong> ${apptDate}</p>
+                  <p><strong>Status:</strong> 
+                    <select class="form-select status-select" data-appointment-id="${appt.id}">
+                      <option value="booked" ${appt.status.toLowerCase() === 'booked' ? 'selected' : ''}>Booked</option>
+                      <option value="arrived" ${appt.status.toLowerCase() === 'arrived' ? 'selected' : ''}>Arrived</option>
+                      <option value="on-going" ${appt.status.toLowerCase() === 'on-going' ? 'selected' : ''}>On-Going</option>
+                      <option value="reviewed" ${appt.status.toLowerCase() === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                    </select>
+                  </p>
+                  <p><strong>Notes:</strong> ${appt.notes || 'N/A'}</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+  
+        $('body').append(modal);
+        const bsModal = new bootstrap.Modal(modal[0]);
+        bsModal.show();
+  
+        // Bind status change
+        modal.find('.status-select').on('change', function () {
+          const newStatus = $(this).val();
+          updateAppointmentStatus(appointmentId, newStatus, null, null, () => {
+            // Refresh calendar
+            const dateStr = $("#dateFilter").val();
+            const doctorFilter = $("#doctorFilter").val();
+            fetchAppointmentsByDate(dateStr, 'all', doctorFilter);
+          });
+        });
+  
+        modal.on('hidden.bs.modal', function () {
+          modal.remove();
+        });
+      },
+      error: function (xhr) {
+        console.error(`❌ Failed to fetch appointment ${appointmentId}:`, xhr.responseJSON || xhr.statusText);
+        alert(`Failed to fetch appointment details: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
   }
   
   // Populate Appointments Table
-  // Populate Appointments Table
-  function populateAppointmentsTable(appointments, date, filter = 'all') {
-    const $tbody = $('.table-appointments tbody');
-    $tbody.empty();
-
-    console.log(`📥 Processing appointments for ${date}, filter: ${filter}`);
-
-    let appointmentsArray = [];
-    if (Array.isArray(appointments)) {
-      appointmentsArray = appointments;
-    } else if (appointments && typeof appointments === 'object') {
-      if (Array.isArray(appointments.appointments)) {
-        appointmentsArray = appointments.appointments;
-      } else if (Array.isArray(appointments.results)) {
-        appointmentsArray = appointments.results;
-      } else if (!Array.isArray(appointments)) {
-        appointmentsArray = [appointments];
-      }
-    } else {
-      console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
-    }
-
-    // Filter appointments by exact date
-    appointmentsArray = appointmentsArray.filter(appt => {
-      if (!appt || !appt.appointment_date) return false;
-      const apptDate = new Date(appt.appointment_date);
-      const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
-      return apptDateStr === date;
-    });
-
-    // Map filter to statuses
-    const statusMap = {
-      'all': ['booked', 'arrived', 'on-going', 'reviewed'],
-      'booked': ['booked'],
-      'arrived': ['arrived'],
-      'on-going': ['on-going'],
-      'reviewed': ['reviewed']
-    };
-    const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
-
-    // Filter appointments by status
-    appointmentsArray = appointmentsArray.filter(appt => {
-      if (!appt || !appt.status) return false;
-      return allowedStatuses.includes(appt.status.toLowerCase());
-    });
-
-    if (!appointmentsArray.length) {
-      $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date} (${filter})</td></tr>`);
-      console.log(`ℹ️ No appointments to display for ${date} with filter ${filter}`);
+  function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
+    const calendarBody = document.getElementById("calendarBody");
+    const calendarHeader = document.querySelector(".calendar-header");
+    calendarBody.innerHTML = "";
+    calendarHeader.innerHTML = "<div>Time</div>"; // Reset header
+  
+    // Parse week start date
+    const weekStart = new Date(weekStartDateStr);
+    if (isNaN(weekStart)) {
+      console.error("Invalid weekStartDateStr:", weekStartDateStr);
+      calendarBody.innerHTML = '<div class="text-center">Invalid date selected.</div>';
       return;
     }
-
-    const groupedByPatient = appointmentsArray.reduce((acc, appt) => {
-      if (!appt || typeof appt !== 'object' || !appt.id || !appt.patient || !appt.patient.patient_id) {
-        console.warn(`⚠️ Skipping invalid appointment at index ${appointmentsArray.indexOf(appt)}:`, appt);
-        return acc;
-      }
-      const patientId = appt.patient.patient_id;
-      if (!acc[patientId]) {
-        acc[patientId] = {
-          patient: appt.patient,
-          appointments: []
-        };
-      }
-      acc[patientId].appointments.push(appt);
-      return acc;
-    }, {});
-
-    let patientIndex = 0;
-    let totalAppointments = 0;
-    const patientEntries = Object.entries(groupedByPatient).sort((a, b) => {
-      const nameA = `${a[1].patient.first_name} ${a[1].patient.last_name || ''}`.toLowerCase();
-      const nameB = `${b[1].patient.first_name} ${b[1].patient.last_name || ''}`.toLowerCase();
-      return nameA.localeCompare(nameB);
+  
+    // Define hours (8 AM to 8 PM)
+    const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 to 20:00
+  
+    // Define days (Sunday to Saturday)
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      return {
+        dateStr: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+        display: `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]} ${date.getDate()}/${date.getMonth() + 1}`
+      };
     });
-
-    if (!patientEntries.length) {
-      $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date} (${filter})</td></tr>`);
-      console.log(`ℹ️ No valid appointments to display for ${date} with filter ${filter}`);
-      return;
+  
+    // Populate header with days
+    days.forEach(day => {
+      const headerCell = document.createElement("div");
+      headerCell.innerText = day.display;
+      calendarHeader.appendChild(headerCell);
+    });
+  
+    // Filter appointments by doctor if specified
+    let filteredAppointments = appointments;
+    if (doctorId !== 'all') {
+      filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == doctorId);
     }
-
-    // Define STATUS_CHOICES aligned with Django model
-    const STATUS_CHOICES = [
-      { value: 'booked', label: 'Booked' },
-      { value: 'arrived', label: 'Arrived' },
-      { value: 'on-going', label: 'On-Going' },
-      { value: 'reviewed', label: 'Reviewed' }
-    ];
-
-    patientEntries.forEach(([patientId, { patient, appointments }]) => {
-      patientIndex++;
-      appointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
-      const patientName = patient.first_name
-        ? `${patient.first_name} ${patient.last_name || ''}`
-        : 'Unknown Patient';
-      const $patientRow = $(`
-        <tr class="patient-row" style="background-color: #f8f9fa;">
-          <td>${patientIndex}</td>
-          <td>${patientId}</td>
-          <td colspan="6"><strong>${patientName}</strong></td>
-        </tr>
-      `);
-      $tbody.append($patientRow);
-
-      appointments.forEach((appt) => {
-        const doctorName = appt.doctor && appt.doctor.first_name
-          ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
-          : 'N/A';
-        const appointmentDate = appt.appointment_date
-          ? new Date(appt.appointment_date)
-          : null;
-        const dateTimeStr = appointmentDate && !isNaN(appointmentDate)
-          ? `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`
-          : 'N/A';
-        const statusClass = appt.status
-          ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
-          : 'status-unknown';
-
-        // Create status dropdown
-        let statusOptions = STATUS_CHOICES.map(choice => 
-          `<option value="${choice.value}" ${appt.status.toLowerCase() === choice.value ? 'selected' : ''}>${choice.label}</option>`
-        ).join('');
-        const $apptRow = $(`
-          <tr class="appointment-row">
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>${appt.id}</td>
-            <td>${dateTimeStr}</td>
-            <td class="status-cell">
-              <select class="form-select form-select-sm status-select" data-appointment-id="${appt.id}" data-original-status="${appt.status}">
-                ${statusOptions}
-              </select>
-            </td>
-            <td>${doctorName}</td>
-            <td>${appt.notes || 'N/A'}</td>
-          </tr>
-        `);
-        $tbody.append($apptRow);
-        totalAppointments++;
-
-        if (!appt.patient || !appt.patient.first_name) {
-          console.warn(`⚠️ Appointment ID ${appt.id} has incomplete patient data:`, appt.patient);
-        }
-        if (!appt.doctor) {
-          console.warn(`⚠️ Appointment ID ${appt.id} has no doctor data:`, appt.doctor);
-        }
+  
+    // Populate calendar rows
+    hours.forEach(hour => {
+      const row = document.createElement("div");
+      row.classList.add("calendar-row");
+  
+      // Time label
+      const hourLabel = document.createElement("div");
+      hourLabel.innerText = `${hour}:00`;
+      row.appendChild(hourLabel);
+  
+      // Slots for each day
+      days.forEach(day => {
+        const slot = document.createElement("div");
+        slot.classList.add("calendar-slot");
+  
+        // Find appointments for this day and hour
+        const slotAppointments = filteredAppointments.filter(appt => {
+          if (!appt || !appt.appointment_date) return false;
+          const apptDate = new Date(appt.appointment_date);
+          const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+          const apptHour = apptDate.getHours();
+          return apptDateStr === day.dateStr && apptHour === hour;
+        });
+  
+        // Add appointment blocks
+        slotAppointments.forEach(appt => {
+          const block = document.createElement("div");
+          block.classList.add("appointment-block");
+          block.dataset.appointmentId = appt.id;
+          const patientName = appt.patient && appt.patient.first_name
+            ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
+            : 'Unnamed';
+          const statusClass = appt.status ? `status-${appt.status.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+          block.innerHTML = `
+            <strong>${patientName}</strong><br>
+            <span class="${statusClass}">${appt.status.toUpperCase()}</span><br>
+            ID: ${appt.id}
+          `;
+          block.title = `Doctor: ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'}\nNotes: ${appt.notes || 'N/A'}`;
+          slot.appendChild(block);
+        });
+  
+        row.appendChild(slot);
+      });
+  
+      calendarBody.appendChild(row);
+    });
+  
+    // Add click event for appointment blocks
+    document.querySelectorAll(".appointment-block").forEach(block => {
+      block.addEventListener("click", () => {
+        const appointmentId = block.dataset.appointmentId;
+        showAppointmentDetails(appointmentId);
       });
     });
-
-    // Bind status change event
-    $('.status-select').off('change').on('change', function () {
-      const $select = $(this);
-      const appointmentId = $select.data('appointment-id');
-      const newStatus = $select.val();
-      const $row = $select.closest('tr');
-      console.log(`🖱️ Status change for appointment ${appointmentId} to ${newStatus}`);
-      updateAppointmentStatus(appointmentId, newStatus, $row, date);
-    });
-
-    console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date} (${filter})`);
+  
+    // Display message if no appointments
+    if (filteredAppointments.length === 0) {
+      calendarBody.innerHTML = `<div class="text-center">No appointments found for ${doctorId === 'all' ? 'the selected week' : 'this doctor'}.</div>`;
+    }
+  
+    console.log(`✅ Populated calendar with ${filteredAppointments.length} appointments for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
   }
+  
+  // Populate Appointments Table
+  // function populateAppointmentsTable(appointments, date, filter = 'all') {
+  //   const $tbody = $('.table-appointments tbody');
+  //   $tbody.empty();
+
+  //   console.log(`📥 Processing appointments for ${date}, filter: ${filter}`);
+
+  //   let appointmentsArray = [];
+  //   if (Array.isArray(appointments)) {
+  //     appointmentsArray = appointments;
+  //   } else if (appointments && typeof appointments === 'object') {
+  //     if (Array.isArray(appointments.appointments)) {
+  //       appointmentsArray = appointments.appointments;
+  //     } else if (Array.isArray(appointments.results)) {
+  //       appointmentsArray = appointments.results;
+  //     } else if (!Array.isArray(appointments)) {
+  //       appointmentsArray = [appointments];
+  //     }
+  //   } else {
+  //     console.warn(`⚠️ Appointments data is not an array or valid object:`, appointments);
+  //   }
+
+  //   // Filter appointments by exact date
+  //   appointmentsArray = appointmentsArray.filter(appt => {
+  //     if (!appt || !appt.appointment_date) return false;
+  //     const apptDate = new Date(appt.appointment_date);
+  //     const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+  //     return apptDateStr === date;
+  //   });
+
+  //   // Map filter to statuses
+  //   const statusMap = {
+  //     'all': ['booked', 'arrived', 'on-going', 'reviewed'],
+  //     'booked': ['booked'],
+  //     'arrived': ['arrived'],
+  //     'on-going': ['on-going'],
+  //     'reviewed': ['reviewed']
+  //   };
+  //   const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
+
+  //   // Filter appointments by status
+  //   appointmentsArray = appointmentsArray.filter(appt => {
+  //     if (!appt || !appt.status) return false;
+  //     return allowedStatuses.includes(appt.status.toLowerCase());
+  //   });
+
+  //   if (!appointmentsArray.length) {
+  //     $tbody.append(`<tr><td colspan="8" class="text-center">No appointments found for ${date} (${filter})</td></tr>`);
+  //     console.log(`ℹ️ No appointments to display for ${date} with filter ${filter}`);
+  //     return;
+  //   }
+
+  //   const groupedByPatient = appointmentsArray.reduce((acc, appt) => {
+  //     if (!appt || typeof appt !== 'object' || !appt.id || !appt.patient || !appt.patient.patient_id) {
+  //       console.warn(`⚠️ Skipping invalid appointment at index ${appointmentsArray.indexOf(appt)}:`, appt);
+  //       return acc;
+  //     }
+  //     const patientId = appt.patient.patient_id;
+  //     if (!acc[patientId]) {
+  //       acc[patientId] = {
+  //         patient: appt.patient,
+  //         appointments: []
+  //       };
+  //     }
+  //     acc[patientId].appointments.push(appt);
+  //     return acc;
+  //   }, {});
+
+  //   let patientIndex = 0;
+  //   let totalAppointments = 0;
+  //   const patientEntries = Object.entries(groupedByPatient).sort((a, b) => {
+  //     const nameA = `${a[1].patient.first_name} ${a[1].patient.last_name || ''}`.toLowerCase();
+  //     const nameB = `${b[1].patient.first_name} ${b[1].patient.last_name || ''}`.toLowerCase();
+  //     return nameA.localeCompare(nameB);
+  //   });
+
+  //   if (!patientEntries.length) {
+  //     $tbody.append(`<tr><td colspan="8" class="text-center">No valid appointments found for ${date} (${filter})</td></tr>`);
+  //     console.log(`ℹ️ No valid appointments to display for ${date} with filter ${filter}`);
+  //     return;
+  //   }
+
+  //   // Define STATUS_CHOICES aligned with Django model
+  //   const STATUS_CHOICES = [
+  //     { value: 'booked', label: 'Booked' },
+  //     { value: 'arrived', label: 'Arrived' },
+  //     { value: 'on-going', label: 'On-Going' },
+  //     { value: 'reviewed', label: 'Reviewed' }
+  //   ];
+
+  //   patientEntries.forEach(([patientId, { patient, appointments }]) => {
+  //     patientIndex++;
+  //     appointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
+  //     const patientName = patient.first_name
+  //       ? `${patient.first_name} ${patient.last_name || ''}`
+  //       : 'Unknown Patient';
+  //     const $patientRow = $(`
+  //       <tr class="patient-row" style="background-color: #f8f9fa;">
+  //         <td>${patientIndex}</td>
+  //         <td>${patientId}</td>
+  //         <td colspan="6"><strong>${patientName}</strong></td>
+  //       </tr>
+  //     `);
+  //     $tbody.append($patientRow);
+
+  //     appointments.forEach((appt) => {
+  //       const doctorName = appt.doctor && appt.doctor.first_name
+  //         ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
+  //         : 'N/A';
+  //       const appointmentDate = appt.appointment_date
+  //         ? new Date(appt.appointment_date)
+  //         : null;
+  //       const dateTimeStr = appointmentDate && !isNaN(appointmentDate)
+  //         ? `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`
+  //         : 'N/A';
+  //       const statusClass = appt.status
+  //         ? `status-${appt.status.toLowerCase().replace(' ', '-')}`
+  //         : 'status-unknown';
+
+  //       // Create status dropdown
+  //       let statusOptions = STATUS_CHOICES.map(choice => 
+  //         `<option value="${choice.value}" ${appt.status.toLowerCase() === choice.value ? 'selected' : ''}>${choice.label}</option>`
+  //       ).join('');
+  //       const $apptRow = $(`
+  //         <tr class="appointment-row">
+  //           <td></td>
+  //           <td></td>
+  //           <td></td>
+  //           <td>${appt.id}</td>
+  //           <td>${dateTimeStr}</td>
+  //           <td class="status-cell">
+  //             <select class="form-select form-select-sm status-select" data-appointment-id="${appt.id}" data-original-status="${appt.status}">
+  //               ${statusOptions}
+  //             </select>
+  //           </td>
+  //           <td>${doctorName}</td>
+  //           <td>${appt.notes || 'N/A'}</td>
+  //         </tr>
+  //       `);
+  //       $tbody.append($apptRow);
+  //       totalAppointments++;
+
+  //       if (!appt.patient || !appt.patient.first_name) {
+  //         console.warn(`⚠️ Appointment ID ${appt.id} has incomplete patient data:`, appt.patient);
+  //       }
+  //       if (!appt.doctor) {
+  //         console.warn(`⚠️ Appointment ID ${appt.id} has no doctor data:`, appt.doctor);
+  //       }
+  //     });
+  //   });
+
+  //   // Bind status change event
+  //   $('.status-select').off('change').on('change', function () {
+  //     const $select = $(this);
+  //     const appointmentId = $select.data('appointment-id');
+  //     const newStatus = $select.val();
+  //     const $row = $select.closest('tr');
+  //     console.log(`🖱️ Status change for appointment ${appointmentId} to ${newStatus}`);
+  //     updateAppointmentStatus(appointmentId, newStatus, $row, date);
+  //   });
+
+  //   console.log(`✅ Populated appointments table with ${totalAppointments} appointments across ${patientEntries.length} patients for ${date} (${filter})`);
+  // }
 
 
   // Logout Function
@@ -2354,6 +2627,9 @@ $(document).ready(function () {
   // Populate doctor dropdowns
   populateDoctorDropdown("doctor", "doctorSpecialty");
   populateDoctorDropdown("serviceDoctors");
+
+  populateDoctorDropdownForFilter();
+  bindDoctorFilter();
 
   
   // Fetch today's appointments on page load

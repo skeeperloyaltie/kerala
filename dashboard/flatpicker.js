@@ -1,5 +1,7 @@
 function initializeDatePickers() {
-  console.log("Initializing Flatpickr for .custom-datetime-picker elements...");
+  console.log("Initializing Flatpickr for .custom-datetime-picker elements and #dateFilter...");
+
+  // Handle .custom-datetime-picker elements (patientDOB, maritalSince, billDate, appointmentDate)
   $(".custom-datetime-picker").each(function() {
     const $input = $(this);
     const inputId = $input.attr("id");
@@ -10,11 +12,11 @@ function initializeDatePickers() {
     }
 
     if (!$input.length) {
-      console.warn("Element not found for Flatpickr initialization:", inputId);
+      console.warn(`Element not found for Flatpickr initialization: #${inputId}`);
       return;
     }
 
-    console.log("Processing input:", inputId);
+    console.log(`Processing input: #${inputId}`);
 
     const isDateOnly = ["patientDOB", "maritalSince", "billDate"].includes(inputId);
 
@@ -24,21 +26,25 @@ function initializeDatePickers() {
       console.log(`Destroyed existing Flatpickr instance for #${inputId}`);
     }
 
-    // Base configuration
+    // Base configuration for custom-datetime-picker
     let config = {
       altInput: true,
       altFormat: isDateOnly ? "F j, Y" : "F j, Y, h:i K", // Readable format
       dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i",     // Backend format
       enableTime: !isDateOnly,
       time_24hr: false,
-      minDate: ["appointmentDate"].includes(inputId) ? new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) : null,
+      minDate: ["appointmentDate"].includes(inputId)
+        ? new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+        : null,
       maxDate: ["patientDOB", "maritalSince"].includes(inputId) ? "today" : null,
       defaultDate: ["billDate"].includes(inputId) ? "today" : null,
       appendTo: document.body,
       position: "auto",
       allowInput: true,
       // Add year range for patientDOB and maritalSince
-      yearRange: ["patientDOB", "maritalSince"].includes(inputId) ? [1900, new Date().getFullYear()] : undefined,
+      yearRange: ["patientDOB", "maritalSince"].includes(inputId)
+        ? [1900, new Date().getFullYear()]
+        : undefined,
       onReady: function(selectedDates, dateStr, instance) {
         const calendar = instance.calendarContainer;
         const inputRect = $input[0].getBoundingClientRect();
@@ -149,6 +155,134 @@ function initializeDatePickers() {
       $input.next(".flatpickr-input").prop("readonly", false);
     }
   });
+
+  // Handle #dateFilter separately
+  const $dateFilter = $("#dateFilter");
+  if (!$dateFilter.length) {
+    console.warn("Skipping Flatpickr initialization for #dateFilter: Element not found");
+    return;
+  }
+
+  console.log("Processing input: #dateFilter");
+
+  // Destroy any existing instance
+  if ($dateFilter[0]._flatpickr) {
+    $dateFilter[0]._flatpickr.destroy();
+    console.log("Destroyed existing Flatpickr instance for #dateFilter");
+  }
+
+  // Initialize appointmentsData for highlighting
+  let appointmentsData = [];
+
+  // Configuration for #dateFilter
+  const dateFilterConfig = {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    allowInput: true,
+    minDate: "1900-01-01",
+    altInput: true,
+    altFormat: "F j, Y",
+    appendTo: document.body,
+    position: "auto",
+    onChange: function(selectedDates, dateStr, instance) {
+      console.log("📅 Date Filter Changed - Selected date:", dateStr);
+      if (dateStr) {
+        const doctorId = $("#doctorFilter").val() || "all";
+        const filter = $(".navbar-secondary .nav-item a.active").data("section") || "all";
+        fetchAppointmentsByDate(dateStr, filter, doctorId);
+      }
+    },
+    onOpen: function(selectedDates, dateStr, instance) {
+      const currentDate = dateStr || instance.formatDate(new Date(), "Y-m-d");
+      const startDate = new Date(currentDate);
+      startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6); // End on Saturday
+      const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
+      const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+      let url = `${API_BASE_URL}/appointments/list/?start_date=${startDateStr}&end_date=${endDateStr}`;
+      const doctorId = $("#doctorFilter").val() || "all";
+      if (doctorId !== "all") {
+        url += `&doctor_id=${doctorId}`;
+      }
+
+      $.ajax({
+        url: url,
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function(data) {
+          appointmentsData = Array.isArray(data.appointments)
+            ? data.appointments
+            : Array.isArray(data.results)
+            ? data.results
+            : Array.isArray(data)
+            ? data
+            : [];
+          console.log(`📅 Loaded ${appointmentsData.length} appointments for calendar picker`);
+          instance.redraw();
+        },
+        error: function(xhr) {
+          console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Unknown error"}`);
+          appointmentsData = [];
+          instance.redraw();
+        }
+      });
+    },
+    onDayCreate: function(dObj, dStr, fp, dayElem) {
+      const date = dayElem.dateObj;
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const hasAppointments = appointmentsData.some(appt => {
+        if (!appt.appointment_date) return false;
+        const apptDate = new Date(appt.appointment_date);
+        const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, "0")}-${String(apptDate.getDate()).padStart(2, "0")}`;
+        return apptDateStr === dateStr;
+      });
+      if (hasAppointments) {
+        dayElem.classList.add("has-appointment");
+        dayElem.style.backgroundColor = "#e3f2fd";
+        dayElem.style.border = "1px solid #2196f3";
+      }
+    },
+    onReady: function(selectedDates, dateStr, instance) {
+      const calendar = instance.calendarContainer;
+      const inputRect = $dateFilter[0].getBoundingClientRect();
+      const calendarRect = calendar.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      calendar.style.top = "";
+      calendar.style.left = "";
+      calendar.style.bottom = "";
+      calendar.style.right = "";
+
+      if (inputRect.bottom + calendarRect.height > viewportHeight) {
+        calendar.style.top = "auto";
+        calendar.style.bottom = (viewportHeight - inputRect.top) + "px";
+      } else {
+        calendar.style.top = inputRect.bottom + "px";
+        calendar.style.bottom = "auto";
+      }
+
+      if (inputRect.left + calendarRect.width > viewportWidth) {
+        calendar.style.left = "auto";
+        calendar.style.right = (viewportWidth - inputRect.right) + "px";
+      } else {
+        calendar.style.left = inputRect.left + "px";
+        calendar.style.right = "auto";
+      }
+    }
+  };
+
+  // Initialize Flatpickr for #dateFilter
+  const dateFilterInstance = flatpickr($dateFilter[0], dateFilterConfig);
+  console.log("Flatpickr initialized for #dateFilter with config:", dateFilterConfig);
+
+  // Ensure readonly state is respected
+  if ($dateFilter.attr("readonly")) {
+    $dateFilter.next(".flatpickr-input").prop("readonly", true);
+  } else {
+    $dateFilter.next(".flatpickr-input").prop("readonly", false);
+  }
 }
 
 // Initialize on page load and modal show

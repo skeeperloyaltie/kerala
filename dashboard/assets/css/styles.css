@@ -746,3 +746,46 @@ height: 100%;
   font-weight: bold;
 }
 
+
+.calendar-grid {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border: 1px solid #ccc;
+}
+
+.calendar-header, .calendar-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.calendar-header > div,
+.calendar-row > div {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.calendar-slot {
+  min-height: 40px;
+  position: relative;
+}
+
+.appointment-block {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  background: #198754;
+  color: white;
+  font-size: 0.8rem;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+
+
+.flatpickr-day.has-appointment {
+  background-color: #e3f2fd !important;
+  border: 1px solid #2196f3 !important;
+}
