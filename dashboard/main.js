@@ -258,7 +258,7 @@ $(document).ready(function () {
     const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
     const modalTabs = $("#newActionTabs .nav-item");
   
-    // Show all elements by default, then hide based on role
+    // Show all elements by default
     navItems.show();
     secondaryNavItems.show();
     buttons.show();
@@ -271,10 +271,23 @@ $(document).ready(function () {
     const role = `${userType}-${roleLevel}`.toLowerCase();
     const permissions = JSON.parse(sessionStorage.getItem("permissions") || "[]");
   
+    // Explicitly ensure full access for doctor-senior
+    if (role === "doctor-senior") {
+      console.log("✅ Granting full access to doctor-senior");
+      // Ensure all modal tabs and their content are visible and enabled
+      modalTabs.show();
+      $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
+      // Log visible modal tabs for debugging
+      console.log("🔍 Doctor-Senior Modal Tabs Visible:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
+      // No further restrictions applied
+      bindLogoutEvent();
+      bindModalActions();
+      setupPatientSearch();
+      return;
+    }
+  
+    // Apply restrictions for other roles
     switch (role) {
-      case "doctor-senior":
-        // Full access, including Add Service
-        break;
       case "doctor-medium":
         navItems.filter(":contains('Add Services')").hide();
         modalTabs.filter(":contains('Add Service')").hide();
@@ -347,10 +360,10 @@ $(document).ready(function () {
         modalTabs.hide();
     }
   
-    // Override with permissions
+    // Apply permission-based overrides for non-doctor-senior roles
     if (permissions.can_add_bill === true) {
       modalTabs.filter(":contains('Add Bills')").show();
-    } else if (permissions.can_add_bill !== true && role !== "doctor-senior" && role !== "receptionist-senior") {
+    } else if (permissions.can_add_bill !== true && role !== "doctor-senior") {
       modalTabs.filter(":contains('Add Bills')").hide();
     }
   
@@ -1099,7 +1112,7 @@ $(document).ready(function () {
       const navItem = $(this).closest(".nav-item");
   
       // Check if the clicked nav item is visible (indicates user has access)
-      if (navItem.length && !navItem.is(":visible")) {
+      if (navItem.length && !navItem.is(":visible") && sessionStorage.getItem("user_type")?.toLowerCase() !== "doctor" && sessionStorage.getItem("role_level")?.toLowerCase() !== "senior") {
         console.error(`❌ Nav item for action ${action} is not visible. User lacks access.`);
         alert("You do not have permission to access this feature.");
         return;
@@ -1117,54 +1130,54 @@ $(document).ready(function () {
       modal.modal('show');
       console.log("🔍 Modal Opened");
   
-      // Reset tab visibility based on role permissions
-      const permittedTabs = $("#newActionTabs .nav-item:visible");
-      permittedTabs.show();
-      // Hide Add Service tab by default unless explicitly triggered
-      $("#addServiceTab").closest(".nav-item").hide();
-  
-      // Handle specific actions
-      if (action === "new") {
-        // Reset Add Patient form and show only Personal Details
-        $('#addPatientForm')[0].reset();
-        $('#patientPhone').val('').trigger('change'); // Reset intlTelInput
-        $('#mobile2').val('').trigger('change'); // Reset intlTelInput
-        flatpickr("#patientDOB").clear();
-        flatpickr("#maritalSince").clear();
-        flatpickr("#appointmentDate").clear();
-        $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
-        $('#personalDetailsCollapse').addClass('show');
-        $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
-        updateDetailsSection(null); // Clear patient details
-        // selectedPatientId = null; // Clear global patient ID
-      }
-  
-      // Handle Add Service action exclusively
-      if (action === "add-services") {
-        // Show only Add Service tab
-        $("#newActionTabs .nav-item").hide();
-        $(`#${tabId}`).closest(".nav-item").show();
-        // Activate Add Service tab content
-        $("#newActionTabContent .tab-pane").removeClass("show active");
-        $(`#${tabId}`).tab('show');
-        $(`#addService`).addClass("show active");
-        console.log(`✅ Exclusively showing Add Service tab: ${tabId}`);
-      } else {
-        // For other actions, show all permitted tabs except Add Service
-        permittedTabs.show();
-        // Ensure Add Service tab remains hidden unless permitted
-        if (!$(`#addServiceTab`).closest(".nav-item").is(":visible")) {
-          $(`#addServiceTab`).closest(".nav-item").hide();
-        }
-        // Switch to the requested tab
-        if (tabElement.length) {
-          console.log(`🔍 Tab Element: ${tabId} found, Visible: ${tabElement.is(":visible")}`);
-          tabElement.closest(".nav-item").show();
-          tabElement.tab('show');
-          console.log(`✅ Successfully switched to tab: ${tabId}`);
+      // Determine role
+      const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
+      
+      // Handle tab visibility
+      if (role === "doctor-senior") {
+        // Show all tabs for doctor-senior unless add-services is triggered
+        $("#newActionTabs .nav-item").show();
+        $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
+        if (action === "add-services") {
+          // Isolate Add Service tab
+          $("#newActionTabs .nav-item").hide();
+          $(`#${tabId}`).closest(".nav-item").show();
+          $("#newActionTabContent .tab-pane").removeClass("show active");
+          $(`#${tabId}`).tab('show');
+          $(`#addService`).addClass("show active");
+          console.log(`✅ Exclusively showing Add Service tab for doctor-senior: ${tabId}`);
         } else {
-          console.error(`❌ Tab with ID ${tabId} not found! Falling back to Add Patient tab`);
-          $("#addPatientTab").tab("show");
+          // Show requested tab while keeping all tabs visible
+          $(`#${tabId}`).tab('show');
+          console.log(`✅ Showing tab ${tabId} with all tabs visible for doctor-senior`);
+        }
+      } else {
+        // For other roles, show only permitted tabs
+        const permittedTabs = $("#newActionTabs .nav-item:visible");
+        permittedTabs.show();
+        // Hide Add Service tab by default unless explicitly triggered
+        $("#addServiceTab").closest(".nav-item").hide();
+        if (action === "add-services") {
+          $("#newActionTabs .nav-item").hide();
+          $(`#${tabId}`).closest(".nav-item").show();
+          $("#newActionTabContent .tab-pane").removeClass("show active");
+          $(`#${tabId}`).tab('show');
+          $(`#addService`).addClass("show active");
+          console.log(`✅ Exclusively showing Add Service tab: ${tabId}`);
+        } else {
+          permittedTabs.show();
+          if (!$(`#addServiceTab`).closest(".nav-item").is(":visible")) {
+            $(`#addServiceTab`).closest(".nav-item").hide();
+          }
+          if (tabElement.length) {
+            console.log(`🔍 Tab Element: ${tabId} found, Visible: ${tabElement.is(":visible")}`);
+            tabElement.closest(".nav-item").show();
+            tabElement.tab('show');
+            console.log(`✅ Successfully switched to tab: ${tabId}`);
+          } else {
+            console.error(`❌ Tab with ID ${tabId} not found! Falling back to Add Patient tab`);
+            $("#addPatientTab").tab("show");
+          }
         }
       }
     });
@@ -1177,16 +1190,26 @@ $(document).ready(function () {
     const sidebarContentArea = $("#sidebarContentArea");
     modalBody.removeClass("split-view");
     sidebarContentArea.hide();
-    // Show all permitted tabs based on role
-    $("#newActionTabs .nav-item:visible").show();
-    // Ensure Add Service tab is hidden unless explicitly allowed
-    if (!$("#addServiceTab").closest(".nav-item").is(":visible")) {
-      $("#addServiceTab").closest(".nav-item").hide();
+    
+    const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
+    
+    if (role === "doctor-senior") {
+      // Show all tabs for doctor-senior
+      $("#newActionTabs .nav-item").show();
+      $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
+      console.log("✅ Reset modal view with all tabs visible for doctor-senior");
+    } else {
+      // Show all permitted tabs based on role
+      $("#newActionTabs .nav-item:visible").show();
+      // Ensure Add Service tab is hidden unless explicitly allowed
+      if (!$("#addServiceTab").closest(".nav-item").is(":visible")) {
+        $("#addServiceTab").closest(".nav-item").hide();
+      }
     }
+    
     // Reset to default tab (e.g., Add Patient)
     $("#addPatientTab").tab("show");
   }
-
   // Setup Patient Search with Autocomplete
   function setupPatientSearch() {
     console.log("🔍 Setting up patient search...");
@@ -2681,29 +2704,57 @@ $(document).ready(function () {
   // Event Listeners
   $('#newActionModal').on('shown.bs.modal', function () {
     console.log("🔍 Modal shown, ensuring tab visibility...");
-    const permittedTabs = $("#newActionTabs .nav-item:visible");
-    permittedTabs.show();
-    // Explicitly hide Add Service tab by default
-    $("#addServiceTab").closest(".nav-item").hide();
-    // If Add Service tab is active (from add-services action), show it
-    if ($("#addServiceTab").hasClass("active")) {
-      $("#addServiceTab").closest(".nav-item").show();
+    const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
+    
+    if (role === "doctor-senior") {
+      // Show all tabs and enable all elements for doctor-senior
+      $("#newActionTabs .nav-item").show();
+      $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
+      console.log("✅ All modal tabs visible and elements enabled for doctor-senior");
+    } else {
+      // For other roles, show only permitted tabs
+      const permittedTabs = $("#newActionTabs .nav-item:visible");
+      permittedTabs.show();
+      // Hide Add Service tab unless explicitly active
+      $("#addServiceTab").closest(".nav-item").hide();
+      if ($("#addServiceTab").hasClass("active")) {
+        $("#addServiceTab").closest(".nav-item").show();
+      }
     }
-    // If Add Patient tab is active and no patient is selected, show only Personal Details
+  
+    // Handle Add Patient tab reset
     if ($("#addPatientTab").hasClass("active") && !selectedPatientId) {
       $('#addPatientForm')[0].reset();
-      $('#patientPhone').val('').trigger('change'); // Reset intlTelInput
-      $('#mobile2').val('').trigger('change'); // Reset intlTelInput
+      $('#patientPhone').val('').trigger('change');
+      $('#mobile2').val('').trigger('change');
       flatpickr("#patientDOB").clear();
       flatpickr("#maritalSince").clear();
       flatpickr("#appointmentDate").clear();
       $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
       $('#personalDetailsCollapse').addClass('show');
       $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
-      updateDetailsSection(null); // Clear patient details
+      updateDetailsSection(null);
     }
     if (typeof initializeDatePickers === 'function') initializeDatePickers();
   });
+  
+  $('#newActionModal').on('hidden.bs.modal', function () {
+    console.log("🔄 Modal hidden, resetting view and search input...");
+    resetModalView();
+    updateDetailsSection(null);
+    sessionStorage.removeItem("billPatientId");
+    selectedPatientId = null;
+    $('.navbar-top .form-control.patient-search').val('');
+    $('#addPatientForm')[0].reset();
+    $('#patientPhone').val('').trigger('change');
+    $('#mobile2').val('').trigger('change');
+    flatpickr("#patientDOB").clear();
+    flatpickr("#maritalSince").clear();
+    flatpickr("#appointmentDate").clear();
+    $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
+    $('#personalDetailsCollapse').addClass('show');
+    $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
+  });;
 
   $('#newActionModal').on('hidden.bs.modal', function () {
     console.log("🔄 Modal hidden, resetting view and search input...");
