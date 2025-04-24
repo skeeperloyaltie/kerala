@@ -2574,10 +2574,10 @@ $(document).ready(function () {
   // Populate Doctor Dropdown
   function populateDoctorDropdown(selectId, specialtyId) {
     const doctorSelect = $(`#${selectId}`);
-    if (!doctorSelect.length) {
-      console.error(`❌ Select element #${selectId} not found in DOM`);
-      return;
-    }
+    // if (!doctorSelect.length) {
+    //   console.error(`❌ Select element #${selectId} not found in DOM`);
+    //   return;
+    // }
   
     // Clear existing options and set loading state
     doctorSelect.empty().append('<option value="" disabled>Loading doctors...</option>');
@@ -2639,7 +2639,7 @@ $(document).ready(function () {
 
   // Populate doctor dropdowns
   populateDoctorDropdown("doctor", "doctorSpecialty");
-  populateDoctorDropdown("serviceOwner");
+  // populateDoctorDropdown("serviceOwner");
 
   // Event Listeners
   $('#newActionModal').on('shown.bs.modal', function () {
