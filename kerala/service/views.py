@@ -20,8 +20,8 @@ class ServiceCreateView(APIView):
         user_type = getattr(request.user, 'user_type', None)
         role_level = getattr(request.user, 'role_level', None)
 
-        if user_type == 'doctor' and role_level == 'senior':
-            logger.info(f"User {request.user.username} (doctor-senior) allowed to add service")
+        if user_type == 'Doctor' and role_level == 'Senior':
+            logger.info(f"User {request.user.username} (Doctor-Senior) allowed to add service")
         elif not request.user.has_perm('service.add_service'):
             error_msg = f"Permission denied: User {request.user.username} lacks 'service.add_service' permission."
             if not user_type or not role_level:
@@ -31,7 +31,6 @@ class ServiceCreateView(APIView):
             logger.warning(error_msg)
             return Response({"error": error_msg}, status=status.HTTP_403_FORBIDDEN)
 
-        # Pass request to serializer context to access all_doctors flag
         serializer = ServiceSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             service = serializer.save()
@@ -49,8 +48,8 @@ class ServiceListView(APIView):
         user_type = getattr(request.user, 'user_type', None)
         role_level = getattr(request.user, 'role_level', None)
 
-        if user_type == 'doctor' and role_level == 'senior':
-            logger.info(f"User {request.user.username} (doctor-senior) allowed to view services")
+        if user_type == 'Doctor' and role_level == 'Senior':
+            logger.info(f"User {request.user.username} (Doctor-Senior) allowed to view services")
         elif not request.user.has_perm('service.view_service'):
             error_msg = f"Permission denied: User {request.user.username} lacks 'service.view_service' permission."
             if not user_type or not role_level:
@@ -77,8 +76,8 @@ class ServiceSearchView(APIView):
 
         user_type = getattr(user, 'user_type', None)
         role_level = getattr(user, 'role_level', None)
-        if user_type == 'doctor' and role_level == 'senior':
-            logger.info(f"User {user.username} (doctor-senior) allowed to search services")
+        if user_type == 'Doctor' and role_level == 'Senior':
+            logger.info(f"User {user.username} (Doctor-Senior) allowed to search services")
         elif not user.has_perm('service.view_service'):
             error_msg = f"Permission denied: User {user.username} lacks 'service.view_service' permission."
             if not user_type or not role_level:
@@ -100,3 +99,37 @@ class ServiceSearchView(APIView):
         except Exception as e:
             logger.error(f"Error searching services: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while searching services."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ServiceUpdateView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk, *args, **kwargs):
+        user_type = getattr(request.user, 'user_type', None)
+        role_level = getattr(request.user, 'role_level', None)
+
+        if user_type == 'Doctor' and role_level == 'Senior':
+            logger.info(f"User {request.user.username} (Doctor-Senior) allowed to update service")
+        elif not request.user.has_perm('service.change_service'):
+            error_msg = f"Permission denied: User {request.user.username} lacks 'service.change_service' permission."
+            if not user_type or not role_level:
+                error_msg += " User type or role level missing from profile."
+            else:
+                error_msg += f" Current role: {user_type}-{role_level}."
+            logger.warning(error_msg)
+            return Response({"error": error_msg}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
+            logger.error(f"Service with ID {pk} not found for update by {request.user.username}")
+            return Response({"error": "Service not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ServiceSerializer(service, data=request.data, context={'request': request}, partial=True)
+        if serializer.is_valid():
+            updated_service = serializer.save()
+            logger.info(f"Service {updated_service.name} (ID: {pk}) updated by {request.user.username} with doctors: {list(updated_service.doctors.values_list('id', flat=True))}")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.error(f"Service update failed for ID {pk}: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

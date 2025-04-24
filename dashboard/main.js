@@ -1978,6 +1978,107 @@ $(document).ready(function () {
     });
   }
 
+  function populateDoctorOptions($select, allDoctors, selectedDoctors) {
+    $.ajax({
+      url: `${API_BASE_URL}/appointments/doctors/list/`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        $select.empty().append('<option value="all">All Doctors</option>');
+        const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+        doctors.forEach(doctor => {
+          if (doctor.id && doctor.first_name) {
+            $select.append(
+              `<option value="${doctor.id}" ${selectedDoctors.includes(doctor.id) ? 'selected' : ''}>
+                ${doctor.first_name} ${doctor.last_name || ''}
+              </option>`
+            );
+          }
+        });
+        // Set initial value
+        if (allDoctors) {
+          $select.val(['all']);
+        } else {
+          $select.val(selectedDoctors.map(id => id.toString()));
+        }
+      },
+      error: function (xhr) {
+        console.error(`Failed to fetch doctors for dropdown: ${xhr.status}`, xhr.responseJSON);
+        $select.empty().append('<option value="" disabled>Failed to load doctors</option>');
+      }
+    });
+  }
+
+  function updateService(serviceId, data, $row) {
+    $.ajax({
+      url: `${API_BASE_URL}/service/edit/${serviceId}/`,
+      type: "PATCH",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(data),
+      contentType: "application/json",
+      success: function (response) {
+        console.log(`✅ Updated service ${serviceId}:`, response);
+        alert("Service updated successfully!");
+        // Update the display value
+        const $cell = $row.find('.editing');
+        const field = $cell.data('field');
+        const $display = $cell.find('.display-value');
+        if (field === 'name') {
+          $display.text(response.service_name || response.name);
+        } else if (field === 'code') {
+          $display.text(response.code || 'N/A');
+        } else if (field === 'price') {
+          $display.text(`₹${parseFloat(response.service_price || response.price).toFixed(2)}`);
+        } else if (field === 'color_code') {
+          $display.html(`<span style="display: inline-block; width: 20px; height: 20px; background-color: ${response.color_code}; border: 1px solid #ccc;"></span>`);
+        } else if (field === 'doctors') {
+          const doctorNames = response.doctor_details && response.doctor_details.length
+            ? response.doctor_details.map(d => `${d.first_name} ${d.last_name || ''}`.trim()).join(', ') || 'All Doctors'
+            : 'N/A';
+          $display.text(doctorNames);
+        }
+        // Store original value for future cancels
+        $display.data('original-value', $cell.find('.edit-input').val());
+        // Exit edit mode
+        exitEditMode($row);
+        // Refresh services for bill items
+        fetchServices();
+      },
+      error: function (xhr) {
+        console.error(`❌ Failed to update service ${serviceId}:`, xhr.responseJSON || xhr.statusText);
+        alert(`Failed to update service: ${xhr.responseJSON?.error || "Unknown error"}`);
+      }
+    });
+  }
+
+  function exitEditMode($row) {
+    const $cell = $row.find('.editing');
+    $cell.find('.display-value').removeClass('d-none');
+    $cell.find('.edit-input').addClass('d-none');
+    $cell.removeClass('editing');
+    $row.find('.edit-controls').addClass('d-none');
+    $row.find('.edit-icon').removeClass('d-none');
+  }
+
+
+  function validateServiceField(field, value) {
+    if (field === 'name' && !value.trim()) {
+      return false; // Service name cannot be empty
+    }
+    if (field === 'code' && !value.trim()) {
+      return false; // Service code cannot be empty
+    }
+    if (field === 'price' && (isNaN(value) || value < 0)) {
+      return false; // Price must be a non-negative number
+    }
+    if (field === 'color_code' && !value.match(/^#[0-9A-Fa-f]{6}$/)) {
+      return false; // Must be a valid hex color
+    }
+    if (field === 'doctors' && (!Array.isArray(value) || value.length === 0)) {
+      return false; // At least one doctor or 'All Doctors' must be selected
+    }
+    return true;
+  }
   // Fetch services on page load
   fetchServices();
 
@@ -2012,22 +2113,123 @@ $(document).ready(function () {
           const doctorNames = service.doctor_details && service.doctor_details.length
             ? service.doctor_details.map(d => `${d.first_name} ${d.last_name || ''}`.trim()).join(', ') || 'All Doctors'
             : 'N/A';
+          const serviceId = service.id; // Ensure service ID is captured
           const $row = $(`
-            <tr>
+            <tr data-service-id="${serviceId}">
               <td>${index + 1}</td>
-              <td>${service.service_name || service.name || 'Unknown Service'}</td>
-              <td>${service.code || 'N/A'}</td>
-              <td>₹${parseFloat(service.service_price || service.price || 0).toFixed(2)}</td>
-              <td>
-                <span style="display: inline-block; width: 20px; height: 20px; background-color: ${service.color_code || '#000000'}; border: 1px solid #ccc;"></span>
+              <td class="editable" data-field="name">
+                <span class="display-value">${service.service_name || service.name || 'Unknown Service'}</span>
+                <input type="text" class="edit-input form-control form-control-sm d-none" value="${service.service_name || service.name || ''}">
+                <i class="fas fa-edit edit-icon ms-2"></i>
               </td>
-              <td>${doctorNames}</td>
+              <td class="editable" data-field="code">
+                <span class="display-value">${service.code || 'N/A'}</span>
+                <input type="text" class="edit-input form-control form-control-sm d-none" value="${service.code || ''}">
+                <i class="fas fa-edit edit-icon ms-2"></i>
+              </td>
+              <td class="editable" data-field="price">
+                <span class="display-value">₹${parseFloat(service.service_price || service.price || 0).toFixed(2)}</span>
+                <input type="number" step="0.01" min="0" class="edit-input form-control form-control-sm d-none" value="${parseFloat(service.service_price || service.price || 0).toFixed(2)}">
+                <i class="fas fa-edit edit-icon ms-2"></i>
+              </td>
+              <td class="editable" data-field="color_code">
+                <span class="display-value">
+                  <span style="display: inline-block; width: 20px; height: 20px; background-color: ${service.color_code || '#000000'}; border: 1px solid #ccc;"></span>
+                </span>
+                <input type="color" class="edit-input form-control form-control-sm d-none" value="${service.color_code || '#000000'}">
+                <i class="fas fa-edit edit-icon ms-2"></i>
+              </td>
+              <td class="editable" data-field="doctors">
+                <span class="display-value">${doctorNames}</span>
+                <select multiple class="edit-input form-select form-select-sm d-none" data-original-value="${service.all_doctors ? 'all' : service.doctors.join(',')}">
+                  <!-- Options populated dynamically -->
+                </select>
+                <i class="fas fa-edit edit-icon ms-2"></i>
+              </td>
+              <td class="edit-controls d-none">
+                <button class="btn btn-success btn-sm save-edit me-1"><i class="fas fa-check"></i></button>
+                <button class="btn btn-secondary btn-sm cancel-edit"><i class="fas fa-times"></i></button>
+              </td>
             </tr>
           `);
           $tbody.append($row);
+  
+          // Populate doctor dropdown for editing
+          populateDoctorOptions($row.find('select.edit-input'), service.all_doctors, service.doctors);
         });
   
         console.log(`Populated services table with ${rawServices.length} entries`);
+  
+        // Bind edit icon click event
+        $tbody.find('.edit-icon').on('click', function () {
+          const $cell = $(this).closest('td');
+          const $row = $cell.closest('tr');
+          const field = $cell.data('field');
+  
+          // Exit if another cell is being edited
+          if ($tbody.find('.editing').length && !$cell.hasClass('editing')) {
+            alert('Please save or cancel the current edit before editing another field.');
+            return;
+          }
+  
+          // Toggle edit mode for this cell
+          $cell.addClass('editing');
+          $row.find('.edit-controls').removeClass('d-none');
+          $cell.find('.display-value').addClass('d-none');
+          $cell.find('.edit-input').removeClass('d-none').focus();
+  
+          // Hide edit icons in other cells
+          $row.find('.edit-icon').addClass('d-none');
+        });
+  
+        // Bind save button click event
+        $tbody.find('.save-edit').on('click', function () {
+          const $row = $(this).closest('tr');
+          const serviceId = $row.data('service-id');
+          const $cell = $row.find('.editing');
+          const field = $cell.data('field');
+          const $input = $cell.find('.edit-input');
+          let newValue = $input.val();
+  
+          // Validate input
+          if (!validateServiceField(field, newValue)) {
+            alert(`Invalid value for ${field}.`);
+            return;
+          }
+  
+          // Format new value based on field
+          if (field === 'doctors') {
+            newValue = $input.val().includes('all') ? { all_doctors: true, doctors: [] } : { all_doctors: false, doctors: $input.val().map(id => parseInt(id)) };
+          } else if (field === 'price') {
+            newValue = parseFloat(newValue);
+          }
+  
+          // Prepare data for PATCH request
+          const updateData = field === 'doctors' ? newValue : { [field]: newValue };
+  
+          // Send update to server
+          updateService(serviceId, updateData, $row);
+        });
+  
+        // Bind cancel button click event
+        $tbody.find('.cancel-edit').on('click', function () {
+          const $row = $(this).closest('tr');
+          const $cell = $row.find('.editing');
+          const field = $cell.data('field');
+          const $input = $cell.find('.edit-input');
+          const $display = $cell.find('.display-value');
+  
+          // Reset input to original value
+          if (field === 'doctors') {
+            const originalValue = $input.data('original-value').split(',');
+            $input.val(originalValue);
+          } else {
+            $input.val($display.data('original-value') || $input.val());
+          }
+  
+          // Exit edit mode
+          exitEditMode($row);
+        });
       },
       error: function (xhr) {
         console.error(`Failed to fetch services for table: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);

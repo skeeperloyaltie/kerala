@@ -843,3 +843,23 @@ height: 100%;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }
+
+.editable {
+  position: relative;
+}
+.edit-icon {
+  cursor: pointer;
+  color: #007bff;
+}
+.edit-icon:hover {
+  color: #0056b3;
+}
+.edit-input {
+  width: 100%;
+}
+.edit-controls {
+  white-space: nowrap;
+}
+.table-sm td {
+  vertical-align: middle;
+}
