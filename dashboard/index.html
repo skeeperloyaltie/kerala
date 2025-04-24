@@ -644,9 +644,8 @@
               <label for="serviceDoctors" class="form-label">Doctors</label>
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                <select class="form-select select2" id="serviceDoctors" name="doctors" multiple placeholder="Select doctors or All Doctors">
-                  <option value="all">All Doctors</option>
-                  <!-- Populated dynamically via JS -->
+                <select id="serviceDoctors" name="doctors[]" class="form-select" multiple required>
+                  <!-- Options populated by populateDoctorDropdown -->
                 </select>
               </div>
             </div>
