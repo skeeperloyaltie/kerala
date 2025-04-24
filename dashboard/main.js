@@ -733,11 +733,33 @@ $(document).ready(function () {
       calendarHeader.appendChild(headerCell);
     });
   
-    // Filter appointments by doctor if specified
+    // Get logged-in doctor's ID from sessionStorage
+    const loggedInDoctorId = sessionStorage.getItem("doctor_id");
+    console.log(`🔍 Logged-in Doctor ID: ${loggedInDoctorId}, Requested Doctor ID: ${doctorId}`);
+  
+    // Filter appointments by doctor
     let filteredAppointments = appointments;
     if (doctorId !== 'all') {
-      filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == doctorId);
+      filteredAppointments = appointments.filter(appt => 
+        appt.doctor && appt.doctor.id == doctorId
+      );
+    } else if (loggedInDoctorId && loggedInDoctorId !== 'null') {
+      // If no specific doctorId is provided and user is a doctor, show only their appointments
+      filteredAppointments = appointments.filter(appt => 
+        appt.doctor && appt.doctor.id == loggedInDoctorId
+      );
+      console.log(`🔍 Filtering for logged-in doctor's appointments (ID: ${loggedInDoctorId})`);
     }
+  
+    // Early check for no appointments
+    if (filteredAppointments.length === 0) {
+      calendarBody.innerHTML = `<div class="text-center">No appointments found for ${doctorId === 'all' && loggedInDoctorId ? 'your schedule' : doctorId === 'all' ? 'the selected week' : 'this doctor'}.</div>`;
+      console.log(`ℹ️ No appointments to display for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
+      return;
+    }
+  
+    // Log filtered appointments for debugging
+    console.log(`📅 Filtered appointments (${filteredAppointments.length}):`, filteredAppointments);
   
     // Populate calendar rows
     hours.forEach(hour => {
@@ -753,31 +775,72 @@ $(document).ready(function () {
       days.forEach(day => {
         const slot = document.createElement("div");
         slot.classList.add("calendar-slot");
+        slot.style.position = "relative"; // Ensure relative positioning for appointment blocks
+        slot.style.overflowY = "auto"; // Allow scrolling for multiple appointments
+        slot.style.maxHeight = "60px"; // Limit height to prevent overlap
   
         // Find appointments for this day and hour
         const slotAppointments = filteredAppointments.filter(appt => {
-          if (!appt || !appt.appointment_date) return false;
+          if (!appt || !appt.appointment_date) {
+            console.warn(`⚠️ Invalid appointment:`, appt);
+            return false;
+          }
+  
+          // Parse appointment date, assuming it's in ISO format (e.g., "2025-04-24T08:00:00+05:30")
           const apptDate = new Date(appt.appointment_date);
+          if (isNaN(apptDate)) {
+            console.warn(`⚠️ Invalid appointment_date for ID ${appt.id}:`, appt.appointment_date);
+            return false;
+          }
+  
+          // Extract date in YYYY-MM-DD format
           const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+  
+          // Check if date matches
+          if (apptDateStr !== day.dateStr) return false;
+  
+          // Get hours and minutes
           const apptHour = apptDate.getHours();
-          return apptDateStr === day.dateStr && apptHour === hour;
+          const apptMinute = apptDate.getMinutes();
+  
+          // Match appointments within the hour (e.g., 8:00–8:59)
+          const isInHour = apptHour === hour;
+  
+          console.log(`🔍 Checking appointment ID ${appt.id}: Date=${apptDateStr}, Hour=${apptHour}:${apptMinute}, Matches=${isInHour ? 'Yes' : 'No'}`);
+  
+          return isInHour;
         });
   
         // Add appointment blocks
-        slotAppointments.forEach(appt => {
+        slotAppointments.forEach((appt, index) => {
           const block = document.createElement("div");
           block.classList.add("appointment-block");
           block.dataset.appointmentId = appt.id;
+  
+          // Stack appointments vertically with slight offset
+          block.style.marginTop = `${index * 22}px`; // Adjust based on block height
+          block.style.zIndex = index + 1; // Ensure later blocks are on top
+  
           const patientName = appt.patient && appt.patient.first_name
             ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
             : 'Unnamed';
           const statusClass = appt.status ? `status-${appt.status.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+  
+          // Format appointment time for display
+          const apptTime = new Date(appt.appointment_date).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+  
           block.innerHTML = `
             <strong>${patientName}</strong><br>
             <span class="${statusClass}">${appt.status.toUpperCase()}</span><br>
+            <small>Time: ${apptTime}</small><br>
             ID: ${appt.id}
           `;
           block.title = `Doctor: ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'}\nNotes: ${appt.notes || 'N/A'}`;
+  
           slot.appendChild(block);
         });
   
@@ -791,14 +854,10 @@ $(document).ready(function () {
     document.querySelectorAll(".appointment-block").forEach(block => {
       block.addEventListener("click", () => {
         const appointmentId = block.dataset.appointmentId;
+        console.log(`🖱️ Appointment block clicked: ID ${appointmentId}`);
         showAppointmentDetails(appointmentId);
       });
     });
-  
-    // Display message if no appointments
-    if (filteredAppointments.length === 0) {
-      calendarBody.innerHTML = `<div class="text-center">No appointments found for ${doctorId === 'all' ? 'the selected week' : 'this doctor'}.</div>`;
-    }
   
     console.log(`✅ Populated calendar with ${filteredAppointments.length} appointments for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
   }
