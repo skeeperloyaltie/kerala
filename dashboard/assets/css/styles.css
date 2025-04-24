@@ -1,10 +1,11 @@
 body {
-    background-color: #f8f9fa;
-    min-height: 100vh;
-    font-size: 11px;
-    margin: 0;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  }
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-size: 11px;
+  margin: 0;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
   /* Top Navbar Styling */
   .navbar-top {
     background-color: #1a2a6c;
@@ -617,6 +618,7 @@ left: 0;
 width: 100%;
 height: 100%;
 }
+/* Appointments Section */
 .appointments-view {
   transition: opacity 0.3s ease;
   width: 100%;
@@ -627,6 +629,7 @@ height: 100%;
   padding: 15px;
   background-color: #ffffff; /* White background */
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
 
 #appointmentsCalendar {
@@ -635,134 +638,20 @@ height: 100%;
   color: #000000; /* Black text */
 }
 
-/* Style for FullCalendar (if used) */
-.fc {
-  font-family: Arial, sans-serif;
-}
-
-/* Header toolbar (prev, next, today) */
-.fc .fc-toolbar {
-  background-color: #ffffff; /* White background */
-  color: #000000; /* Black text */
-  padding: 10px;
-  border-radius: 5px 5px 0 0;
-  border-bottom: 1px solid #ddd; /* Subtle border for separation */
-}
-
-.fc .fc-toolbar-title {
-  font-size: 1.5em;
-  font-weight: bold;
-}
-
-.fc .fc-button {
-  background-color: #e0e0e0; /* Light gray for buttons */
-  border: none;
-  color: #000000;
-}
-
-.fc .fc-button:hover {
-  background-color: #d0d0d0; /* Slightly darker gray on hover */
-}
-
-/* Day view styling */
-.fc-timegrid {
-  background-color: #ffffff; /* White background */
-}
-
-.fc-timegrid-slot {
-  border-color: #ddd; /* Light gray border */
-  background-color: #ffffff; /* White background */
-  color: #000000; /* Black text */
-}
-
-.fc-timegrid-slot-label {
-  color: #000000; /* Black text */
-  font-size: 0.9em;
-}
-
-/* Event (appointment) styling */
-.fc-event {
-  background-color: #e0e0e0; /* Light gray for appointment blocks */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  color: #000000; /* Black text */
-  font-size: 0.9em;
-  padding: 2px 5px;
-}
-
-.fc-event:hover {
-  background-color: #d0d0d0; /* Slightly darker gray on hover */
-}
-
-/* Highlight current time line */
-.fc .fc-timegrid-now-indicator-line {
-  border-color: #000000; /* Black line for current time */
-  border-width: 2px;
-}
-
-/* Month view styling */
-.fc-daygrid-day {
-  background-color: #ffffff; /* White background */
-  border-color: #ddd; /* Light gray border */
-}
-
-.fc-daygrid-day-number {
-  color: #000000; /* Black text */
-}
-
-.fc-daygrid-day.has-appointment {
-  background-color: #f5f5f5 !important; /* Very light gray for appointment days */
-}
-
-.fc-daygrid-day-number:hover {
-  background-color: #e0e0e0; /* Light gray on hover */
-  border-radius: 50%;
-  color: #000000;
-}
-
-/* Today’s date in month view */
-.fc-daygrid-day.fc-day-today {
-  background-color: #f0f0f0 !important; /* Very light gray for today */
-}
-
-.fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-  color: #000000;
-  font-weight: bold;
-}
-
-/* Status colors (kept distinct but subtle) */
-.status-booked {
-  color: #000000; /* Black for consistency */
-  font-weight: bold;
-}
-
-.status-arrived {
-  color: #000000;
-  font-weight: bold;
-}
-
-.status-on-going {
-  color: #000000;
-  font-weight: bold;
-}
-
-.status-reviewed {
-  color: #000000;
-  font-weight: bold;
-}
-
-/* Calendar grid */
+/* Calendar Grid */
 .calendar-grid {
   display: grid;
   grid-template-rows: auto 1fr;
   border: 1px solid #ccc;
   width: 100%; /* Span full width */
+  box-sizing: border-box;
 }
 
 .calendar-header,
 .calendar-row {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: 80px repeat(7, 1fr); /* Fixed width for time column, equal for days */
+  background-color: #ffffff; /* White background */
 }
 
 .calendar-header > div,
@@ -770,15 +659,23 @@ height: 100%;
   border: 1px solid #ddd;
   padding: 6px;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 11px; /* Match global font size */
   background-color: #ffffff; /* White background */
   color: #000000; /* Black text */
+  box-sizing: border-box;
+}
+
+.calendar-header > div:first-child,
+.calendar-row > div:first-child {
+  font-weight: 500; /* Slightly bolder for time column */
+  background-color: #f5f5f5; /* Very light gray for time column */
 }
 
 .calendar-slot {
   min-height: 40px;
   position: relative;
   background-color: #ffffff; /* White background */
+  border: 1px solid #ddd; /* Consistent borders */
 }
 
 .appointment-block {
@@ -788,46 +685,86 @@ height: 100%;
   right: 2px;
   background: #e0e0e0; /* Light gray for appointment blocks */
   color: #000000; /* Black text */
-  font-size: 0.8rem;
-  padding: 2px;
+  font-size: 10px; /* Slightly smaller for compact display */
+  padding: 2px 4px;
   border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Flatpickr styling */
-.flatpickr-day.has-appointment {
-  background-color: #f5f5f5 !important; /* Very light gray for appointment days */
-  border: 1px solid #ccc !important;
+.appointment-block:hover {
+  background: #d0d0d0; /* Slightly darker gray on hover */
+  cursor: pointer;
 }
 
-/* Doctor filter container */
+/* Doctor Filter */
 .doctor-filter-container {
   display: flex;
   align-items: center;
-  max-width: 300px; /* Limits the filter width */
+  max-width: 300px; /* Limits filter width */
 }
 
 .doctor-filter-container .form-label {
-  font-size: 0.9rem;
+  font-size: 11px; /* Match global font size */
   font-weight: 500;
-  margin-bottom: 0; /* Remove default margin for inline alignment */
+  margin-bottom: 0;
   white-space: nowrap;
   color: #000000; /* Black text */
 }
 
 .doctor-filter-container .form-select {
-  width: 180px; /* Fixed width for the dropdown */
-  font-size: 0.9rem;
-  padding: 0.25rem 0.5rem;
+  width: 180px; /* Fixed width for dropdown */
+  font-size: 11px; /* Match global font size */
+  padding: 2px 6px; /* Compact padding */
+  height: 24px; /* Consistent with navbar inputs */
   background-color: #ffffff; /* White background */
   color: #000000; /* Black text */
   border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
-.appointments-section {
-  position: relative;
+/* Flatpickr Styling (consistent with global styles) */
+.flatpickr-day.has-appointment {
+  background-color: #f5f5f5 !important; /* Very light gray */
+  border: 1px solid #ccc !important;
+  color: #000000 !important; /* Black text */
 }
 
-/* Responsive adjustments */
+/* Status Classes (aligned with modal and table) */
+.status-booked {
+  background-color: #007bff; /* Keep blue for consistency */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.status-arrived {
+  background-color: #28a745; /* Keep green */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.status-on-going {
+  background-color: #ffc107; /* Keep yellow */
+  color: black;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.status-reviewed {
+  background-color: #6c757d; /* Keep gray */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 576px) {
   .doctor-filter-container {
     max-width: 100%;
@@ -839,7 +776,18 @@ height: 100%;
     width: 150px;
   }
 
-  .calendar-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adjust for smaller screens */
+  .calendar-header,
+  .calendar-row {
+    grid-template-columns: 60px repeat(7, 1fr); /* Smaller time column */
+    font-size: 10px; /* Slightly smaller text */
+  }
+
+  .calendar-slot {
+    min-height: 30px; /* Smaller slots for mobile */
+  }
+
+  .appointment-block {
+    font-size: 9px; /* Smaller text for mobile */
+    padding: 1px 3px;
   }
 }
