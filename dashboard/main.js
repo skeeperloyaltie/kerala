@@ -1845,7 +1845,7 @@ $(document).ready(function () {
     const servicePrice = parseFloat($("#servicePrice").val());
     const serviceCode = $("#serviceCode").val().trim();
     const serviceColorCode = $("#serviceColorCode").val();
-    const selectedDoctors = $("#serviceDoctors").val() || [];
+    let selectedDoctors = $("#serviceDoctors").val() || [];
 
     // Validation
     if (!serviceName) {
@@ -1864,17 +1864,23 @@ $(document).ready(function () {
       alert("Service Color Code is required.");
       return;
     }
-    if (selectedDoctors.length === 0) {
+    if (!selectedDoctors.length) {
       alert("Please select at least one doctor or 'All Doctors'.");
       return;
     }
 
+    // Handle "All Doctors" selection
     const allDoctors = selectedDoctors.includes("all");
-    const doctorIds = allDoctors ? [] : selectedDoctors.filter(id => id !== "all").map(id => parseInt(id));
+    const doctorIds = allDoctors
+      ? [] // Empty array if "All Doctors" is selected
+      : selectedDoctors
+          .filter(id => id !== "all")
+          .map(id => parseInt(id)); // Convert to integers
 
+    // Adjust data to match server expectations
     const data = {
-      service_name: serviceName,
-      service_price: servicePrice,
+      name: serviceName, // Changed from service_name to name
+      price: servicePrice, // Changed from service_price to price
       code: serviceCode,
       color_code: serviceColorCode,
       doctors: doctorIds,
@@ -1891,15 +1897,16 @@ $(document).ready(function () {
       success: () => {
         console.log("✅ Service added successfully");
         $(this)[0].reset();
-        $("#serviceDoctors").val(null); // Reset native select
+        $("#serviceDoctors").val(null).trigger('change'); // Reset multi-select
         $("#newActionModal").modal("hide");
         alert("Service added successfully");
         fetchServices(); // Refresh services list for bill items
         populateServicesTable(); // Refresh services table
       },
       error: xhr => {
-        console.error(`❌ Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
-        alert(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`);
+        console.error(`❌ Failed to add service: ${xhr.status}`, xhr.responseJSON);
+        const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.detail || "Unknown error";
+        alert(`Failed to add service: ${errorMsg}`);
       }
     });
   });
