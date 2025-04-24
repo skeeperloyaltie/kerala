@@ -1817,19 +1817,47 @@ $(document).ready(function () {
 // Update Add Service Form Submission to refresh table
   $("#addServiceForm").submit(function (e) {
     e.preventDefault();
-    const selectedDoctors = $("#serviceDoctors").val();
+
+    const serviceName = $("#serviceName").val().trim();
+    const servicePrice = parseFloat($("#servicePrice").val());
+    const serviceCode = $("#serviceCode").val().trim();
+    const serviceColorCode = $("#serviceColorCode").val();
+    const selectedDoctors = $("#serviceDoctors").val() || [];
+
+    // Validation
+    if (!serviceName) {
+      alert("Service Name is required.");
+      return;
+    }
+    if (isNaN(servicePrice) || servicePrice < 0) {
+      alert("Service Price must be a valid number greater than or equal to 0.");
+      return;
+    }
+    if (!serviceCode) {
+      alert("Service Code is required.");
+      return;
+    }
+    if (!serviceColorCode) {
+      alert("Service Color Code is required.");
+      return;
+    }
+    if (selectedDoctors.length === 0) {
+      alert("Please select at least one doctor or 'All Doctors'.");
+      return;
+    }
+
     const allDoctors = selectedDoctors.includes("all");
     const doctorIds = allDoctors ? [] : selectedDoctors.filter(id => id !== "all").map(id => parseInt(id));
 
     const data = {
-      service_name: $("#serviceName").val(),
-      service_price: parseFloat($("#servicePrice").val()),
-      code: $("#serviceCode").val(),
-      color_code: $("#serviceColorCode").val(),
+      service_name: serviceName,
+      service_price: servicePrice,
+      code: serviceCode,
+      color_code: serviceColorCode,
       doctors: doctorIds,
       all_doctors: allDoctors
     };
-    console.log("Submitting add service form...", data);
+    console.log("🟢 Submitting add service form:", data);
 
     $.ajax({
       url: `${API_BASE_URL}/service/create/`,
@@ -1838,16 +1866,16 @@ $(document).ready(function () {
       data: JSON.stringify(data),
       contentType: "application/json",
       success: () => {
-        console.log("Service added successfully");
+        console.log("✅ Service added successfully");
         $(this)[0].reset();
-        $("#serviceDoctors").val(null).trigger('change'); // Reset Select2
+        $("#serviceDoctors").val(null); // Reset native select
         $("#newActionModal").modal("hide");
         alert("Service added successfully");
         fetchServices(); // Refresh services list for bill items
         populateServicesTable(); // Refresh services table
       },
       error: xhr => {
-        console.error(`Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
+        console.error(`❌ Failed to add service: ${xhr.responseJSON?.error || xhr.statusText}`, xhr.responseJSON);
         alert(`Failed to add service: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
     });
@@ -2062,7 +2090,6 @@ $(document).ready(function () {
     }
   });
 
-  // Populate Doctor Dropdown for Bills
   function populateDoctorDropdown(selectId, specialtyId) {
     const doctorSelect = $(`#${selectId}`);
     if (!doctorSelect.length) {
@@ -2085,7 +2112,7 @@ $(document).ready(function () {
         if (selectId === "serviceDoctors") {
           doctorSelect.append('<option value="all">All Doctors</option>');
         } else {
-          doctorSelect.append('<option value="" selected>Select Doctor</option>');
+          doctorSelect.append('<option value="" selected disabled>Select Doctor</option>');
         }
   
         // Validate and populate doctor options
@@ -2105,21 +2132,7 @@ $(document).ready(function () {
           });
         }
   
-        // Initialize or reinitialize Select2 for serviceDoctors
-        if (selectId === "serviceDoctors") {
-          // Destroy existing Select2 instance to prevent duplicates
-          if (doctorSelect.hasClass('select2-hidden-accessible')) {
-            doctorSelect.select2('destroy');
-          }
-          doctorSelect.select2({
-            placeholder: "Select doctors or All Doctors",
-            allowClear: true,
-            width: '100%'
-          });
-          console.log(`✅ Initialized Select2 for #${selectId}`);
-        }
-  
-        // Handle specialty field updates
+        // Handle specialty field updates (if applicable)
         if (specialtyId) {
           doctorSelect.off('change.specialty').on('change.specialty', function () {
             const selectedDoctor = doctors.find(d => d.id == $(this).val());
