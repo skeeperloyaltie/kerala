@@ -1118,13 +1118,6 @@ $(document).ready(function () {
         return;
       }
   
-      // Check modal existence
-      if (!modal.length) {
-        console.error("❌ Modal #newActionModal not found in DOM");
-        alert("Error: Modal not found.");
-        return;
-      }
-  
       // Show modal
       console.log("🔍 Modal Element:", modal.length ? "Found" : "Not Found");
       modal.modal('show');
@@ -1132,7 +1125,7 @@ $(document).ready(function () {
   
       // Determine role
       const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
-      
+  
       // Handle tab visibility
       if (role === "doctor-senior") {
         // Show all tabs for doctor-senior unless add-services is triggered
@@ -1190,9 +1183,9 @@ $(document).ready(function () {
     const sidebarContentArea = $("#sidebarContentArea");
     modalBody.removeClass("split-view");
     sidebarContentArea.hide();
-    
+  
     const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
-    
+  
     if (role === "doctor-senior") {
       // Show all tabs for doctor-senior
       $("#newActionTabs .nav-item").show();
@@ -1206,7 +1199,7 @@ $(document).ready(function () {
         $("#addServiceTab").closest(".nav-item").hide();
       }
     }
-    
+  
     // Reset to default tab (e.g., Add Patient)
     $("#addPatientTab").tab("show");
   }
@@ -2847,7 +2840,7 @@ $(document).ready(function () {
   $('#newActionModal').on('shown.bs.modal', function () {
     console.log("🔍 Modal shown, ensuring tab visibility...");
     const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
-    
+  
     if (role === "doctor-senior") {
       // Show all tabs and enable all elements for doctor-senior
       $("#newActionTabs .nav-item").show();
