@@ -2082,12 +2082,6 @@ $(document).ready(function () {
     }
   });
 
-  // Call populateServicesTable when Add Service tab is shown
-  $("#addServiceTab").on("shown.bs.tab", function () {
-    console.log("Add Service tab shown, populating doctors...");
-    populateDoctorDropdown("serviceDoctors"); // Re-populate doctors
-    populateServicesTable(); // Existing call to populate services table
-  });
 
   // Handle service selection
   // Update service selection to populate service code
@@ -2787,6 +2781,13 @@ $(document).ready(function () {
   populateDoctorDropdownForFilter();
   bindDoctorFilter();
 
+
+  // Call populateServicesTable when Add Service tab is shown
+  $("#addServiceTab").on("shown.bs.tab", function () {
+    console.log("Add Service tab shown, populating doctors...");
+    populateDoctorDropdown("serviceDoctors"); // Re-populate doctors
+    populateServicesTable(); // Existing call to populate services table
+  });
   
   // Fetch today's appointments on page load
   const today = new Date();
