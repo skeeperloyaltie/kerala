@@ -7,5 +7,5 @@ django
 requests
 postfix
 pytz
-
+dateutil
 django-simple-history
