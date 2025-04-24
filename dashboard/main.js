@@ -1092,7 +1092,7 @@ $(document).ready(function () {
   
     const actionToTabMap = {
       "new": "addPatientTab",
-      "all-bills": "billsTab",
+      "all-bills": "addBillsTab",
       "add-services": "addServiceTab",
       "patient-q": "addPatientTab",
       "tele-consults": "visitsTab",
@@ -1126,38 +1126,52 @@ $(document).ready(function () {
       // Determine role
       const role = `${sessionStorage.getItem("user_type")?.toLowerCase()}-${sessionStorage.getItem("role_level")?.toLowerCase()}`;
   
-      // Handle tab visibility
+      // Handle tab visibility based on action
       if (role === "doctor-senior") {
-        // Show all tabs for doctor-senior unless add-services is triggered
+        // Show all tabs by default for doctor-senior
         $("#newActionTabs .nav-item").show();
         $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
+  
         if (action === "add-services") {
-          // Isolate Add Service tab
+          // Hide all tabs except Add Service when "Add Services" is clicked
           $("#newActionTabs .nav-item").hide();
-          $(`#${tabId}`).closest(".nav-item").show();
+          $(`#addServiceTab`).closest(".nav-item").show();
           $("#newActionTabContent .tab-pane").removeClass("show active");
-          $(`#${tabId}`).tab('show');
+          $(`#addServiceTab`).tab('show');
           $(`#addService`).addClass("show active");
           console.log(`✅ Exclusively showing Add Service tab for doctor-senior: ${tabId}`);
-        } else {
-          // Show requested tab while keeping all tabs visible
+        } else if (action === "new") {
+          // Hide Add Service tab when "New" is clicked
+          $("#newActionTabs .nav-item").show();
+          $(`#addServiceTab`).closest(".nav-item").hide();
           $(`#${tabId}`).tab('show');
-          console.log(`✅ Showing tab ${tabId} with all tabs visible for doctor-senior`);
+          console.log(`✅ Showing tab ${tabId} with Add Service hidden for doctor-senior`);
+        } else {
+          // Show requested tab with all permitted tabs visible (except Add Service if not explicitly allowed)
+          $(`#${tabId}`).tab('show');
+          console.log(`✅ Showing tab ${tabId} with all permitted tabs visible for doctor-senior`);
         }
       } else {
         // For other roles, show only permitted tabs
         const permittedTabs = $("#newActionTabs .nav-item:visible");
         permittedTabs.show();
-        // Hide Add Service tab by default unless explicitly triggered
-        $("#addServiceTab").closest(".nav-item").hide();
+  
         if (action === "add-services") {
+          // Hide all tabs except Add Service when "Add Services" is clicked
           $("#newActionTabs .nav-item").hide();
-          $(`#${tabId}`).closest(".nav-item").show();
+          $(`#addServiceTab`).closest(".nav-item").show();
           $("#newActionTabContent .tab-pane").removeClass("show active");
-          $(`#${tabId}`).tab('show');
+          $(`#addServiceTab`).tab('show');
           $(`#addService`).addClass("show active");
           console.log(`✅ Exclusively showing Add Service tab: ${tabId}`);
+        } else if (action === "new") {
+          // Hide Add Service tab when "New" is clicked
+          $("#newActionTabs .nav-item:visible").show();
+          $(`#addServiceTab`).closest(".nav-item").hide();
+          $(`#${tabId}`).tab('show');
+          console.log(`✅ Showing tab ${tabId} with Add Service hidden`);
         } else {
+          // Default behavior: Show permitted tabs, hide Add Service unless explicitly active
           permittedTabs.show();
           if (!$(`#addServiceTab`).closest(".nav-item").is(":visible")) {
             $(`#addServiceTab`).closest(".nav-item").hide();
