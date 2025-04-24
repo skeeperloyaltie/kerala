@@ -2336,7 +2336,7 @@ $(document).ready(function () {
   
     const totalAmount = parseFloat($("#totalAmount").val()) || 0;
     const depositAmount = parseFloat($("#depositAmount").val()) || 0;
-    const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'booked');
+    const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
     const notes = $("#billNotes").val();
   
     const billData = {

@@ -74,7 +74,7 @@ class CreateBillView(APIView):
                 'doctor': doctor,
                 'appointment_date': appointment_date,
                 'notes': data.get('notes', ''),
-                'status': 'Scheduled',
+                'status': 'Booked',
                 'is_emergency': False,
                 'created_by': user
             }
