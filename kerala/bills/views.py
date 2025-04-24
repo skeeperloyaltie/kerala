@@ -79,7 +79,8 @@ class CreateBillView(APIView):
                 'created_by': user
             }
             appointment = Appointment.objects.create(**appointment_data)
-            logger.info(f"Appointment created: {appointment.id} during bill creation")
+            logger.info(f"Appointment created: {appointment.id} with appointment_date: {appointment.appointment_date} (Kolkata: {appointment.appointment_date.astimezone(KOLKATA_TZ)})")
+
             data['appointment_id'] = appointment.id
 
         # Create bill

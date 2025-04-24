@@ -149,10 +149,14 @@ class AppointmentListView(APIView):
                 try:
                     start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
                     end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
-                    start_date = KOLKATA_TZ.localize(start_date)
-                    end_date = KOLKATA_TZ.localize(end_date)
+                    if settings.USE_TZ:
+                        start_date = KOLKATA_TZ.localize(start_date)
+                        end_date = KOLKATA_TZ.localize(end_date)
                     appointments = appointments.filter(appointment_date__range=[start_date, end_date])
                     logger.debug(f"After date filter: {appointments.count()} appointments")
+                    # Debug: Print the appointment dates
+                    for appt in appointments:
+                        logger.debug(f"Appointment {appt.id}: {appt.appointment_date}")
                 except ValueError:
                     logger.error(f"Invalid date format: start_date={start_date_str}, end_date={end_date_str}")
                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
