@@ -623,7 +623,7 @@ height: 100%;
   }
   
   #appointmentsCalendarView {
-    color:#1c2526;
+    color:#000000;
     padding: 15px;
     background-color: #cfddde; /* Dark background like Google Calendar */
     border-radius: 8px;
@@ -633,7 +633,7 @@ height: 100%;
     max-width: 900px;
     margin: 0 auto;
     background-color: #e5eded;
-    color: #e0e0e0; /* Light text for dark theme */
+    color: #040202; /* Light text for dark theme */
   }
   
   /* Style for FullCalendar */
