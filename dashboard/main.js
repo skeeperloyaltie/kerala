@@ -2011,7 +2011,7 @@ $(document).ready(function () {
 
   function updateService(serviceId, data, $row) {
     $.ajax({
-      url: `${API_BASE_URL}/service/edit/${serviceId}/`,
+      url: `${API_BASE_URL}/service/update/${serviceId}/`,
       type: "PATCH",
       headers: getAuthHeaders(),
       data: JSON.stringify(data),
