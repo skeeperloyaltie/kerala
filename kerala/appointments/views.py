@@ -78,7 +78,7 @@ class CreateAppointmentView(APIView):
             doctor=doctor,
             appointment_date=appointment_date,
             notes=data.get("notes", ""),
-            status="Scheduled",
+            status="Booked",
             is_emergency=data.get("is_emergency", False),
             created_by=user
         )
@@ -115,30 +115,67 @@ class AppointmentListView(APIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        status_filter = request.query_params.get('status', 'Scheduled')
-        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) requesting appointments with status '{status_filter}'")
+        # Get query parameters
+        status_filter = request.query_params.get('status', 'all').lower()
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+        doctor_id = request.query_params.get('doctor_id')
+
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) requesting appointments with params: status={status_filter}, start_date={start_date_str}, end_date={end_date_str}, doctor_id={doctor_id}")
 
         if not user.has_perm('appointments.view_appointment'):
             logger.warning(f"Unauthorized appointment list access by {user.username}")
             raise PermissionDenied("You do not have permission to view appointments.")
 
         try:
-            if user.user_type == "Doctor":
-                appointments = Appointment.objects.filter(doctor=user.doctor, status=status_filter)
-                logger.info(f"Doctor {user.username} fetched {appointments.count()} appointments")
-            elif user.user_type in ["Receptionist", "Nurse"] or user.is_superuser:
-                appointments = Appointment.objects.filter(status=status_filter)
-                logger.info(f"{user.user_type} {user.username} fetched {appointments.count()} appointments")
-            else:
-                logger.warning(f"Unauthorized access attempt by {user.username} ({user.user_type})")
-                return Response({"error": "Only Doctors, Nurses, Receptionists, or Admins can view appointments."}, status=status.HTTP_403_FORBIDDEN)
+            # Initialize queryset
+            appointments = Appointment.objects.all()
 
+            # Apply status filter
+            status_map = {
+                'all': ['booked', 'arrived', 'on-going', 'reviewed'],
+                'booked': ['booked'],
+                'arrived': ['arrived'],
+                'on-going': ['on-going'],
+                'reviewed': ['reviewed']
+            }
+            allowed_statuses = status_map.get(status_filter, status_map['all'])
+            if status_filter != 'all':
+                appointments = appointments.filter(status__in=allowed_statuses)
+            else:
+                appointments = appointments.filter(status__in=allowed_statuses)
+
+            # Apply date range filter
+            if start_date_str and end_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+                    start_date = KOLKATA_TZ.localize(start_date)
+                    end_date = KOLKATA_TZ.localize(end_date)
+                    appointments = appointments.filter(appointment_date__range=[start_date, end_date])
+                except ValueError:
+                    logger.error(f"Invalid date format: start_date={start_date_str}, end_date={end_date_str}")
+                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Apply doctor filter
+            if doctor_id and doctor_id != 'all':
+                try:
+                    appointments = appointments.filter(doctor__id=doctor_id)
+                except ValueError:
+                    logger.error(f"Invalid doctor_id: {doctor_id}")
+                    return Response({"error": "Invalid doctor_id."}, status=status.HTTP_400_BAD_REQUEST)
+            elif user.user_type == "Doctor":
+                # Restrict doctors to their own appointments
+                appointments = appointments.filter(doctor=user.doctor)
+
+            # Serialize and return
             serializer = AppointmentSerializer(appointments, many=True)
             logger.info(f"Appointments returned for {user.username}: {len(serializer.data)}")
             return Response({"appointments": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error fetching appointments for {user.username}: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while retrieving appointments."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class VitalsAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -380,7 +417,7 @@ class CreatePatientAndAppointmentView(APIView):
                     'appointment_date': serializer.validated_data['appointment_date'],
                     'notes': serializer.validated_data.get('notes', ''),
                     'is_emergency': serializer.validated_data.get('is_emergency', False),
-                    'status': 'scheduled',
+                    'status': 'booked',
                 }
 
                 try:
