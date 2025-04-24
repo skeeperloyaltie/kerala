@@ -2128,6 +2128,7 @@ $(document).ready(function () {
         // Handle selectId-specific options
         if (selectId === "serviceDoctors") {
           doctorSelect.append('<option value="all">All Doctors</option>');
+          doctorSelect.prop('multiple', true); // Enable multi-select for serviceDoctors
         } else {
           doctorSelect.append('<option value="" selected disabled>Select Doctor</option>');
         }
@@ -2149,6 +2150,9 @@ $(document).ready(function () {
           });
         }
   
+        // Apply Bootstrap styling
+        doctorSelect.addClass('form-select'); // Ensure Bootstrap styling
+  
         // Handle specialty field updates (if applicable)
         if (specialtyId) {
           doctorSelect.off('change.specialty').on('change.specialty', function () {
@@ -2164,6 +2168,8 @@ $(document).ready(function () {
       }
     });
   }
+
+  
   function populateDoctorDropdownForBill() {
     const doctorSelect = $("#billDoctor");
     doctorSelect.empty().append('<option value="" selected>Select Doctor</option>');
