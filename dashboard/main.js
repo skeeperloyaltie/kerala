@@ -2192,16 +2192,6 @@ $(document).ready(function () {
             }
           });
         }
-  
-        // Optionally initialize Select2 for consistency (uncomment if needed)
-        
-        // if (!doctorSelect.hasClass('select2-hidden-accessible')) {
-        //   doctorSelect.select2({
-        //     placeholder: "Select Doctor",
-        //     allowClear: true,
-        //     width: '100%'
-        //   });
-        // }
         
       },
       error: function (xhr) {
