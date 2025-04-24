@@ -778,7 +778,7 @@ height: 100%;
   left: 2px;
   right: 2px;
   background: #198754;
-  color: white;
+  color: rgb(0, 0, 0);
   font-size: 0.8rem;
   padding: 2px;
   border-radius: 4px;
@@ -789,4 +789,46 @@ height: 100%;
 .flatpickr-day.has-appointment {
   background-color: #e3f2fd !important;
   border: 1px solid #2196f3 !important;
+}
+
+
+.doctor-filter-container {
+  display: flex;
+  align-items: center;
+  max-width: 300px; /* Limits the filter width */
+}
+
+.doctor-filter-container .form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0; /* Remove default margin for inline alignment */
+  white-space: nowrap;
+}
+
+.doctor-filter-container .form-select {
+  width: 180px; /* Fixed width for the dropdown */
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.appointments-section {
+  position: relative;
+}
+
+/* Ensure the calendar view remains unaffected */
+.appointments-view {
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .doctor-filter-container {
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .doctor-filter-container .form-select {
+    width: 150px;
+  }
 }
