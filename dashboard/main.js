@@ -486,14 +486,14 @@ $(document).ready(function () {
         }
   
         // Filter by status
-        status_map = {
-          'all': ['booked', 'arrived', 'on-going', 'reviewed', 'scheduled'],  
+        const statusMap = {
+          'all': ['booked', 'arrived', 'on-going', 'reviewed'],
           'booked': ['booked'],
           'arrived': ['arrived'],
           'on-going': ['on-going'],
           'reviewed': ['reviewed'],
-          'scheduled': ['scheduled']  
-        }
+          'scheduled': ['scheduled']
+        };
         const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
   
         appointmentsArray = appointmentsArray.filter(appt => {
