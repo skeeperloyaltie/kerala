@@ -863,3 +863,31 @@ height: 100%;
 .table-sm td {
   vertical-align: middle;
 }
+
+/* styles.css or relevant stylesheet */
+.status-paid {
+  color: #28a745; /* Green for Paid */
+  font-weight: bold;
+}
+
+.status-partially-paid {
+  color: #ffc107; /* Yellow for Partially Paid */
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #dc3545; /* Red for Pending */
+  font-weight: bold;
+}
+
+.amount-paid {
+  color: #28a745; /* Green for Paid */
+}
+
+.amount-partially-paid {
+  color: #ffc107; /* Yellow for Partially Paid */
+}
+
+.amount-pending {
+  color: #dc3545; /* Red for Pending */
+}

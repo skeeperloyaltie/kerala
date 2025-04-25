@@ -115,3 +115,63 @@ class BillListView(APIView):
         serializer = BillSerializer(bills, many=True)
         logger.info(f"Returning {bills.count()} bills for {user.username}")
         return Response({"bills": serializer.data}, status=status.HTTP_200_OK)
+    
+    
+# bills/views.py
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.exceptions import PermissionDenied
+from .models import Bill, BillItem
+from .serializers import BillSerializer, BillItemSerializer
+import logging
+
+logger = logging.getLogger(__name__)
+KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
+
+@method_decorator(csrf_exempt, name='dispatch')
+class BillUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        user = request.user
+        data = request.data
+        bill_id = data.get('bill_id')
+        logger.info(f"User {user.username} attempting to update bill {bill_id}")
+
+        # Check permissions
+        if not (user.is_superuser or user.has_perm('bills.change_bill')):
+            logger.warning(f"Unauthorized bill update attempt by {user.username}")
+            raise PermissionDenied("You do not have permission to update bills.")
+
+        try:
+            bill = Bill.objects.get(bill_id=bill_id)
+        except Bill.DoesNotExist:
+            logger.error(f"Bill with ID {bill_id} not found.")
+            return Response({"error": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Prepare data for serializer
+        items_data = data.pop('items', [])
+        data['patient_id'] = data.get('patient_id')  # Ensure patient_id is included
+
+        serializer = BillSerializer(bill, data=data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            # Update bill
+            bill = serializer.save()
+
+            # Update bill items
+            BillItem.objects.filter(bill=bill).delete()  # Remove existing items
+            for item_data in items_data:
+                item_serializer = BillItemSerializer(data=item_data)
+                if item_serializer.is_valid():
+                    BillItem.objects.create(bill=bill, **item_serializer.validated_data)
+                else:
+                    logger.error(f"Invalid bill item data: {item_serializer.errors}")
+                    return Response({"error": "Invalid bill item data", "details": item_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+            logger.info(f"Bill {bill_id} updated successfully by {user.username}")
+            return Response({"success": True, "bill": BillSerializer(bill).data}, status=status.HTTP_200_OK)
+        
+        logger.error(f"Bill update errors: {serializer.errors}")
+        return Response({"error": "Invalid bill data", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

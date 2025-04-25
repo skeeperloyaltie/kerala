@@ -2800,17 +2800,22 @@ function showBillDetails(billId) {
   });
 }
   // main.js
-function populateBillsTable(bills) {
+// main.js
+function populateBillsTable(bills, page = 1, pageSize = 10) {
   const $tbody = $('#billsTable tbody');
   $tbody.empty();
 
   if (!bills.length) {
-    $tbody.append('<tr><td colspan="8" class="text-center">No bills found.</td></tr>');
+    $tbody.append('<tr><td colspan="9" class="text-center">No bills found.</td></tr>');
+    $('#billsTableInfo').text('Showing 0 of 0 entries');
     console.log(`ℹ️ No bills to display`);
     return;
   }
 
-  bills.forEach((bill, index) => {
+  const startIndex = (page - 1) * pageSize;
+  const paginatedBills = bills.slice(startIndex, startIndex + pageSize);
+
+  paginatedBills.forEach((bill, index) => {
     const patientName = bill.patient_id ? `Patient ID: ${bill.patient_id}` : 'Unknown';
     const billDate = bill.created_at
       ? new Date(bill.created_at).toLocaleDateString()
@@ -2818,12 +2823,24 @@ function populateBillsTable(bills) {
     const statusClass = bill.status
       ? `status-${bill.status.toLowerCase().replace(' ', '-')}`
       : 'status-unknown';
-    const totalAmount = bill.total_amount ? `₹${parseFloat(bill.total_amount).toFixed(2)}` : 'N/A';
-    const depositAmount = bill.deposit_amount ? `₹${parseFloat(bill.deposit_amount).toFixed(2)}` : '₹0.00';
+    const amountClass = bill.status
+      ? `amount-${bill.status.toLowerCase().replace(' ', '-')}`
+      : 'amount-unknown';
+    const totalAmount = bill.total_amount
+      ? `<span class="${amountClass}">₹${parseFloat(bill.total_amount).toFixed(2)}</span>`
+      : 'N/A';
+    const depositAmount = bill.deposit_amount
+      ? `₹${parseFloat(bill.deposit_amount).toFixed(2)}`
+      : '₹0.00';
 
     const $row = $(`
       <tr>
-        <td>${index + 1}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-warning edit-bill" data-bill-id="${bill.bill_id}">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+        </td>
+        <td>${startIndex + index + 1}</td>
         <td>${bill.bill_id || 'N/A'}</td>
         <td>${patientName}</td>
         <td>${billDate}</td>
@@ -2840,33 +2857,466 @@ function populateBillsTable(bills) {
     $tbody.append($row);
   });
 
-  // Bind view button click event
+  // Update table info
+  const totalEntries = bills.length;
+  const showingStart = startIndex + 1;
+  const showingEnd = Math.min(startIndex + paginatedBills.length, totalEntries);
+  $('#billsTableInfo').text(`Showing ${showingStart} to ${showingEnd} of ${totalEntries} entries`);
+
+  // Bind button click events
   $tbody.find('.view-bill').on('click', function () {
     const billId = $(this).data('bill-id');
     showBillDetails(billId);
   });
 
-  console.log(`✅ Populated bills table with ${bills.length} bills`);
+  $tbody.find('.edit-bill').on('click', function () {
+    const billId = $(this).data('bill-id');
+    editBill(billId);
+  });
+
+  console.log(`✅ Populated bills table with ${paginatedBills.length} bills (page ${page})`);
 }
-  // main.js
+// main.js
+// main.js
+function editBill(billId) {
+  $.ajax({
+    url: `${API_BASE_URL}/bills/list/?bill_id=${billId}`,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      console.log(`📋 Fetched bill details for editing ID ${billId}:`, data);
+      const bill = data.bills && data.bills.length > 0 ? data.bills[0] : null;
+      if (!bill) {
+        alert("Bill not found.");
+        return;
+      }
+
+      // Fetch associated appointment (assuming bill has an appointment_id field)
+      let appointmentPromise = bill.appointment_id
+        ? $.ajax({
+            url: `${API_BASE_URL}/appointments/list/?appointment_id=${bill.appointment_id}`,
+            type: "GET",
+            headers: getAuthHeaders()
+          })
+        : Promise.resolve({ appointments: [] });
+
+      appointmentPromise.then(appointmentData => {
+        const appointment = appointmentData.appointments && appointmentData.appointments.length > 0
+          ? appointmentData.appointments[0]
+          : null;
+
+        // Create edit modal
+        const modal = $(`
+          <div class="modal fade" id="editBillModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Bill - ${bill.bill_id}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="editBillForm">
+                    <div class="mb-3">
+                      <label for="editBillPatientId" class="form-label">Patient ID</label>
+                      <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillStatus" class="form-label">Status</label>
+                      <select class="form-control" id="editBillStatus" required>
+                        <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                        <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
+                        <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillTotalAmount" class="form-label">Total Amount</label>
+                      <input type="number" step="0.01" class="form-control" id="editBillTotalAmount" value="${bill.total_amount || ''}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillDepositAmount" class="form-label">Deposit Amount</label>
+                      <input type="number" step="0.01" class="form-control" id="editBillDepositAmount" value="${bill.deposit_amount || '0'}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillNotes" class="form-label">Notes</label>
+                      <textarea class="form-control" id="editBillNotes">${bill.notes || ''}</textarea>
+                    </div>
+                    ${
+                      appointment
+                        ? `
+                        <!-- Appointment Details -->
+                        <h6>Associated Appointment</h6>
+                        <div class="mb-3">
+                          <label for="editAppointmentId" class="form-label">Appointment ID</label>
+                          <input type="text" class="form-control" id="editAppointmentId" value="${appointment.appointment_id || ''}" readonly>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editAppointmentDate" class="form-label">Appointment Date</label>
+                          <input type="date" class="form-control" id="editAppointmentDate" value="${appointment.date || ''}">
+                        </div>
+                        <div class="mb-3">
+                          <label for="editAppointmentTime" class="form-label">Appointment Time</label>
+                          <input type="time" class="form-control" id="editAppointmentTime" value="${appointment.time || ''}">
+                        </div>
+                        <div class="mb-3">
+                          <label for="editAppointmentStatus" class="form-label">Appointment Status</label>
+                          <select class="form-control" id="editAppointmentStatus">
+                            <option value="Scheduled" ${appointment && appointment.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                            <option value="Completed" ${appointment && appointment.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            <option value="Cancelled" ${appointment && appointment.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                          </select>
+                        </div>
+                        `
+                        : ''
+                    }
+                    <!-- Bill Items -->
+                    <h6>Bill Items</h6>
+                    <div id="editBillItems">
+                      ${bill.items.map((item, index) => `
+                        <div class="row mb-2">
+                          <div class="col-md-3">
+                            <input type="text" class="form-control" name="item_service_id_${index}" value="${item.service_id}" placeholder="Service ID" required>
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
+                          </div>
+                          <div class="col-md-1">
+                            <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+
+        $('body').append(modal);
+        const bsModal = new bootstrap.Modal(modal[0]);
+        bsModal.show();
+
+        // Add item dynamically
+        modal.find('.add-item').on('click', function () {
+          const itemCount = modal.find('#editBillItems .row').length;
+          const newItem = `
+            <div class="row mb-2">
+              <div class="col-md-3">
+                <input type="text" class="form-control" name="item_service_id_${itemCount}" placeholder="Service ID" required>
+              </div>
+              <div class="col-md-2">
+                <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
+              </div>
+              <div class="col-md-2">
+                <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
+              </div>
+              <div class="col-md-2">
+                <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
+              </div>
+              <div class="col-md-2">
+                <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
+              </div>
+              <div class="col-md-1">
+                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+          modal.find('#editBillItems').append(newItem);
+        });
+
+        // Remove item
+        modal.find('.remove-item').on('click', function () {
+          $(this).closest('.row').remove();
+        });
+
+        // Save changes
+        modal.find('#saveBillChanges').on('click', function () {
+          const updatedBill = {
+            bill_id: bill.bill_id,
+            patient_id: modal.find('#editBillPatientId').val(),
+            status: modal.find('#editBillStatus').val(),
+            total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
+            deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
+            notes: modal.find('#editBillNotes').val(),
+            items: []
+          };
+
+          // Collect bill items
+          modal.find('#editBillItems .row').each(function () {
+            const item = {
+              service_id: $(this).find(`input[name^='item_service_id']`).val(),
+              quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
+              unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
+              gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
+              discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
+            };
+            updatedBill.items.push(item);
+          });
+
+          // Update bill
+          $.ajax({
+            url: `${API_BASE_URL}/bills/update/`,
+            type: "PUT",
+            headers: getAuthHeaders(),
+            data: JSON.stringify(updatedBill),
+            contentType: "application/json",
+            success: function (response) {
+              console.log(`✅ Bill ${billId} updated successfully:`, response);
+
+              // Update appointment if applicable
+              if (appointment && modal.find('#editAppointmentId').val()) {
+                const updatedAppointment = {
+                  appointment_id: modal.find('#editAppointmentId').val(),
+                  date: modal.find('#editAppointmentDate').val(),
+                  time: modal.find('#editAppointmentTime').val(),
+                  status: modal.find('#editAppointmentStatus').val()
+                };
+
+                $.ajax({
+                  url: `${API_BASE_URL}/appointments/update/`,
+                  type: "PUT",
+                  headers: getAuthHeaders(),
+                  data: JSON.stringify(updatedAppointment),
+                  contentType: "application/json",
+                  success: function (response) {
+                    console.log(`✅ Appointment ${updatedAppointment.appointment_id} updated successfully:`, response);
+                    alert("Bill and appointment updated successfully!");
+                    bsModal.hide();
+                    fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+                  },
+                  error: function (xhr) {
+                    console.error(`❌ Failed to update appointment:`, xhr.responseJSON || xhr.statusText);
+                    alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                  }
+                });
+              } else {
+                alert("Bill updated successfully!");
+                bsModal.hide();
+                fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+              }
+            },
+            error: function (xhr) {
+              console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+              alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+            }
+          });
+        });
+
+        modal.on('hidden.bs.modal', function () {
+          modal.remove();
+        });
+      }).catch(xhr => {
+        console.error(`❌ Failed to fetch appointment for bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+        alert("Failed to fetch associated appointment. Continuing with bill edit.");
+
+        // Create fallback modal without appointment fields
+        const modal = $(`
+          <div class="modal fade" id="editBillModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Bill - ${bill.bill_id}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="editBillForm">
+                    <div class="mb-3">
+                      <label for="editBillPatientId" class="form-label">Patient ID</label>
+                      <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillStatus" class="form-label">Status</label>
+                      <select class="form-control" id="editBillStatus" required>
+                        <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                        <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
+                        <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillTotalAmount" class="form-label">Total Amount</label>
+                      <input type="number" step="0.01" class="form-control" id="editBillTotalAmount" value="${bill.total_amount || ''}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillDepositAmount" class="form-label">Deposit Amount</label>
+                      <input type="number" step="0.01" class="form-control" id="editBillDepositAmount" value="${bill.deposit_amount || '0'}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="editBillNotes" class="form-label">Notes</label>
+                      <textarea class="form-control" id="editBillNotes">${bill.notes || ''}</textarea>
+                    </div>
+                    <!-- Bill Items -->
+                    <h6>Bill Items</h6>
+                    <div id="editBillItems">
+                      ${bill.items.map((item, index) => `
+                        <div class="row mb-2">
+                          <div class="col-md-3">
+                            <input type="text" class="form-control" name="item_service_id_${index}" value="${item.service_id}" placeholder="Service ID" required>
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
+                          </div>
+                          <div class="col-md-2">
+                            <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
+                          </div>
+                          <div class="col-md-1">
+                            <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+
+        $('body').append(modal);
+        const bsModal = new bootstrap.Modal(modal[0]);
+        bsModal.show();
+
+        // Add item dynamically
+        modal.find('.add-item').on('click', function () {
+          const itemCount = modal.find('#editBillItems .row').length;
+          const newItem = `
+            <div class="row mb-2">
+              <div class="col-md-3">
+                <input type="text" class="form-control" name="item_service_id_${itemCount}" placeholder="Service ID" required>
+              </div>
+              <div class="col-md-2">
+                <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
+              </div>
+              <div class="col-md-2">
+                <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
+              </div>
+              <div class="col-md-2">
+                <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
+              </div>
+              <div class="col-md-2">
+                <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
+              </div>
+              <div class="col-md-1">
+                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+          modal.find('#editBillItems').append(newItem);
+        });
+
+        // Remove item
+        modal.find('.remove-item').on('click', function () {
+          $(this).closest('.row').remove();
+        });
+
+        // Save changes
+        modal.find('#saveBillChanges').on('click', function () {
+          const updatedBill = {
+            bill_id: bill.bill_id,
+            patient_id: modal.find('#editBillPatientId').val(),
+            status: modal.find('#editBillStatus').val(),
+            total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
+            deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
+            notes: modal.find('#editBillNotes').val(),
+            items: []
+          };
+
+          // Collect bill items
+          modal.find('#editBillItems .row').each(function () {
+            const item = {
+              service_id: $(this).find(`input[name^='item_service_id']`).val(),
+              quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
+              unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
+              gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
+              discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
+            };
+            updatedBill.items.push(item);
+          });
+
+          // Update bill
+          $.ajax({
+            url: `${API_BASE_URL}/bills/update/`,
+            type: "PUT",
+            headers: getAuthHeaders(),
+            data: JSON.stringify(updatedBill),
+            contentType: "application/json",
+            success: function (response) {
+              console.log(`✅ Bill ${billId} updated successfully:`, response);
+              alert("Bill updated successfully!");
+              bsModal.hide();
+              fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+            },
+            error: function (xhr) {
+              console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+              alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+            }
+          });
+        });
+
+        modal.on('hidden.bs.modal', function () {
+          modal.remove();
+        });
+      });
+    },
+    error: function (xhr) {
+      console.error(`❌ Failed to fetch bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+      alert(`Failed to fetch bill details: ${xhr.responseJSON?.error || "Unknown error"}`);
+    }
+  });
+}
+
+// main.js
+function bindBillFilters() {
+  $('#billsNav .nav-link').on('click', function (e) {
+    e.preventDefault();
+    const filter = $(this).data('filter');
+    console.log(`🖱️ Bill filter clicked: ${filter}`);
+
+    // Update active class
+    $('#billsNav .nav-link').removeClass('active');
+    $(this).addClass('active');
+
+    // Fetch bills with the selected filter
+    fetchBills(filter);
+  });
+}
+let currentBills = [];
+let currentPage = 1;
+const pageSize = 10;
+
 function fetchBills(filter = 'all', patientId = null, startDate = null, endDate = null) {
   console.log(`📄 Fetching bills with filter: ${filter}, patientId: ${patientId}, date range: ${startDate} - ${endDate}`);
   
-  // Build the API URL with optional query parameters
   let url = `${API_BASE_URL}/bills/list/`;
   const queryParams = [];
-  if (patientId) {
-    queryParams.push(`patient_id=${encodeURIComponent(patientId)}`);
-  }
-  if (startDate) {
-    queryParams.push(`start_date=${encodeURIComponent(startDate)}`);
-  }
-  if (endDate) {
-    queryParams.push(`end_date=${encodeURIComponent(endDate)}`);
-  }
-  if (queryParams.length > 0) {
-    url += `?${queryParams.join('&')}`;
-  }
+  if (patientId) queryParams.push(`patient_id=${encodeURIComponent(patientId)}`);
+  if (startDate) queryParams.push(`start_date=${encodeURIComponent(startDate)}`);
+  if (endDate) queryParams.push(`end_date=${encodeURIComponent(endDate)}`);
+  if (queryParams.length > 0) url += `?${queryParams.join('&')}`;
 
   $.ajax({
     url: url,
@@ -2875,7 +3325,6 @@ function fetchBills(filter = 'all', patientId = null, startDate = null, endDate 
     success: function (data) {
       console.log(`📥 Raw API response for bills:`, data);
       
-      // Normalize bills data
       let billsArray = [];
       if (Array.isArray(data.bills)) {
         billsArray = data.bills;
@@ -2888,7 +3337,6 @@ function fetchBills(filter = 'all', patientId = null, startDate = null, endDate 
         billsArray = [];
       }
 
-      // Filter bills by status if needed
       const statusMap = {
         'all': ['Paid', 'Partially Paid', 'Pending'],
         'paid': ['Paid'],
@@ -2897,20 +3345,39 @@ function fetchBills(filter = 'all', patientId = null, startDate = null, endDate 
       };
       const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
       
-      billsArray = billsArray.filter(bill => {
+      currentBills = billsArray.filter(bill => {
         if (!bill || !bill.status) return false;
         return allowedStatuses.includes(bill.status);
       });
 
-      // Populate the bills table
-      populateBillsTable(billsArray);
+      currentPage = 1; // Reset to first page
+      populateBillsTable(currentBills, currentPage, pageSize);
       
-      console.log(`✅ Fetched ${billsArray.length} bills with filter ${filter}`);
+      console.log(`✅ Fetched ${currentBills.length} bills with filter ${filter}`);
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch bills: ${xhr.responseJSON?.error || "Unknown error"}`);
       alert(`Failed to fetch bills: ${xhr.responseJSON?.error || "Unknown error"}`);
-      populateBillsTable([]); // Show empty table on error
+      currentBills = [];
+      populateBillsTable(currentBills, currentPage, pageSize);
+    }
+  });
+}
+
+function bindPagination() {
+  $('#billsPrevPage').on('click', function (e) {
+    e.preventDefault();
+    if (currentPage > 1) {
+      currentPage--;
+      populateBillsTable(currentBills, currentPage, pageSize);
+    }
+  });
+
+  $('#billsNextPage').on('click', function (e) {
+    e.preventDefault();
+    if (currentPage * pageSize < currentBills.length) {
+      currentPage++;
+      populateBillsTable(currentBills, currentPage, pageSize);
     }
   });
 }
@@ -3296,6 +3763,8 @@ function fetchBills(filter = 'all', patientId = null, startDate = null, endDate 
 
   populateDoctorDropdownForFilter();
   bindDoctorFilter();
+  bindBillFilters();
+  bindPagination();
 
 
   // Call populateServicesTable when Add Service tab is shown

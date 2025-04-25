@@ -497,3 +497,43 @@ class CreatePatientAndAppointmentView(APIView):
             return Response(patient_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         logger.error(f"CreatePatientAndAppointment serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # appointments/views.py
+@method_decorator(csrf_exempt, name='dispatch')
+class AppointmentUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        user = request.user
+        data = request.data
+        appointment_id = data.get('appointment_id')
+        logger.info(f"User {user.username} attempting to update appointment {appointment_id}")
+
+        if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
+            logger.warning(f"Unauthorized appointment update attempt by {user.username}")
+            raise PermissionDenied("Only Senior roles can edit appointments.")
+
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+        if user.user_type == "Doctor" and appointment.doctor != user.doctor:
+            logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
+            raise PermissionDenied("You can only edit your own appointments.")
+
+        # Convert date and time to appointment_date
+        if data.get('date') and data.get('time'):
+            try:
+                appointment_date_str = f"{data['date']} {data['time']}"
+                appointment_date = datetime.strptime(appointment_date_str, '%Y-%m-%d %H:%M')
+                appointment_date = KOLKATA_TZ.localize(appointment_date)
+                data['appointment_date'] = appointment_date
+            except ValueError:
+                logger.error(f"Invalid date/time format: {appointment_date_str}")
+                return Response({"error": "Invalid date/time format. Use 'YYYY-MM-DD' and 'HH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = AppointmentSerializer(appointment, data=data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(updated_by=user)
+            logger.info(f"Appointment {appointment_id} updated by {user.username}")
+            return Response({"success": True, "appointment": serializer.data}, status=status.HTTP_200_OK)
+        
+        logger.error(f"Errors updating appointment {appointment_id}: {serializer.errors}")
+        return Response({"error": "Invalid appointment data", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

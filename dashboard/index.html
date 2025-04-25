@@ -784,51 +784,67 @@
         </div>
       </div>
       <!-- Bills Tab -->
-<div class="tab-pane fade" id="bills" role="tabpanel" aria-labelledby="billsTab">
-  <div class="container-fluid py-3">
-      <!-- Header with Create Bill Button -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">Bills</h5>
-          <button class="btn btn-primary btn-sm" id="createNewBillBtn" data-action="all-bills">
+      <div class="tab-pane fade" id="bills" role="tabpanel" aria-labelledby="billsTab">
+        <div class="container-fluid py-3">
+          <!-- Header with Navigation and Create Bill Button -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Bills</h5>
+            <div>
+              <ul class="nav nav-pills bills-filter me-3" id="billsNav">
+                <li class="nav-item">
+                  <a class="nav-link active" href="#" data-filter="all">All</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#" data-filter="paid">Paid</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#" data-filter="partially-paid">Partially Paid</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#" data-filter="pending">Pending</a>
+                </li>
+              </ul>
+            </div>
+            <button class="btn btn-primary btn-sm" id="createNewBillBtn" data-action="all-bills">
               <i class="fas fa-plus me-1"></i> Create New Bill
-          </button>
-      </div>
-
-      <!-- Bills Table -->
-      <div class="card">
-          <!-- index.html or relevant template -->
-        <h3>Bills</h3>
-        <table class="table table-striped table-bordered" id="billsTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Bill ID</th>
-              <th>Patient</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Total Amount</th>
-              <th>Deposit Amount</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-          <!-- Pagination -->
-          <div class="card-footer d-flex justify-content-between align-items-center">
+            </button>
+          </div>
+      
+          <!-- Bills Table -->
+          <div class="card">
+            <div class="card-body">
+              <table class="table table-striped table-bordered" id="billsTable">
+                <thead>
+                  <tr>
+                    <th>Edit</th>
+                    <th>#</th>
+                    <th>Bill ID</th>
+                    <th>Patient</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Total Amount</th>
+                    <th>Deposit Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <!-- Pagination -->
+            <div class="card-footer d-flex justify-content-between align-items-center">
               <div>
-                  <span id="billsTableInfo">Showing 0 of 0 entries</span>
+                <span id="billsTableInfo">Showing 0 of 0 entries</span>
               </div>
               <nav>
-                  <ul class="pagination pagination-sm mb-0">
-                      <li class="page-item"><a class="page-link" href="#" id="billsPrevPage">Previous</a></li>
-                      <li class="page-item"><a class="page-link" href="#" id="billsNextPage">Next</a></li>
-                  </ul>
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item"><a class="page-link" href="#" id="billsPrevPage">Previous</a></li>
+                  <li class="page-item"><a class="page-link" href="#" id="billsNextPage">Next</a></li>
+                </ul>
               </nav>
+            </div>
           </div>
+        </div>
       </div>
-  </div>
-</div>
       <!-- Payments Tab -->
       <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="paymentsTab">
         <form id="addPaymentsForm">
@@ -1154,6 +1170,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="flatpicker.js"></script>
   <script src="main.js"></script>
+  <!-- <script src="editBill.js"></script> -->
   <script src="clicks.js"></script>
 
   <!-- Custom JS -->
