@@ -1218,77 +1218,64 @@ $(document).ready(function () {
     $("#addPatientTab").tab("show");
   }
   // Setup Patient Search with Autocomplete
-  function setupPatientSearch() {
-    console.log("🔍 Setting up patient search...");
-    const $searchInput = $('.navbar-top .form-control.patient-search');
-    console.log("🔍 Search input found:", $searchInput.length ? "Yes" : "No", $searchInput);
-  
-    const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
-    $searchInput.after($dropdown);
-    $searchInput.on('input', debounce(function () {
-      console.log("✨ Search input triggered:", $searchInput.val());
-      const query = $searchInput.val().trim();
-      if (query.length < 1) {
-        $dropdown.hide().empty();
-        console.log("Query too short, skipping search");
-        return;
-      }
-      console.log("🚀 Proceeding with search for query:", query);
-  
-      $.ajax({
-        url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
-        type: "GET",
-        headers: getAuthHeaders(),
-        beforeSend: function () {
-          console.log("📤 Sending search request for query:", query);
-        },
-        success: function (data) {
-          console.log("✅ Patient search results:", data);
-          if (!data || !data.patients) {
-            data = { patients: [] };
-            console.log("🛠️ Mocking empty response for testing");
-          }
-          $dropdown.empty();
-          if (data.patients && data.patients.length > 0) {
-            data.patients.forEach(patient => {
-              const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
-              $dropdown.append($li);
-              console.log("➕ Added patient to dropdown:", $li.text());
-            });
-            $dropdown.show();
-            console.log("👀 Dropdown should be visible now");
-          } else {
-            $dropdown.show();
-            console.log("🕳️ No patients found, showing create patient prompt");
-            showCreatePatientPrompt(query);
-          }
-        },
-        error: function (xhr) {
-          console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
-          $dropdown.hide();
+  let selectedPatientId = null;
+
+// Setup Patient Search with Autocomplete
+function setupPatientSearch() {
+  console.log("🔍 Setting up patient search...");
+  const $searchInput = $('.navbar-top .form-control.patient-search');
+  const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
+  $searchInput.after($dropdown);
+
+  $searchInput.on('input', debounce(function () {
+    const query = $searchInput.val().trim();
+    console.log("✨ Search input triggered:", query);
+    if (query.length < 1) {
+      $dropdown.hide().empty();
+      return;
+    }
+
+    $.ajax({
+      url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
+      type: "GET",
+      headers: getAuthHeaders(),
+      success: function (data) {
+        console.log("✅ Patient search results:", data);
+        $dropdown.empty();
+        if (data.patients && data.patients.length > 0) {
+          data.patients.forEach(patient => {
+            const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
+            $dropdown.append($li);
+          });
+          $dropdown.show();
+        } else {
+          $dropdown.show();
+          showCreatePatientPrompt(query);
         }
-      });
-    }, 300));
-  
-    $dropdown.on('click', 'li', function () {
-      const patientId = $(this).data('patient-id');
-      $searchInput.val($(this).text());
-      $dropdown.hide();
-      console.log("👤 Patient selected, ID:", patientId);
-      fetchPatientDetails(patientId);
-      // Show all sections in Add Patient form
-      $('#personalDetailsCollapse, #contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').addClass('show');
-      // Open modal to Add Patient tab
-      $('#newActionModal').modal('show');
-      $('#addPatientTab').tab('show');
-    });
-  
-    $(document).on('click', function (e) {
-      if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
+      },
+      error: function (xhr) {
+        console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
         $dropdown.hide();
       }
     });
-  }
+  }, 300));
+
+  // Handle patient selection
+  $dropdown.on('click', 'li', function () {
+    const patientId = $(this).data('patient-id');
+    $searchInput.val($(this).text());
+    $dropdown.hide();
+    console.log("👤 Patient selected, ID:", patientId);
+    selectedPatientId = patientId; // Store globally
+    fetchPatientDetails(patientId, 'addBillsTab'); // Default to Add Bills tab
+  });
+
+  $(document).on('click', function (e) {
+    if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
+      $dropdown.hide();
+    }
+  });
+}
 
   // Debounce function
   function debounce(func, wait) {
@@ -1300,60 +1287,252 @@ $(document).ready(function () {
   }
 
   // Fetch Patient Details
-  function fetchPatientDetails(patientId) {
+  function fetchPatientDetails(patientId, targetTab = 'addPatientTab') {
     $.ajax({
       url: `${API_BASE_URL}/patients/patients/${patientId}/`,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
-        selectedPatientId = (data.patient || data).patient_id; // Store patient ID globally
+        selectedPatientId = (data.patient || data).patient_id; // Update global variable
         const patient = data.patient || data;
         const appointment = patient.appointments && patient.appointments.length > 0 ? patient.appointments[0] : null;
-        
-        // Populate both Profile and Add Patient forms
+  
+        // Populate forms
         populateProfileTab(patient);
         populateAddPatientForm(patient, appointment);
-        
-        // Show all sections in Add Patient form
-        $('#personalDetailsCollapse, #contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').addClass('show');
-        
-        // Open modal to Add Patient tab
-        $('#newActionModal').modal('show');
-        $('#addPatientTab').tab('show');
-        
         updateDetailsSection(data);
-        // Pre-set bill patient ID for seamless transition to bill tab
+  
+        // Pre-set bill patient ID
         $("#patientIdForBill").val(selectedPatientId);
         sessionStorage.setItem("billPatientId", selectedPatientId);
-        console.log(`✅ Fetched details for patient ${patientId}`);
-      },
-      error: function (xhr) {
-        console.error(`❌ Failed to fetch patient details for ${patientId}:`, {
-          status: xhr.status,
-          statusText: xhr.statusText,
-          response: xhr.responseJSON
-        });
   
-        let errorMessage = "Failed to fetch patient details.";
-        if (xhr.responseJSON && xhr.responseJSON.error) {
-          errorMessage = xhr.responseJSON.error;
-        } else if (xhr.status === 403) {
-          errorMessage = "You do not have permission to view this patient’s details.";
-        } else if (xhr.status === 404) {
-          errorMessage = "Patient not found.";
-        } else {
-          errorMessage += ` Unknown error (Status: ${xhr.status}).`;
+        // Open modal and switch to target tab
+        $('#newActionModal').modal('show');
+        $(`#${targetTab}`).tab('show');
+  
+        // If targeting Add Bills tab, ensure form is ready
+        if (targetTab === 'addBillsTab') {
+          updateBillDetails(selectedPatientId);
+          if (!$("#billItemsTableBody tr").length) {
+            $("#addBillItem").click(); // Add at least one bill item
+          }
         }
   
+        // Show all sections in Add Patient form if needed
+        if (targetTab === 'addPatientTab') {
+          $('#personalDetailsCollapse, #contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').addClass('show');
+        }
+  
+        console.log(`✅ Fetched and populated details for patient ${patientId}, switched to ${targetTab}`);
+      },
+      error: function (xhr) {
+        console.error(`❌ Failed to fetch patient details for ${patientId}:`, xhr.responseJSON);
+        let errorMessage = xhr.responseJSON?.error || "Failed to fetch patient details.";
         alert(errorMessage);
       }
     });
   }
 
+  // New Function: Display Patient Appointments in APPT Tab
+function showPatientAppointments(patientId) {
+  $.ajax({
+    url: `${API_BASE_URL}/appointments/list/?patient_id=${patientId}`,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      console.log(`✅ Fetched appointments for patient ${patientId}:`, data);
+      const appointments = Array.isArray(data.appointments) ? data.appointments : [];
+      renderAppointmentsTable(appointments, patientId);
+      $('#newActionModal').modal('show');
+      $('#visitsTab').tab('show'); // APPT tab is assumed to be 'visitsTab'
+    },
+    error: function (xhr) {
+      console.error(`❌ Failed to fetch appointments for patient ${patientId}:`, xhr.responseJSON);
+      alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
+    }
+  });
+}
+// New Function: Render Appointments Table in APPT Tab
+function renderAppointmentsTable(appointments, patientId) {
+  const $visitsTabContent = $('#visits'); // Assuming 'visits' is the ID of the APPT tab content
+  $visitsTabContent.empty(); // Clear existing content
+
+  if (!appointments.length) {
+    $visitsTabContent.append('<p class="text-center">No appointments found for this patient.</p>');
+    console.log(`ℹ️ No appointments to display for patient ${patientId}`);
+    return;
+  }
+
+  const $table = $(`
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Appointment ID</th>
+          <th>Date & Time</th>
+          <th>Doctor</th>
+          <th>Status</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  `);
+  const $tbody = $table.find('tbody');
+
+  appointments.forEach((appt, index) => {
+    const doctorName = appt.doctor && appt.doctor.first_name
+      ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
+      : 'N/A';
+    const apptDate = appt.appointment_date
+      ? new Date(appt.appointment_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+      : 'N/A';
+    const statusClass = appt.status ? `status-${appt.status.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+
+    const $row = $(`
+      <tr>
+        <td>${index + 1}</td>
+        <td>${appt.id}</td>
+        <td>${apptDate}</td>
+        <td>${doctorName}</td>
+        <td><span class="${statusClass}">${appt.status.toUpperCase()}</span></td>
+        <td>${appt.notes || 'N/A'}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary edit-appointment" data-appointment-id="${appt.id}">
+            <i class="fas fa-edit"></i>
+          </button>
+        </td>
+      </tr>
+    `);
+    $tbody.append($row);
+  });
+
+  $visitsTabContent.append($table);
+
+  // Bind edit button click
+  $visitsTabContent.find('.edit-appointment').on('click', function () {
+    const appointmentId = $(this).data('appointment-id');
+    editAppointment(appointmentId);
+  });
+
+  console.log(`✅ Rendered appointments table for patient ${patientId} with ${appointments.length} entries`);
+}
+  // New Function: Edit Appointment (Frontend Modal)
+function editAppointment(appointmentId) {
+  $.ajax({
+    url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (appt) {
+      console.log(`📋 Fetched appointment ${appointmentId} for editing:`, appt);
+
+      // Create edit modal
+      const modal = $(`
+        <div class="modal fade" id="editAppointmentModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="editApptDate" class="form-label">Date & Time</label>
+                  <input type="text" class="form-control" id="editApptDate" value="${appt.appointment_date || ''}">
+                </div>
+                <div class="mb-3">
+                  <label for="editApptDoctor" class="form-label">Doctor</label>
+                  <select class="form-select" id="editApptDoctor"></select>
+                </div>
+                <div class="mb-3">
+                  <label for="editApptStatus" class="form-label">Status</label>
+                  <select class="form-select" id="editApptStatus">
+                    <option value="booked" ${appt.status.toLowerCase() === 'booked' ? 'selected' : ''}>Booked</option>
+                    <option value="arrived" ${appt.status.toLowerCase() === 'arrived' ? 'selected' : ''}>Arrived</option>
+                    <option value="on-going" ${appt.status.toLowerCase() === 'on-going' ? 'selected' : ''}>On-Going</option>
+                    <option value="reviewed" ${appt.status.toLowerCase() === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="editApptNotes" class="form-label">Notes</label>
+                  <textarea class="form-control" id="editApptNotes">${appt.notes || ''}</textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary save-appointment" data-appointment-id="${appt.id}">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+
+      $('body').append(modal);
+      const bsModal = new bootstrap.Modal(modal[0]);
+      bsModal.show();
+
+      // Initialize Flatpickr for date
+      flatpickr("#editApptDate", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        minDate: "today",
+        defaultDate: appt.appointment_date || new Date(),
+        time_24hr: true,
+        allowInput: true
+      });
+
+      // Populate doctor dropdown
+      populateDoctorDropdown('editApptDoctor');
+      $('#editApptDoctor').val(appt.doctor?.id || '');
+
+      // Handle save
+      modal.find('.save-appointment').on('click', function () {
+        const updatedData = {
+          appointment_date: $('#editApptDate').val(),
+          doctor_id: $('#editApptDoctor').val(),
+          status: $('#editApptStatus').val(),
+          notes: $('#editApptNotes').val()
+        };
+
+        // Placeholder for backend update (to be implemented)
+        $.ajax({
+          url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+          type: "PATCH",
+          headers: getAuthHeaders(),
+          data: JSON.stringify(updatedData),
+          contentType: "application/json",
+          success: function () {
+            console.log(`✅ Updated appointment ${appointmentId}`);
+            alert("Appointment updated successfully!");
+            bsModal.hide();
+            showPatientAppointments(selectedPatientId); // Refresh table
+          },
+          error: function (xhr) {
+            console.error(`❌ Failed to update appointment ${appointmentId}:`, xhr.responseJSON);
+            alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+          }
+        });
+      });
+
+      modal.on('hidden.bs.modal', function () {
+        modal.remove();
+      });
+    },
+    error: function (xhr) {
+      console.error(`❌ Failed to fetch appointment ${appointmentId}:`, xhr.responseJSON);
+      alert(`Failed to fetch appointment details: ${xhr.responseJSON?.error || "Unknown error"}`);
+    }
+  });
+}
+
   // Populate Profile Tab
+  // Update Profile Tab to Include View Appointments Button
   function populateProfileTab(data) {
     const patient = data.patient || data;
     console.log("📋 Populating profile tab with data:", patient);
+
+    // Existing population logic (unchanged)
     $('#profileFirstName').val(patient.first_name || '');
     $('#profileLastName').val(patient.last_name || '');
     $('#profilePhone').val(patient.mobile_number || '');
@@ -1369,9 +1548,8 @@ $(document).ready(function () {
       const formattedDate = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}-${String(appointmentDate.getDate()).padStart(2, '0')} ${String(appointmentDate.getHours()).padStart(2, '0')}:${String(appointmentDate.getMinutes()).padStart(2, '0')}`;
       $('#profileAppointmentDate').val(formattedDate);
     } else {
-        $('#profileAppointmentDate').val('N/A');
+      $('#profileAppointmentDate').val('N/A');
     }
-
     $('#profileCity').val(patient.city || '');
     $('#profileAddress').val(patient.address || '');
     $('#profilePin').val(patient.pincode || '');
@@ -1408,65 +1586,65 @@ $(document).ready(function () {
 
     // Add edit toggle button if not already present
     if (!$('#toggleProfileEdit').length) {
-        const $editButton = $('<button class="btn btn-sm btn-outline-primary ms-2" id="toggleProfileEdit">Edit</button>');
-        $('#profileCity').closest('.input-group').append($editButton);
+      const $editButton = $('<button class="btn btn-sm btn-outline-primary ms-2" id="toggleProfileEdit">Edit</button>');
+      $('#profileCity').closest('.input-group').append($editButton);
 
-        $editButton.on('click', function () {
-            const isReadonly = $profileFields.prop('readonly');
-            $profileFields.prop('readonly', !isReadonly);
-            $(this).text(isReadonly ? 'Save' : 'Edit');
-            if (!isReadonly) {
-                // Save changes
-                const patientId = selectedPatientId || patient.patient_id;
-                if (!patientId) {
-                    alert("No patient ID found. Please select a patient.");
-                    return;
-                }
-                const updatedData = {
-                    city: $('#profileCity').val(),
-                    address: $('#profileAddress').val(),
-                    pincode: $('#profilePin').val()
-                };
-                $.ajax({
-                    url: `${API_BASE_URL}/patients/patients/${patientId}/`,
-                    type: "PATCH",
-                    headers: getAuthHeaders(),
-                    data: JSON.stringify(updatedData),
-                    contentType: "application/json",
-                    success: function () {
-                        console.log(`✅ Updated patient ${patientId} address details`);
-                        alert("Address details updated successfully!");
-                    },
-                    error: function (xhr) {
-                        console.error(`❌ Failed to update patient ${patientId}:`, xhr.responseJSON || xhr.statusText);
-                        alert(`Failed to update address: ${xhr.responseJSON?.error || "Unknown error"}`);
-                    }
-                });
+      $editButton.on('click', function () {
+        const isReadonly = $profileFields.prop('readonly');
+        $profileFields.prop('readonly', !isReadonly);
+        $(this).text(isReadonly ? 'Save' : 'Edit');
+        if (!isReadonly) {
+          const patientId = selectedPatientId || patient.patient_id;
+          if (!patientId) {
+            alert("No patient ID found. Please select a patient.");
+            return;
+          }
+          const updatedData = {
+            city: $('#profileCity').val(),
+            address: $('#profileAddress').val(),
+            pincode: $('#profilePin').val()
+          };
+          $.ajax({
+            url: `${API_BASE_URL}/patients/patients/${patientId}/`,
+            type: "PATCH",
+            headers: getAuthHeaders(),
+            data: JSON.stringify(updatedData),
+            contentType: "application/json",
+            success: function () {
+              console.log(`✅ Updated patient ${patientId} address details`);
+              alert("Address details updated successfully!");
+            },
+            error: function (xhr) {
+              console.error(`❌ Failed to update patient ${patientId}:`, xhr.responseJSON || xhr.statusText);
+              alert(`Failed to update address: ${xhr.responseJSON?.error || "Unknown error"}`);
             }
-        });
+          });
+        }
+      });
     }
 
     // Reinitialize autocomplete for profileCity
     setupCityAutocomplete("profileCity");
 
+    // Update button bindings
     $('#editProfileBtn').off('click').on('click', function () {
-        populateAddPatientForm(patient, appointment);
-        $('#addPatientTab').tab('show');
+      populateAddPatientForm(patient, appointment);
+      $('#addPatientTab').tab('show');
     });
 
     $('#viewAppointmentsBtn').off('click').on('click', function () {
-        alert('View Appointments functionality TBD');
+      showPatientAppointments(patient.patient_id);
     });
 
     $('#addBillFromProfileBtn').off('click').on('click', function () {
-        selectedPatientId = patient.patient_id;
-        $('#patientIdForBill').val(patient.patient_id || '');
-        sessionStorage.setItem("billPatientId", patient.patient_id || '');
-        $('#addBillsTab').tab('show');
+      selectedPatientId = patient.patient_id;
+      $('#patientIdForBill').val(patient.patient_id || '');
+      sessionStorage.setItem("billPatientId", patient.patient_id || '');
+      $('#addBillsTab').tab('show');
     });
 
     console.log("✅ Profile tab populated with patient data:", patient);
-}
+  }
 
   // Update Details Section
   function updateDetailsSection(data) {
@@ -2687,7 +2865,6 @@ $(document).ready(function () {
   });
 
   // Add a global variable to store the selected patient ID
-  let selectedPatientId = null;
 
   function updateBillDetails(patientId) {
     // Use provided patientId, global selectedPatientId, input field, or sessionStorage
