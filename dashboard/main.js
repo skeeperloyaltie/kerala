@@ -2719,7 +2719,135 @@ function editAppointment(appointmentId) {
       modal.remove();
     });
   }
+// main.js
+function showBillDetails(billId) {
+  $.ajax({
+    url: `${API_BASE_URL}/bills/list/?bill_id=${billId}`,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      console.log(`📋 Fetched bill details for ID ${billId}:`, data);
+      const bill = data.bills && data.bills.length > 0 ? data.bills[0] : null;
+      if (!bill) {
+        alert("Bill not found.");
+        return;
+      }
 
+      // Create modal
+      const modal = $(`
+        <div class="modal fade" id="billDetailsModal" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Bill Details - ${bill.bill_id}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p><strong>Patient ID:</strong> ${bill.patient_id || 'N/A'}</p>
+                <p><strong>Date:</strong> ${bill.created_at ? new Date(bill.created_at).toLocaleString() : 'N/A'}</p>
+                <p><strong>Status:</strong> ${bill.status || 'N/A'}</p>
+                <p><strong>Total Amount:</strong> ₹${parseFloat(bill.total_amount || 0).toFixed(2)}</p>
+                <p><strong>Deposit Amount:</strong> ₹${parseFloat(bill.deposit_amount || 0).toFixed(2)}</p>
+                <p><strong>Notes:</strong> ${bill.notes || 'N/A'}</p>
+                <h6>Items:</h6>
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Service</th>
+                      <th>Quantity</th>
+                      <th>Unit Price</th>
+                      <th>GST (%)</th>
+                      <th>Discount</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${bill.items.map((item, index) => `
+                      <tr>
+                        <td>${index + 1}</td>
+                        <td>Service ID: ${item.service_id}</td>
+                        <td>${item.quantity}</td>
+                        <td>₹${parseFloat(item.unit_price).toFixed(2)}</td>
+                        <td>${parseFloat(item.gst).toFixed(2)}</td>
+                        <td>₹${parseFloat(item.discount).toFixed(2)}</td>
+                        <td>₹${parseFloat(item.total_price).toFixed(2)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+
+      $('body').append(modal);
+      const bsModal = new bootstrap.Modal(modal[0]);
+      bsModal.show();
+
+      modal.on('hidden.bs.modal', function () {
+        modal.remove();
+      });
+    },
+    error: function (xhr) {
+      console.error(`❌ Failed to fetch bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+      alert(`Failed to fetch bill details: ${xhr.responseJSON?.error || "Unknown error"}`);
+    }
+  });
+}
+  // main.js
+function populateBillsTable(bills) {
+  const $tbody = $('#billsTable tbody');
+  $tbody.empty();
+
+  if (!bills.length) {
+    $tbody.append('<tr><td colspan="8" class="text-center">No bills found.</td></tr>');
+    console.log(`ℹ️ No bills to display`);
+    return;
+  }
+
+  bills.forEach((bill, index) => {
+    const patientName = bill.patient_id ? `Patient ID: ${bill.patient_id}` : 'Unknown';
+    const billDate = bill.created_at
+      ? new Date(bill.created_at).toLocaleDateString()
+      : 'N/A';
+    const statusClass = bill.status
+      ? `status-${bill.status.toLowerCase().replace(' ', '-')}`
+      : 'status-unknown';
+    const totalAmount = bill.total_amount ? `₹${parseFloat(bill.total_amount).toFixed(2)}` : 'N/A';
+    const depositAmount = bill.deposit_amount ? `₹${parseFloat(bill.deposit_amount).toFixed(2)}` : '₹0.00';
+
+    const $row = $(`
+      <tr>
+        <td>${index + 1}</td>
+        <td>${bill.bill_id || 'N/A'}</td>
+        <td>${patientName}</td>
+        <td>${billDate}</td>
+        <td><span class="${statusClass}">${bill.status.toUpperCase()}</span></td>
+        <td>${totalAmount}</td>
+        <td>${depositAmount}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary view-bill" data-bill-id="${bill.bill_id}">
+            <i class="fas fa-eye"></i> View
+          </button>
+        </td>
+      </tr>
+    `);
+    $tbody.append($row);
+  });
+
+  // Bind view button click event
+  $tbody.find('.view-bill').on('click', function () {
+    const billId = $(this).data('bill-id');
+    showBillDetails(billId);
+  });
+
+  console.log(`✅ Populated bills table with ${bills.length} bills`);
+}
   // main.js
 function fetchBills(filter = 'all', patientId = null, startDate = null, endDate = null) {
   console.log(`📄 Fetching bills with filter: ${filter}, patientId: ${patientId}, date range: ${startDate} - ${endDate}`);
