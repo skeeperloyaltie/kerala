@@ -122,6 +122,7 @@ import logging
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone('Asia/Kolkata')
 
+# appointments/views.py
 @method_decorator(csrf_exempt, name='dispatch')
 class AppointmentListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -132,15 +133,30 @@ class AppointmentListView(APIView):
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
         doctor_id = request.query_params.get('doctor_id')
+        appointment_id = request.query_params.get('appointment_id')  # New parameter
 
-        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) requesting appointments with params: status={status_filter}, start_date={start_date_str}, end_date={end_date_str}, doctor_id={doctor_id}")
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) requesting appointments with params: status={status_filter}, start_date={start_date_str}, end_date={end_date_str}, doctor_id={doctor_id}, appointment_id={appointment_id}")
 
         if not user.has_perm('appointments.view_appointment'):
             logger.warning(f"Unauthorized appointment list access by {user.username}")
             raise PermissionDenied("You do not have permission to view appointments.")
 
         try:
-            # Start with all appointments
+            # Handle single appointment fetch by appointment_id
+            if appointment_id:
+                try:
+                    appointment = Appointment.objects.get(id=appointment_id)
+                    if user.user_type == "Doctor" and appointment.doctor != user.doctor:
+                        logger.warning(f"Doctor {user.username} tried to access an appointment they don't own.")
+                        raise PermissionDenied("You can only view your own appointments.")
+                    serializer = AppointmentSerializer(appointment)
+                    logger.info(f"Returning single appointment {appointment_id} for {user.username}")
+                    return Response({"appointments": [serializer.data]}, status=status.HTTP_200_OK)
+                except Appointment.DoesNotExist:
+                    logger.error(f"Appointment with ID {appointment_id} not found.")
+                    return Response({"error": "Appointment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Existing logic for fetching multiple appointments
             appointments = Appointment.objects.all()
             filtered_appointments = []
             status_success = False
@@ -185,7 +201,7 @@ class AppointmentListView(APIView):
                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 logger.warning("Missing start_date or end_date parameters")
-                return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Both start_date and end_date are required for fetching multiple appointments."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Apply doctor filter
             if doctor_id and doctor_id != 'all':
