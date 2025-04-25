@@ -2882,7 +2882,7 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
   console.log(`✅ Populated bills table with ${paginatedBills.length} bills (page ${page})`);
 }
 
-// main.js
+// Edit bill 
 // main.js
 function editBill(billId) {
   if (!billId) {
@@ -2897,7 +2897,7 @@ function editBill(billId) {
     headers: getAuthHeaders(),
     success: function (data) {
       console.log(`📋 Fetched bill details for editing ID ${billId}:`, data);
-      const bill = data.bills && data.bills.length > 0 ? data.bills[0] : null; // Expect single bill
+      const bill = data.bills && data.bills.length > 0 ? data.bills[0] : null;
       if (!bill) {
         console.error(`❌ No bill found with ID ${billId}`);
         alert("Bill not found.");
@@ -2914,11 +2914,15 @@ function editBill(billId) {
           })
         : Promise.resolve({ services: [] });
 
-      // Fetch all services for adding new items
-      let allServicesPromise = $.ajax({
-        url: `${API_BASE_URL}/service/list/`,
-        type: "GET",
-        headers: getAuthHeaders()
+      // Fetch all services for autocomplete
+      let allServicesPromise = new Promise((resolve, reject) => {
+        if (services.length > 0) {
+          resolve({ services });
+        } else {
+          fetchServices()
+            .then(() => resolve({ services }))
+            .catch(reject);
+        }
       });
 
       // Fetch associated appointment
@@ -2950,7 +2954,11 @@ function editBill(billId) {
           // Map services to items
           const serviceMap = {};
           services.forEach(service => {
-            serviceMap[service.id] = service;
+            serviceMap[service.id] = {
+              id: service.id,
+              name: service.service_name || service.name || 'Unknown Service',
+              price: service.service_price || service.price || 0
+            };
           });
 
           // Create edit modal
@@ -3023,22 +3031,22 @@ function editBill(billId) {
                         ${bill.items.map((item, index) => {
                           const service = serviceMap[item.service_id];
                           return `
-                            <div class="row mb-2">
+                            <div class="row mb-2 bill-item-row">
                               <div class="col-md-3">
-                                <input type="hidden" name="item_service_id_${index}" value="${item.service_id}">
-                                <input type="text" class="form-control" value="${service ? service.name : item.service_id}" readonly title="${service ? service.name : 'Service not found'}">
+                                <input type="hidden" class="service-id" name="item_service_id_${index}" value="${item.service_id}">
+                                <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? service.name : item.service_id}" placeholder="Search Service" required>
                               </div>
                               <div class="col-md-2">
-                                <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
+                                <input type="number" class="form-control item-quantity" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
                               </div>
                               <div class="col-md-2">
-                                <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
+                                <input type="number" step="0.01" class="form-control item-unit-price" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required min="0">
                               </div>
                               <div class="col-md-2">
-                                <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
+                                <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)" min="0">
                               </div>
                               <div class="col-md-2">
-                                <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
+                                <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${index}" value="${item.discount}" placeholder="Discount" min="0">
                               </div>
                               <div class="col-md-1">
                                 <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
@@ -3063,30 +3071,51 @@ function editBill(billId) {
           const bsModal = new bootstrap.Modal(modal[0]);
           bsModal.show();
 
+          // Initialize autocomplete for service search
+          modal.find('.service-search').each(function () {
+            $(this).autocomplete({
+              source: function (request, response) {
+                const term = request.term.toLowerCase();
+                const filteredServices = allServices.filter(service =>
+                  service.name.toLowerCase().includes(term) ||
+                  service.code.toLowerCase().includes(term)
+                );
+                response(filteredServices.map(service => ({
+                  label: `${service.name} (${service.code})`,
+                  value: service.name,
+                  id: service.id
+                })));
+              },
+              minLength: 2,
+              select: function (event, ui) {
+                const $row = $(this).closest('.bill-item-row');
+                $row.find('.service-id').val(ui.item.id);
+                $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
+                calculateTotalAmount();
+              }
+            });
+          });
+
           // Add item dynamically
           modal.find('.add-item').on('click', function () {
             const itemCount = modal.find('#editBillItems .row').length;
             const newItem = `
-              <div class="row mb-2">
+              <div class="row mb-2 bill-item-row">
                 <div class="col-md-3">
-                  <select class="form-control" name="item_service_id_${itemCount}" required>
-                    <option value="" disabled selected>Select Service</option>
-                    ${allServices.map(service => `
-                      <option value="${service.id}">${service.name}</option>
-                    `).join('')}
-                  </select>
+                  <input type="hidden" class="service-id" name="item_service_id_${itemCount}">
+                  <input type="text" class="form-control service-search" name="item_service_name_${itemCount}" placeholder="Search Service" required>
                 </div>
                 <div class="col-md-2">
-                  <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
+                  <input type="number" class="form-control item-quantity" name="item_quantity_${itemCount}" placeholder="Quantity" required min="1">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
+                  <input type="number" step="0.01" class="form-control item-unit-price" name="item_unit_price_${itemCount}" placeholder="Unit Price" required min="0">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
+                  <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${itemCount}" placeholder="GST (%)" min="0">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
+                  <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${itemCount}" placeholder="Discount" min="0">
                 </div>
                 <div class="col-md-1">
                   <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
@@ -3094,12 +3123,53 @@ function editBill(billId) {
               </div>
             `;
             modal.find('#editBillItems').append(newItem);
+
+            // Initialize autocomplete for new item
+            modal.find(`[name="item_service_name_${itemCount}"]`).autocomplete({
+              source: function (request, response) {
+                const term = request.term.toLowerCase();
+                const filteredServices = allServices.filter(service =>
+                  service.name.toLowerCase().includes(term) ||
+                  service.code.toLowerCase().includes(term)
+                );
+                response(filteredServices.map(service => ({
+                  label: `${service.name} (${service.code})`,
+                  value: service.name,
+                  id: service.id
+                })));
+              },
+              minLength: 2,
+              select: function (event, ui) {
+                const $row = $(this).closest('.bill-item-row');
+                $row.find('.service-id').val(ui.item.id);
+                $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
+                calculateTotalAmount();
+              }
+            });
           });
 
           // Remove item
           modal.find('.remove-item').on('click', function () {
             $(this).closest('.row').remove();
+            calculateTotalAmount();
           });
+
+          // Calculate total amount on input change
+          modal.find('#editBillItems').on('input', '.item-quantity, .item-unit-price, .item-gst, .item-discount', calculateTotalAmount);
+
+          function calculateTotalAmount() {
+            let total = 0;
+            modal.find('.bill-item-row').each(function () {
+              const $row = $(this);
+              const quantity = parseInt($row.find('.item-quantity').val()) || 0;
+              const unitPrice = parseFloat($row.find('.item-unit-price').val()) || 0;
+              const gst = parseFloat($row.find('.item-gst').val()) || 0;
+              const discount = parseFloat($row.find('.item-discount').val()) || 0;
+              const itemTotal = (quantity * unitPrice * (1 + gst / 100)) - discount;
+              total += itemTotal;
+            });
+            modal.find('#editBillTotalAmount').val(total.toFixed(2));
+          }
 
           // Save changes
           modal.find('#saveBillChanges').on('click', function () {
@@ -3114,16 +3184,45 @@ function editBill(billId) {
             };
 
             // Collect bill items
-            modal.find('#editBillItems .row').each(function () {
-              const item = {
-                service_id: $(this).find(`[name^='item_service_id']`).val(),
-                quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
-                unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
-                gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
-                discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
-              };
-              updatedBill.items.push(item);
+            let hasErrors = false;
+            modal.find('.bill-item-row').each(function () {
+              const $row = $(this);
+              const serviceId = $row.find('.service-id').val();
+              const quantity = parseInt($row.find('.item-quantity').val()) || 0;
+              const unitPrice = parseFloat($row.find('.item-unit-price').val()) || 0;
+              const gst = parseFloat($row.find('.item-gst').val()) || 0;
+              const discount = parseFloat($row.find('.item-discount').val()) || 0;
+              const totalPrice = (quantity * unitPrice * (1 + gst / 100)) - discount;
+
+              if (!serviceId) {
+                alert("Please select a valid service for all items.");
+                hasErrors = true;
+                return false;
+              }
+              if (quantity <= 0) {
+                alert("Quantity must be greater than zero.");
+                hasErrors = true;
+                return false;
+              }
+              if (unitPrice <= 0) {
+                alert("Unit price must be greater than zero.");
+                hasErrors = true;
+                return false;
+              }
+
+              updatedBill.items.push({
+                service_id: serviceId,
+                quantity: quantity,
+                unit_price: unitPrice,
+                gst: gst,
+                discount: discount,
+                total_price: totalPrice // Include total_price for compatibility
+              });
             });
+
+            if (hasErrors) {
+              return;
+            }
 
             // Update bill
             $.ajax({
@@ -3222,21 +3321,21 @@ function editBill(billId) {
                       <h6>Bill Items</h6>
                       <div id="editBillItems">
                         ${bill.items.map((item, index) => `
-                          <div class="row mb-2">
+                          <div class="row mb-2 bill-item-row">
                             <div class="col-md-3">
                               <input type="text" class="form-control" name="item_service_id_${index}" value="${item.service_id}" placeholder="Service ID" required>
                             </div>
                             <div class="col-md-2">
-                              <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
+                              <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
                             </div>
                             <div class="col-md-2">
-                              <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
+                              <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required min="0">
                             </div>
                             <div class="col-md-2">
-                              <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
+                              <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)" min="0">
                             </div>
                             <div class="col-md-2">
-                              <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
+                              <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount" min="0">
                             </div>
                             <div class="col-md-1">
                               <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
@@ -3264,21 +3363,21 @@ function editBill(billId) {
           modal.find('.add-item').on('click', function () {
             const itemCount = modal.find('#editBillItems .row').length;
             const newItem = `
-              <div class="row mb-2">
+              <div class="row mb-2 bill-item-row">
                 <div class="col-md-3">
                   <input type="text" class="form-control" name="item_service_id_${itemCount}" placeholder="Service ID" required>
                 </div>
                 <div class="col-md-2">
-                  <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
+                  <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required min="1">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
+                  <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required min="0">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
+                  <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)" min="0">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
+                  <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount" min="0">
                 </div>
                 <div class="col-md-1">
                   <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
@@ -3291,6 +3390,7 @@ function editBill(billId) {
           // Remove item
           modal.find('.remove-item').on('click', function () {
             $(this).closest('.row').remove();
+            calculateTotalAmount();
           });
 
           // Save changes (fallback)
@@ -3306,16 +3406,45 @@ function editBill(billId) {
             };
 
             // Collect bill items
-            modal.find('#editBillItems .row').each(function () {
-              const item = {
-                service_id: $(this).find(`input[name^='item_service_id']`).val(),
-                quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
-                unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
-                gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
-                discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
-              };
-              updatedBill.items.push(item);
+            let hasErrors = false;
+            modal.find('.bill-item-row').each(function () {
+              const $row = $(this);
+              const serviceId = $row.find('[name^="item_service_id"]').val();
+              const quantity = parseInt($row.find('.item-quantity').val()) || 0;
+              const unitPrice = parseFloat($row.find('.item-unit-price').val()) || 0;
+              const gst = parseFloat($row.find('.item-gst').val()) || 0;
+              const discount = parseFloat($row.find('.item-discount').val()) || 0;
+              const totalPrice = (quantity * unitPrice * (1 + gst / 100)) - discount;
+
+              if (!serviceId) {
+                alert("Please select a valid service for all items.");
+                hasErrors = true;
+                return false;
+              }
+              if (quantity <= 0) {
+                alert("Quantity must be greater than zero.");
+                hasErrors = true;
+                return false;
+              }
+              if (unitPrice <= 0) {
+                alert("Unit price must be greater than zero.");
+                hasErrors = true;
+                return false;
+              }
+
+              updatedBill.items.push({
+                service_id: serviceId,
+                quantity: quantity,
+                unit_price: unitPrice,
+                gst: gst,
+                discount: discount,
+                total_price: totalPrice // Include total_price for compatibility
+              });
             });
+
+            if (hasErrors) {
+              return;
+            }
 
             // Update bill
             $.ajax({

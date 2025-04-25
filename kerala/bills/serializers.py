@@ -8,8 +8,10 @@ class BillItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillItem
         fields = ['service_id', 'quantity', 'unit_price', 'gst', 'discount', 'total_price']
+        extra_kwargs = {
+            'total_price': {'required': False, 'allow_null': True}  # Make total_price optional
+        }
 
-# bills/serializers.py
 class BillSerializer(serializers.ModelSerializer):
     items = BillItemSerializer(many=True)
     patient_id = serializers.CharField(write_only=True)
@@ -39,6 +41,7 @@ class BillSerializer(serializers.ModelSerializer):
         validated_data.pop('patient_id')
         bill = Bill.objects.create(**validated_data)
         for item_data in items_data:
+            item_data.pop('total_price', None)  # Remove total_price if provided
             BillItem.objects.create(bill=bill, **item_data)
         return bill
 
@@ -58,13 +61,14 @@ class BillSerializer(serializers.ModelSerializer):
         if items_data is not None:
             instance.items.all().delete()
             for item_data in items_data:
+                item_data.pop('total_price', None)  # Remove total_price if provided
                 BillItem.objects.create(bill=instance, **item_data)
 
         return instance
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['bill_id'] = instance.bill_id  # Add bill_id
+        representation['bill_id'] = instance.bill_id
         representation['patient_id'] = instance.patient.patient_id
-        representation['created_at'] = instance.created_at.isoformat()  # Ensure created_at is included
+        representation['created_at'] = instance.created_at.isoformat()
         return representation
