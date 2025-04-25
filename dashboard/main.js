@@ -1354,7 +1354,7 @@ function showPatientAppointments(patientId) {
 }
 // New Function: Render Appointments Table in APPT Tab
 function renderAppointmentsTable(appointments, patientId) {
-  const $visitsTabContent = $('#visits'); // Assuming 'visits' is the ID of the APPT tab content
+  const $visitsTabContent = $('#visitsTab'); // Assuming 'visits' is the ID of the APPT tab content
   $visitsTabContent.empty(); // Clear existing content
 
   if (!appointments.length) {
