@@ -64,6 +64,7 @@ class ServiceListView(APIView):
         logger.info(f"Services retrieved by {request.user.username}: {len(serializer.data)}")
         return Response({"services": serializer.data}, status=status.HTTP_200_OK)
 
+# services/views.py
 @method_decorator(csrf_exempt, name='dispatch')
 class ServiceSearchView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -72,7 +73,9 @@ class ServiceSearchView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         query = request.query_params.get('query', '').strip()
-        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) searching services with query: '{query}'")
+        service_ids = request.query_params.get('service_ids', '')  # New parameter for comma-separated IDs
+
+        logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) searching services with query: '{query}', service_ids: '{service_ids}'")
 
         user_type = getattr(user, 'user_type', None)
         role_level = getattr(user, 'role_level', None)
@@ -88,13 +91,24 @@ class ServiceSearchView(APIView):
             return Response({"error": error_msg}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            if query:
-                services = Service.objects.filter(name__icontains=query)
+            services = Service.objects.all()
+
+            if service_ids:
+                try:
+                    # Convert comma-separated service_ids to a list of integers
+                    id_list = [int(id.strip()) for id in service_ids.split(',') if id.strip()]
+                    services = services.filter(id__in=id_list)
+                    logger.info(f"Filtered services by IDs: {id_list}")
+                except ValueError:
+                    logger.error(f"Invalid service_ids format: {service_ids}")
+                    return Response({"error": "Invalid service_ids format. Use comma-separated integers."}, status=status.HTTP_400_BAD_REQUEST)
+            elif query:
+                services = services.filter(name__icontains=query)
             else:
-                services = Service.objects.all()
+                services = services  # Return all services if no query or IDs
 
             serializer = ServiceSerializer(services, many=True)
-            logger.info(f"Fetched {services.count()} services for query '{query}' by {user.username}")
+            logger.info(f"Fetched {services.count()} services for query '{query}', service_ids '{service_ids}' by {user.username}")
             return Response({"services": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error searching services: {str(e)}", exc_info=True)

@@ -2876,8 +2876,7 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
 
   console.log(`✅ Populated bills table with ${paginatedBills.length} bills (page ${page})`);
 }
-// main.js
-// main.js
+
 function editBill(billId) {
   $.ajax({
     url: `${API_BASE_URL}/bills/list/?bill_id=${billId}`,
@@ -2891,7 +2890,24 @@ function editBill(billId) {
         return;
       }
 
-      // Fetch associated appointment (assuming bill has an appointment_id field)
+      // Fetch services for bill items
+      const serviceIds = bill.items.map(item => item.service_id).join(',');
+      let servicePromise = serviceIds
+        ? $.ajax({
+            url: `${API_BASE_URL}/service/search/?service_ids=${serviceIds}`,
+            type: "GET",
+            headers: getAuthHeaders()
+          })
+        : Promise.resolve({ services: [] });
+
+      // Fetch all services for adding new items
+      let allServicesPromise = $.ajax({
+        url: `${API_BASE_URL}/service/list/`,
+        type: "GET",
+        headers: getAuthHeaders()
+      });
+
+      // Fetch associated appointment
       let appointmentPromise = bill.appointment_id
         ? $.ajax({
             url: `${API_BASE_URL}/appointments/list/?appointment_id=${bill.appointment_id}`,
@@ -2900,387 +2916,415 @@ function editBill(billId) {
           })
         : Promise.resolve({ appointments: [] });
 
-      appointmentPromise.then(appointmentData => {
-        const appointment = appointmentData.appointments && appointmentData.appointments.length > 0
-          ? appointmentData.appointments[0]
-          : null;
+      // Wait for all promises
+      Promise.all([servicePromise, allServicesPromise, appointmentPromise])
+        .then(([serviceData, allServicesData, appointmentData]) => {
+          const services = serviceData.services || [];
+          const allServices = allServicesData.services || [];
+          let appointment = appointmentData.appointments && appointmentData.appointments.length > 0
+            ? appointmentData.appointments[0]
+            : null;
 
-        // Create edit modal
-        const modal = $(`
-          <div class="modal fade" id="editBillModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Edit Bill - ${bill.bill_id}</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <form id="editBillForm">
-                    <div class="mb-3">
-                      <label for="editBillPatientId" class="form-label">Patient ID</label>
-                      <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillStatus" class="form-label">Status</label>
-                      <select class="form-control" id="editBillStatus" required>
-                        <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
-                        <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
-                        <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                      </select>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillTotalAmount" class="form-label">Total Amount</label>
-                      <input type="number" step="0.01" class="form-control" id="editBillTotalAmount" value="${bill.total_amount || ''}" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillDepositAmount" class="form-label">Deposit Amount</label>
-                      <input type="number" step="0.01" class="form-control" id="editBillDepositAmount" value="${bill.deposit_amount || '0'}" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillNotes" class="form-label">Notes</label>
-                      <textarea class="form-control" id="editBillNotes">${bill.notes || ''}</textarea>
-                    </div>
-                    ${
-                      appointment
-                        ? `
-                        <!-- Appointment Details -->
-                        <h6>Associated Appointment</h6>
-                        <div class="mb-3">
-                          <label for="editAppointmentId" class="form-label">Appointment ID</label>
-                          <input type="text" class="form-control" id="editAppointmentId" value="${appointment.appointment_id || ''}" readonly>
-                        </div>
-                        <div class="mb-3">
-                          <label for="editAppointmentDate" class="form-label">Appointment Date</label>
-                          <input type="date" class="form-control" id="editAppointmentDate" value="${appointment.date || ''}">
-                        </div>
-                        <div class="mb-3">
-                          <label for="editAppointmentTime" class="form-label">Appointment Time</label>
-                          <input type="time" class="form-control" id="editAppointmentTime" value="${appointment.time || ''}">
-                        </div>
-                        <div class="mb-3">
-                          <label for="editAppointmentStatus" class="form-label">Appointment Status</label>
-                          <select class="form-control" id="editAppointmentStatus">
-                            <option value="Scheduled" ${appointment && appointment.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
-                            <option value="Completed" ${appointment && appointment.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                            <option value="Cancelled" ${appointment && appointment.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                          </select>
-                        </div>
-                        `
-                        : ''
-                    }
-                    <!-- Bill Items -->
-                    <h6>Bill Items</h6>
-                    <div id="editBillItems">
-                      ${bill.items.map((item, index) => `
-                        <div class="row mb-2">
-                          <div class="col-md-3">
-                            <input type="text" class="form-control" name="item_service_id_${index}" value="${item.service_id}" placeholder="Service ID" required>
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
-                          </div>
-                          <div class="col-md-1">
-                            <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
-                          </div>
-                        </div>
-                      `).join('')}
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
-                  </form>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
+          // Normalize appointment data
+          if (appointment && appointment.appointment_date) {
+            const apptDate = new Date(appointment.appointment_date);
+            appointment.date = apptDate.toISOString().split('T')[0]; // YYYY-MM-DD
+            appointment.time = apptDate.toTimeString().slice(0, 5); // HH:MM
+            appointment.appointment_id = appointment.id;
+          }
 
-        $('body').append(modal);
-        const bsModal = new bootstrap.Modal(modal[0]);
-        bsModal.show();
-
-        // Add item dynamically
-        modal.find('.add-item').on('click', function () {
-          const itemCount = modal.find('#editBillItems .row').length;
-          const newItem = `
-            <div class="row mb-2">
-              <div class="col-md-3">
-                <input type="text" class="form-control" name="item_service_id_${itemCount}" placeholder="Service ID" required>
-              </div>
-              <div class="col-md-2">
-                <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
-              </div>
-              <div class="col-md-2">
-                <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
-              </div>
-              <div class="col-md-2">
-                <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
-              </div>
-              <div class="col-md-2">
-                <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
-              </div>
-              <div class="col-md-1">
-                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
-              </div>
-            </div>
-          `;
-          modal.find('#editBillItems').append(newItem);
-        });
-
-        // Remove item
-        modal.find('.remove-item').on('click', function () {
-          $(this).closest('.row').remove();
-        });
-
-        // Save changes
-        modal.find('#saveBillChanges').on('click', function () {
-          const updatedBill = {
-            bill_id: bill.bill_id,
-            patient_id: modal.find('#editBillPatientId').val(),
-            status: modal.find('#editBillStatus').val(),
-            total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
-            deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
-            notes: modal.find('#editBillNotes').val(),
-            items: []
-          };
-
-          // Collect bill items
-          modal.find('#editBillItems .row').each(function () {
-            const item = {
-              service_id: $(this).find(`input[name^='item_service_id']`).val(),
-              quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
-              unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
-              gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
-              discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
-            };
-            updatedBill.items.push(item);
+          // Map services to items
+          const serviceMap = {};
+          services.forEach(service => {
+            serviceMap[service.id] = service;
           });
 
-          // Update bill
-          $.ajax({
-            url: `${API_BASE_URL}/bills/update/`,
-            type: "PUT",
-            headers: getAuthHeaders(),
-            data: JSON.stringify(updatedBill),
-            contentType: "application/json",
-            success: function (response) {
-              console.log(`✅ Bill ${billId} updated successfully:`, response);
+          // Create edit modal
+          const modal = $(`
+            <div class="modal fade" id="editBillModal" tabindex="-1">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Edit Bill - ${bill.bill_id}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <form id="editBillForm">
+                      <div class="mb-3">
+                        <label for="editBillPatientId" class="form-label">Patient ID</label>
+                        <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillStatus" class="form-label">Status</label>
+                        <select class="form-control" id="editBillStatus" required>
+                          <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                          <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
+                          <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        </select>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillTotalAmount" class="form-label">Total Amount</label>
+                        <input type="number" step="0.01" class="form-control" id="editBillTotalAmount" value="${bill.total_amount || ''}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillDepositAmount" class="form-label">Deposit Amount</label>
+                        <input type="number" step="0.01" class="form-control" id="editBillDepositAmount" value="${bill.deposit_amount || '0'}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="editBillNotes">${bill.notes || ''}</textarea>
+                      </div>
+                      ${
+                        appointment
+                          ? `
+                          <!-- Appointment Details -->
+                          <h6>Associated Appointment</h6>
+                          <div class="mb-3">
+                            <label for="editAppointmentId" class="form-label">Appointment ID</label>
+                            <input type="text" class="form-control" id="editAppointmentId" value="${appointment.appointment_id || ''}" readonly>
+                          </div>
+                          <div class="mb-3">
+                            <label for="editAppointmentDate" class="form-label">Appointment Date</label>
+                            <input type="date" class="form-control" id="editAppointmentDate" value="${appointment.date || ''}">
+                          </div>
+                          <div class="mb-3">
+                            <label for="editAppointmentTime" class="form-label">Appointment Time</label>
+                            <input type="time" class="form-control" id="editAppointmentTime" value="${appointment.time || ''}">
+                          </div>
+                          <div class="mb-3">
+                            <label for="editAppointmentStatus" class="form-label">Appointment Status</label>
+                            <select class="form-control" id="editAppointmentStatus">
+                              <option value="Scheduled" ${appointment.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                              <option value="Completed" ${appointment.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                              <option value="Cancelled" ${appointment.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                          </div>
+                          `
+                          : ''
+                      }
+                      <!-- Bill Items -->
+                      <h6>Bill Items</h6>
+                      <div id="editBillItems">
+                        ${bill.items.map((item, index) => {
+                          const service = serviceMap[item.service_id];
+                          return `
+                            <div class="row mb-2">
+                              <div class="col-md-3">
+                                <input type="hidden" name="item_service_id_${index}" value="${item.service_id}">
+                                <input type="text" class="form-control" value="${service ? service.name : item.service_id}" readonly title="${service ? service.name : 'Service not found'}">
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
+                              </div>
+                              <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                              </div>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
+                    </form>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `);
 
-              // Update appointment if applicable
-              if (appointment && modal.find('#editAppointmentId').val()) {
-                const updatedAppointment = {
-                  appointment_id: modal.find('#editAppointmentId').val(),
-                  date: modal.find('#editAppointmentDate').val(),
-                  time: modal.find('#editAppointmentTime').val(),
-                  status: modal.find('#editAppointmentStatus').val()
-                };
+          $('body').append(modal);
+          const bsModal = new bootstrap.Modal(modal[0]);
+          bsModal.show();
 
-                $.ajax({
-                  url: `${API_BASE_URL}/appointments/update/`,
-                  type: "PUT",
-                  headers: getAuthHeaders(),
-                  data: JSON.stringify(updatedAppointment),
-                  contentType: "application/json",
-                  success: function (response) {
-                    console.log(`✅ Appointment ${updatedAppointment.appointment_id} updated successfully:`, response);
-                    alert("Bill and appointment updated successfully!");
-                    bsModal.hide();
-                    fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
-                  },
-                  error: function (xhr) {
-                    console.error(`❌ Failed to update appointment:`, xhr.responseJSON || xhr.statusText);
-                    alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
-                  }
-                });
-              } else {
+          // Add item dynamically
+          modal.find('.add-item').on('click', function () {
+            const itemCount = modal.find('#editBillItems .row').length;
+            const newItem = `
+              <div class="row mb-2">
+                <div class="col-md-3">
+                  <select class="form-control" name="item_service_id_${itemCount}" required>
+                    <option value="" disabled selected>Select Service</option>
+                    ${allServices.map(service => `
+                      <option value="${service.id}">${service.name}</option>
+                    `).join('')}
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
+                </div>
+                <div class="col-md-2">
+                  <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            `;
+            modal.find('#editBillItems').append(newItem);
+          });
+
+          // Remove item
+          modal.find('.remove-item').on('click', function () {
+            $(this).closest('.row').remove();
+          });
+
+          // Save changes
+          modal.find('#saveBillChanges').on('click', function () {
+            const updatedBill = {
+              bill_id: bill.bill_id,
+              patient_id: modal.find('#editBillPatientId').val(),
+              status: modal.find('#editBillStatus').val(),
+              total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
+              deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
+              notes: modal.find('#editBillNotes').val(),
+              items: []
+            };
+
+            // Collect bill items
+            modal.find('#editBillItems .row').each(function () {
+              const item = {
+                service_id: $(this).find(`[name^='item_service_id']`).val(),
+                quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
+                unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
+                gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
+                discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
+              };
+              updatedBill.items.push(item);
+            });
+
+            // Update bill
+            $.ajax({
+              url: `${API_BASE_URL}/bills/update/`,
+              type: "PUT",
+              headers: getAuthHeaders(),
+              data: JSON.stringify(updatedBill),
+              contentType: "application/json",
+              success: function (response) {
+                console.log(`✅ Bill ${billId} updated successfully:`, response);
+
+                // Update appointment if applicable
+                if (appointment && modal.find('#editAppointmentId').val()) {
+                  const updatedAppointment = {
+                    appointment_id: modal.find('#editAppointmentId').val(),
+                    date: modal.find('#editAppointmentDate').val(),
+                    time: modal.find('#editAppointmentTime').val(),
+                    status: modal.find('#editAppointmentStatus').val()
+                  };
+
+                  $.ajax({
+                    url: `${API_BASE_URL}/appointments/update/`,
+                    type: "PUT",
+                    headers: getAuthHeaders(),
+                    data: JSON.stringify(updatedAppointment),
+                    contentType: "application/json",
+                    success: function (response) {
+                      console.log(`✅ Appointment ${updatedAppointment.appointment_id} updated successfully:`, response);
+                      alert("Bill and appointment updated successfully!");
+                      bsModal.hide();
+                      fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+                    },
+                    error: function (xhr) {
+                      console.error(`❌ Failed to update appointment:`, xhr.responseJSON || xhr.statusText);
+                      alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                    }
+                  });
+                } else {
+                  alert("Bill updated successfully!");
+                  bsModal.hide();
+                  fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+                }
+              },
+              error: function (xhr) {
+                console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+                alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+              }
+            });
+          });
+
+          modal.on('hidden.bs.modal', function () {
+            modal.remove();
+          });
+        })
+        .catch(error => {
+          console.error(`❌ Failed to fetch services or appointment for bill ${billId}:`, error);
+          alert("Failed to fetch services or associated appointment. Continuing with basic bill edit.");
+
+          // Fallback modal without services or appointment
+          const modal = $(`
+            <div class="modal fade" id="editBillModal" tabindex="-1">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Edit Bill - ${bill.bill_id}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <form id="editBillForm">
+                      <div class="mb-3">
+                        <label for="editBillPatientId" class="form-label">Patient ID</label>
+                        <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillStatus" class="form-label">Status</label>
+                        <select class="form-control" id="editBillStatus" required>
+                          <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                          <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
+                          <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        </select>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillTotalAmount" class="form-label">Total Amount</label>
+                        <input type="number" step="0.01" class="form-control" id="editBillTotalAmount" value="${bill.total_amount || ''}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillDepositAmount" class="form-label">Deposit Amount</label>
+                        <input type="number" step="0.01" class="form-control" id="editBillDepositAmount" value="${bill.deposit_amount || '0'}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label for="editBillNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="editBillNotes">${bill.notes || ''}</textarea>
+                      </div>
+                      <!-- Bill Items -->
+                      <h6>Bill Items</h6>
+                      <div id="editBillItems">
+                        ${bill.items.map((item, index) => `
+                          <div class="row mb-2">
+                            <div class="col-md-3">
+                              <input type="text" class="form-control" name="item_service_id_${index}" value="${item.service_id}" placeholder="Service ID" required>
+                            </div>
+                            <div class="col-md-2">
+                              <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
+                            </div>
+                            <div class="col-md-2">
+                              <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
+                            </div>
+                            <div class="col-md-2">
+                              <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
+                            </div>
+                            <div class="col-md-2">
+                              <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
+                            </div>
+                            <div class="col-md-1">
+                              <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
+                    </form>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `);
+
+          $('body').append(modal);
+          const bsModal = new bootstrap.Modal(modal[0]);
+          bsModal.show();
+
+          // Add item dynamically (fallback)
+          modal.find('.add-item').on('click', function () {
+            const itemCount = modal.find('#editBillItems .row').length;
+            const newItem = `
+              <div class="row mb-2">
+                <div class="col-md-3">
+                  <input type="text" class="form-control" name="item_service_id_${itemCount}" placeholder="Service ID" required>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
+                </div>
+                <div class="col-md-2">
+                  <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            `;
+            modal.find('#editBillItems').append(newItem);
+          });
+
+          // Remove item
+          modal.find('.remove-item').on('click', function () {
+            $(this).closest('.row').remove();
+          });
+
+          // Save changes (fallback)
+          modal.find('#saveBillChanges').on('click', function () {
+            const updatedBill = {
+              bill_id: bill.bill_id,
+              patient_id: modal.find('#editBillPatientId').val(),
+              status: modal.find('#editBillStatus').val(),
+              total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
+              deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
+              notes: modal.find('#editBillNotes').val(),
+              items: []
+            };
+
+            // Collect bill items
+            modal.find('#editBillItems .row').each(function () {
+              const item = {
+                service_id: $(this).find(`input[name^='item_service_id']`).val(),
+                quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
+                unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
+                gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
+                discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
+              };
+              updatedBill.items.push(item);
+            });
+
+            // Update bill
+            $.ajax({
+              url: `${API_BASE_URL}/bills/update/`,
+              type: "PUT",
+              headers: getAuthHeaders(),
+              data: JSON.stringify(updatedBill),
+              contentType: "application/json",
+              success: function (response) {
+                console.log(`✅ Bill ${billId} updated successfully:`, response);
                 alert("Bill updated successfully!");
                 bsModal.hide();
                 fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+              },
+              error: function (xhr) {
+                console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+                alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
               }
-            },
-            error: function (xhr) {
-              console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
-              alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
-            }
-          });
-        });
-
-        modal.on('hidden.bs.modal', function () {
-          modal.remove();
-        });
-      }).catch(xhr => {
-        console.error(`❌ Failed to fetch appointment for bill ${billId}:`, xhr.responseJSON || xhr.statusText);
-        alert("Failed to fetch associated appointment. Continuing with bill edit.");
-
-        // Create fallback modal without appointment fields
-        const modal = $(`
-          <div class="modal fade" id="editBillModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Edit Bill - ${bill.bill_id}</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <form id="editBillForm">
-                    <div class="mb-3">
-                      <label for="editBillPatientId" class="form-label">Patient ID</label>
-                      <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillStatus" class="form-label">Status</label>
-                      <select class="form-control" id="editBillStatus" required>
-                        <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
-                        <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
-                        <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                      </select>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillTotalAmount" class="form-label">Total Amount</label>
-                      <input type="number" step="0.01" class="form-control" id="editBillTotalAmount" value="${bill.total_amount || ''}" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillDepositAmount" class="form-label">Deposit Amount</label>
-                      <input type="number" step="0.01" class="form-control" id="editBillDepositAmount" value="${bill.deposit_amount || '0'}" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="editBillNotes" class="form-label">Notes</label>
-                      <textarea class="form-control" id="editBillNotes">${bill.notes || ''}</textarea>
-                    </div>
-                    <!-- Bill Items -->
-                    <h6>Bill Items</h6>
-                    <div id="editBillItems">
-                      ${bill.items.map((item, index) => `
-                        <div class="row mb-2">
-                          <div class="col-md-3">
-                            <input type="text" class="form-control" name="item_service_id_${index}" value="${item.service_id}" placeholder="Service ID" required>
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" class="form-control" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required>
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" step="0.01" class="form-control" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required>
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" step="0.01" class="form-control" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)">
-                          </div>
-                          <div class="col-md-2">
-                            <input type="number" step="0.01" class="form-control" name="item_discount_${index}" value="${item.discount}" placeholder="Discount">
-                          </div>
-                          <div class="col-md-1">
-                            <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
-                          </div>
-                        </div>
-                      `).join('')}
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
-                  </form>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
-
-        $('body').append(modal);
-        const bsModal = new bootstrap.Modal(modal[0]);
-        bsModal.show();
-
-        // Add item dynamically
-        modal.find('.add-item').on('click', function () {
-          const itemCount = modal.find('#editBillItems .row').length;
-          const newItem = `
-            <div class="row mb-2">
-              <div class="col-md-3">
-                <input type="text" class="form-control" name="item_service_id_${itemCount}" placeholder="Service ID" required>
-              </div>
-              <div class="col-md-2">
-                <input type="number" class="form-control" name="item_quantity_${itemCount}" placeholder="Quantity" required>
-              </div>
-              <div class="col-md-2">
-                <input type="number" step="0.01" class="form-control" name="item_unit_price_${itemCount}" placeholder="Unit Price" required>
-              </div>
-              <div class="col-md-2">
-                <input type="number" step="0.01" class="form-control" name="item_gst_${itemCount}" placeholder="GST (%)">
-              </div>
-              <div class="col-md-2">
-                <input type="number" step="0.01" class="form-control" name="item_discount_${itemCount}" placeholder="Discount">
-              </div>
-              <div class="col-md-1">
-                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
-              </div>
-            </div>
-          `;
-          modal.find('#editBillItems').append(newItem);
-        });
-
-        // Remove item
-        modal.find('.remove-item').on('click', function () {
-          $(this).closest('.row').remove();
-        });
-
-        // Save changes
-        modal.find('#saveBillChanges').on('click', function () {
-          const updatedBill = {
-            bill_id: bill.bill_id,
-            patient_id: modal.find('#editBillPatientId').val(),
-            status: modal.find('#editBillStatus').val(),
-            total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
-            deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
-            notes: modal.find('#editBillNotes').val(),
-            items: []
-          };
-
-          // Collect bill items
-          modal.find('#editBillItems .row').each(function () {
-            const item = {
-              service_id: $(this).find(`input[name^='item_service_id']`).val(),
-              quantity: parseInt($(this).find(`input[name^='item_quantity']`).val()),
-              unit_price: parseFloat($(this).find(`input[name^='item_unit_price']`).val()),
-              gst: parseFloat($(this).find(`input[name^='item_gst']`).val()) || 0,
-              discount: parseFloat($(this).find(`input[name^='item_discount']`).val()) || 0
-            };
-            updatedBill.items.push(item);
+            });
           });
 
-          // Update bill
-          $.ajax({
-            url: `${API_BASE_URL}/bills/update/`,
-            type: "PUT",
-            headers: getAuthHeaders(),
-            data: JSON.stringify(updatedBill),
-            contentType: "application/json",
-            success: function (response) {
-              console.log(`✅ Bill ${billId} updated successfully:`, response);
-              alert("Bill updated successfully!");
-              bsModal.hide();
-              fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
-            },
-            error: function (xhr) {
-              console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
-              alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
-            }
+          modal.on('hidden.bs.modal', function () {
+            modal.remove();
           });
         });
-
-        modal.on('hidden.bs.modal', function () {
-          modal.remove();
-        });
-      });
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch bill ${billId}:`, xhr.responseJSON || xhr.statusText);
