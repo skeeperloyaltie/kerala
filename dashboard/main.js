@@ -266,7 +266,7 @@ $(document).ready(function () {
     dateFilter.show();
     dashboardDropdown.show();
     logoutLink.show();
-    modalTabs.show();
+    modalTabs.show(); // Ensure all modal tabs, including Visits, are shown by default
   
     const role = `${userType}-${roleLevel}`.toLowerCase();
     const permissions = JSON.parse(sessionStorage.getItem("permissions") || "[]");
@@ -274,12 +274,9 @@ $(document).ready(function () {
     // Explicitly ensure full access for doctor-senior
     if (role === "doctor-senior") {
       console.log("✅ Granting full access to doctor-senior");
-      // Ensure all modal tabs and their content are visible and enabled
       modalTabs.show();
       $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
-      // Log visible modal tabs for debugging
       console.log("🔍 Doctor-Senior Modal Tabs Visible:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
-      // No further restrictions applied
       bindLogoutEvent();
       bindModalActions();
       setupPatientSearch();
@@ -360,20 +357,12 @@ $(document).ready(function () {
         modalTabs.hide();
     }
   
-    // Apply permission-based overrides for non-doctor-senior roles
-    if (permissions.can_add_bill === true) {
-      modalTabs.filter(":contains('Add Bills')").show();
-    } else if (permissions.can_add_bill !== true && role !== "doctor-senior") {
-      modalTabs.filter(":contains('Add Bills')").hide();
-    }
-  
     console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
     console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
     bindLogoutEvent();
     bindModalActions();
     setupPatientSearch();
   }
-
   // main.js (replace relevant sections)
   let appointmentsData = [];
   // Initialize Flatpickr for Date Filter
@@ -1344,7 +1333,7 @@ function showPatientAppointments(patientId) {
       const appointments = Array.isArray(data.appointments) ? data.appointments : [];
       renderAppointmentsTable(appointments, patientId);
       $('#newActionModal').modal('show');
-      $('#visitsTab').tab('show'); // APPT tab is assumed to be 'visitsTab'
+      $('#visitsTab').tab('show'); // This should work if the tab trigger has id="visitsTab"
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch appointments for patient ${patientId}:`, xhr.responseJSON);
@@ -1354,7 +1343,7 @@ function showPatientAppointments(patientId) {
 }
 // New Function: Render Appointments Table in APPT Tab
 function renderAppointmentsTable(appointments, patientId) {
-  const $visitsTabContent = $('#visitsTab'); // Assuming 'visits' is the ID of the APPT tab content
+  const $visitsTabContent = $('#visitsTabContent'); // Target the content container
   $visitsTabContent.empty(); // Clear existing content
 
   if (!appointments.length) {
