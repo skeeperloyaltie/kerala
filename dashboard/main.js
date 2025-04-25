@@ -2720,6 +2720,73 @@ function editAppointment(appointmentId) {
     });
   }
 
+  // main.js
+function fetchBills(filter = 'all', patientId = null, startDate = null, endDate = null) {
+  console.log(`📄 Fetching bills with filter: ${filter}, patientId: ${patientId}, date range: ${startDate} - ${endDate}`);
+  
+  // Build the API URL with optional query parameters
+  let url = `${API_BASE_URL}/bills/list/`;
+  const queryParams = [];
+  if (patientId) {
+    queryParams.push(`patient_id=${encodeURIComponent(patientId)}`);
+  }
+  if (startDate) {
+    queryParams.push(`start_date=${encodeURIComponent(startDate)}`);
+  }
+  if (endDate) {
+    queryParams.push(`end_date=${encodeURIComponent(endDate)}`);
+  }
+  if (queryParams.length > 0) {
+    url += `?${queryParams.join('&')}`;
+  }
+
+  $.ajax({
+    url: url,
+    type: "GET",
+    headers: getAuthHeaders(),
+    success: function (data) {
+      console.log(`📥 Raw API response for bills:`, data);
+      
+      // Normalize bills data
+      let billsArray = [];
+      if (Array.isArray(data.bills)) {
+        billsArray = data.bills;
+      } else if (Array.isArray(data)) {
+        billsArray = data;
+      } else if (data && Array.isArray(data.results)) {
+        billsArray = data.results;
+      } else {
+        console.warn(`⚠️ Unexpected response format:`, data);
+        billsArray = [];
+      }
+
+      // Filter bills by status if needed
+      const statusMap = {
+        'all': ['Paid', 'Partially Paid', 'Pending'],
+        'paid': ['Paid'],
+        'partially-paid': ['Partially Paid'],
+        'pending': ['Pending']
+      };
+      const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
+      
+      billsArray = billsArray.filter(bill => {
+        if (!bill || !bill.status) return false;
+        return allowedStatuses.includes(bill.status);
+      });
+
+      // Populate the bills table
+      populateBillsTable(billsArray);
+      
+      console.log(`✅ Fetched ${billsArray.length} bills with filter ${filter}`);
+    },
+    error: function (xhr) {
+      console.error(`❌ Failed to fetch bills: ${xhr.responseJSON?.error || "Unknown error"}`);
+      alert(`Failed to fetch bills: ${xhr.responseJSON?.error || "Unknown error"}`);
+      populateBillsTable([]); // Show empty table on error
+    }
+  });
+}
+
   // Add Bills Form Submission
   $("#addBillsForm").submit(function (e) {
     e.preventDefault();
