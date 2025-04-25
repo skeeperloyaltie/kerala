@@ -2801,6 +2801,7 @@ function showBillDetails(billId) {
 }
   // main.js
 // main.js
+// main.js
 function populateBillsTable(bills, page = 1, pageSize = 10) {
   const $tbody = $('#billsTable tbody');
   $tbody.empty();
@@ -2832,6 +2833,8 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
     const depositAmount = bill.deposit_amount
       ? `₹${parseFloat(bill.deposit_amount).toFixed(2)}`
       : '₹0.00';
+
+    console.log(`📄 Rendering bill with ID: ${bill.bill_id}`); // Added logging
 
     const $row = $(`
       <tr>
@@ -2866,11 +2869,13 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
   // Bind button click events
   $tbody.find('.view-bill').on('click', function () {
     const billId = $(this).data('bill-id');
+    console.log(`🖱️ View bill clicked for ID: ${billId}`); // Added logging
     showBillDetails(billId);
   });
 
   $tbody.find('.edit-bill').on('click', function () {
     const billId = $(this).data('bill-id');
+    console.log(`🖱️ Edit bill clicked for ID: ${billId}`); // Added logging
     editBill(billId);
   });
 
@@ -2902,7 +2907,7 @@ function editBill(billId) {
       const serviceIds = bill.items.map(item => item.service_id).join(',');
       let servicePromise = serviceIds
         ? $.ajax({
-            url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`,
+            url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`, // Fixed endpoint
             type: "GET",
             headers: getAuthHeaders()
           })
@@ -2910,7 +2915,7 @@ function editBill(billId) {
 
       // Fetch all services for adding new items
       let allServicesPromise = $.ajax({
-        url: `${API_BASE_URL}/service/list/`,
+        url: `${API_BASE_URL}/service/list/`, // Fixed endpoint
         type: "GET",
         headers: getAuthHeaders()
       });
