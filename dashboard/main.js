@@ -2877,15 +2877,23 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
   console.log(`✅ Populated bills table with ${paginatedBills.length} bills (page ${page})`);
 }
 
+// main.js
 function editBill(billId) {
+  if (!billId) {
+    console.error("❌ Invalid billId provided:", billId);
+    alert("Cannot edit bill: Invalid bill ID.");
+    return;
+  }
+
   $.ajax({
-    url: `${API_BASE_URL}/bills/list/?bill_id=${billId}`,
+    url: `${API_BASE_URL}/bills/list/?bill_id=${encodeURIComponent(billId)}`,
     type: "GET",
     headers: getAuthHeaders(),
     success: function (data) {
       console.log(`📋 Fetched bill details for editing ID ${billId}:`, data);
-      const bill = data.bills && data.bills.length > 0 ? data.bills[0] : null;
+      const bill = data.bills && data.bills.length > 0 ? data.bills.find(b => b.bill_id === billId) : null;
       if (!bill) {
+        console.error(`❌ No bill found with ID ${billId}`);
         alert("Bill not found.");
         return;
       }
@@ -2894,7 +2902,7 @@ function editBill(billId) {
       const serviceIds = bill.items.map(item => item.service_id).join(',');
       let servicePromise = serviceIds
         ? $.ajax({
-            url: `${API_BASE_URL}/service/search/?service_ids=${serviceIds}`,
+            url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`,
             type: "GET",
             headers: getAuthHeaders()
           })
@@ -2910,7 +2918,7 @@ function editBill(billId) {
       // Fetch associated appointment
       let appointmentPromise = bill.appointment_id
         ? $.ajax({
-            url: `${API_BASE_URL}/appointments/list/?appointment_id=${bill.appointment_id}`,
+            url: `${API_BASE_URL}/appointments/list/?appointment_id=${encodeURIComponent(bill.appointment_id)}`,
             type: "GET",
             headers: getAuthHeaders()
           })
