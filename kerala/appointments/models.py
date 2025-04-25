@@ -16,7 +16,7 @@ class Appointment(models.Model):
     doctor = models.ForeignKey('users.Doctor', on_delete=models.SET_NULL, null=True, blank=True)
     receptionist = models.ForeignKey('users.Receptionist', on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='booked')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Booked')
     appointment_date = models.DateTimeField()
     notes = models.TextField(null=True, blank=True)
     is_emergency = models.BooleanField(default=False)

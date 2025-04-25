@@ -161,3 +161,55 @@ class PatientSearchView(generics.ListAPIView):
         except Exception as e:
             logger.error(f"Error in patient search for {request.user.username}: {str(e)}", exc_info=True)
             return Response({'error': 'An error occurred while searching patients.'}, status=500)
+        
+# patients/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.core.exceptions import PermissionDenied
+from .models import Patient
+from .serializers import PatientSerializer
+import logging
+
+logger = logging.getLogger(__name__)
+
+class UpdatePatientView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, patient_id, *args, **kwargs):
+        user = request.user
+        logger.info(f"Received patient update request for {patient_id} from user {user.username}: {request.data}")
+
+        # Permission check: Only superusers or users with 'appointments.change_appointment' can update patients
+        if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
+            logger.warning(f"Unauthorized patient update attempt by {user.username} ({user.user_type} - {user.role_level})")
+            raise PermissionDenied("You do not have permission to update patients.")
+
+        try:
+            patient = Patient.objects.get(patient_id=patient_id)
+        except Patient.DoesNotExist:
+            logger.error(f"Patient {patient_id} not found for update by {user.username}")
+            return Response({"error": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Additional check for doctors: Can only update their assigned patients
+        if user.user_type == "Doctor" and not (
+            patient.primary_doctor == user.doctor or
+            patient.appointments.filter(doctor=user.doctor).exists()
+        ):
+            logger.warning(f"Doctor {user.username} attempted to update patient {patient_id} not assigned to them.")
+            return Response(
+                {"error": f"You can only update details of your assigned patients. Patient {patient_id} is not assigned to you."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = PatientSerializer(patient, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated_patient = serializer.save()
+            logger.info(f"Patient {patient_id} updated successfully by {user.username}")
+            return Response(
+                {"message": "Patient updated successfully.", "patient": PatientSerializer(updated_patient).data},
+                status=status.HTTP_200_OK
+            )
+        logger.error(f"Patient update failed for {patient_id}: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
