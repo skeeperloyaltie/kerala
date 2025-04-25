@@ -2883,6 +2883,7 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
 }
 
 // main.js
+// main.js
 function editBill(billId) {
   if (!billId) {
     console.error("❌ Invalid billId provided:", billId);
@@ -2896,7 +2897,7 @@ function editBill(billId) {
     headers: getAuthHeaders(),
     success: function (data) {
       console.log(`📋 Fetched bill details for editing ID ${billId}:`, data);
-      const bill = data.bills && data.bills.length > 0 ? data.bills.find(b => b.bill_id === billId) : null;
+      const bill = data.bills && data.bills.length > 0 ? data.bills[0] : null; // Expect single bill
       if (!bill) {
         console.error(`❌ No bill found with ID ${billId}`);
         alert("Bill not found.");
@@ -2907,7 +2908,7 @@ function editBill(billId) {
       const serviceIds = bill.items.map(item => item.service_id).join(',');
       let servicePromise = serviceIds
         ? $.ajax({
-            url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`, // Fixed endpoint
+            url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`,
             type: "GET",
             headers: getAuthHeaders()
           })
@@ -2915,7 +2916,7 @@ function editBill(billId) {
 
       // Fetch all services for adding new items
       let allServicesPromise = $.ajax({
-        url: `${API_BASE_URL}/service/list/`, // Fixed endpoint
+        url: `${API_BASE_URL}/service/list/`,
         type: "GET",
         headers: getAuthHeaders()
       });
@@ -2973,6 +2974,7 @@ function editBill(billId) {
                           <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
                           <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
                           <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                          <option value="Canceled" ${bill.status === 'Canceled' ? 'selected' : ''}>Canceled</option>
                         </select>
                       </div>
                       <div class="mb-3">
@@ -3201,6 +3203,7 @@ function editBill(billId) {
                           <option value="Paid" ${bill.status === 'Paid' ? 'selected' : ''}>Paid</option>
                           <option value="Partially Paid" ${bill.status === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
                           <option value="Pending" ${bill.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                          <option value="Canceled" ${bill.status === 'Canceled' ? 'selected' : ''}>Canceled</option>
                         </select>
                       </div>
                       <div class="mb-3">

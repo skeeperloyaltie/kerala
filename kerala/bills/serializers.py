@@ -18,7 +18,6 @@ class BillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill
         fields = ['patient_id', 'total_amount', 'deposit_amount', 'status', 'notes', 'items', 'appointment_id']
-        # Remove status from read_only_fields
         read_only_fields = []
 
     def validate_patient_id(self, value):
@@ -65,5 +64,7 @@ class BillSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        representation['bill_id'] = instance.bill_id  # Add bill_id
         representation['patient_id'] = instance.patient.patient_id
+        representation['created_at'] = instance.created_at.isoformat()  # Ensure created_at is included
         return representation
