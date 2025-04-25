@@ -96,19 +96,27 @@ class CreateBillView(APIView):
         logger.error(f"Bill creation errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# bills/views.py
 @method_decorator(csrf_exempt, name='dispatch')
 class BillListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        logger.info(f"User {user.username} requesting bill list")
+        bill_id = request.query_params.get('bill_id')
+        logger.info(f"User {user.username} requesting bill list with bill_id: {bill_id}")
 
         if not (user.is_superuser or user.has_perm('bills.view_bill')):
             logger.warning(f"Unauthorized bill list access by {user.username}")
             raise PermissionDenied("You do not have permission to view bills.")
 
         bills = Bill.objects.all()
+        if bill_id:
+            bills = bills.filter(bill_id=bill_id)
+            if not bills.exists():
+                logger.error(f"Bill with ID {bill_id} not found for {user.username}")
+                return Response({"error": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
+        
         if user.user_type == 'Doctor':
             bills = bills.filter(appointment__doctor=user.doctor)
         
