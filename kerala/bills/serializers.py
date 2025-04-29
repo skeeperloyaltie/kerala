@@ -36,7 +36,7 @@ class BillSerializer(serializers.ModelSerializer):
     def validate_patient_id(self, value):
         try:
             patient = Patient.objects.get(patient_id=value)
-            return patient  # Return the Patient object
+            return patient.id  # Return the Patient's primary key
         except Patient.DoesNotExist:
             raise serializers.ValidationError(f"Patient with patient_id {value} does not exist.")
 
@@ -52,6 +52,8 @@ class BillSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
+        # Rename patient_id to patient to match Bill model field
+        validated_data['patient_id'] = validated_data.pop('patient')
         bill = Bill.objects.create(**validated_data)
         for item_data in items_data:
             BillItem.objects.create(bill=bill, **item_data)
@@ -59,6 +61,9 @@ class BillSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
+        # Rename patient_id to patient if provided
+        if 'patient' in validated_data:
+            validated_data['patient_id'] = validated_data.pop('patient')
         instance = super().update(instance, validated_data)
         if items_data is not None:
             instance.items.all().delete()

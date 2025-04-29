@@ -86,7 +86,11 @@ class CreateBillView(APIView):
         if 'items' in data:
             for item in data['items']:
                 if 'service_id' in item and isinstance(item['service_id'], str):
-                    item['service_id'] = int(item['service_id'])
+                    try:
+                        item['service_id'] = int(item['service_id'])
+                    except ValueError:
+                        logger.error(f"Invalid service_id: {item['service_id']}")
+                        return Response({"error": f"Invalid service_id: {item['service_id']} must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create bill
         serializer = BillSerializer(data=data, context={'request': request})
