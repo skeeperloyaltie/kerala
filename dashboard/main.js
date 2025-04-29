@@ -2904,22 +2904,42 @@ function editBill(billId) {
         return;
       }
 
-      // Fetch services for bill items
-      const serviceIds = bill.items.map(item => item.service_id).join(',');
-      // In editBill
-      let servicePromise = serviceIds
-      ? $.ajax({
-          url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`,
-          type: "GET",
-          headers: getAuthHeaders(),
-          success: function (data) {
-            console.log(`✅ Service search response for IDs ${serviceIds}:`, data);
-          },
-          error: function (xhr) {
-            console.error(`❌ Service search failed for IDs ${serviceIds}:`, xhr.responseJSON || xhr.statusText);
+      // Validate bill items
+      if (!bill.items || bill.items.length === 0) {
+        console.error(`❌ Bill ${billId} has no items`);
+        alert("Cannot edit bill: No items found.");
+        return;
+      }
+
+      // Extract service IDs from bill items
+      const serviceIds = bill.items
+        .map(item => item.service_id)
+        .filter(id => id); // Remove null/undefined IDs
+      if (serviceIds.length === 0) {
+        console.error(`❌ No valid service IDs found for bill ${billId}`);
+        alert("Cannot edit bill: No valid services associated with items.");
+        return;
+      }
+      console.log(`📋 Service IDs for bill ${billId}:`, serviceIds);
+
+      // Fetch all services using /service/list/
+      let servicePromise = $.ajax({
+        url: `${API_BASE_URL}/service/list/`,
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function (data) {
+          console.log(`✅ Service list response:`, data);
+          if (!data.services || data.services.length === 0) {
+            console.error(`❌ No services returned from /service/list/`);
+            alert("Cannot edit bill: No services available in the system.");
+            throw new Error("No services available");
           }
-        })
-      : Promise.resolve({ services: [] });
+        },
+        error: function (xhr) {
+          console.error(`❌ Service list fetch failed:`, xhr.responseJSON || xhr.statusText);
+          throw new Error(`Service list fetch failed: ${xhr.responseJSON?.error || xhr.statusText}`);
+        }
+      });
 
       let allServicesPromise = new Promise((resolve, reject) => {
         if (services.length > 0) {
@@ -2957,7 +2977,10 @@ function editBill(billId) {
       // Wait for all promises
       Promise.all([servicePromise, allServicesPromise, appointmentPromise])
         .then(([serviceData, allServicesData, appointmentData]) => {
-          const services = serviceData.services || [];
+          // Filter services to match bill item service IDs
+          const services = (serviceData.services || []).filter(service =>
+            serviceIds.includes(service.id)
+          );
           const allServices = allServicesData.services || [];
           let appointment = appointmentData.appointments && appointmentData.appointments.length > 0
             ? appointmentData.appointments[0]
@@ -2967,7 +2990,7 @@ function editBill(billId) {
           const missingServices = bill.items.filter(item => !services.find(s => s.id === item.service_id));
           if (missingServices.length > 0) {
             console.error(`❌ Missing services for bill items:`, missingServices);
-            alert("Cannot edit bill: Some services are missing or invalid.");
+            alert(`Cannot edit bill: Some services are missing or invalid (Service IDs: ${missingServices.map(item => item.service_id).join(', ')}).`);
             return;
           }
 
