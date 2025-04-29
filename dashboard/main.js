@@ -2906,31 +2906,50 @@ function editBill(billId) {
 
       // Fetch services for bill items
       const serviceIds = bill.items.map(item => item.service_id).join(',');
+      // In editBill
       let servicePromise = serviceIds
-        ? $.ajax({
-            url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`,
-            type: "GET",
-            headers: getAuthHeaders()
-          })
-        : Promise.resolve({ services: [] });
+      ? $.ajax({
+          url: `${API_BASE_URL}/service/search/?service_ids=${encodeURIComponent(serviceIds)}`,
+          type: "GET",
+          headers: getAuthHeaders(),
+          success: function (data) {
+            console.log(`✅ Service search response for IDs ${serviceIds}:`, data);
+          },
+          error: function (xhr) {
+            console.error(`❌ Service search failed for IDs ${serviceIds}:`, xhr.responseJSON || xhr.statusText);
+          }
+        })
+      : Promise.resolve({ services: [] });
 
-      // Fetch all services for autocomplete
-      let allServicesPromise = new Promise((resolve, reject) => {
+        let allServicesPromise = new Promise((resolve, reject) => {
         if (services.length > 0) {
+          console.log(`✅ Using cached services: ${services.length} entries`);
           resolve({ services });
         } else {
+          console.log("🟡 Fetching services as cache is empty");
           fetchServices()
-            .then(() => resolve({ services }))
-            .catch(reject);
+            .then(() => {
+              console.log(`✅ Services fetched: ${services.length} entries`);
+              resolve({ services });
+            })
+            .catch(error => {
+              console.error("❌ Failed to fetch services:", error);
+              reject(error);
+            });
         }
-      });
+        });
 
-      // Fetch associated appointment
-      let appointmentPromise = bill.appointment_id
+        let appointmentPromise = bill.appointment_id
         ? $.ajax({
             url: `${API_BASE_URL}/appointments/list/?appointment_id=${encodeURIComponent(bill.appointment_id)}`,
             type: "GET",
-            headers: getAuthHeaders()
+            headers: getAuthHeaders(),
+            success: function (data) {
+              console.log(`✅ Appointment fetch response for ID ${bill.appointment_id}:`, data);
+            },
+            error: function (xhr) {
+              console.error(`❌ Appointment fetch failed for ID ${bill.appointment_id}:`, xhr.responseJSON || xhr.statusText);
+            }
           })
         : Promise.resolve({ appointments: [] });
 
