@@ -4,6 +4,7 @@ from .models import Bill, BillItem
 from service.models import Service
 from patients.models import Patient
 from appointments.models import Appointment
+from service.serializers import ServiceSerializer
 
 class BillItemSerializer(serializers.ModelSerializer):
     service = ServiceSerializer(read_only=True)
