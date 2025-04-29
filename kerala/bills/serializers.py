@@ -11,7 +11,7 @@ class BillItemSerializer(serializers.ModelSerializer):
     service_id = serializers.PrimaryKeyRelatedField(
         queryset=Service.objects.all(), source='service', write_only=True
     )
-    service_id_read = serializers.IntegerField(source='service.id', read_only=True)  # Explicitly include service_id in output
+    service_id_read = serializers.IntegerField(source='service.id', read_only=True)
 
     class Meta:
         model = BillItem
@@ -26,14 +26,15 @@ class BillItemSerializer(serializers.ModelSerializer):
 class BillSerializer(serializers.ModelSerializer):
     items = BillItemSerializer(many=True)
     patient_id = serializers.CharField(write_only=True)
+    patient_id_read = serializers.CharField(source='patient.patient_id', read_only=True)  # Add patient_id output
     appointment_id = serializers.PrimaryKeyRelatedField(
         queryset=Appointment.objects.all(), source='appointment', allow_null=True
     )
 
     class Meta:
         model = Bill
-        fields = ['bill_id', 'patient_id', 'appointment_id', 'total_amount', 'deposit_amount', 'status', 'created_at', 'updated_at', 'notes', 'items']
-        read_only_fields = ['bill_id', 'created_at', 'updated_at']
+        fields = ['bill_id', 'patient_id', 'patient_id_read', 'appointment_id', 'total_amount', 'deposit_amount', 'status', 'created_at', 'updated_at', 'notes', 'items']
+        read_only_fields = ['bill_id', 'created_at', 'updated_at', 'patient_id_read']
 
     def validate_patient_id(self, value):
         try:

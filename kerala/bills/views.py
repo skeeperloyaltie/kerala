@@ -151,6 +151,7 @@ import logging
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
+# bills/views.py
 @method_decorator(csrf_exempt, name='dispatch')
 class BillUpdateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -161,7 +162,6 @@ class BillUpdateView(APIView):
         bill_id = data.get('bill_id')
         logger.info(f"User {user.username} attempting to update bill {bill_id}")
 
-        # Check permissions
         if not (user.is_superuser or user.has_perm('bills.change_bill')):
             logger.warning(f"Unauthorized bill update attempt by {user.username}")
             raise PermissionDenied("You do not have permission to update bills.")
@@ -172,24 +172,30 @@ class BillUpdateView(APIView):
             logger.error(f"Bill with ID {bill_id} not found.")
             return Response({"error": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Prepare data for serializer
+        # Prepare data
         items_data = data.pop('items', [])
-        data['patient_id'] = data.get('patient_id')  # Ensure patient_id is included
+        data['patient_id'] = data.get('patient_id')
 
         serializer = BillSerializer(bill, data=data, partial=True, context={'request': request})
         if serializer.is_valid():
-            # Update bill
             bill = serializer.save()
-
-            # Update bill items
-            BillItem.objects.filter(bill=bill).delete()  # Remove existing items
+            BillItem.objects.filter(bill=bill).delete()
             for item_data in items_data:
-                item_serializer = BillItemSerializer(data=item_data)
-                if item_serializer.is_valid():
-                    BillItem.objects.create(bill=bill, **item_serializer.validated_data)
-                else:
-                    logger.error(f"Invalid bill item data: {item_serializer.errors}")
-                    return Response({"error": "Invalid bill item data", "details": item_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                service_id = item_data.get('service_id')
+                try:
+                    service = Service.objects.get(id=service_id)
+                except Service.DoesNotExist:
+                    logger.error(f"Service with ID {service_id} not found.")
+                    return Response({"error": f"Service with ID {service_id} not found."}, status=status.HTTP_400_BAD_REQUEST)
+                BillItem.objects.create(
+                    bill=bill,
+                    service=service,
+                    quantity=item_data.get('quantity', 1),
+                    unit_price=item_data.get('unit_price', 0),
+                    gst=item_data.get('gst', 0),
+                    discount=item_data.get('discount', 0),
+                    total_price=item_data.get('total_price', 0)
+                )
 
             logger.info(f"Bill {bill_id} updated successfully by {user.username}")
             return Response({"success": True, "bill": BillSerializer(bill).data}, status=status.HTTP_200_OK)

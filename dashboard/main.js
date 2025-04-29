@@ -2881,6 +2881,8 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
 
   console.log(`✅ Populated bills table with ${paginatedBills.length} bills (page ${page})`);
 }
+
+//edit bills  
 function editBill(billId) {
   if (!billId) {
     console.error("❌ Invalid billId provided:", billId);
@@ -2905,8 +2907,8 @@ function editBill(billId) {
 
       // Extract service IDs from bill items
       const serviceIds = bill.items
-        .map(item => Number(item.service_id_read)) // Use service_id_read
-        .filter(id => id && Number.isInteger(id)); // Ensure integer IDs
+        .map(item => Number(item.service_id_read))
+        .filter(id => id && Number.isInteger(id));
       console.log(`📋 Service IDs for bill ${billId}:`, serviceIds);
 
       // Warn about invalid service IDs
@@ -2997,12 +2999,15 @@ function editBill(billId) {
           services.forEach(service => {
             serviceMap[service.id] = {
               id: service.id,
-              service_id: service.code || service.id,
+              service_id: service.service_id || service.code || service.id,
               name: service.name || 'Unknown Service',
               price: service.price || 0,
               doctors: service.doctor_details || []
             };
           });
+
+          // Determine patient_id
+          const patientId = bill.patient_id_read || (appointment && appointment.patient ? appointment.patient.patient_id : '');
 
           const modal = $(`
             <div class="modal fade" id="editBillModal" tabindex="-1">
@@ -3016,7 +3021,7 @@ function editBill(billId) {
                     <form id="editBillForm">
                       <div class="mb-3">
                         <label for="editBillPatientId" class="form-label">Patient ID</label>
-                        <input type="text" class="form-control" id="editBillPatientId" value="${bill.patient_id || ''}" required>
+                        <input type="text" class="form-control" id="editBillPatientId" value="${patientId}" required>
                       </div>
                       <div class="mb-3">
                         <label for="editBillStatus" class="form-label">Status</label>
@@ -3117,8 +3122,10 @@ function editBill(billId) {
 
           // Initialize autocomplete for service search
           modal.find('.service-search').each(function () {
+            const $input = $(this);
+            const $row = $input.closest('.bill-item-row');
             if (typeof $.fn.autocomplete === 'function') {
-              $(this).autocomplete({
+              $input.autocomplete({
                 source: function (request, response) {
                   const term = request.term.toLowerCase();
                   const filteredServices = allServices.filter(service =>
@@ -3127,32 +3134,36 @@ function editBill(billId) {
                     (service.service_id && service.service_id.toLowerCase().includes(term))
                   );
                   response(filteredServices.map(service => ({
-                    label: `${service.name} (${service.code || service.id})`,
+                    label: `${service.name} (${service.service_id || service.code || service.id})`,
                     value: service.name,
                     id: service.id,
-                    code: service.code
+                    code: service.service_id || service.code || service.id
                   })));
                 },
                 minLength: 2,
                 select: function (event, ui) {
-                  const $row = $(this).closest('.bill-item-row');
                   $row.find('.service-id').val(ui.item.id);
                   $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
-                  $row.find('.service-search').val(`${ui.item.value} (${ui.item.code || ui.item.id})`);
+                  $input.val(`${ui.item.value} (${ui.item.code})`);
                   calculateTotalAmount();
-                  return false;
+                  return false; // Prevent default value setting
+                },
+                change: function (event, ui) {
+                  // Clear service-id if input is invalid
+                  if (!ui.item) {
+                    $row.find('.service-id').val('');
+                    $input.val('');
+                  }
                 }
               });
             } else {
               console.warn('⚠️ jQuery UI Autocomplete not available. Falling back to select dropdown.');
-              const $input = $(this);
-              const $row = $input.closest('.bill-item-row');
               const $select = $(`
                 <select class="form-control service-select" name="${$input.attr('name')}">
                   <option value="">Select Service</option>
                   ${allServices.map(service => `
                     <option value="${service.id}" ${service.id === Number($input.prev('.service-id').val()) ? 'selected' : ''}>
-                      ${service.name} (${service.code || service.id})
+                      ${service.name} (${service.service_id || service.code || service.id})
                     </option>
                   `).join('')}
                 </select>
@@ -3197,7 +3208,8 @@ function editBill(billId) {
             `;
             modal.find('#editBillItems').append(newItem);
 
-            modal.find(`[name="item_service_name_${itemCount}"]`).autocomplete({
+            const $newInput = modal.find(`[name="item_service_name_${itemCount}"]`);
+            $newInput.autocomplete({
               source: function (request, response) {
                 const term = request.term.toLowerCase();
                 const filteredServices = allServices.filter(service =>
@@ -3206,10 +3218,10 @@ function editBill(billId) {
                   (service.service_id && service.service_id.toLowerCase().includes(term))
                 );
                 response(filteredServices.map(service => ({
-                  label: `${service.name} (${service.code || service.id})`,
+                  label: `${service.name} (${service.service_id || service.code || service.id})`,
                   value: service.name,
                   id: service.id,
-                  code: service.code
+                  code: service.service_id || service.code || service.id
                 })));
               },
               minLength: 2,
@@ -3217,20 +3229,31 @@ function editBill(billId) {
                 const $row = $(this).closest('.bill-item-row');
                 $row.find('.service-id').val(ui.item.id);
                 $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
-                $row.find('.service-search').val(`${ui.item.value} (${ui.item.code || ui.item.id})`);
+                $(this).val(`${ui.item.value} (${ui.item.code})`);
                 calculateTotalAmount();
                 return false;
+              },
+              change: function (event, ui) {
+                if (!ui.item) {
+                  $(this).closest('.bill-item-row').find('.service-id').val('');
+                  $(this).val('');
+                }
               }
             });
           });
 
-          // Remove item
+          // Remove item with validation
           modal.find('#editBillItems').on('click', '.remove-item', function () {
-            $(this).closest('.row').remove();
+            const $row = $(this).closest('.row');
+            if (modal.find('.bill-item-row').length === 1) {
+              alert("A bill must have at least one item.");
+              return;
+            }
+            $row.remove();
             calculateTotalAmount();
           });
 
-          // Calculate total amount on input change
+          // Calculate total amount
           modal.find('#editBillItems').on('input', '.item-quantity, .item-unit-price, .item-gst, .item-discount', calculateTotalAmount);
 
           function calculateTotalAmount() {
@@ -3253,8 +3276,8 @@ function editBill(billId) {
               bill_id: bill.bill_id,
               patient_id: modal.find('#editBillPatientId').val(),
               status: modal.find('#editBillStatus').val(),
-              total_amount: parseFloat(modal.find('#editBillTotalAmount').val()),
-              deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()),
+              total_amount: parseFloat(modal.find('#editBillTotalAmount').val()) || 0,
+              deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()) || 0,
               notes: modal.find('#editBillNotes').val(),
               items: []
             };
@@ -3286,7 +3309,7 @@ function editBill(billId) {
               }
 
               updatedBill.items.push({
-                service_id: Number(serviceId), // Ensure integer
+                service_id: Number(serviceId),
                 quantity: quantity,
                 unit_price: unitPrice,
                 gst: gst,
@@ -3295,9 +3318,12 @@ function editBill(billId) {
               });
             });
 
-            if (hasErrors) {
+            if (hasErrors || updatedBill.items.length === 0) {
+              alert("Please ensure at least one valid item is included.");
               return;
             }
+
+            console.log(`📤 Sending updated bill:`, updatedBill);
 
             $.ajax({
               url: `${API_BASE_URL}/bills/update/`,
@@ -3351,8 +3377,7 @@ function editBill(billId) {
         })
         .catch(error => {
           console.error(`❌ Failed to fetch services or appointment for bill ${billId}:`, error);
-          alert(`Failed to fetch services or appointment: ${error.message}. Continuing with basic bill edit.`);
-          // Fallback modal remains the same as provided
+          alert(`Failed to fetch services or appointment: ${error.message}.`);
         });
     },
     error: function (xhr) {
