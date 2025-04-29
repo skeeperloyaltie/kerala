@@ -152,13 +152,27 @@ logger = logging.getLogger(__name__)
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 # bills/views.py
+# bills/views.py
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.exceptions import PermissionDenied
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from .models import Bill, BillItem
+from .serializers import BillSerializer
+import logging
+
+logger = logging.getLogger(__name__)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class BillUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
         user = request.user
-        data = request.data
+        data = request.data.copy()  # Create a copy to avoid modifying original
         bill_id = data.get('bill_id')
         logger.info(f"User {user.username} attempting to update bill {bill_id}")
 
@@ -172,31 +186,13 @@ class BillUpdateView(APIView):
             logger.error(f"Bill with ID {bill_id} not found.")
             return Response({"error": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Prepare data
-        items_data = data.pop('items', [])
+        # Ensure patient_id is included
         data['patient_id'] = data.get('patient_id')
+        logger.debug(f"Bill update data: {data}")
 
         serializer = BillSerializer(bill, data=data, partial=True, context={'request': request})
         if serializer.is_valid():
             bill = serializer.save()
-            BillItem.objects.filter(bill=bill).delete()
-            for item_data in items_data:
-                service_id = item_data.get('service_id')
-                try:
-                    service = Service.objects.get(id=service_id)
-                except Service.DoesNotExist:
-                    logger.error(f"Service with ID {service_id} not found.")
-                    return Response({"error": f"Service with ID {service_id} not found."}, status=status.HTTP_400_BAD_REQUEST)
-                BillItem.objects.create(
-                    bill=bill,
-                    service=service,
-                    quantity=item_data.get('quantity', 1),
-                    unit_price=item_data.get('unit_price', 0),
-                    gst=item_data.get('gst', 0),
-                    discount=item_data.get('discount', 0),
-                    total_price=item_data.get('total_price', 0)
-                )
-
             logger.info(f"Bill {bill_id} updated successfully by {user.username}")
             return Response({"success": True, "bill": BillSerializer(bill).data}, status=status.HTTP_200_OK)
         

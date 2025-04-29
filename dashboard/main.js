@@ -3270,9 +3270,9 @@ function editBill(billId) {
             modal.find('#editBillTotalAmount').val(total.toFixed(2));
           }
 
-          // Save changes
-          modal.find('#saveBillChanges').on('click', function () {
-            const updatedBill = {
+        // main.js (in editBill function, saveBillChanges handler)
+        modal.find('#saveBillChanges').on('click', function () {
+          const updatedBill = {
               bill_id: bill.bill_id,
               patient_id: modal.find('#editBillPatientId').val(),
               status: modal.find('#editBillStatus').val(),
@@ -3280,10 +3280,10 @@ function editBill(billId) {
               deposit_amount: parseFloat(modal.find('#editBillDepositAmount').val()) || 0,
               notes: modal.find('#editBillNotes').val(),
               items: []
-            };
+          };
 
-            let hasErrors = false;
-            modal.find('.bill-item-row').each(function () {
+          let hasErrors = false;
+          modal.find('.bill-item-row').each(function (index) {
               const $row = $(this);
               const serviceId = $row.find('.service-id').val();
               const quantity = parseInt($row.find('.item-quantity').val()) || 0;
@@ -3292,84 +3292,90 @@ function editBill(billId) {
               const discount = parseFloat($row.find('.item-discount').val()) || 0;
               const totalPrice = (quantity * unitPrice * (1 + gst / 100)) - discount;
 
+              console.log(`Item ${index}: serviceId=${serviceId}, quantity=${quantity}, unitPrice=${unitPrice}`);
+
               if (!serviceId) {
-                alert("Please select a valid service for all items.");
-                hasErrors = true;
-                return false;
+                  alert("Please select a valid service for all items.");
+                  hasErrors = true;
+                  return false;
               }
               if (quantity <= 0) {
-                alert("Quantity must be greater than zero.");
-                hasErrors = true;
-                return false;
+                  alert("Quantity must be greater than zero.");
+                  hasErrors = true;
+                  return false;
               }
               if (unitPrice <= 0) {
-                alert("Unit price must be greater than zero.");
-                hasErrors = true;
-                return false;
+                  alert("Unit price must be greater than zero.");
+                  hasErrors = true;
+                  return false;
               }
 
               updatedBill.items.push({
-                service_id: Number(serviceId),
-                quantity: quantity,
-                unit_price: unitPrice,
-                gst: gst,
-                discount: discount,
-                total_price: totalPrice
+                  service_id: Number(serviceId),
+                  quantity: quantity,
+                  unit_price: unitPrice,
+                  gst: gst,
+                  discount: discount,
+                  total_price: totalPrice
               });
-            });
+          });
 
-            if (hasErrors || updatedBill.items.length === 0) {
+          if (hasErrors || updatedBill.items.length === 0) {
               alert("Please ensure at least one valid item is included.");
               return;
-            }
+          }
 
-            console.log(`📤 Sending updated bill:`, updatedBill);
+          console.log(`📤 Sending updated bill:`, updatedBill);
 
-            $.ajax({
+          $.ajax({
               url: `${API_BASE_URL}/bills/update/`,
               type: "PUT",
               headers: getAuthHeaders(),
               data: JSON.stringify(updatedBill),
               contentType: "application/json",
+              beforeSend: function (xhr) {
+                  console.log(`📤 Request payload:`, JSON.stringify(updatedBill, null, 2));
+              },
               success: function (response) {
-                console.log(`✅ Bill ${billId} updated successfully:`, response);
-                if (appointment && modal.find('#editAppointmentId').val()) {
-                  const updatedAppointment = {
-                    appointment_id: modal.find('#editAppointmentId').val(),
-                    date: modal.find('#editAppointmentDate').val(),
-                    time: modal.find('#editAppointmentTime').val(),
-                    status: modal.find('#editAppointmentStatus').val()
-                  };
+                  console.log(`✅ Bill ${billId} updated successfully:`, response);
+                  if (appointment && modal.find('#editAppointmentId').val()) {
+                      const updatedAppointment = {
+                          appointment_id: modal.find('#editAppointmentId').val(),
+                          date: modal.find('#editAppointmentDate').val(),
+                          time: modal.find('#editAppointmentTime').val(),
+                          status: modal.find('#editAppointmentStatus').val()
+                      };
 
-                  $.ajax({
-                    url: `${API_BASE_URL}/appointments/update/`,
-                    type: "PUT",
-                    headers: getAuthHeaders(),
-                    data: JSON.stringify(updatedAppointment),
-                    contentType: "application/json",
-                    success: function (response) {
-                      console.log(`✅ Appointment ${updatedAppointment.appointment_id} updated successfully:`, response);
-                      alert("Bill and appointment updated successfully!");
+                      $.ajax({
+                          url: `${API_BASE_URL}/appointments/update/`,
+                          type: "PUT",
+                          headers: getAuthHeaders(),
+                          data: JSON.stringify(updatedAppointment),
+                          contentType: "application/json",
+                          success: function (response) {
+                              console.log(`✅ Appointment ${updatedAppointment.appointment_id} updated successfully:`, response);
+                              alert("Bill and appointment updated successfully!");
+                              bsModal.hide();
+                              fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
+                          },
+                          error: function (xhr) {
+                              console.error(`❌ Failed to update appointment:`, xhr.responseJSON || xhr.statusText);
+                              alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                          }
+                      });
+                  } else {
+                      alert("Bill updated successfully!");
                       bsModal.hide();
                       fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
-                    },
-                    error: function (xhr) {
-                      console.error(`❌ Failed to update appointment:`, xhr.responseJSON || xhr.statusText);
-                      alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
-                    }
-                  });
-                } else {
-                  alert("Bill updated successfully!");
-                  bsModal.hide();
-                  fetchBills($('.bills-filter .nav-link.active').data('filter') || 'all');
-                }
+                  }
               },
               error: function (xhr) {
-                console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
-                alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+                  console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
+                  console.error(`❌ Full error response:`, xhr.responseJSON);
+                  alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
               }
-            });
           });
+        });
 
           modal.on('hidden.bs.modal', function () {
             modal.remove();
