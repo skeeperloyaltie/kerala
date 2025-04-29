@@ -34,6 +34,11 @@ class CreateBillView(APIView):
             logger.warning(f"Unauthorized bill creation attempt by {user.username}")
             raise PermissionDenied("You do not have permission to create bills.")
 
+        # Validate patient_id presence
+        if 'patient_id' not in data:
+            logger.error("Missing patient_id in request data.")
+            return Response({"error": "patient_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         # Handle appointment creation if appointment_date is provided
         appointment_date = data.pop('appointment_date', None)
         doctor_id = data.pop('doctor_id', None)  # Remove doctor_id from bill data
