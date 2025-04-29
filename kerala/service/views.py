@@ -64,7 +64,20 @@ class ServiceListView(APIView):
         logger.info(f"Services retrieved by {request.user.username}: {len(serializer.data)}")
         return Response({"services": serializer.data}, status=status.HTTP_200_OK)
 
-# services/views.py
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from .models import Service
+from .serializers import ServiceSerializer
+import logging
+
+logger = logging.getLogger(__name__)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class ServiceSearchView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -73,7 +86,7 @@ class ServiceSearchView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         query = request.query_params.get('query', '').strip()
-        service_ids = request.query_params.get('service_ids', '')  # New parameter for comma-separated IDs
+        service_ids = request.query_params.get('service_ids', '')
 
         logger.info(f"User {user.username} ({user.user_type} - {user.role_level}) searching services with query: '{query}', service_ids: '{service_ids}'")
 
@@ -95,17 +108,17 @@ class ServiceSearchView(APIView):
 
             if service_ids:
                 try:
-                    # Convert comma-separated service_ids to a list of integers
                     id_list = [int(id.strip()) for id in service_ids.split(',') if id.strip()]
                     services = services.filter(id__in=id_list)
+                    if not services.exists():
+                        logger.warning(f"No services found for IDs: {id_list}")
+                        return Response({"services": [], "warning": "No services found for the provided IDs"}, status=status.HTTP_200_OK)
                     logger.info(f"Filtered services by IDs: {id_list}")
                 except ValueError:
                     logger.error(f"Invalid service_ids format: {service_ids}")
                     return Response({"error": "Invalid service_ids format. Use comma-separated integers."}, status=status.HTTP_400_BAD_REQUEST)
             elif query:
                 services = services.filter(name__icontains=query)
-            else:
-                services = services  # Return all services if no query or IDs
 
             serializer = ServiceSerializer(services, many=True)
             logger.info(f"Fetched {services.count()} services for query '{query}', service_ids '{service_ids}' by {user.username}")
@@ -113,7 +126,6 @@ class ServiceSearchView(APIView):
         except Exception as e:
             logger.error(f"Error searching services: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while searching services."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class ServiceUpdateView(APIView):
     authentication_classes = [TokenAuthentication]
