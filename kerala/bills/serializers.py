@@ -52,9 +52,6 @@ class BillSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        # Map 'patient' (from validate_patient_id) to 'patient_id' for the Bill model
-        if 'patient' in validated_data:
-            validated_data['patient_id'] = validated_data.pop('patient')
         bill = Bill.objects.create(**validated_data)
         for item_data in items_data:
             BillItem.objects.create(bill=bill, **item_data)
@@ -62,9 +59,6 @@ class BillSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
-        # Map 'patient' to 'patient_id' if provided
-        if 'patient' in validated_data:
-            validated_data['patient_id'] = validated_data.pop('patient')
         instance = super().update(instance, validated_data)
         if items_data is not None:
             instance.items.all().delete()

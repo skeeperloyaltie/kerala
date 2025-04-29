@@ -100,7 +100,7 @@ class CreateBillView(APIView):
         # Create bill
         serializer = BillSerializer(data=data, context={'request': request})
         if serializer.is_valid():
-            bill = serializer.save(created_by=user)  # Set created_by
+            bill = serializer.save(created_by=user)
             logger.info(f"Bill created: {bill.bill_id} by {user.username}")
             response_data = serializer.data
             if appointment:
@@ -108,7 +108,6 @@ class CreateBillView(APIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
         
         logger.error(f"Bill creation errors: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # bills/views.py
 @method_decorator(csrf_exempt, name='dispatch')
