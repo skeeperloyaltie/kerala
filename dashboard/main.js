@@ -3063,10 +3063,10 @@ function editBill(billId) {
                           <div class="mb-3">
                             <label for="editAppointmentStatus" class="form-label">Appointment Status</label>
                             <select class="form-control" id="editAppointmentStatus">
-                              <option value="Scheduled" ${appointment.status === 'booked' ? 'selected' : ''}>Scheduled</option>
-                              <option value="Completed" ${appointment.status === 'reviewed' ? 'selected' : ''}>Reviewed</option>
-                              <option value="Cancelled" ${appointment.status === 'on-going' ? 'selected' : ''}>On-Going</option>
-                              <option value="Cancelled" ${appointment.status === 'arrived' ? 'selected' : ''}>Arrived</option>
+                              <option value="booked" ${appointment.status === 'booked' ? 'selected' : ''}>Scheduled</option>
+                              <option value="reviewed" ${appointment.status === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                              <option value="on-going" ${appointment.status === 'on-going' ? 'selected' : ''}>On-Going</option>
+                              <option value="arrived" ${appointment.status === 'arrived' ? 'selected' : ''}>Arrived</option>
 
                             </select>
                           </div>
