@@ -2881,8 +2881,6 @@ function populateBillsTable(bills, page = 1, pageSize = 10) {
 
   console.log(`✅ Populated bills table with ${paginatedBills.length} bills (page ${page})`);
 }
-
-// edit bill
 function editBill(billId) {
   if (!billId) {
     console.error("❌ Invalid billId provided:", billId);
@@ -2903,40 +2901,32 @@ function editBill(billId) {
         return;
       }
 
-      // Validate bill items
-      // if (!bill.items || bill.items.length === 0) {
-      //   console.error(`❌ Bill ${billId} has no items`);
-      //   alert("Cannot edit bill: No items found.");
-      //   return;
-      // }
-
-      // Log bill items for debugging
       console.log(`📋 Bill ${billId} items:`, bill.items);
 
       // Extract service IDs from bill items
       const serviceIds = bill.items
-        .map(item => item.service_id)
-        .filter(id => id && Number.isInteger(Number(id))); // Remove null/undefined/non-integer IDs
+        .map(item => Number(item.service_id_read)) // Use service_id_read
+        .filter(id => id && Number.isInteger(id)); // Ensure integer IDs
       console.log(`📋 Service IDs for bill ${billId}:`, serviceIds);
 
-      // Warn about invalid service IDs but proceed to fetch services
-      const invalidItems = bill.items.filter(item => !item.service_id || !Number.isInteger(Number(item.service_id)));
+      // Warn about invalid service IDs
+      const invalidItems = bill.items.filter(item => !item.service_id_read || !Number.isInteger(Number(item.service_id_read)));
       if (invalidItems.length > 0) {
         console.warn(`⚠️ Invalid or missing service IDs in bill ${billId} items:`, invalidItems);
         alert(`Warning: Some bill items have invalid or missing service IDs. You can still edit the bill, but these items may need correction.`);
       }
 
-      // Fetch all services using /service/list/
+      // Fetch services
       let servicePromise = $.ajax({
-        url: `${API_BASE_URL}/service/list/`,
+        url: serviceIds.length > 0
+          ? `${API_BASE_URL}/service/list/?service_ids=${serviceIds.join(',')}`
+          : `${API_BASE_URL}/service/list/`,
         type: "GET",
         headers: getAuthHeaders(),
         success: function (data) {
           console.log(`✅ Service list response:`, data);
           if (!data.services || data.services.length === 0) {
-            console.error(`❌ No services returned from /service/list/`);
-            alert("Cannot edit bill: No services available in the system.");
-            throw new Error("No services available");
+            console.warn(`⚠️ No services returned`);
           }
         },
         error: function (xhr) {
@@ -2978,47 +2968,42 @@ function editBill(billId) {
           })
         : Promise.resolve({ appointments: [] });
 
-      // Wait for all promises
       Promise.all([servicePromise, allServicesPromise, appointmentPromise])
         .then(([serviceData, allServicesData, appointmentData]) => {
-          // Filter services to match bill item service IDs
-          const services = (serviceData.services || []).filter(service =>
-            serviceIds.includes(service.id)
-          );
+          const services = (serviceData.services || []).filter(service => serviceIds.includes(service.id));
           const allServices = allServicesData.services || [];
           let appointment = appointmentData.appointments && appointmentData.appointments.length > 0
             ? appointmentData.appointments[0]
             : null;
 
-          // Validate that all bill items with valid service IDs have corresponding services
+          // Validate services
           const missingServices = bill.items.filter(
-            item => item.service_id && Number.isInteger(Number(item.service_id)) && !services.find(s => s.id === Number(item.service_id))
+            item => item.service_id_read && Number.isInteger(Number(item.service_id_read)) && !services.find(s => s.id === Number(item.service_id_read))
           );
           if (missingServices.length > 0) {
             console.error(`❌ Missing services for bill items:`, missingServices);
-            alert(`Cannot edit bill: Some services are missing or invalid (Service IDs: ${missingServices.map(item => item.service_id).join(', ')}).`);
+            alert(`Cannot edit bill: Some services are missing or invalid (Service IDs: ${missingServices.map(item => item.service_id_read).join(', ')}).`);
             return;
           }
 
-          // Normalize appointment data
           if (appointment && appointment.appointment_date) {
             const apptDate = new Date(appointment.appointment_date);
-            appointment.date = apptDate.toISOString().split('T')[0]; // YYYY-MM-DD
-            appointment.time = apptDate.toTimeString().slice(0, 5); // HH:MM
+            appointment.date = apptDate.toISOString().split('T')[0];
+            appointment.time = apptDate.toTimeString().slice(0, 5);
             appointment.appointment_id = appointment.id;
           }
 
-          // Map services to items
           const serviceMap = {};
           services.forEach(service => {
             serviceMap[service.id] = {
               id: service.id,
+              service_id: service.code || service.id,
               name: service.name || 'Unknown Service',
-              price: service.price || 0
+              price: service.price || 0,
+              doctors: service.doctor_details || []
             };
           });
 
-          // Create edit modal
           const modal = $(`
             <div class="modal fade" id="editBillModal" tabindex="-1">
               <div class="modal-dialog modal-lg">
@@ -3057,7 +3042,6 @@ function editBill(billId) {
                       ${
                         appointment
                           ? `
-                          <!-- Appointment Details -->
                           <h6>Associated Appointment</h6>
                           <div class="mb-3">
                             <label for="editAppointmentId" class="form-label">Appointment ID</label>
@@ -3082,50 +3066,49 @@ function editBill(billId) {
                           `
                           : ''
                       }
-                     <!-- Bill Items -->
-                                <h6>Bill Items</h6>
-                                  <div id="editBillItems">
-                                      ${bill.items.map((item, index) => {
-                                          const service = serviceMap[item.service_id];
-                                          const doctorNames = service && service.doctors.length > 0
-                                              ? service.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
-                                              : 'No doctors assigned';
-                                          return `
-                                              <div class="row mb-2 bill-item-row">
-                                                  <div class="col-md-3">
-                                                      <input type="hidden" class="service-id" name="item_service_id_${index}" value="${item.service_id || ''}">
-                                                      <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? `${service.name} (${service.service_id})` : (item.service_id ? `Service ID ${item.service_id} (Invalid)` : 'Select Service')}" placeholder="Search Service" required>
-                                                      <small class="form-text text-muted">Doctors: ${doctorNames}</small>
-                                                  </div>
-                                                  <div class="col-md-2">
-                                                      <input type="number" class="form-control item-quantity" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
-                                                  </div>
-                                                  <div class="col-md-2">
-                                                      <input type="number" step="0.01" class="form-control item-unit-price" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required min="0">
-                                                  </div>
-                                                  <div class="col-md-2">
-                                                      <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)" min="0">
-                                                  </div>
-                                                  <div class="col-md-2">
-                                                      <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${index}" value="${item.discount}" placeholder="Discount" min="0">
-                                                  </div>
-                                                  <div class="col-md-1">
-                                                      <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
-                                                  </div>
-                                              </div>
-                                          `;
-                                      }).join('')}
-                                  </div>
-                                  <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
-                              </form>
-                          </div>
-                          <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                              <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
-                          </div>
+                      <h6>Bill Items</h6>
+                      <div id="editBillItems">
+                        ${bill.items.map((item, index) => {
+                          const service = serviceMap[item.service_id_read];
+                          const doctorNames = service && service.doctors && service.doctors.length > 0
+                            ? service.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
+                            : 'No doctors assigned';
+                          return `
+                            <div class="row mb-2 bill-item-row">
+                              <div class="col-md-3">
+                                <input type="hidden" class="service-id" name="item_service_id_${index}" value="${item.service_id_read || ''}">
+                                <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? `${service.name} (${service.service_id})` : (item.service_id_read ? `Service ID ${item.service_id_read} (Invalid)` : 'Select Service')}" placeholder="Search Service" required>
+                                <small class="form-text text-muted">Doctors: ${doctorNames}</small>
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" class="form-control item-quantity" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" step="0.01" class="form-control item-unit-price" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required min="0">
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)" min="0">
+                              </div>
+                              <div class="col-md-2">
+                                <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${index}" value="${item.discount}" placeholder="Discount" min="0">
+                              </div>
+                              <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                              </div>
+                            </div>
+                          `;
+                        }).join('')}
                       </div>
+                      <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
+                    </form>
                   </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
+                  </div>
+                </div>
               </div>
+            </div>
           `);
 
           $('body').append(modal);
@@ -3140,12 +3123,14 @@ function editBill(billId) {
                   const term = request.term.toLowerCase();
                   const filteredServices = allServices.filter(service =>
                     service.name.toLowerCase().includes(term) ||
-                    service.code.toLowerCase().includes(term)
+                    (service.code && service.code.toLowerCase().includes(term)) ||
+                    (service.service_id && service.service_id.toLowerCase().includes(term))
                   );
                   response(filteredServices.map(service => ({
-                    label: `${service.name} (${service.code})`,
+                    label: `${service.name} (${service.code || service.id})`,
                     value: service.name,
-                    id: service.id
+                    id: service.id,
+                    code: service.code
                   })));
                 },
                 minLength: 2,
@@ -3153,7 +3138,9 @@ function editBill(billId) {
                   const $row = $(this).closest('.bill-item-row');
                   $row.find('.service-id').val(ui.item.id);
                   $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
+                  $row.find('.service-search').val(`${ui.item.value} (${ui.item.code || ui.item.id})`);
                   calculateTotalAmount();
+                  return false;
                 }
               });
             } else {
@@ -3164,8 +3151,8 @@ function editBill(billId) {
                 <select class="form-control service-select" name="${$input.attr('name')}">
                   <option value="">Select Service</option>
                   ${allServices.map(service => `
-                    <option value="${service.id}" ${service.id === $input.prev('.service-id').val() ? 'selected' : ''}>
-                      ${service.name} (${service.code})
+                    <option value="${service.id}" ${service.id === Number($input.prev('.service-id').val()) ? 'selected' : ''}>
+                      ${service.name} (${service.code || service.id})
                     </option>
                   `).join('')}
                 </select>
@@ -3189,6 +3176,7 @@ function editBill(billId) {
                 <div class="col-md-3">
                   <input type="hidden" class="service-id" name="item_service_id_${itemCount}">
                   <input type="text" class="form-control service-search" name="item_service_name_${itemCount}" placeholder="Search Service" required>
+                  <small class="form-text text-muted">Doctors: No doctors assigned</small>
                 </div>
                 <div class="col-md-2">
                   <input type="number" class="form-control item-quantity" name="item_quantity_${itemCount}" placeholder="Quantity" required min="1">
@@ -3200,7 +3188,7 @@ function editBill(billId) {
                   <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${itemCount}" placeholder="GST (%)" min="0">
                 </div>
                 <div class="col-md-2">
-                  <input type="number" step="0.01" class="form-control item-discount" name="item_service_id_${itemCount}" placeholder="Discount" min="0">
+                  <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${itemCount}" placeholder="Discount" min="0">
                 </div>
                 <div class="col-md-1">
                   <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
@@ -3209,18 +3197,19 @@ function editBill(billId) {
             `;
             modal.find('#editBillItems').append(newItem);
 
-            // Initialize autocomplete for new item
             modal.find(`[name="item_service_name_${itemCount}"]`).autocomplete({
               source: function (request, response) {
                 const term = request.term.toLowerCase();
                 const filteredServices = allServices.filter(service =>
                   service.name.toLowerCase().includes(term) ||
-                  service.code.toLowerCase().includes(term)
+                  (service.code && service.code.toLowerCase().includes(term)) ||
+                  (service.service_id && service.service_id.toLowerCase().includes(term))
                 );
                 response(filteredServices.map(service => ({
-                  label: `${service.name} (${service.code})`,
+                  label: `${service.name} (${service.code || service.id})`,
                   value: service.name,
-                  id: service.id
+                  id: service.id,
+                  code: service.code
                 })));
               },
               minLength: 2,
@@ -3228,13 +3217,15 @@ function editBill(billId) {
                 const $row = $(this).closest('.bill-item-row');
                 $row.find('.service-id').val(ui.item.id);
                 $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
+                $row.find('.service-search').val(`${ui.item.value} (${ui.item.code || ui.item.id})`);
                 calculateTotalAmount();
+                return false;
               }
             });
           });
 
           // Remove item
-          modal.find('.remove-item').on('click', function () {
+          modal.find('#editBillItems').on('click', '.remove-item', function () {
             $(this).closest('.row').remove();
             calculateTotalAmount();
           });
@@ -3268,7 +3259,6 @@ function editBill(billId) {
               items: []
             };
 
-            // Collect bill items
             let hasErrors = false;
             modal.find('.bill-item-row').each(function () {
               const $row = $(this);
@@ -3296,7 +3286,7 @@ function editBill(billId) {
               }
 
               updatedBill.items.push({
-                service_id: serviceId,
+                service_id: Number(serviceId), // Ensure integer
                 quantity: quantity,
                 unit_price: unitPrice,
                 gst: gst,
@@ -3309,7 +3299,6 @@ function editBill(billId) {
               return;
             }
 
-            // Update bill
             $.ajax({
               url: `${API_BASE_URL}/bills/update/`,
               type: "PUT",
@@ -3318,8 +3307,6 @@ function editBill(billId) {
               contentType: "application/json",
               success: function (response) {
                 console.log(`✅ Bill ${billId} updated successfully:`, response);
-
-                // Update appointment if applicable
                 if (appointment && modal.find('#editAppointmentId').val()) {
                   const updatedAppointment = {
                     appointment_id: modal.find('#editAppointmentId').val(),

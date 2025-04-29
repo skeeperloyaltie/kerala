@@ -11,10 +11,12 @@ class BillItemSerializer(serializers.ModelSerializer):
     service_id = serializers.PrimaryKeyRelatedField(
         queryset=Service.objects.all(), source='service', write_only=True
     )
+    service_id_read = serializers.IntegerField(source='service.id', read_only=True)  # Explicitly include service_id in output
 
     class Meta:
         model = BillItem
-        fields = ['id', 'service', 'service_id', 'quantity', 'unit_price', 'gst', 'discount', 'total_price']
+        fields = ['id', 'service', 'service_id', 'service_id_read', 'quantity', 'unit_price', 'gst', 'discount', 'total_price']
+        read_only_fields = ['id', 'service', 'service_id_read']
 
     def validate_service_id(self, value):
         if not value:
@@ -23,7 +25,7 @@ class BillItemSerializer(serializers.ModelSerializer):
 
 class BillSerializer(serializers.ModelSerializer):
     items = BillItemSerializer(many=True)
-    patient_id = serializers.CharField(write_only=True)  # Accept patient_id string
+    patient_id = serializers.CharField(write_only=True)
     appointment_id = serializers.PrimaryKeyRelatedField(
         queryset=Appointment.objects.all(), source='appointment', allow_null=True
     )
@@ -36,12 +38,11 @@ class BillSerializer(serializers.ModelSerializer):
     def validate_patient_id(self, value):
         try:
             patient = Patient.objects.get(patient_id=value)
-            return patient.id  # Return the Patient's primary key
+            return patient.id
         except Patient.DoesNotExist:
             raise serializers.ValidationError(f"Patient with patient_id {value} does not exist.")
 
     def validate(self, data):
-        # Ensure at least one item with a valid service
         items = data.get('items', [])
         if not items:
             raise serializers.ValidationError("A bill must have at least one item.")
