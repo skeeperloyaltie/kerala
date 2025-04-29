@@ -3130,27 +3130,51 @@ function editBill(billId) {
 
           // Initialize autocomplete for service search
           modal.find('.service-search').each(function () {
-            $(this).autocomplete({
-              source: function (request, response) {
-                const term = request.term.toLowerCase();
-                const filteredServices = allServices.filter(service =>
-                  service.name.toLowerCase().includes(term) ||
-                  service.code.toLowerCase().includes(term)
-                );
-                response(filteredServices.map(service => ({
-                  label: `${service.name} (${service.code})`,
-                  value: service.name,
-                  id: service.id
-                })));
-              },
-              minLength: 2,
-              select: function (event, ui) {
-                const $row = $(this).closest('.bill-item-row');
-                $row.find('.service-id').val(ui.item.id);
-                $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
+            if (typeof $.fn.autocomplete === 'function') {
+              $(this).autocomplete({
+                source: function (request, response) {
+                  const term = request.term.toLowerCase();
+                  const filteredServices = allServices.filter(service =>
+                    service.name.toLowerCase().includes(term) ||
+                    service.code.toLowerCase().includes(term)
+                  );
+                  response(filteredServices.map(service => ({
+                    label: `${service.name} (${service.code})`,
+                    value: service.name,
+                    id: service.id
+                  })));
+                },
+                minLength: 2,
+                select: function (event, ui) {
+                  const $row = $(this).closest('.bill-item-row');
+                  $row.find('.service-id').val(ui.item.id);
+                  $row.find('.item-unit-price').val(ui.item.id in serviceMap ? serviceMap[ui.item.id].price : 0);
+                  calculateTotalAmount();
+                }
+              });
+            } else {
+              console.warn('⚠️ jQuery UI Autocomplete not available. Falling back to select dropdown.');
+              const $input = $(this);
+              const $row = $input.closest('.bill-item-row');
+              const $select = $(`
+                <select class="form-control service-select" name="${$input.attr('name')}">
+                  <option value="">Select Service</option>
+                  ${allServices.map(service => `
+                    <option value="${service.id}" ${service.id === $input.prev('.service-id').val() ? 'selected' : ''}>
+                      ${service.name} (${service.code})
+                    </option>
+                  `).join('')}
+                </select>
+              `);
+              $input.replaceWith($select);
+              $select.on('change', function () {
+                const serviceId = $(this).val();
+                $row.find('.service-id').val(serviceId);
+                const service = allServices.find(s => s.id === Number(serviceId));
+                $row.find('.item-unit-price').val(service ? service.price : 0);
                 calculateTotalAmount();
-              }
-            });
+              });
+            }
           });
 
           // Add item dynamically
