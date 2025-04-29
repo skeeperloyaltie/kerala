@@ -3082,7 +3082,7 @@ function editBill(billId) {
                           `
                           : ''
                       }
-                      <!-- Bill Items -->
+                     <!-- Bill Items -->
                       <h6>Bill Items</h6>
                       <div id="editBillItems">
                         ${bill.items.map((item, index) => {
@@ -3091,7 +3091,7 @@ function editBill(billId) {
                             <div class="row mb-2 bill-item-row">
                               <div class="col-md-3">
                                 <input type="hidden" class="service-id" name="item_service_id_${index}" value="${item.service_id || ''}">
-                                <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? service.name : (item.service_id ? `Service ID ${item.service_id} (Invalid)` : 'Select Service')}" placeholder="Search Service" required>
+                                <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? `${service.name} (${service.service_id})` : (item.service_id ? `Service ID ${item.service_id} (Invalid)` : 'Select Service')}" placeholder="Search Service" required>
                               </div>
                               <div class="col-md-2">
                                 <input type="number" class="form-control item-quantity" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
