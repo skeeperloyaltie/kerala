@@ -1,3 +1,4 @@
+# service/serializers.py
 from rest_framework import serializers
 from .models import Service
 from users.models import Doctor
@@ -18,7 +19,18 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Service
-        fields = ['id', 'service_id', 'name', 'price', 'code', 'color_code', 'doctors', 'created_at', 'updated_at']
+        fields = [
+            'id',
+            'service_id',
+            'name',
+            'price',
+            'code',
+            'color_code',
+            'doctors',
+            'doctor_details',  # Added doctor_details
+            'created_at',
+            'updated_at'
+        ]
 
     def validate(self, data):
         # Only validate doctors if provided in the request (for partial updates)
