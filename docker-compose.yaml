@@ -28,7 +28,9 @@ services:
     ports:
       - "8000:8000"
     command: >
-      sh -c "python manage.py makemigrations service &&
+      sh -c "python manage.py makemigrations users &&
+             python manage.py migrate users && 
+             python manage.py makemigrations service &&
              python manage.py migrate service &&
              python manage.py makemigrations users &&
              python manage.py makemigrations patients &&
