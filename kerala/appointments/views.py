@@ -515,6 +515,24 @@ class CreatePatientAndAppointmentView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # appointments/views.py
+# appointments/views.py
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
+from datetime import datetime
+import pytz
+import logging
+from .models import Appointment
+from .serializers import AppointmentSerializer
+
+logger = logging.getLogger(__name__)
+KOLKATA_TZ = pytz.timezone('Asia/Kolkata')
+
 @method_decorator(csrf_exempt, name='dispatch')
 class AppointmentUpdateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -524,6 +542,7 @@ class AppointmentUpdateView(APIView):
         data = request.data
         appointment_id = data.get('appointment_id')
         logger.info(f"User {user.username} attempting to update appointment {appointment_id}")
+        logger.debug(f"Incoming request data: {data}")
 
         if not (user.is_superuser or user.has_perm('appointments.change_appointment')):
             logger.warning(f"Unauthorized appointment update attempt by {user.username}")
@@ -534,6 +553,12 @@ class AppointmentUpdateView(APIView):
             logger.warning(f"Doctor {user.username} tried to edit an appointment they don't own.")
             raise PermissionDenied("You can only edit your own appointments.")
 
+        # Log valid status choices
+        status_field = Appointment._meta.get_field('status')
+        status_choices = [choice[0] for choice in status_field.choices]
+        logger.debug(f"Valid status choices for Appointment: {status_choices}")
+        logger.debug(f"Status field details: default={status_field.default}, max_length={status_field.max_length}")
+
         # Convert date and time to appointment_date
         if data.get('date') and data.get('time'):
             try:
@@ -543,13 +568,13 @@ class AppointmentUpdateView(APIView):
                 data['appointment_date'] = appointment_date
             except ValueError:
                 logger.error(f"Invalid date/time format: {appointment_date_str}")
-                return Response({"error": "Invalid date/time format. Use 'YYYY-MM-DD' and 'HH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid date/time format. Use 'YYYY-MM-DD' and 'HH:MM'."}, status=HTTP_400_BAD_REQUEST)
 
         serializer = AppointmentSerializer(appointment, data=data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save(updated_by=user)
             logger.info(f"Appointment {appointment_id} updated by {user.username}")
-            return Response({"success": True, "appointment": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"success": True, "appointment": serializer.data}, status=HTTP_200_OK)
         
         logger.error(f"Errors updating appointment {appointment_id}: {serializer.errors}")
-        return Response({"error": "Invalid appointment data", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Invalid appointment data", "details": serializer.errors}, status=HTTP_400_BAD_REQUEST)
