@@ -3083,45 +3083,49 @@ function editBill(billId) {
                           : ''
                       }
                      <!-- Bill Items -->
-                      <h6>Bill Items</h6>
-                      <div id="editBillItems">
-                        ${bill.items.map((item, index) => {
-                          const service = serviceMap[item.service_id];
-                          return `
-                            <div class="row mb-2 bill-item-row">
-                              <div class="col-md-3">
-                                <input type="hidden" class="service-id" name="item_service_id_${index}" value="${item.service_id || ''}">
-                                <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? `${service.name} (${service.service_id})` : (item.service_id ? `Service ID ${item.service_id} (Invalid)` : 'Select Service')}" placeholder="Search Service" required>
-                              </div>
-                              <div class="col-md-2">
-                                <input type="number" class="form-control item-quantity" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
-                              </div>
-                              <div class="col-md-2">
-                                <input type="number" step="0.01" class="form-control item-unit-price" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required min="0">
-                              </div>
-                              <div class="col-md-2">
-                                <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)" min="0">
-                              </div>
-                              <div class="col-md-2">
-                                <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${index}" value="${item.discount}" placeholder="Discount" min="0">
-                              </div>
-                              <div class="col-md-1">
-                                <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
-                              </div>
-                            </div>
-                          `;
-                        }).join('')}
+                                <h6>Bill Items</h6>
+                                  <div id="editBillItems">
+                                      ${bill.items.map((item, index) => {
+                                          const service = serviceMap[item.service_id];
+                                          const doctorNames = service && service.doctors.length > 0
+                                              ? service.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
+                                              : 'No doctors assigned';
+                                          return `
+                                              <div class="row mb-2 bill-item-row">
+                                                  <div class="col-md-3">
+                                                      <input type="hidden" class="service-id" name="item_service_id_${index}" value="${item.service_id || ''}">
+                                                      <input type="text" class="form-control service-search" name="item_service_name_${index}" value="${service ? `${service.name} (${service.service_id})` : (item.service_id ? `Service ID ${item.service_id} (Invalid)` : 'Select Service')}" placeholder="Search Service" required>
+                                                      <small class="form-text text-muted">Doctors: ${doctorNames}</small>
+                                                  </div>
+                                                  <div class="col-md-2">
+                                                      <input type="number" class="form-control item-quantity" name="item_quantity_${index}" value="${item.quantity}" placeholder="Quantity" required min="1">
+                                                  </div>
+                                                  <div class="col-md-2">
+                                                      <input type="number" step="0.01" class="form-control item-unit-price" name="item_unit_price_${index}" value="${item.unit_price}" placeholder="Unit Price" required min="0">
+                                                  </div>
+                                                  <div class="col-md-2">
+                                                      <input type="number" step="0.01" class="form-control item-gst" name="item_gst_${index}" value="${item.gst}" placeholder="GST (%)" min="0">
+                                                  </div>
+                                                  <div class="col-md-2">
+                                                      <input type="number" step="0.01" class="form-control item-discount" name="item_discount_${index}" value="${item.discount}" placeholder="Discount" min="0">
+                                                  </div>
+                                                  <div class="col-md-1">
+                                                      <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
+                                                  </div>
+                                              </div>
+                                          `;
+                                      }).join('')}
+                                  </div>
+                                  <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
+                              </form>
+                          </div>
+                          <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                              <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
+                          </div>
                       </div>
-                      <button type="button" class="btn btn-sm btn-outline-primary add-item"><i class="fas fa-plus"></i> Add Item</button>
-                    </form>
                   </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveBillChanges">Save Changes</button>
-                  </div>
-                </div>
               </div>
-            </div>
           `);
 
           $('body').append(modal);
