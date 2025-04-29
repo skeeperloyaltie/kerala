@@ -36,7 +36,7 @@ class CreateBillView(APIView):
 
         # Handle appointment creation if appointment_date is provided
         appointment_date = data.pop('appointment_date', None)
-        doctor_id = data.get('doctor_id')
+        doctor_id = data.pop('doctor_id', None)  # Remove doctor_id from bill data
         appointment = None
         if appointment_date:
             try:
@@ -80,13 +80,18 @@ class CreateBillView(APIView):
             }
             appointment = Appointment.objects.create(**appointment_data)
             logger.info(f"Appointment created: {appointment.id} with appointment_date: {appointment.appointment_date} (Kolkata: {appointment.appointment_date.astimezone(KOLKATA_TZ)})")
-
             data['appointment_id'] = appointment.id
+
+        # Ensure items' service_id is treated as integer
+        if 'items' in data:
+            for item in data['items']:
+                if 'service_id' in item and isinstance(item['service_id'], str):
+                    item['service_id'] = int(item['service_id'])
 
         # Create bill
         serializer = BillSerializer(data=data, context={'request': request})
         if serializer.is_valid():
-            bill = serializer.save()
+            bill = serializer.save(created_by=user)  # Set created_by
             logger.info(f"Bill created: {bill.bill_id} by {user.username}")
             response_data = serializer.data
             if appointment:

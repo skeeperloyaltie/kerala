@@ -23,9 +23,7 @@ class BillItemSerializer(serializers.ModelSerializer):
 
 class BillSerializer(serializers.ModelSerializer):
     items = BillItemSerializer(many=True)
-    patient_id = serializers.PrimaryKeyRelatedField(
-        queryset=Patient.objects.all(), source='patient'
-    )
+    patient_id = serializers.CharField(write_only=True)  # Accept patient_id string
     appointment_id = serializers.PrimaryKeyRelatedField(
         queryset=Appointment.objects.all(), source='appointment', allow_null=True
     )
@@ -33,6 +31,14 @@ class BillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill
         fields = ['bill_id', 'patient_id', 'appointment_id', 'total_amount', 'deposit_amount', 'status', 'created_at', 'updated_at', 'notes', 'items']
+        read_only_fields = ['bill_id', 'created_at', 'updated_at']
+
+    def validate_patient_id(self, value):
+        try:
+            patient = Patient.objects.get(patient_id=value)
+            return patient  # Return the Patient object
+        except Patient.DoesNotExist:
+            raise serializers.ValidationError(f"Patient with patient_id {value} does not exist.")
 
     def validate(self, data):
         # Ensure at least one item with a valid service
@@ -52,11 +58,10 @@ class BillSerializer(serializers.ModelSerializer):
         return bill
 
     def update(self, instance, validated_data):
-        items_data = validated_data.pop('items')
+        items_data = validated_data.pop('items', None)
         instance = super().update(instance, validated_data)
-        
-        # Delete existing items and create new ones
-        instance.items.all().delete()
-        for item_data in items_data:
-            BillItem.objects.create(bill=instance, **item_data)
+        if items_data is not None:
+            instance.items.all().delete()
+            for item_data in items_data:
+                BillItem.objects.create(bill=instance, **item_data)
         return instance
