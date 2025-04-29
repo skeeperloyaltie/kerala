@@ -45,7 +45,7 @@ class Bill(models.Model):
 
 class BillItem(models.Model):
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='items')
-    service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True)
+    service = models.ForeignKey(Service, on_delete=models.PROTECT, null=False, blank=False)  # Changed to non-nullable, PROTECT to prevent deletion
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     gst = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)  # Percentage
@@ -58,4 +58,4 @@ class BillItem(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Item {self.service.name if self.service else 'Unknown'} for Bill {self.bill.bill_id}"
+        return f"Item {self.service.name} for Bill {self.bill.bill_id}"

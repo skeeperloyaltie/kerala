@@ -2921,7 +2921,7 @@ function editBill(billId) {
         })
       : Promise.resolve({ services: [] });
 
-        let allServicesPromise = new Promise((resolve, reject) => {
+      let allServicesPromise = new Promise((resolve, reject) => {
         if (services.length > 0) {
           console.log(`✅ Using cached services: ${services.length} entries`);
           resolve({ services });
@@ -2937,9 +2937,9 @@ function editBill(billId) {
               reject(error);
             });
         }
-        });
+      });
 
-        let appointmentPromise = bill.appointment_id
+      let appointmentPromise = bill.appointment_id
         ? $.ajax({
             url: `${API_BASE_URL}/appointments/list/?appointment_id=${encodeURIComponent(bill.appointment_id)}`,
             type: "GET",
@@ -2949,6 +2949,7 @@ function editBill(billId) {
             },
             error: function (xhr) {
               console.error(`❌ Appointment fetch failed for ID ${bill.appointment_id}:`, xhr.responseJSON || xhr.statusText);
+              throw new Error(`Appointment fetch failed: ${xhr.responseJSON?.error || xhr.statusText}`);
             }
           })
         : Promise.resolve({ appointments: [] });
@@ -2961,6 +2962,14 @@ function editBill(billId) {
           let appointment = appointmentData.appointments && appointmentData.appointments.length > 0
             ? appointmentData.appointments[0]
             : null;
+
+          // Validate that all bill items have corresponding services
+          const missingServices = bill.items.filter(item => !services.find(s => s.id === item.service_id));
+          if (missingServices.length > 0) {
+            console.error(`❌ Missing services for bill items:`, missingServices);
+            alert("Cannot edit bill: Some services are missing or invalid.");
+            return;
+          }
 
           // Normalize appointment data
           if (appointment && appointment.appointment_date) {
@@ -2975,8 +2984,8 @@ function editBill(billId) {
           services.forEach(service => {
             serviceMap[service.id] = {
               id: service.id,
-              name: service.service_name || service.name || 'Unknown Service',
-              price: service.service_price || service.price || 0
+              name: service.name || 'Unknown Service',
+              price: service.price || 0
             };
           });
 
