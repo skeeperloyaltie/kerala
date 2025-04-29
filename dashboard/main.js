@@ -3345,9 +3345,8 @@ function editBill(billId) {
                           time: modal.find('#editAppointmentTime').val(),
                           status: modal.find('#editAppointmentStatus').val()
                       };
-
-                      $.ajax({
-                          url: `${API_BASE_URL}/appointments/update/`,
+                        $.ajax({
+                          url: `${API_BASE_URL}/appointments/edit/${updatedAppointment.appointment_id}/`, // Updated URL
                           type: "PUT",
                           headers: getAuthHeaders(),
                           data: JSON.stringify(updatedAppointment),
