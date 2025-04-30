@@ -701,7 +701,6 @@ $(document).ready(function () {
   }
   
   // Populate Appointments Table
-   
   function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
     const calendarBody = document.getElementById("calendarBody");
     const calendarHeader = document.querySelector(".calendar-header");
@@ -749,7 +748,13 @@ $(document).ready(function () {
         return;
     }
 
-    console.log(`📅 Filtered appointments (${filteredAppointments.length}):`, filteredAppointments);
+    // Log appointment details for debugging
+    console.log(`📅 Filtered appointments (${filteredAppointments.length}):`, filteredAppointments.map(appt => ({
+        id: appt.id,
+        appointment_date: appt.appointment_date,
+        istDate: new Date(new Date(appt.appointment_date).getTime() + (5.5 * 60 * 60 * 1000)).toLocaleString('en-US'),
+        status: appt.status
+    })));
 
     hours.forEach(hour => {
         const row = document.createElement("div");
@@ -764,7 +769,9 @@ $(document).ready(function () {
             slot.classList.add("calendar-slot");
             slot.style.position = "relative";
             slot.style.overflowY = "auto";
-            slot.style.maxHeight = "60px";
+            slot.style.maxHeight = "none"; // Remove maxHeight to prevent clipping
+
+            console.log(`🔄 Processing slot for day ${day.dateStr}, hour ${hour}:00`);
 
             const slotAppointments = filteredAppointments.filter(appt => {
                 if (!appt || !appt.appointment_date) {
@@ -778,15 +785,20 @@ $(document).ready(function () {
                     return false;
                 }
 
-                // Adjust to IST (5.5 hours = 19800 seconds)
                 const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000));
                 const apptDateStr = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
                 const apptHour = istDate.getHours();
                 const apptMinute = istDate.getMinutes();
 
-                if (apptDateStr !== day.dateStr) return false;
+                if (apptDateStr !== day.dateStr) {
+                    console.log(`⚠️ Date mismatch for appointment ID ${appt.id}: apptDateStr=${apptDateStr}, day.dateStr=${day.dateStr}`);
+                    return false;
+                }
 
                 const isInHour = apptHour === hour;
+                if (!isInHour) {
+                    console.log(`⚠️ Hour mismatch for appointment ID ${appt.id}: apptHour=${apptHour}, slotHour=${hour}`);
+                }
 
                 console.log(`🔍 Checking appointment ID ${appt.id}: Date=${apptDateStr}, Raw=${appt.appointment_date}, Parsed=${apptDate.toISOString()}, Local=${istDate.toLocaleString('en-US')}, Hour=${apptHour}:${apptMinute}, Matches=${isInHour ? 'Yes' : 'No'}`);
 
@@ -830,7 +842,6 @@ $(document).ready(function () {
         calendarBody.appendChild(row);
     });
 
-    // Check for unmatched appointments
     const unmatchedAppointments = filteredAppointments.filter(appt => {
         const apptDate = new Date(appt.appointment_date);
         const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000));
