@@ -756,9 +756,22 @@ $(document).ready(function () {
         status: appt.status
     })));
 
+    // Get current IST time
+    const now = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000)); // Adjust to IST
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     hours.forEach(hour => {
         const row = document.createElement("div");
         row.classList.add("calendar-row");
+        row.dataset.hour = hour; // Add data-hour for scrolling
+
+        // Blur past hours if on the current date
+        const isCurrentDay = days.some(day => day.dateStr === currentDateStr);
+        if (isCurrentDay && hour < currentHour) {
+            row.classList.add("past"); // Apply blur to past hours
+        }
 
         const hourLabel = document.createElement("div");
         hourLabel.innerText = `${hour}:00`;
@@ -769,9 +782,29 @@ $(document).ready(function () {
             slot.classList.add("calendar-slot");
             slot.style.position = "relative";
             slot.style.overflowY = "auto";
-            slot.style.maxHeight = "none"; // Remove maxHeight to prevent clipping
+            slot.style.maxHeight = "none";
 
             console.log(`🔄 Processing slot for day ${day.dateStr}, hour ${hour}:00`);
+
+            // Add current time marker if on current day and hour
+            if (day.dateStr === currentDateStr && hour === currentHour) {
+                const marker = document.createElement("div");
+                marker.classList.add("current-time-marker");
+                // Position marker based on minutes (assuming row height is 60px)
+                const minuteOffset = (currentMinute / 60) * 60; // Scale to row height
+                marker.style.top = `${minuteOffset}px`;
+
+                const label = document.createElement("div");
+                label.classList.add("current-time-label");
+                label.innerText = now.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                marker.appendChild(label);
+
+                slot.appendChild(marker);
+            }
 
             const slotAppointments = filteredAppointments.filter(appt => {
                 if (!appt || !appt.appointment_date) {
@@ -841,14 +874,17 @@ $(document).ready(function () {
 
         calendarBody.appendChild(row);
     });
+
+    // Fallback rendering for unmatched appointments
     if (document.querySelectorAll(".appointment-block").length === 0) {
-      calendarBody.innerHTML += `<div class="text-center text-warning">No appointments matched calendar slots. Displaying all:</div>`;
-      filteredAppointments.forEach(appt => {
-          const div = document.createElement("div");
-          div.innerHTML = `ID: ${appt.id}, Date: ${appt.appointment_date}, Status: ${appt.status}`;
-          calendarBody.appendChild(div);
-      });
-  }
+        calendarBody.innerHTML += `<div class="text-center text-warning">No appointments matched calendar slots. Displaying all:</div>`;
+        filteredAppointments.forEach(appt => {
+            const div = document.createElement("div");
+            div.innerHTML = `ID: ${appt.id}, Date: ${appt.appointment_date}, Status: ${appt.status}`;
+            calendarBody.appendChild(div);
+        });
+    }
+
     const unmatchedAppointments = filteredAppointments.filter(appt => {
         const apptDate = new Date(appt.appointment_date);
         const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000));
@@ -857,6 +893,17 @@ $(document).ready(function () {
     });
     if (unmatchedAppointments.length > 0) {
         calendarBody.innerHTML += `<div class="text-center text-warning">Warning: ${unmatchedAppointments.length} appointment(s) are outside the selected week.</div>`;
+    }
+
+    // Scroll to current time
+    const currentHourRow = document.querySelector(`.calendar-row[data-hour="${currentHour}"]`);
+    if (currentHourRow) {
+        const calendarContainer = calendarBody.parentElement || calendarBody;
+        const rowOffset = currentHourRow.offsetTop;
+        const containerHeight = calendarContainer.clientHeight;
+        const rowHeight = currentHourRow.clientHeight;
+        // Center the current hour in the viewport
+        calendarContainer.scrollTop = rowOffset - (containerHeight / 2) + (rowHeight / 2);
     }
 
     document.querySelectorAll(".appointment-block").forEach(block => {
@@ -869,7 +916,6 @@ $(document).ready(function () {
 
     console.log(`✅ Populated calendar with ${filteredAppointments.length} appointments for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
 }
-
 
   // Logout Function
   function logoutUser() {

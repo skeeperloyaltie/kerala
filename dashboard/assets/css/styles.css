@@ -891,3 +891,35 @@ height: 100%;
 .amount-pending {
   color: #dc3545; /* Red for Pending */
 }
+
+
+.calendar-row.past {
+  filter: blur(2px); /* Blur past time slots */
+  opacity: 0.6; /* Optional: reduce opacity for better contrast */
+}
+
+.current-time-marker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: red; /* Red line for visibility */
+  z-index: 10;
+}
+
+.current-time-label {
+  position: absolute;
+  left: 10px;
+  top: -10px;
+  background-color: red;
+  color: white;
+  padding: 2px 5px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+#calendarBody {
+  position: relative; /* Ensure relative positioning for absolute markers */
+  overflow-y: auto; /* Allow scrolling */
+  max-height: 600px; /* Adjust based on your layout */
+}
