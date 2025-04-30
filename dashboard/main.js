@@ -841,7 +841,14 @@ $(document).ready(function () {
 
         calendarBody.appendChild(row);
     });
-
+    if (document.querySelectorAll(".appointment-block").length === 0) {
+      calendarBody.innerHTML += `<div class="text-center text-warning">No appointments matched calendar slots. Displaying all:</div>`;
+      filteredAppointments.forEach(appt => {
+          const div = document.createElement("div");
+          div.innerHTML = `ID: ${appt.id}, Date: ${appt.appointment_date}, Status: ${appt.status}`;
+          calendarBody.appendChild(div);
+      });
+  }
     const unmatchedAppointments = filteredAppointments.filter(appt => {
         const apptDate = new Date(appt.appointment_date);
         const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000));
