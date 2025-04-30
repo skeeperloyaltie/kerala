@@ -1675,197 +1675,232 @@ function editAppointment(appointmentId) {
     e.preventDefault();
 
     const requiredFields = [
-      { id: "patientFirstName", name: "First Name" },
-      { id: "patientLastName", name: "Last Name" },
-      { id: "patientGender", name: "Gender" },
-      { id: "patientDOB", name: "Date of Birth" },
-      { id: "fatherName", name: "Father's Name" },
-      { id: "patientPhone", name: "Phone Number" },
-      { id: "preferredLanguage", name: "Preferred Language" },
-      { id: "maritalStatus", name: "Marital Status" },
-      { id: "paymentPreference", name: "Payment Preference" }
+        { id: "patientFirstName", name: "First Name" },
+        { id: "patientLastName", name: "Last Name" },
+        { id: "patientGender", name: "Gender" },
+        { id: "patientDOB", name: "Date of Birth" },
+        { id: "fatherName", name: "Father's Name" },
+        { id: "patientPhone", name: "Phone Number" },
+        { id: "preferredLanguage", name: "Preferred Language" },
+        { id: "maritalStatus", name: "Marital Status" },
+        { id: "paymentPreference", name: "Payment Preference" }
     ];
 
     let errors = [];
 
     requiredFields.forEach(field => {
-      const value = field.id === "patientPhone" ? itiPhone.getNumber() : $(`#${field.id}`).val();
-      if (!value || value.trim() === "") {
-        errors.push(`${field.name} is required.`);
-      }
+        const value = field.id === "patientPhone" ? itiPhone.getNumber() : $(`#${field.id}`).val();
+        if (!value || value.trim() === "") {
+            errors.push(`${field.name} is required.`);
+        }
     });
 
     const aadharValue = $("#aadharNumber").val().trim();
     if (aadharValue && !/^\d{12}$/.test(aadharValue)) {
-      errors.push("Aadhar Number must be exactly 12 digits.");
+        errors.push("Aadhar Number must be exactly 12 digits.");
     }
 
     const phoneValue = itiPhone.getNumber();
     if (!/^\+?\d+$/.test(phoneValue) || phoneValue.length > 13) {
-      errors.push("Phone Number must be numeric and up to 13 digits (including country code).");
+        errors.push("Phone Number must be numeric and up to 13 digits (including country code).");
     }
 
     const mobile2Value = itiMobile2.getNumber();
     if (mobile2Value && (!/^\+?\d+$/.test(mobile2Value) || mobile2Value.length > 13)) {
-      errors.push("Mobile 2 must be numeric and up to 13 digits (including country code).");
+        errors.push("Mobile 2 must be numeric and up to 13 digits (including country code).");
     }
 
     const appointmentDateInput = $("#appointmentDate")[0]?._flatpickr?.selectedDates[0];
     const appointmentDate = appointmentDateInput
-      ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30"
-      : null;
+        ? flatpickr.formatDate(appointmentDateInput, "Y-m-d H:i") + ":00+05:30"
+        : null;
 
     if ($('#addPatientForm').data('appointment-id') && !appointmentDate) {
-      errors.push("Appointment Date is required for editing an appointment.");
+        errors.push("Appointment Date is required for editing an appointment.");
     }
 
     const primaryDoctor = $("#doctor").val();
     if (!primaryDoctor) {
-      errors.push("Primary Doctor is required.");
+        errors.push("Primary Doctor is required.");
     }
 
     if (errors.length > 0) {
-      alert("Please fix the following errors:\n- " + errors.join("\n- "));
-      return;
+        alert("Please fix the following errors:\n- " + errors.join("\n- "));
+        return;
     }
 
     const patientData = {
-      first_name: $("#patientFirstName").val(),
-      last_name: $("#patientLastName").val(),
-      gender: $("#patientGender").val(),
-      date_of_birth: $("#patientDOB").val(),
-      father_name: $("#fatherName").val(),
-      mobile_number: itiPhone.getNumber(),
-      alternate_mobile_number: mobile2Value || null,
-      aadhar_number: aadharValue || null,
-      preferred_language: $("#preferredLanguage").val(),
-      marital_status: $("#maritalStatus").val(),
-      marital_since: $("#maritalSince").val() || null,
-      referred_by: $("#referredBy").val(),
-      channel: $("#channel").val(),
-      cio: $("#cio").val(),
-      occupation: $("#occupation").val(),
-      tag: $("#tag").val(),
-      blood_group: $("#bloodGroup").val(),
-      address: $("#patientAddress").val(),
-      city: $("#patientCity").val(),
-      pincode: $("#patientPin").val(),
-      known_allergies: $("#knownAllergies").val(),
-      current_medications: $("#currentMedications").val(),
-      past_medical_history: $("#pastMedicalHistory").val(),
-      specific_notes: $("#specificNotes").val(),
-      emergency_contact_name: $("#emergencyContactName").val(),
-      emergency_contact_relationship: $("#emergencyContactRelationship").val(),
-      emergency_contact_number: $("#emergencyContactNumber").val(),
-      insurance_provider: $("#insuranceProvider").val(),
-      policy_number: $("#policyNumber").val(),
-      payment_preference: $("#paymentPreference").val(),
-      admission_type: $("#admissionType").val(),
-      hospital_code: $("#hospitalCode").val(),
-      primary_doctor: $("#doctor").val()
+        first_name: $("#patientFirstName").val(),
+        last_name: $("#patientLastName").val(),
+        gender: $("#patientGender").val(),
+        date_of_birth: $("#patientDOB").val(),
+        father_name: $("#fatherName").val(),
+        mobile_number: itiPhone.getNumber(),
+        alternate_mobile_number: mobile2Value || null,
+        aadhar_number: aadharValue || null,
+        preferred_language: $("#preferredLanguage").val(),
+        marital_status: $("#maritalStatus").val(),
+        marital_since: $("#maritalSince").val() || null,
+        referred_by: $("#referredBy").val(), // Preserved as user-entered
+        channel: $("#channel").val(),
+        cio: $("#cio").val(),
+        occupation: $("#occupation").val(),
+        tag: $("#tag").val(),
+        blood_group: $("#bloodGroup").val(),
+        address: $("#patientAddress").val(),
+        city: $("#patientCity").val(),
+        pincode: $("#patientPin").val(),
+        known_allergies: $("#knownAllergies").val(),
+        current_medications: $("#currentMedications").val(),
+        past_medical_history: $("#pastMedicalHistory").val(),
+        specific_notes: $("#specificNotes").val(),
+        emergency_contact_name: $("#emergencyContactName").val(),
+        emergency_contact_relationship: $("#emergencyContactRelationship").val(),
+        emergency_contact_number: $("#emergencyContactNumber").val(),
+        insurance_provider: $("#insuranceProvider").val(),
+        policy_number: $("#policyNumber").val(),
+        payment_preference: $("#paymentPreference").val(),
+        admission_type: $("#admissionType").val(),
+        hospital_code: $("#hospitalCode").val(),
+        primary_doctor: $("#doctor").val() // Will use default if set
     };
 
     const appointmentData = appointmentDate
-      ? {
-          appointment_date: appointmentDate,
-          notes: $("#appointmentNotes").val(),
-          doctor_id: $("#doctor").val() || null,
-          is_emergency: false
-        }
-      : null;
+        ? {
+              appointment_date: appointmentDate,
+              notes: $("#appointmentNotes").val(),
+              doctor_id: $("#doctor").val() || null,
+              is_emergency: false
+          }
+        : null;
 
     const isEditMode = $('#addPatientForm').data('edit-mode');
     const patientId = $('#addPatientForm').data('patient-id');
     const appointmentId = $('#addPatientForm').data('appointment-id');
     let activeButton = null;
     if (e.originalEvent && e.originalEvent.submitter) {
-      activeButton = e.originalEvent.submitter.id;
+        activeButton = e.originalEvent.submitter.id;
     } else {
-      console.warn("⚠️ Submitter not available, checking form buttons...");
-      const $submitButtons = $('#addPatientForm').find('button[type="submit"]');
-      activeButton = $submitButtons.length === 1 ? $submitButtons.attr('id') : 'savePatient';
+        console.warn("⚠️ Submitter not available, checking form buttons...");
+        const $submitButtons = $('#addPatientForm').find('button[type="submit"]');
+        activeButton = $submitButtons.length === 1 ? $submitButtons.attr('id') : 'savePatient';
     }
     console.log(`🖱️ Form submitted by button: ${activeButton}`);
 
     if (isEditMode && patientId) {
-      $.ajax({
-        url: `${API_BASE_URL}/patients/patients/${patientId}/`,
-        type: "PATCH",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(patientData),
-        contentType: "application/json",
-        success: function (updatedPatient) {
-          if (appointmentId && appointmentData) {
-            $.ajax({
-              url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
-              type: "PATCH",
-              headers: getAuthHeaders(),
-              data: JSON.stringify(appointmentData),
-              contentType: "application/json",
-              success: function (updatedAppointment) {
-                const combinedData = { ...updatedPatient, appointments: [updatedAppointment] };
-                handlePostSubmission(combinedData, activeButton);
-              },
-              error: function (xhr) {
-                alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
-              }
-            });
-          } else if (appointmentData) {
-            $.ajax({
-              url: `${API_BASE_URL}/appointments/create/`,
-              type: "POST",
-              headers: getAuthHeaders(),
-              data: JSON.stringify({ ...appointmentData, patient_id: patientId }),
-              contentType: "application/json",
-              success: function (newAppointment) {
-                const combinedData = { ...updatedPatient, appointments: [newAppointment] };
-                handlePostSubmission(combinedData, activeButton);
-              },
-              error: function (xhr) {
-                alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
-              }
-            });
-          } else {
-            handlePostSubmission(updatedPatient, activeButton);
-          }
-        },
-        error: function (xhr) {
-          alert(`Failed to update patient: ${xhr.responseJSON?.error || "Unknown error"}`);
-        }
-      });
+        $.ajax({
+            url: `${API_BASE_URL}/patients/patients/${patientId}/`,
+            type: "PATCH",
+            headers: getAuthHeaders(),
+            data: JSON.stringify(patientData),
+            contentType: "application/json",
+            success: function (updatedPatient) {
+                if (appointmentId && appointmentData) {
+                    $.ajax({
+                        url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+                        type: "PATCH",
+                        headers: getAuthHeaders(),
+                        data: JSON.stringify(appointmentData),
+                        contentType: "application/json",
+                        success: function (updatedAppointment) {
+                            const combinedData = { ...updatedPatient, appointments: [updatedAppointment] };
+                            handlePostSubmission(combinedData, activeButton);
+                        },
+                        error: function (xhr) {
+                            alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                        }
+                    });
+                } else if (appointmentData) {
+                    $.ajax({
+                        url: `${API_BASE_URL}/appointments/create/`,
+                        type: "POST",
+                        headers: getAuthHeaders(),
+                        data: JSON.stringify({ ...appointmentData, patient_id: patientId }),
+                        contentType: "application/json",
+                        success: function (newAppointment) {
+                            const combinedData = { ...updatedPatient, appointments: [newAppointment] };
+                            handlePostSubmission(combinedData, activeButton);
+                        },
+                        error: function (xhr) {
+                            alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                        }
+                    });
+                } else {
+                    handlePostSubmission(updatedPatient, activeButton);
+                }
+            },
+            error: function (xhr) {
+                alert(`Failed to update patient: ${xhr.responseJSON?.error || "Unknown error"}`);
+            }
+        });
     } else {
-      $.ajax({
-        url: `${API_BASE_URL}/patients/patients/create/`,
-        type: "POST",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(patientData),
-        contentType: "application/json",
-        success: function (newPatient) {
-          if (appointmentData) {
-            $.ajax({
-              url: `${API_BASE_URL}/appointments/create/`,
-              type: "POST",
-              headers: getAuthHeaders(),
-              data: JSON.stringify({ ...appointmentData, patient_id: newPatient.patient_id }),
-              contentType: "application/json",
-              success: function (newAppointment) {
-                const combinedData = { ...newPatient, appointments: [newAppointment] };
-                handlePostSubmission(combinedData, activeButton);
-              },
-              error: function (xhr) {
-                alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
-              }
-            });
-          } else {
-            handlePostSubmission(newPatient, activeButton);
-          }
-        },
-        error: function (xhr) {
-          alert(`Failed to create patient: ${xhr.responseJSON?.error || "Unknown error"}`);
-        }
-      });
+        $.ajax({
+            url: `${API_BASE_URL}/patients/patients/create/`,
+            type: "POST",
+            headers: getAuthHeaders(),
+            data: JSON.stringify(patientData),
+            contentType: "application/json",
+            success: function (newPatient) {
+                if (appointmentData) {
+                    $.ajax({
+                        url: `${API_BASE_URL}/appointments/create/`,
+                        type: "POST",
+                        headers: getAuthHeaders(),
+                        data: JSON.stringify({ ...appointmentData, patient_id: newPatient.patient_id }),
+                        contentType: "application/json",
+                        success: function (newAppointment) {
+                            const combinedData = { ...newPatient, appointments: [newAppointment] };
+                            handlePostSubmission(combinedData, activeButton);
+                        },
+                        error: function (xhr) {
+                            alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                        }
+                    });
+                } else {
+                    handlePostSubmission(newPatient, activeButton);
+                }
+            },
+            error: function (xhr) {
+                alert(`Failed to create patient: ${xhr.responseJSON?.error || "Unknown error"}`);
+            }
+        });
     }
-  });
+});
+function initializePatientForm() {
+  console.log("🔄 Initializing patient form...");
+
+  // Clear form fields (if not in edit mode)
+  if (!$('#addPatientForm').data('edit-mode')) {
+      $('#addPatientForm')[0].reset();
+      $('#patientPhone').val(''); // Reset phone input (handled by intl-tel-input)
+      $('#mobile2').val(''); // Reset alternate mobile
+      if (itiPhone) itiPhone.setNumber(''); // Reset intl-tel-input for phone
+      if (itiMobile2) itiMobile2.setNumber(''); // Reset intl-tel-input for mobile2
+  }
+
+  // Set default primary doctor based on logged-in doctor
+  const loggedInDoctorId = sessionStorage.getItem("doctor_id");
+  console.log(`🔍 Logged-in Doctor ID for default: ${loggedInDoctorId || 'None'}`);
+
+  if (loggedInDoctorId && loggedInDoctorId !== 'null') {
+      // Check if #doctor select has an option matching loggedInDoctorId
+      const $doctorSelect = $("#doctor");
+      if ($doctorSelect.find(`option[value="${loggedInDoctorId}"]`).length > 0) {
+          $doctorSelect.val(loggedInDoctorId);
+          console.log(`👨‍⚕️ Set default Primary Doctor to ID: ${loggedInDoctorId}`);
+      } else {
+          console.warn(`⚠️ Doctor ID ${loggedInDoctorId} not found in #doctor options`);
+          $doctorSelect.val(''); // Fallback to empty
+      }
+  } else {
+      // Non-doctor user or no doctor_id, set to empty or placeholder
+      $("#doctor").val('');
+      console.log("ℹ️ No logged-in doctor, Primary Doctor set to empty");
+  }
+
+  // Ensure referred_by is not modified (user-entered)
+  // No action needed, as #referredBy retains user input
+}
 
   function handlePostSubmission(data, activeButton) {
     updateDetailsSection(data);
@@ -3757,6 +3792,8 @@ function bindPagination() {
   bindDoctorFilter();
   bindBillFilters();
   bindPagination();
+  initializePatientForm();
+
 
 
   // Call populateServicesTable when Add Service tab is shown
