@@ -1105,54 +1105,55 @@ function setupPatientSearch() {
   $searchInput.after($dropdown);
 
   $searchInput.on('input', debounce(function () {
-    const query = $searchInput.val().trim();
-    console.log("✨ Search input triggered:", query);
-    if (query.length < 1) {
-      $dropdown.hide().empty();
-      return;
-    }
-
-    $.ajax({
-      url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function (data) {
-        console.log("✅ Patient search results:", data);
-        $dropdown.empty();
-        if (data.patients && data.patients.length > 0) {
-          data.patients.forEach(patient => {
-            const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
-            $dropdown.append($li);
-          });
-          $dropdown.show();
-        } else {
-          $dropdown.show();
-          showCreatePatientPrompt(query);
-        }
-      },
-      error: function (xhr) {
-        console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
-        $dropdown.hide();
+      const query = $searchInput.val().trim();
+      console.log("✨ Search input triggered:", query);
+      if (query.length < 1) {
+          $dropdown.hide().empty();
+          return;
       }
-    });
+
+      $.ajax({
+          url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
+          type: "GET",
+          headers: getAuthHeaders(),
+          success: function (data) {
+              console.log("✅ Patient search results:", data);
+              $dropdown.empty();
+              if (data.patients && data.patients.length > 0) {
+                  data.patients.forEach(patient => {
+                      const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
+                      $dropdown.append($li);
+                  });
+                  $dropdown.show();
+              } else {
+                  $dropdown.hide(); // Hide dropdown if no patients found
+                  showCreatePatientPrompt(query);
+              }
+          },
+          error: function (xhr) {
+              console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
+              $dropdown.hide();
+          }
+      });
   }, 300));
 
   // Handle patient selection
   $dropdown.on('click', 'li', function () {
-    const patientId = $(this).data('patient-id');
-    $searchInput.val($(this).text());
-    $dropdown.hide();
-    console.log("👤 Patient selected, ID:", patientId);
-    selectedPatientId = patientId; // Store globally
-    fetchPatientDetails(patientId, 'addBillsTab'); // Default to Add Bills tab
+      const patientId = $(this).data('patient-id');
+      $searchInput.val($(this).text());
+      $dropdown.hide();
+      console.log("👤 Patient selected, ID:", patientId);
+      selectedPatientId = patientId; // Store globally
+      fetchPatientDetails(patientId, 'addBillsTab'); // Default to Add Bills tab
   });
 
+  // Hide dropdown when clicking outside
   $(document).on('click', function (e) {
-    if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
-      $dropdown.hide();
-    }
+      if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
+          $dropdown.hide();
+      }
   });
-}
+  }
 
   // Debounce function
   function debounce(func, wait) {
@@ -1597,6 +1598,12 @@ function editAppointment(appointmentId) {
   // Show Create Patient Prompt
   // Show Create Patient Prompt
   function showCreatePatientPrompt(query) {
+    // Check if modal already exists
+    if ($('#noPatientFoundModal').length > 0) {
+        console.log("ℹ️ No Patient Found modal already exists, skipping creation.");
+        return; // Exit if modal is already present
+    }
+
     const [firstName, ...lastNameParts] = query.split(' ');
     const lastName = lastNameParts.join(' ');
 
@@ -1627,9 +1634,9 @@ function editAppointment(appointmentId) {
 
     // Initialize Bootstrap modal
     const promptModal = new bootstrap.Modal($modal[0], {
-      backdrop: 'static', // Prevent closing by clicking outside
-      keyboard: true, // Allow closing with ESC key
-      focus: true // Ensure modal is focused
+        backdrop: 'static', // Prevent closing by clicking outside
+        keyboard: true, // Allow closing with ESC key
+        focus: true // Ensure modal is focused
     });
 
     // Show the modal
@@ -1637,20 +1644,20 @@ function editAppointment(appointmentId) {
 
     // Handle Create Patient button click
     $('#createPatientBtn').on('click', function () {
-      promptModal.hide();
-      $('#newActionModal').modal('show');
-      $('#addPatientTab').tab('show');
-      $('#patientFirstName').val(firstName);
-      $('#patientLastName').val(lastName);
-      resetModalView();
-      updateDetailsSection(null);
+        promptModal.hide();
+        $('#newActionModal').modal('show');
+        $('#addPatientTab').tab('show');
+        $('#patientFirstName').val(firstName);
+        $('#patientLastName').val(lastName);
+        resetModalView();
+        updateDetailsSection(null);
     });
 
     // Clean up modal after it is hidden
     $modal.on('hidden.bs.modal', function () {
-      $modal.remove(); // Remove modal from DOM
+        $modal.remove(); // Remove modal from DOM
     });
-  }
+}
 
   // Toggle Split View
   function toggleSplitView(tabId) {
