@@ -282,6 +282,54 @@
                   </div>
                 </div>
               </div>
+              <div class="card card-body p-3 mt-2">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="doctor" class="form-label">Referred Doctor</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+                      <select class="form-select" id="doctor">
+                        <option value="" selected>Select Doctor</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="doctorSpecialty" class="form-label">Specialty</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
+                      <input type="text" class="form-control" id="doctorSpecialty" readonly>
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="admissionType" class="form-label">Admission Type</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><i class="fas fa-hospital"></i></span>
+                      <select class="form-select" id="admissionType">
+                        <option value="OU" selected>Outpatient (OU)</option>
+                        <option value="IN">Inpatient (IN)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="hospitalCode" class="form-label">Hospital Code</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><i class="fas fa-hospital-symbol"></i></span>
+                      <input type="text" class="form-control" id="hospitalCode" value="115">
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-12">
+                    <label for="appointmentNotes" class="form-label">Appointment Notes</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><i class="fas fa-notes-medical"></i></span>
+                      <textarea class="form-control" id="appointmentNotes" rows="3"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
       
@@ -497,54 +545,7 @@
                 <i class="fas fa-calendar-check me-2"></i>Appointment Details
               </button>
               <div class="collapse" id="appointmentDetailsCollapse">
-                <div class="card card-body p-3 mt-2">
-                  <div class="row mb-3">
-                    <div class="col-md-6">
-                      <label for="doctor" class="form-label">Referred Doctor</label>
-                      <div class="input-group input-group-sm">
-                        <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                        <select class="form-select" id="doctor">
-                          <option value="" selected>Select Doctor</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <label for="doctorSpecialty" class="form-label">Specialty</label>
-                      <div class="input-group input-group-sm">
-                        <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
-                        <input type="text" class="form-control" id="doctorSpecialty" readonly>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row mb-3">
-                    <div class="col-md-6">
-                      <label for="admissionType" class="form-label">Admission Type</label>
-                      <div class="input-group input-group-sm">
-                        <span class="input-group-text"><i class="fas fa-hospital"></i></span>
-                        <select class="form-select" id="admissionType">
-                          <option value="OU" selected>Outpatient (OU)</option>
-                          <option value="IN">Inpatient (IN)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <label for="hospitalCode" class="form-label">Hospital Code</label>
-                      <div class="input-group input-group-sm">
-                        <span class="input-group-text"><i class="fas fa-hospital-symbol"></i></span>
-                        <input type="text" class="form-control" id="hospitalCode" value="115">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row mb-3">
-                    <div class="col-md-12">
-                      <label for="appointmentNotes" class="form-label">Appointment Notes</label>
-                      <div class="input-group input-group-sm">
-                        <span class="input-group-text"><i class="fas fa-notes-medical"></i></span>
-                        <textarea class="form-control" id="appointmentNotes" rows="3"></textarea>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                
               </div>
             </div>
       
