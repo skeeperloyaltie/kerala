@@ -1644,6 +1644,8 @@ function editAppointment(appointmentId) {
         $('#patientLastName').val(lastName);
         resetModalView();
         updateDetailsSection(null);
+        initializePatientForm(); // Initialize form with default doctor
+
     });
 
     // Clean up modal after it is hidden
