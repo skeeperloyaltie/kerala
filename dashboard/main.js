@@ -767,11 +767,14 @@ $(document).ready(function () {
         row.classList.add("calendar-row");
         row.dataset.hour = hour; // Add data-hour for scrolling
 
-        // Blur past hours if on the current date
-        const isCurrentDay = days.some(day => day.dateStr === currentDateStr);
-        if (isCurrentDay && hour < currentHour) {
-            row.classList.add("past"); // Apply blur to past hours
-        }
+        // Grey out past days and past hours on the current day
+        days.forEach(day => {
+            const isPastDay = new Date(day.dateStr) < new Date(currentDateStr);
+            const isCurrentDay = day.dateStr === currentDateStr;
+            if (isPastDay || (isCurrentDay && hour < currentHour)) {
+                row.classList.add("past"); // Apply grey-out to past slots
+            }
+        });
 
         const hourLabel = document.createElement("div");
         hourLabel.innerText = `${hour}:00`;
@@ -786,23 +789,13 @@ $(document).ready(function () {
 
             console.log(`🔄 Processing slot for day ${day.dateStr}, hour ${hour}:00`);
 
-            // Add current time marker if on current day and hour
+            // Add current time marker only on current day and hour
             if (day.dateStr === currentDateStr && hour === currentHour) {
                 const marker = document.createElement("div");
                 marker.classList.add("current-time-marker");
                 // Position marker based on minutes (assuming row height is 60px)
                 const minuteOffset = (currentMinute / 60) * 60; // Scale to row height
                 marker.style.top = `${minuteOffset}px`;
-
-                const label = document.createElement("div");
-                label.classList.add("current-time-label");
-                label.innerText = now.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                marker.appendChild(label);
-
                 slot.appendChild(marker);
             }
 
