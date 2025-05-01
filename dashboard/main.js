@@ -630,7 +630,7 @@ $(document).ready(function () {
     console.log(`🔍 Fetching details for appointment ID: ${appointmentId}`);
 
     $.ajax({
-        url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`, // Adjust endpoint if needed (e.g., /appointments/details/${appointmentId}/)
+        url: `${API_BASE_URL}/appointments/${appointmentId}/`, // Adjust endpoint if needed (e.g., /appointments/details/${appointmentId}/)
         type: "GET",
         headers: getAuthHeaders(),
         success: function (response) {
