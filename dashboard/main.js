@@ -3411,16 +3411,18 @@ function bindPagination() {
   });
 }
 // Function to update appointment status to "Booked"
+// Function to update appointment status to "Booked"
 function postSubmissionAppointment(appointmentId) {
+  console.log(`🔍 Entering postSubmissionAppointment with appointmentId: ${appointmentId}`);
   if (!appointmentId) {
       console.warn("⚠️ No appointment ID provided, skipping status update.");
       return;
   }
 
-  console.log(`📅 Updating appointment ID ${appointmentId} status to Booked...`);
+  console.log(`📅 Sending PATCH request to update appointment ID ${appointmentId} status to Booked...`);
 
   const appointmentUpdateData = {
-      status: "booked"
+      status: "Booked"
   };
 
   $.ajax({
@@ -3433,7 +3435,7 @@ function postSubmissionAppointment(appointmentId) {
           console.log(`✅ Appointment ID ${appointmentId} status updated to Booked:`, response);
       },
       error: function (xhr) {
-          console.error(`❌ Failed to update appointment status: ${xhr.responseJSON?.error || xhr.statusText}`);
+          console.error(`❌ Failed to update appointment status for ID ${appointmentId}: ${xhr.responseJSON?.error || xhr.statusText}`);
           alert(`Failed to update appointment status: ${xhr.responseJSON?.error || "Unknown error"}`);
       }
   });
@@ -3517,16 +3519,32 @@ $("#addBillsForm").submit(function (e) {
           contentType: "application/json",
           success: function (response) {
               console.log("✅ Bill created successfully:", response);
+
+              // Log the full response for debugging
+              console.log("🔍 Bill creation response:", JSON.stringify(response, null, 2));
+
               $("#addBillsForm")[0].reset();
               $("#newActionModal").modal("hide");
               sessionStorage.removeItem("billPatientId");
               alert("Bill and appointment created successfully!");
 
-              // Update appointment status to "Booked"
+              // Check appointment status and update if needed
+              let appointmentId = null;
               if (response.appointment && response.appointment.id) {
-                  postSubmissionAppointment(response.appointment.id);
+                  appointmentId = response.appointment.id;
+              } else if (response.appointment_id) {
+                  appointmentId = response.appointment_id;
+              }
+
+              if (appointmentId) {
+                  if (response.appointment && response.appointment.status === "Booked") {
+                      console.log(`ℹ️ Appointment ID ${appointmentId} already has status 'Booked', skipping update.`);
+                  } else {
+                      console.log(`🔄 Calling postSubmissionAppointment for appointment ID: ${appointmentId}`);
+                      postSubmissionAppointment(appointmentId);
+                  }
               } else {
-                  console.warn("⚠️ No appointment ID in response, skipping status update.");
+                  console.warn("⚠️ No appointment ID found in response, skipping status update.");
               }
 
               // Extract appointment date from response or input
