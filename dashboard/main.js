@@ -3410,20 +3410,48 @@ function bindPagination() {
     }
   });
 }
+// Function to update appointment status to "Booked"
+function postSubmissionAppointment(appointmentId) {
+  if (!appointmentId) {
+      console.warn("⚠️ No appointment ID provided, skipping status update.");
+      return;
+  }
 
-  // Add Bills Form Submission
-  $("#addBillsForm").submit(function (e) {
-    e.preventDefault();
-  
-    const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
-    if (!patientId) {
+  console.log(`📅 Updating appointment ID ${appointmentId} status to Booked...`);
+
+  const appointmentUpdateData = {
+      status: "booked"
+  };
+
+  $.ajax({
+      url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
+      type: "PATCH",
+      headers: getAuthHeaders(),
+      data: JSON.stringify(appointmentUpdateData),
+      contentType: "application/json",
+      success: function (response) {
+          console.log(`✅ Appointment ID ${appointmentId} status updated to Booked:`, response);
+      },
+      error: function (xhr) {
+          console.error(`❌ Failed to update appointment status: ${xhr.responseJSON?.error || xhr.statusText}`);
+          alert(`Failed to update appointment status: ${xhr.responseJSON?.error || "Unknown error"}`);
+      }
+  });
+}
+
+// Add Bills Form Submission
+$("#addBillsForm").submit(function (e) {
+  e.preventDefault();
+
+  const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+  if (!patientId) {
       alert("Please select a patient.");
       return;
-    }
-  
-    const items = [];
-    let hasErrors = false;
-    $("#billItemsTableBody tr").each(function () {
+  }
+
+  const items = [];
+  let hasErrors = false;
+  $("#billItemsTableBody tr").each(function () {
       const $row = $(this);
       const serviceId = $row.find(".service-id").val();
       const serviceName = $row.find(".service-search").val();
@@ -3432,96 +3460,101 @@ function bindPagination() {
       const gst = parseFloat($row.find(".gst").val()) || 0;
       const discount = parseFloat($row.find(".discount").val()) || 0;
       const totalPrice = parseFloat($row.find(".total-price").val()) || 0;
-  
+
       if (!serviceId || !serviceName) {
-        alert("Please select a valid service for all items.");
-        hasErrors = true;
-        return false;
+          alert("Please select a valid service for all items.");
+          hasErrors = true;
+          return false;
       }
       if (quantity <= 0) {
-        alert("Quantity must be greater than zero.");
-        hasErrors = true;
-        return false;
+          alert("Quantity must be greater than zero.");
+          hasErrors = true;
+          return false;
       }
       if (unitPrice <= 0) {
-        alert("Unit price must be greater than zero.");
-        hasErrors = true;
-        return false;
+          alert("Unit price must be greater than zero.");
+          hasErrors = true;
+          return false;
       }
-  
+
       items.push({
-        service_id: serviceId,
-        quantity: quantity,
-        unit_price: unitPrice,
-        gst: gst,
-        discount: discount,
-        total_price: totalPrice
+          service_id: serviceId,
+          quantity: quantity,
+          unit_price: unitPrice,
+          gst: gst,
+          discount: discount,
+          total_price: totalPrice
       });
-    });
-  
-    if (hasErrors) {
+  });
+
+  if (hasErrors) {
       return;
-    }
-  
-    const totalAmount = parseFloat($("#totalAmount").val()) || 0;
-    const depositAmount = parseFloat($("#depositAmount").val()) || 0;
-    const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
-    const notes = $("#billNotes").val();
-  
-    const billData = {
+  }
+
+  const totalAmount = parseFloat($("#totalAmount").val()) || 0;
+  const depositAmount = parseFloat($("#depositAmount").val()) || 0;
+  const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
+  const notes = $("#billNotes").val();
+
+  const billData = {
       patient_id: patientId,
       total_amount: totalAmount,
       deposit_amount: depositAmount,
       status: status,
       notes: notes,
       items: items
-    };
-  
-    showAppointmentDatePopup(function (appointmentDate, doctorId) {
+  };
+
+  showAppointmentDatePopup(function (appointmentDate, doctorId) {
       billData.appointment_date = appointmentDate;
       billData.doctor_id = doctorId;
-  
-      $.ajax({
-        url: `${API_BASE_URL}/bills/create/`,
-        type: "POST",
-        headers: getAuthHeaders(),
-        data: JSON.stringify(billData),
-        contentType: "application/json",
-        success: function (response) {
-          console.log("Bill created successfully:", response);
-          $("#addBillsForm")[0].reset();
-          $("#newActionModal").modal("hide");
-          sessionStorage.removeItem("billPatientId");
-          alert("Bill and appointment created successfully!");
-  
-          // Extract appointment date from response or input
-          let appointmentDateStr = null;
-          if (response.appointment && response.appointment.appointment_date) {
-            const apptDate = new Date(response.appointment.appointment_date);
-            appointmentDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
-          } else if (appointmentDate) {
-            // Fallback to the appointmentDate from the popup
-            appointmentDateStr = appointmentDate.split(' ')[0]; // Extract YYYY-MM-DD
-          }
-          fetchBills();
 
-  
-          // Refresh appointments table with the appointment date
-          if (appointmentDateStr) {
-            console.log(`📅 Refreshing appointments for date: ${appointmentDateStr}`);
-            fetchAppointmentsByDate(appointmentDateStr);
-          } else {
-            console.warn("⚠️ No appointment date found, refreshing with current filter");
-            fetchAppointmentsByDate();
+      $.ajax({
+          url: `${API_BASE_URL}/bills/create/`,
+          type: "POST",
+          headers: getAuthHeaders(),
+          data: JSON.stringify(billData),
+          contentType: "application/json",
+          success: function (response) {
+              console.log("✅ Bill created successfully:", response);
+              $("#addBillsForm")[0].reset();
+              $("#newActionModal").modal("hide");
+              sessionStorage.removeItem("billPatientId");
+              alert("Bill and appointment created successfully!");
+
+              // Update appointment status to "Booked"
+              if (response.appointment && response.appointment.id) {
+                  postSubmissionAppointment(response.appointment.id);
+              } else {
+                  console.warn("⚠️ No appointment ID in response, skipping status update.");
+              }
+
+              // Extract appointment date from response or input
+              let appointmentDateStr = null;
+              if (response.appointment && response.appointment.appointment_date) {
+                  const apptDate = new Date(response.appointment.appointment_date);
+                  appointmentDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, '0')}-${String(apptDate.getDate()).padStart(2, '0')}`;
+              } else if (appointmentDate) {
+                  appointmentDateStr = appointmentDate.split(' ')[0]; // Extract YYYY-MM-DD
+              }
+
+              // Refresh bills and appointments
+              fetchBills();
+              if (appointmentDateStr) {
+                  console.log(`📅 Refreshing appointments for date: ${appointmentDateStr}`);
+                  fetchAppointmentsByDate(appointmentDateStr);
+              } else {
+                  console.warn("⚠️ No appointment date found, refreshing with current filter");
+                  fetchAppointmentsByDate();
+              }
+          },
+          error: function (xhr) {
+              console.error(`❌ Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+              alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
           }
-        },
-        error: function (xhr) {
-          console.error(`Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
-          alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
-        }
       });
-    });
   });
+});
 
   // Cancel and Create Buttons
   $("#cancelBillBtn").on("click", function () {
