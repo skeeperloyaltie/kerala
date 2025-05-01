@@ -627,78 +627,78 @@ $(document).ready(function () {
 
 
   function showAppointmentDetails(appointmentId) {
+    console.log(`🔍 Fetching details for appointment ID: ${appointmentId}`);
+
     $.ajax({
-      url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function (appt) {
-        console.log(`📋 Fetched appointment details for ID ${appointmentId}:`, appt);
-        const patientName = appt.patient && appt.patient.first_name
-          ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
-          : 'Unnamed';
-        const doctorName = appt.doctor && appt.doctor.first_name
-          ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
-          : 'N/A';
-        const apptDate = appt.appointment_date
-          ? new Date(appt.appointment_date).toLocaleString()
-          : 'N/A';
-  
-        // Create modal
-        const modal = $(`
-          <div class="modal fade" id="appointmentDetailsModal" tabindex="-1">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Appointment Details</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`, // Adjust endpoint if needed (e.g., /appointments/details/${appointmentId}/)
+        type: "GET",
+        headers: getAuthHeaders(),
+        success: function (response) {
+            console.log(`✅ Appointment details fetched:`, response);
+
+            // Format appointment details for display
+            const patientName = response.patient && response.patient.first_name
+                ? `${response.patient.first_name} ${response.patient.last_name || ''}`
+                : 'Unnamed';
+            const doctorName = response.doctor && response.doctor.first_name
+                ? `${response.doctor.first_name} ${response.doctor.last_name || ''}`
+                : 'N/A';
+            const apptDate = new Date(response.appointment_date);
+            const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000)); // Convert to IST
+            const formattedDate = istDate.toLocaleString('en-US', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+
+            // Create modal content
+            const modalHtml = `
+                <div class="modal fade" id="appointmentDetailsModal" tabindex="-1" aria-labelledby="appointmentDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="appointmentDetailsModalLabel">Appointment Details (ID: ${appointmentId})</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Patient:</strong> ${patientName}</p>
+                                <p><strong>Doctor:</strong> ${doctorName}</p>
+                                <p><strong>Date & Time:</strong> ${formattedDate}</p>
+                                <p><strong>Status:</strong> ${response.status || 'N/A'}</p>
+                                <p><strong>Notes:</strong> ${response.notes || 'None'}</p>
+                                <p><strong>Illness:</strong> ${response.illness || 'None'}</p>
+                                <p><strong>Emergency:</strong> ${response.is_emergency ? 'Yes' : 'No'}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="editAppointment(${appointmentId})">Edit</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-body">
-                  <p><strong>Patient:</strong> ${patientName}</p>
-                  <p><strong>Doctor:</strong> ${doctorName}</p>
-                  <p><strong>Date & Time:</strong> ${apptDate}</p>
-                  <p><strong>Status:</strong> 
-                    <select class="form-select status-select" data-appointment-id="${appt.id}">
-                      <option value="booked" ${appt.status.toLowerCase() === 'booked' ? 'selected' : ''}>Booked</option>
-                      <option value="arrived" ${appt.status.toLowerCase() === 'arrived' ? 'selected' : ''}>Arrived</option>
-                      <option value="on-going" ${appt.status.toLowerCase() === 'on-going' ? 'selected' : ''}>On-Going</option>
-                      <option value="reviewed" ${appt.status.toLowerCase() === 'reviewed' ? 'selected' : ''}>Reviewed</option>
-                    </select>
-                  </p>
-                  <p><strong>Notes:</strong> ${appt.notes || 'N/A'}</p>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
-  
-        $('body').append(modal);
-        const bsModal = new bootstrap.Modal(modal[0]);
-        bsModal.show();
-  
-        // Bind status change
-        modal.find('.status-select').on('change', function () {
-          const newStatus = $(this).val();
-          updateAppointmentStatus(appointmentId, newStatus, null, null, () => {
-            // Refresh calendar
-            const dateStr = $("#dateFilter").val();
-            const doctorFilter = $("#doctorFilter").val();
-            fetchAppointmentsByDate(dateStr, 'all', doctorFilter);
-          });
-        });
-  
-        modal.on('hidden.bs.modal', function () {
-          modal.remove();
-        });
-      },
-      error: function (xhr) {
-        console.error(`❌ Failed to fetch appointment ${appointmentId}:`, xhr.responseJSON || xhr.statusText);
-        alert(`Failed to fetch appointment details: ${xhr.responseJSON?.error || "Unknown error"}`);
-      }
+            `;
+
+            // Remove any existing modal
+            $('#appointmentDetailsModal').remove();
+
+            // Append and show modal
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('appointmentDetailsModal'), {
+                backdrop: 'static',
+                keyboard: true
+            });
+            modal.show();
+
+            // Clean up modal on hide
+            $('#appointmentDetailsModal').on('hidden.bs.modal', function () {
+                $(this).remove();
+            });
+        },
+        error: function (xhr) {
+            console.error(`❌ Failed to fetch appointment details for ID ${appointmentId}: ${xhr.responseJSON?.error || xhr.statusText}`);
+            alert(`Failed to load appointment details: ${xhr.responseJSON?.error || "Unknown error"}`);
+        }
     });
-  }
+}
   
   // Populate Appointments Table
   function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
