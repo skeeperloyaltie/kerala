@@ -3433,6 +3433,7 @@ function postSubmissionAppointment(appointmentId) {
       contentType: "application/json",
       success: function (response) {
           console.log(`✅ Appointment ID ${appointmentId} status updated to Booked:`, response);
+
       },
       error: function (xhr) {
           console.error(`❌ Failed to update appointment status for ID ${appointmentId}: ${xhr.responseJSON?.error || xhr.statusText}`);
@@ -3527,7 +3528,10 @@ $("#addBillsForm").submit(function (e) {
               $("#newActionModal").modal("hide");
               sessionStorage.removeItem("billPatientId");
               alert("Bill and appointment created successfully!");
-
+               // Log appointment status
+              if (response.appointment && response.appointment.status) {
+                console.log(`ℹ️ Appointment ID ${response.appointment.id || response.appointment_id} status: ${response.appointment.status}`);
+              }
               // Check appointment status and update if needed
               let appointmentId = null;
               if (response.appointment && response.appointment.id) {
