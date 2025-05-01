@@ -82,7 +82,7 @@ class CreateAppointmentView(APIView):
             doctor=doctor,
             appointment_date=appointment_date,
             notes=data.get("notes", ""),
-            status="Booked",
+            status="booked",
             is_emergency=data.get("is_emergency", False),
             created_by=user
         )
