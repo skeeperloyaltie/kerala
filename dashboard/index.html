@@ -804,7 +804,11 @@
     <form id="profileForm">
       <!-- Required Fields Section -->
       <h6 class="mb-3">Required Information</h6>
-
+      <div class="profile-addons mt-3">
+        <button type="button" class="btn btn-secondary btn-sm" id="editProfileBtn">Edit Profile</button>
+        <button type="button" class="btn btn-info btn-sm" id="viewAppointmentsBtn">View Appointments</button>
+        <button type="button" class="btn btn-primary btn-sm" id="addBillFromProfileBtn">Add Bill</button>
+      </div>
       <!-- Row 1: Patient Name and Phone Number -->
       <div class="row mb-3">
         <div class="col-md-4"><label for="profileFirstName" class="form-label">First Name</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="fas fa-user"></i></span><input type="text" class="form-control" id="profileFirstName" readonly></div></div>
@@ -1059,11 +1063,7 @@
       </div>
 
       <!-- Addons -->
-      <div class="profile-addons mt-3">
-        <button type="button" class="btn btn-secondary btn-sm" id="editProfileBtn">Edit Profile</button>
-        <button type="button" class="btn btn-info btn-sm" id="viewAppointmentsBtn">View Appointments</button>
-        <button type="button" class="btn btn-primary btn-sm" id="addBillFromProfileBtn">Add Bill</button>
-      </div>
+     
     </form>
   </div>
 </div>
