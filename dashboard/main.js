@@ -393,7 +393,7 @@ function adjustUIForRole(userType, roleLevel) {
           instance.redraw();
         },
         error: function (xhr) {
-          console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Unknown error"}`);
+          console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Server Unavailable"}`);
           appointmentsData = [];
           instance.redraw();
         }
@@ -511,8 +511,8 @@ function adjustUIForRole(userType, roleLevel) {
         console.log(`✅ Fetched ${appointmentsArray.length} appointments for ${startDateStr} to ${endDateStr} with filter ${filter} and doctorId ${doctorId}`);
       },
       error: function (xhr) {
-        console.error(`❌ Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
-        alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
+        console.error(`❌ Failed to fetch appointments: ${xhr.responseJSON?.error || "Server Unavailable"}`);
+        alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Server Unavailable"}`);
         populateAppointmentsCalendar([], startDateStr, doctorId); // Show empty calendar
       }
     });
@@ -619,7 +619,7 @@ function adjustUIForRole(userType, roleLevel) {
       },
       error: function (xhr) {
         console.error(`❌ Failed to update appointment ${appointmentId}:`, xhr.responseJSON || xhr.statusText);
-        alert(`Failed to update status: ${xhr.responseJSON?.error || "Unknown error"}`);
+        alert(`Failed to update status: ${xhr.responseJSON?.error || "Server Unavailable"}`);
         if ($row) {
           $row.find('.status-select').val($row.find('.status-select').data('original-status'));
         }
@@ -697,7 +697,7 @@ function adjustUIForRole(userType, roleLevel) {
         },
         error: function (xhr) {
             console.error(`❌ Failed to fetch appointment details for ID ${appointmentId}: ${xhr.responseJSON?.error || xhr.statusText}`);
-            alert(`Failed to load appointment details: ${xhr.responseJSON?.error || "Unknown error"}`);
+            alert(`Failed to load appointment details: ${xhr.responseJSON?.error || "Server Unavailable"}`);
         }
     });
 }
@@ -1345,7 +1345,7 @@ function showPatientAppointments(patientId) {
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch appointments for patient ${patientId}:`, xhr.responseJSON);
-      alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Unknown error"}`);
+      alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Server Unavailable"}`);
     }
   });
 }
@@ -1507,7 +1507,7 @@ function editAppointment(appointmentId) {
           },
           error: function (xhr) {
             console.error(`❌ Failed to update appointment ${appointmentId}:`, xhr.responseJSON);
-            alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+            alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Server Unavailable"}`);
           }
         });
       });
@@ -1518,7 +1518,7 @@ function editAppointment(appointmentId) {
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch appointment ${appointmentId}:`, xhr.responseJSON);
-      alert(`Failed to fetch appointment details: ${xhr.responseJSON?.error || "Unknown error"}`);
+      alert(`Failed to fetch appointment details: ${xhr.responseJSON?.error || "Server Unavailable"}`);
     }
   });
 }
@@ -1613,7 +1613,7 @@ function editAppointment(appointmentId) {
             },
             error: function (xhr) {
               console.error(`❌ Failed to update patient ${patientId}:`, xhr.responseJSON || xhr.statusText);
-              alert(`Failed to update address: ${xhr.responseJSON?.error || "Unknown error"}`);
+              alert(`Failed to update address: ${xhr.responseJSON?.error || "Server Unavailable"}`);
             }
           });
         }
@@ -1935,7 +1935,7 @@ function editAppointment(appointmentId) {
                             handlePostSubmission(combinedData, activeButton);
                         },
                         error: function (xhr) {
-                            alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                            alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Server Unavailable"}`);
                         }
                     });
                 } else if (appointmentData) {
@@ -1950,7 +1950,7 @@ function editAppointment(appointmentId) {
                             handlePostSubmission(combinedData, activeButton);
                         },
                         error: function (xhr) {
-                            alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                            alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Server Unavailable"}`);
                         }
                     });
                 } else {
@@ -1958,7 +1958,7 @@ function editAppointment(appointmentId) {
                 }
             },
             error: function (xhr) {
-                alert(`Failed to update patient: ${xhr.responseJSON?.error || "Unknown error"}`);
+                alert(`Failed to update patient: ${xhr.responseJSON?.error || "Server Unavailable"}`);
             }
         });
     } else {
@@ -1981,7 +1981,7 @@ function editAppointment(appointmentId) {
                             handlePostSubmission(combinedData, activeButton);
                         },
                         error: function (xhr) {
-                            alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                            alert(`Failed to create appointment: ${xhr.responseJSON?.error || "Server Unavailable"}`);
                         }
                     });
                 } else {
@@ -1989,7 +1989,7 @@ function editAppointment(appointmentId) {
                 }
             },
             error: function (xhr) {
-                alert(`Failed to create patient: ${xhr.responseJSON?.error || "Unknown error"}`);
+                alert(`Failed to create patient: ${xhr.responseJSON?.error || "Server Unavailable"}`);
             }
         });
     }
@@ -2130,7 +2130,7 @@ function initializePatientForm() {
       },
       error: xhr => {
         console.error(`❌ Failed to add service: ${xhr.status}`, xhr.responseJSON);
-        const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.detail || "Unknown error";
+        const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.detail || "Server Unavailable";
         alert(`Failed to add service: ${errorMsg}`);
       }
     });
@@ -2271,7 +2271,7 @@ function initializePatientForm() {
       },
       error: function (xhr) {
         console.error(`❌ Failed to update service ${serviceId}:`, xhr.responseJSON || xhr.statusText);
-        alert(`Failed to update service: ${xhr.responseJSON?.error || "Unknown error"}`);
+        alert(`Failed to update service: ${xhr.responseJSON?.error || "Server Unavailable"}`);
       }
     });
   }
@@ -2846,7 +2846,7 @@ function showBillDetails(billId) {
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch bill ${billId}:`, xhr.responseJSON || xhr.statusText);
-      alert(`Failed to fetch bill details: ${xhr.responseJSON?.error || "Unknown error"}`);
+      alert(`Failed to fetch bill details: ${xhr.responseJSON?.error || "Server Unavailable"}`);
     }
   });
 }
@@ -3412,7 +3412,7 @@ function editBill(billId) {
                           },
                           error: function (xhr) {
                               console.error(`❌ Failed to update appointment:`, xhr.responseJSON || xhr.statusText);
-                              alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Unknown error"}`);
+                              alert(`Failed to update appointment: ${xhr.responseJSON?.error || "Server Unavailable"}`);
                           }
                       });
                   } else {
@@ -3424,7 +3424,7 @@ function editBill(billId) {
               error: function (xhr) {
                   console.error(`❌ Failed to update bill ${billId}:`, xhr.responseJSON || xhr.statusText);
                   console.error(`❌ Full error response:`, xhr.responseJSON);
-                  alert(`Failed to update bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+                  alert(`Failed to update bill: ${xhr.responseJSON?.error || "Server Unavailable"}`);
               }
           });
         });
@@ -3440,7 +3440,7 @@ function editBill(billId) {
     },
     error: function (xhr) {
       console.error(`❌ Failed to fetch bill ${billId}:`, xhr.responseJSON || xhr.statusText);
-      alert(`Failed to fetch bill details: ${xhr.responseJSON?.error || "Unknown error"}`);
+      alert(`Failed to fetch bill details: ${xhr.responseJSON?.error || "Server Unavailable"}`);
     }
   });
 }
@@ -3511,8 +3511,8 @@ function fetchBills(filter = 'all', patientId = null, startDate = null, endDate 
       console.log(`✅ Fetched ${currentBills.length} bills with filter ${filter}`);
     },
     error: function (xhr) {
-      console.error(`❌ Failed to fetch bills: ${xhr.responseJSON?.error || "Unknown error"}`);
-      alert(`Failed to fetch bills: ${xhr.responseJSON?.error || "Unknown error"}`);
+      console.error(`❌ Failed to fetch bills: ${xhr.responseJSON?.error || "Server Unavailable"}`);
+      alert(`Failed to fetch bills: ${xhr.responseJSON?.error || "Server Unavailable"}`);
       currentBills = [];
       populateBillsTable(currentBills, currentPage, pageSize);
     }
@@ -3563,7 +3563,7 @@ function postSubmissionAppointment(appointmentId) {
       },
       error: function (xhr) {
           console.error(`❌ Failed to update appointment status for ID ${appointmentId}: ${xhr.responseJSON?.error || xhr.statusText}`);
-          alert(`Failed to update appointment status: ${xhr.responseJSON?.error || "Unknown error"}`);
+          alert(`Failed to update appointment status: ${xhr.responseJSON?.error || "Server Unavailable"}`);
       }
   });
 }
@@ -3698,7 +3698,7 @@ $("#addBillsForm").submit(function (e) {
           },
           error: function (xhr) {
               console.error(`❌ Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
-              alert(`Failed to create bill: ${xhr.responseJSON?.error || "Unknown error"}`);
+              alert(`Failed to create bill: ${xhr.responseJSON?.error || "Server Unavailable"}`);
           }
       });
   });
@@ -3769,7 +3769,7 @@ $("#addBillsForm").submit(function (e) {
         $("#billDoctorName").val("");
         $("#billAppointmentDate").val("");
         $("#billDuration").val("");
-        alert(`Failed to fetch patient details: ${xhr.responseJSON?.error || "Unknown error"}`);
+        alert(`Failed to fetch patient details: ${xhr.responseJSON?.error || "Server Unavailable"}`);
       }
     });
   }
