@@ -210,9 +210,9 @@
               </div>
             </div>
       
-            <!-- Row 2: Preferred Language, City, Address -->
+            <!-- Row 2: Preferred Language, City, Address, Gender -->
             <div class="row mb-3">
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label for="preferredLanguage" class="form-label">Preferred Language</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-language"></i></span>
@@ -226,18 +226,32 @@
                   </select>
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label for="patientCity" class="form-label">City</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-city"></i></span>
                   <input type="text" class="form-control" id="patientCity">
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label for="patientAddress" class="form-label">Address</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-home"></i></span>
                   <input type="text" class="form-control" id="patientAddress">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label for="patientGender" class="form-label">Gender</label>
+                <div class="input-group input-group-sm">
+                  <div class="btn-group w-100" role="group" aria-label="Gender selection">
+                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderMale" value="Male" required>
+                    <label class="btn btn-outline-primary" for="patientGenderMale">M</label>
+                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderFemale" value="Female">
+                    <label class="btn btn-outline-primary" for="patientGenderFemale">F</label>
+                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderOther" value="Other">
+                    <label class="btn btn-outline-primary" for="patientGenderOther">Other</label>
+                  </div>
+                  <input type="hidden" id="patientGender" name="patientGender">
                 </div>
               </div>
             </div>
@@ -321,8 +335,9 @@
                 <label for="doctor" class="form-label">Referred By</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                  <select class="form-select" id="doctor">
-                    <option value="" selected>Select Doctor</option>
+                  <select class="form-select" id="doctor" required>
+                    <option value="" disabled selected>Select Doctor</option>
+                    <!-- Options populated dynamically via JavaScript -->
                   </select>
                 </div>
               </div>
@@ -349,24 +364,6 @@
               </div>
             </div>
       
-            <!-- Row 6: Gender (Tabbed Selectable) -->
-            <div class="row mb-3">
-              <div class="col-md-12">
-                <label class="form-label">Gender</label>
-                <div class="input-group input-group-sm">
-                  <div class="btn-group w-100" role="group" aria-label="Gender selection">
-                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderMale" value="Male" required>
-                    <label class="btn btn-outline-primary" for="patientGenderMale">M</label>
-                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderFemale" value="Female">
-                    <label class="btn btn-outline-primary" for="patientGenderFemale">F</label>
-                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderOther" value="Other">
-                    <label class="btn btn-outline-primary" for="patientGenderOther">Other</label>
-                  </div>
-                  <input type="hidden" id="patientGender" name="patientGender">
-                </div>
-              </div>
-            </div>
-      
             <!-- Removed Fields (Commented Out) -->
             <!--
               <div class="row mb-3">
@@ -389,18 +386,7 @@
                     </select>
                   </div>
                 </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label for="doctor" class="form-label">Referred Doctor</label>
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                    <select class="form-select" id="doctor">
-                      <option value="" selected>Select Doctor</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="admissionType" class="form-label">Admission Type</label>
                   <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="fas fa-hospital"></i></span>

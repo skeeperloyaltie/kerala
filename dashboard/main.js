@@ -24,7 +24,15 @@ $(document).ready(function () {
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
   });
 
-  
+  // Handle tabbed gender selection
+  $('.btn-group input[name="patientGender"]').on('change', function () {
+    const selectedGender = $(this).val();
+    $('#patientGender').val(selectedGender);
+    console.log(`🖱️ Selected gender: ${selectedGender}`);
+    // Update button styles to indicate selection
+    $('.btn-group label').removeClass('active');
+    $(this).next('label').addClass('active');
+  });
 
   // Initialize Flatpickr for Bill Date
   flatpickr("#billDate", {
@@ -1803,24 +1811,30 @@ function editAppointment(appointmentId) {
     e.preventDefault();
 
     const requiredFields = [
-        { id: "patientFirstName", name: "First Name" },
-        { id: "patientLastName", name: "Last Name" },
-        { id: "patientGender", name: "Gender" },
-        { id: "patientDOB", name: "Date of Birth" },
-        { id: "fatherName", name: "Father's Name" },
-        { id: "patientPhone", name: "Phone Number" },
-        { id: "preferredLanguage", name: "Preferred Language" },
-        { id: "maritalStatus", name: "Marital Status" },
-        { id: "paymentPreference", name: "Payment Preference" }
+      { id: 'patientFirstName', name: 'First Name' },
+      { id: 'patientLastName', name: 'Last Name' },
+      { id: 'patientGender', name: 'Gender' },
+      { id: 'patientDOB', name: 'Date of Birth' },
+      { id: 'patientPhone', name: 'Phone Number' },
+      { id: 'preferredLanguage', name: 'Preferred Language' },
+      { id: 'maritalStatus', name: 'Marital Status' },
+      { id: 'doctor', name: 'Referred By' }
     ];
 
     let errors = [];
 
     requiredFields.forEach(field => {
-        const value = field.id === "patientPhone" ? itiPhone.getNumber() : $(`#${field.id}`).val();
-        if (!value || value.trim() === "") {
-            errors.push(`${field.name} is required.`);
-        }
+      let value;
+      if (field.id === 'patientPhone') {
+        value = itiPhone.getNumber();
+      } else if (field.id === 'patientGender') {
+        value = $('#patientGender').val();
+      } else {
+        value = $(`#${field.id}`).val();
+      }
+      if (!value || value.trim() === '') {
+        errors.push(`${field.name} is required.`);
+      }
     });
 
     const aadharValue = $("#aadharNumber").val().trim();
