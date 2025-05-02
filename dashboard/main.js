@@ -247,122 +247,124 @@ $(document).ready(function () {
   setupCityAutocomplete("profileCity");
 
   // Role-Based UI Adjustments
-  function adjustUIForRole(userType, roleLevel) {
-    console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
-    const navItems = $(".navbar-top .nav-item");
-    const secondaryNavItems = $(".navbar-secondary .nav-item");
-    const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
-    const searchInput = $(".navbar-top .form-control");
-    const dateFilter = $("#dateFilter");
-    const dashboardDropdown = $("#dashboardDropdown").parent();
-    const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
-    const modalTabs = $("#newActionTabs .nav-item");
-  
-    // Show all elements by default
-    navItems.show();
-    secondaryNavItems.show();
-    buttons.show();
-    searchInput.show();
-    dateFilter.show();
-    dashboardDropdown.show();
-    logoutLink.show();
-    modalTabs.show(); // Ensure all modal tabs, including Visits, are shown by default
-  
-    const role = `${userType}-${roleLevel}`.toLowerCase();
-    const permissions = JSON.parse(sessionStorage.getItem("permissions") || "[]");
-  
-    // Explicitly ensure full access for doctor-senior
-    if (role === "doctor-senior") {
+ 
+// Update adjustUIForRole to integrate modal handling
+function adjustUIForRole(userType, roleLevel) {
+  console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
+  const navItems = $(".navbar-top .nav-item");
+  const secondaryNavItems = $(".navbar-secondary .nav-item");
+  const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
+  const searchInput = $(".navbar-top .form-control");
+  const dateFilter = $("#dateFilter");
+  const dashboardDropdown = $("#dashboardDropdown").parent();
+  const logoutLink = $(".dropdown-menu .dropdown-item:contains('Logout')");
+  const modalTabs = $("#newActionTabs .nav-item");
+
+  // Show all elements by default
+  navItems.show();
+  secondaryNavItems.show();
+  buttons.show();
+  searchInput.show();
+  dateFilter.show();
+  dashboardDropdown.show();
+  logoutLink.show();
+  modalTabs.show();
+
+  const role = `${userType}-${roleLevel}`.toLowerCase();
+  const permissions = JSON.parse(sessionStorage.getItem("permissions") || "[]");
+
+  if (role === "doctor-senior") {
       console.log("✅ Granting full access to doctor-senior");
       modalTabs.show();
       $("#newActionTabContent .tab-pane").find("input, select, button, textarea").prop("disabled", false);
-      console.log("🔍 Doctor-Senior Modal Tabs Visible:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
-      bindLogoutEvent();
-      bindModalActions();
-      setupPatientSearch();
-      return;
-    }
-  
-    // Apply restrictions for other roles
-    switch (role) {
-      case "doctor-medium":
-        navItems.filter(":contains('Add Services')").hide();
-        modalTabs.filter(":contains('Add Service')").hide();
-        dashboardDropdown.hide();
-        secondaryNavItems.filter(":contains('Reviewed')").hide();
-        break;
-      case "doctor-basic":
-        navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
-        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-        buttons.filter(":contains('New')").hide();
-        secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
-        $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "nurse-senior":
-        navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
-        modalTabs.filter(":contains('Add Service')").hide();
-        buttons.filter(":contains('New')").hide();
-        secondaryNavItems.filter(":contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "nurse-medium":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-        buttons.filter(":contains('New'), :contains('Support')").hide();
-        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").hide();
-        dashboardDropdown.hide();
-        break;
-      case "nurse-basic":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-        buttons.hide();
-        searchInput.hide();
-        dateFilter.hide();
-        secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "receptionist-senior":
-        navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
-        modalTabs.filter(":contains('Add Service')").hide();
-        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
-        dashboardDropdown.hide();
-        break;
-      case "receptionist-medium":
-        navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
-        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-        buttons.filter(":contains('Support')").hide();
-        secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
-        $(".navbar-secondary .btn-circle").hide();
-        dashboardDropdown.hide();
-        break;
-      case "receptionist-basic":
-        navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
-        modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
-        buttons.hide();
-        searchInput.hide();
-        dateFilter.hide();
-        secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
-        dashboardDropdown.hide();
-        break;
-      default:
-        console.warn("⚠️ Unknown role combination:", role);
-        alert("Unknown role detected. Access restricted.");
-        navItems.hide();
-        secondaryNavItems.hide();
-        buttons.hide();
-        modalTabs.hide();
-    }
-  
-    console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
-    console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
-    bindLogoutEvent();
-    bindModalActions();
-    setupPatientSearch();
+  } else {
+      switch (role) {
+          case "doctor-medium":
+              navItems.filter(":contains('Add Services')").hide();
+              modalTabs.filter(":contains('Add Service')").hide();
+              dashboardDropdown.hide();
+              secondaryNavItems.filter(":contains('Reviewed')").hide();
+              break;
+          case "doctor-basic":
+              navItems.filter(":contains('All Bills'), :contains('Add Services')").hide();
+              modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+              buttons.filter(":contains('New')").hide();
+              secondaryNavItems.filter(":contains('Reviewed'), :contains('On-Going')").hide();
+              $(".navbar-secondary .btn-circle").not(":contains('Filter'), :contains('Star')").hide();
+              dashboardDropdown.hide();
+              break;
+          case "nurse-senior":
+              navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
+              modalTabs.filter(":contains('Add Service')").hide();
+              buttons.filter(":contains('New')").hide();
+              secondaryNavItems.filter(":contains('Reviewed')").hide();
+              $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+              dashboardDropdown.hide();
+              break;
+          case "nurse-medium":
+              navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+              modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+              buttons.filter(":contains('New'), :contains('Support')").hide();
+              secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+              $(".navbar-secondary .btn-circle").hide();
+              dashboardDropdown.hide();
+              break;
+          case "nurse-basic":
+              navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+              modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+              buttons.hide();
+              searchInput.hide();
+              dateFilter.hide();
+              secondaryNavItems.filter(":contains('Booked'), :contains('On-Going'), :contains('Reviewed')").hide();
+              dashboardDropdown.hide();
+              break;
+          case "receptionist-senior":
+              navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
+              modalTabs.filter(":contains('Add Service')").hide();
+              secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+              $(".navbar-secondary .btn-circle").not(":contains('Filter')").hide();
+              dashboardDropdown.hide();
+              break;
+          case "receptionist-medium":
+              navItems.filter(":contains('Add Services'), :contains('Tele Consults')").hide();
+              modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+              buttons.filter(":contains('Support')").hide();
+              secondaryNavItems.filter(":contains('On-Going'), :contains('Reviewed')").hide();
+              $(".navbar-secondary .btn-circle").hide();
+              dashboardDropdown.hide();
+              break;
+          case "receptionist-basic":
+              navItems.filter(":contains('All Bills'), :contains('Add Services'), :contains('Tele Consults')").hide();
+              modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+              buttons.hide();
+              searchInput.hide();
+              dateFilter.hide();
+              secondaryNavItems.filter(":contains('Arrived'), :contains('On-Going'), :contains('Reviewed')").hide();
+              dashboardDropdown.hide();
+              break;
+          default:
+              console.warn("⚠️ Unknown role combination:", role);
+              alert("Unknown role detected. Access restricted.");
+              navItems.hide();
+              secondaryNavItems.hide();
+              buttons.hide();
+              modalTabs.hide();
+      }
   }
+
+  // Re-apply modal tabs based on current action (if modal is open)
+  if ($("#newActionModal").hasClass("show")) {
+      adjustModalTabs(currentModalAction);
+  }
+
+  console.log("🔍 Final Nav Items Visibility:", navItems.filter(":visible").map((i, el) => $(el).text().trim()).get());
+  console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
+
+  bindLogoutEvent();
+  bindModalActions();
+  bindNavActions(); // Bind navigation actions
+  setupPatientSearch();
+}
   // main.js (replace relevant sections)
   let appointmentsData = [];
   // Initialize Flatpickr for Date Filter
@@ -956,6 +958,130 @@ $(document).ready(function () {
     });
   }
 
+  // Global variable to track the action that opened the modal
+let currentModalAction = null;
+
+// Function to adjust modal tabs based on action
+function adjustModalTabs(action) {
+    console.log(`🔍 Adjusting modal tabs for action: ${action}`);
+    const modalTabs = $("#newActionTabs .nav-item");
+    const tabContent = $("#newActionTabContent .tab-pane");
+
+    // Reset tabs and content
+    modalTabs.show();
+    tabContent.removeClass("show active");
+
+    // Apply role-based restrictions first
+    const userType = sessionStorage.getItem("userType") || "unknown";
+    const roleLevel = sessionStorage.getItem("roleLevel") || "unknown";
+    const role = `${userType}-${roleLevel}`.toLowerCase();
+
+    // Restrict tabs based on action
+    switch (action) {
+        case "add-services":
+            modalTabs.hide();
+            modalTabs.filter("#addServiceTab").show();
+            $("#addService").addClass("show active");
+            break;
+        case "all-bills":
+            modalTabs.hide();
+            modalTabs.filter("#billsTab").show();
+            $("#bills").addClass("show active");
+            break;
+        case "tele-consults":
+        case "patient-search":
+        case "new":
+            modalTabs.show();
+            modalTabs.filter("#addServiceTab, #billsTab").hide();
+            $("#addPatient").addClass("show active"); // Default to Appt tab
+            break;
+        default:
+            modalTabs.show();
+            $("#addPatient").addClass("show active");
+    }
+
+    // Apply role-based restrictions (override action-based if needed)
+    switch (role) {
+        case "doctor-medium":
+            modalTabs.filter(":contains('Add Service')").hide();
+            break;
+        case "doctor-basic":
+            modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+            break;
+        case "nurse-senior":
+            modalTabs.filter(":contains('Add Service')").hide();
+            break;
+        case "nurse-medium":
+        case "nurse-basic":
+        case "receptionist-medium":
+        case "receptionist-basic":
+            modalTabs.filter(":contains('Add Service'), :contains('Add Bills')").hide();
+            break;
+        case "receptionist-senior":
+            modalTabs.filter(":contains('Add Service')").hide();
+            break;
+        case "doctor-senior":
+            // Full access, no additional restrictions
+            break;
+        default:
+            console.warn(`⚠️ Unknown role: ${role}, restricting all tabs`);
+            modalTabs.hide();
+            modalTabs.filter("#addPatientTab").show(); // Fallback to Appt tab
+    }
+
+    console.log("🔍 Final Modal Tabs Visibility:", modalTabs.filter(":visible").map((i, el) => $(el).text().trim()).get());
+}
+  // Function to open modal with specific action
+function openModalWithAction(action) {
+  currentModalAction = action;
+  console.log(`🖱️ Opening modal for action: ${action}`);
+
+  // Ensure modal is reset
+  $("#newActionModal").modal("show");
+  adjustModalTabs(action);
+
+  // If tele-consults, trigger patient search
+  if (action === "tele-consults") {
+      $(".patient-search").focus();
+      // Optionally trigger search UI or autocomplete
+      setupPatientSearch();
+  }
+}
+
+  // Bind navigation click events
+function bindNavActions() {
+  $(".navbar-top .nav-link").on("click", function (e) {
+      e.preventDefault();
+      const action = $(this).data("action");
+      console.log(`🖱️ Nav item clicked: ${action}`);
+
+      // Check if user has permission for this action
+      const navItem = $(this).closest(".nav-item");
+      if (navItem.is(":visible")) {
+          openModalWithAction(action);
+      } else {
+          console.warn(`⚠️ User lacks permission for action: ${action}`);
+          alert("You do not have permission to perform this action.");
+      }
+  });
+
+  // Handle "New" button
+  $(".navbar-top .btn[data-action='new']").on("click", function (e) {
+      e.preventDefault();
+      openModalWithAction("new");
+  });
+
+  // Handle patient search
+  $(".patient-search").on("search", function () {
+      const query = $(this).val().trim();
+      if (query) {
+          console.log(`🔍 Patient search triggered: ${query}`);
+          openModalWithAction("patient-search");
+          // Assume search populates patient data in modal
+          performPatientSearch(query);
+      }
+  });
+}
   // Bind Modal Actions
   function bindModalActions() {
     console.log("🔍 Found elements with data-action:", $("[data-action]").length, $("[data-action]").map((i, el) => $(el).data("action")).get());
