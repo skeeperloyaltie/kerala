@@ -182,14 +182,16 @@
       <div class="tab-pane fade show active" id="addPatient" role="tabpanel" aria-labelledby="addPatientTab">
         <form id="addPatientForm">
           <div class="card card-body p-3">
-            <h6 class="mb-3">Patient Information</h6>
-            <!-- Row 1: First Name Last Name, Phone Number, DOB -->
+            <h6 class="mb-3">Patient Details</h6>
+      
+            <!-- Row 1: First Name + Last Name, Phone Number, Date of Birth -->
             <div class="row mb-3">
               <div class="col-md-4">
-                <label for="patientFullName" class="form-label">Full Name</label>
+                <label for="patientFirstName" class="form-label">Full Name</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-user"></i></span>
-                  <input type="text" class="form-control" id="patientFullName" required>
+                  <input type="text" class="form-control" id="patientFirstName" placeholder="First Name" required>
+                  <input type="text" class="form-control" id="patientLastName" placeholder="Last Name" required>
                 </div>
               </div>
               <div class="col-md-4">
@@ -207,6 +209,7 @@
                 </div>
               </div>
             </div>
+      
             <!-- Row 2: Preferred Language, City, Address -->
             <div class="row mb-3">
               <div class="col-md-4">
@@ -238,10 +241,11 @@
                 </div>
               </div>
             </div>
-            <!-- Row 3: Pin, Marital Status, Since Date -->
+      
+            <!-- Row 3: Pincode, Marital Status, Marital Since -->
             <div class="row mb-3">
               <div class="col-md-4">
-                <label for="patientPin" class="form-label">Pin</label>
+                <label for="patientPin" class="form-label">Pincode</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-map-pin"></i></span>
                   <input type="text" class="form-control" id="patientPin">
@@ -268,7 +272,8 @@
                 </div>
               </div>
             </div>
-            <!-- Row 4: Blood Group, Email, C/O, Aadhar Number -->
+      
+            <!-- Row 4: Blood Group, Email, CIO, Aadhar Number -->
             <div class="row mb-3">
               <div class="col-md-3">
                 <label for="bloodGroup" class="form-label">Blood Group</label>
@@ -309,15 +314,14 @@
                 </div>
               </div>
             </div>
-            <!-- Row 5: Referred Doctor, Specialty, Mobile Numbers -->
+      
+            <!-- Row 5: Referred By, Specialty, Alternate Mobile, Emergency Contact Number -->
             <div class="row mb-3">
               <div class="col-md-3">
-                <label for="doctor" class="form-label">Referred Doctor</label>
+                <label for="referredBy" class="form-label">Referred By</label>
                 <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-user-md"></i></span>
-                  <select class="form-select" id="doctor">
-                    <option value="" selected>Select Doctor</option>
-                  </select>
+                  <span class="input-group-text"><i class="fas fa-user-plus"></i></span>
+                  <input type="text" class="form-control" id="referredBy">
                 </div>
               </div>
               <div class="col-md-3">
@@ -328,7 +332,7 @@
                 </div>
               </div>
               <div class="col-md-3">
-                <label for="mobile2" class="form-label">Mobile 2</label>
+                <label for="mobile2" class="form-label">Alternate Mobile</label>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
                   <input type="tel" class="form-control" id="mobile2">
@@ -343,46 +347,57 @@
               </div>
             </div>
       
-            <!-- Sticky Footer with Buttons -->
-            <div class="sticky-footer">
-              <button type="submit" class="btn btn-primary btn-sm me-2" id="addAndCreateBill">Add & Create Bill</button>
-              <button type="submit" class="btn btn-primary btn-sm" id="addAndCreateAppointment">Add & Create Appointment</button>
+            <!-- Row 6: Gender (Tabbed Selectable) -->
+            <div class="row mb-3">
+              <div class="col-md-12">
+                <label class="form-label">Gender</label>
+                <div class="input-group input-group-sm">
+                  <div class="btn-group w-100" role="group" aria-label="Gender selection">
+                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderMale" value="Male" required>
+                    <label class="btn btn-outline-primary" for="patientGenderMale">M</label>
+                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderFemale" value="Female">
+                    <label class="btn btn-outline-primary" for="patientGenderFemale">F</label>
+                    <input type="radio" class="btn-check" name="patientGender" id="patientGenderOther" value="Other">
+                    <label class="btn btn-outline-primary" for="patientGenderOther">Other</label>
+                  </div>
+                  <input type="hidden" id="patientGender" name="patientGender">
+                </div>
+              </div>
             </div>
       
             <!-- Removed Fields (Commented Out) -->
             <!--
-              <div class="col-md-4">
-                <label for="patientGender" class="form-label">Gender</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
-                  <select class="form-select" id="patientGender" required>
-                    <option value="" disabled selected>Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label for="fatherName" class="form-label">Father's Name</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                    <input type="text" class="form-control" id="fatherName" required>
+                  </div>
                 </div>
-              </div>
-              <div class="col-md-4">
-                <label for="fatherName" class="form-label">Father's Name</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
-                  <input type="text" class="form-control" id="fatherName" required>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <label for="paymentPreference" class="form-label">Payment Preference</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
-                  <select class="form-select" id="paymentPreference" required>
-                    <option value="" disabled selected>Select Preference</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="Insurance">Insurance</option>
-                  </select>
+                <div class="col-md-4">
+                  <label for="paymentPreference" class="form-label">Payment Preference</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
+                    <select class="form-select" id="paymentPreference" required>
+                      <option value="" disabled selected>Select Preference</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                      <option value="Insurance">Insurance</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="doctor" class="form-label">Referred Doctor</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-user-md"></i></span>
+                    <select class="form-select" id="doctor">
+                      <option value="" selected>Select Doctor</option>
+                    </select>
+                  </div>
+                </div>
                 <div class="col-md-6">
                   <label for="admissionType" class="form-label">Admission Type</label>
                   <div class="input-group input-group-sm">
@@ -393,6 +408,8 @@
                     </select>
                   </div>
                 </div>
+              </div>
+              <div class="row mb-3">
                 <div class="col-md-6">
                   <label for="hospitalCode" class="form-label">Hospital Code</label>
                   <div class="input-group input-group-sm">
@@ -400,9 +417,7 @@
                     <input type="text" class="form-control" id="hospitalCode" value="115">
                   </div>
                 </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-12">
+                <div class="col-md-6">
                   <label for="appointmentNotes" class="form-label">Appointment Notes</label>
                   <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="fas fa-notes-medical"></i></span>
@@ -410,136 +425,119 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label for="emergencyContactName" class="form-label">Emergency Contact Name</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-user"></i></span>
-                  <input type="text" class="form-control" id="emergencyContactName">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="emergencyContactName" class="form-label">Emergency Contact Name</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input type="text" class="form-control" id="emergencyContactName">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="emergencyContactRelationship" class="form-label">Relationship</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-users"></i></span>
+                    <input type="text" class="form-control" id="emergencyContactRelationship">
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label for="emergencyContactRelationship" class="form-label">Relationship</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-users"></i></span>
-                  <input type="text" class="form-control" id="emergencyContactRelationship">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="knownAllergies" class="form-label">Known Allergies</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-allergies"></i></span>
+                    <input type="text" class="form-control" id="knownAllergies">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="currentMedications" class="form-label">Current Medications</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-pills"></i></span>
+                    <input type="text" class="form-control" id="currentMedications">
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label for="knownAllergies" class="form-label">Known Allergies</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-allergies"></i></span>
-                  <input type="text" class="form-control" id="knownAllergies">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="pastMedicalHistory" class="form-label">Past Medical History</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-history"></i></span>
+                    <input type="text" class="form-control" id="pastMedicalHistory">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="specificNotes" class="form-label">Specific Notes</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
+                    <input type="text" class="form-control" id="specificNotes">
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label for="currentMedications" class="form-label">Current Medications</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-pills"></i></span>
-                  <input type="text" class="form-control" id="currentMedications">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="occupation" class="form-label">Occupation</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
+                    <input type="text" class="form-control" id="occupation">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="channel" class="form-label">Channel</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-bullhorn"></i></span>
+                    <select class="form-select" id="channel">
+                      <option value="" disabled selected>Select Channel</option>
+                      <option value="Website">Website</option>
+                      <option value="Referral">Referral</option>
+                      <option value="Advertisement">Advertisement</option>
+                      <option value="Social Media">Social Media</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label for="pastMedicalHistory" class="form-label">Past Medical History</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-history"></i></span>
-                  <input type="text" class="form-control" id="pastMedicalHistory">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="tag" class="form-label">Tag</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                    <input type="text" class="form-control" id="tag">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="insuranceProvider" class="form-label">Insurance Provider</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                    <input type="text" class="form-control" id="insuranceProvider">
+                  </div>
                 </div>
               </div>
-              <div class="col-md-12">
-                <label for="specificNotes" class="form-label">Specific Notes</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
-                  <input type="text" class="form-control" id="specificNotes">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="policyNumber" class="form-label">Policy Number</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
+                    <input type="text" class="form-control" id="policyNumber">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="patientImage" class="form-label">Upload Image</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-image"></i></span>
+                    <input type="file" class="form-control" id="patientImage" accept="image/*">
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label for="occupation" class="form-label">Occupation</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
-                  <input type="text" class="form-control" id="occupation">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="referredBy" class="form-label">Referred By</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-user-plus"></i></span>
-                  <input type="text" class="form-control" id="referredBy">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="channel" class="form-label">Channel</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-bullhorn"></i></span>
-                  <select class="form-select" id="channel">
-                    <option value="" disabled selected>Select Channel</option>
-                    <option value="Website">Website</option>
-                    <option value="Referral">Referral</option>
-                    <option value="Advertisement">Advertisement</option>
-                    <option value="Social Media">Social Media</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="tag" class="form-label">Tag</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-tag"></i></span>
-                  <input type="text" class="form-control" id="tag">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="insuranceProvider" class="form-label">Insurance Provider</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
-                  <input type="text" class="form-control" id="insuranceProvider">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="policyNumber" class="form-label">Policy Number</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
-                  <input type="text" class="form-control" id="policyNumber">
-                </div>
-              </div>
-              <div class="col-md-12">
-                <label for="patientImage" class="form-label">Upload Image</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-image"></i></span>
-                  <input type="file" class="form-control" id="patientImage" accept="image/*">
-                </div>
-              </div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#personalDetailsCollapse" aria-expanded="true" aria-controls="personalDetailsCollapse">
-                <i class="fas fa-user me-2"></i>Personal Details
-              </button>
-              <div class="collapse show" id="personalDetailsCollapse"></div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#contactDetailsCollapse" aria-expanded="false" aria-controls="contactDetailsCollapse">
-                <i class="fas fa-address-book me-2"></i>Contact Details
-              </button>
-              <div class="collapse" id="contactDetailsCollapse"></div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#medicalInfoCollapse" aria-expanded="false" aria-controls="medicalInfoCollapse">
-                <i class="fas fa-stethoscope me-2"></i>Medical Information
-              </button>
-              <div class="collapse" id="medicalInfoCollapse"></div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#additionalPersonalDetailsCollapse" aria-expanded="false" aria-controls="additionalPersonalDetailsCollapse">
-                <i class="fas fa-user me-2"></i>Additional Personal Details
-              </button>
-              <div class="collapse" id="additionalPersonalDetailsCollapse"></div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#appointmentDetailsCollapse" aria-expanded="false" aria-controls="appointmentDetailsCollapse">
-                <i class="fas fa-calendar-check me-2"></i>Appointment Details
-              </button>
-              <div class="collapse" id="appointmentDetailsCollapse"></div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#insuranceDetailsCollapse" aria-expanded="false" aria-controls="insuranceDetailsCollapse">
-                <i class="fas fa-shield-alt me-2"></i>Insurance Details
-              </button>
-              <div class="collapse" id="insuranceDetailsCollapse"></div>
-              <button class="btn btn-outline-primary btn-sm w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#imageUploadCollapse" aria-expanded="false" aria-controls="imageUploadCollapse">
-                <i class="fas fa-image me-2"></i>Image Upload
-              </button>
-              <div class="collapse" id="imageUploadCollapse"></div>
             -->
+      
+            <!-- Sticky Footer with Buttons -->
+            <div class="sticky-footer">
+              <button type="submit" class="btn btn-primary btn-sm me-2" id="addAndCreateBill">Add & Create Bill</button>
+              <button type="submit" class="btn btn-primary btn-sm" id="addAndCreateAppointment">Add & Create Appointment</button>
+            </div>
           </div>
         </form>
-      </div>>
+      </div>
       <!-- Add Service Tab -->
       <!-- Add Service Tab -->
       <div class="tab-pane fade" id="addService" role="tabpanel" aria-labelledby="addServiceTab">
