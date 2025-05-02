@@ -15,7 +15,7 @@ class Patient(models.Model):
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
     date_of_birth = models.DateField()
     age = models.IntegerField(editable=False)
-    father_name = models.CharField(max_length=255)
+    father_name = models.CharField(max_length=255, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     pincode = models.CharField(max_length=6, null=True, blank=True)
