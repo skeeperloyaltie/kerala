@@ -1061,7 +1061,7 @@ function bindNavActions() {
           openModalWithAction(action);
       } else {
           console.warn(`⚠️ User lacks permission for action: ${action}`);
-          alert("You do not have permission to perform this action.");
+          // alert("You do not have permission to perform this action.");
       }
   });
 
@@ -1078,7 +1078,7 @@ function bindNavActions() {
           console.log(`🔍 Patient search triggered: ${query}`);
           openModalWithAction("patient-search");
           // Assume search populates patient data in modal
-          performPatientSearch(query);
+          setupPatientSearch(query);
       }
   });
 }
