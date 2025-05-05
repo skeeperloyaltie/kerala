@@ -1,6 +1,6 @@
-# service/models.py
 from django.db import models
-from users.models import Doctor  # Import Doctor from users app
+from users.models import Doctor
+from systime.utils import get_current_ist_time  # Import systime utilities
 
 class Service(models.Model):
     service_id = models.CharField(max_length=20, unique=True, editable=False)
@@ -9,12 +9,16 @@ class Service(models.Model):
     code = models.CharField(max_length=20, unique=True)
     color_code = models.CharField(max_length=7, default="#007bff")  # Hex color code
     doctors = models.ManyToManyField(Doctor, related_name="services", blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     def save(self, *args, **kwargs):
         if not self.service_id:
             self.service_id = self.generate_service_id()
+        # Ensure created_at and updated_at are IST-aware
+        if not self.created_at:
+            self.created_at = get_current_ist_time()
+        self.updated_at = get_current_ist_time()
         super().save(*args, **kwargs)
 
     def generate_service_id(self):

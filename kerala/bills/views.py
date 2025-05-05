@@ -1,5 +1,3 @@
-# bills/views.py
-from datetime import datetime
 import logging
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -14,11 +12,9 @@ from appointments.models import Appointment
 from appointments.serializers import AppointmentSerializer
 from patients.models import Patient
 from users.models import Doctor
-from django.utils import timezone
-import pytz
+from systime.utils import get_current_ist_time, make_ist_aware, validate_ist_datetime  # Import systime utilities
 
 logger = logging.getLogger(__name__)
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateBillView(APIView):
@@ -45,15 +41,18 @@ class CreateBillView(APIView):
         appointment = None
         if appointment_date:
             try:
-                # Parse appointment_date as YYYY-MM-DD HH:MM
+                # Parse appointment_date as YYYY-MM-DD HH:MM and convert to IST
                 appointment_date = datetime.strptime(appointment_date, '%Y-%m-%d %H:%M')
-                appointment_date = KOLKATA_TZ.localize(appointment_date)
+                appointment_date = make_ist_aware(appointment_date)
+                if not validate_ist_datetime(appointment_date):
+                    logger.warning(f"Non-IST datetime provided for appointment_date: {appointment_date}")
+                    return Response({"error": "Appointment date must be in IST."}, status=status.HTTP_400_BAD_REQUEST)
             except ValueError:
                 logger.error("Invalid appointment date format.")
                 return Response({"error": "Invalid appointment date format. Use 'YYYY-MM-DD HH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
 
-            now_kolkata = datetime.now(KOLKATA_TZ)
-            if appointment_date < now_kolkata:
+            now_ist = get_current_ist_time()
+            if appointment_date <= now_ist:
                 logger.warning(f"Past appointment date: {appointment_date}")
                 return Response({"error": "Appointment date must be in the future."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -79,12 +78,14 @@ class CreateBillView(APIView):
                 'doctor': doctor,
                 'appointment_date': appointment_date,
                 'notes': data.get('notes', ''),
-                'status': 'Booked',
+                'status': 'booked',  # Match Appointment model STATUS_CHOICES
                 'is_emergency': False,
-                'created_by': user
+                'created_by': user,
+                'created_at': get_current_ist_time(),
+                'updated_at': get_current_ist_time()
             }
             appointment = Appointment.objects.create(**appointment_data)
-            logger.info(f"Appointment created: {appointment.id} with appointment_date: {appointment.appointment_date} (Kolkata: {appointment.appointment_date.astimezone(KOLKATA_TZ)})")
+            logger.info(f"Appointment created: {appointment.id} with appointment_date: {appointment.appointment_date}")
             data['appointment_id'] = appointment.id
 
         # Ensure items' service_id is treated as integer
@@ -106,10 +107,10 @@ class CreateBillView(APIView):
             if appointment:
                 response_data['appointment'] = AppointmentSerializer(appointment).data
             return Response(response_data, status=status.HTTP_201_CREATED)
-        
-        logger.error(f"Bill creation errors: {serializer.errors}")
 
-# bills/views.py
+        logger.error(f"Bill creation errors: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class BillListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -129,42 +130,13 @@ class BillListView(APIView):
             if not bills.exists():
                 logger.error(f"Bill with ID {bill_id} not found for {user.username}")
                 return Response({"error": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         if user.user_type == 'Doctor':
             bills = bills.filter(appointment__doctor=user.doctor)
-        
+
         serializer = BillSerializer(bills, many=True)
         logger.info(f"Returning {bills.count()} bills for {user.username}")
         return Response({"bills": serializer.data}, status=status.HTTP_200_OK)
-    
-    
-# bills/views.py
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import PermissionDenied
-from .models import Bill, BillItem
-from .serializers import BillSerializer, BillItemSerializer
-import logging
-
-logger = logging.getLogger(__name__)
-KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-
-# bills/views.py
-# bills/views.py
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import PermissionDenied
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from .models import Bill, BillItem
-from .serializers import BillSerializer
-import logging
-
-logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class BillUpdateView(APIView):
@@ -192,9 +164,9 @@ class BillUpdateView(APIView):
 
         serializer = BillSerializer(bill, data=data, partial=True, context={'request': request})
         if serializer.is_valid():
-            bill = serializer.save()
+            bill = serializer.save(updated_by=user)
             logger.info(f"Bill {bill_id} updated successfully by {user.username}")
             return Response({"success": True, "bill": BillSerializer(bill).data}, status=status.HTTP_200_OK)
-        
+
         logger.error(f"Bill update errors: {serializer.errors}")
         return Response({"error": "Invalid bill data", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

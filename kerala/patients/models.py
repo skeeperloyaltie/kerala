@@ -1,7 +1,7 @@
 from django.db import models
-from django.utils import timezone
 from datetime import date
 from simple_history.models import HistoricalRecords
+from systime.utils import get_current_ist_time, make_ist_aware  # Import systime utilities
 
 class Patient(models.Model):
     ADMISSION_TYPE_CHOICES = [
@@ -45,6 +45,8 @@ class Patient(models.Model):
     payment_preference = models.CharField(max_length=20, choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Insurance', 'Insurance')], null=True, blank=True)
     admission_type = models.CharField(max_length=2, choices=ADMISSION_TYPE_CHOICES, default='OU')
     hospital_code = models.CharField(max_length=3, default='115')
+    created_at = models.DateTimeField()  # Added explicitly
+    updated_at = models.DateTimeField()  # Added explicitly
 
     class Meta:
         unique_together = ('first_name', 'mobile_number')
@@ -57,6 +59,10 @@ class Patient(models.Model):
             self.patient_id = self.generate_patient_id()
         if self.date_of_birth:
             self.age = self.calculate_age()
+        # Ensure created_at and updated_at are IST-aware
+        if not self.created_at:
+            self.created_at = get_current_ist_time()
+        self.updated_at = get_current_ist_time()
         super().save(*args, **kwargs)
 
     def calculate_age(self):
