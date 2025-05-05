@@ -636,6 +636,8 @@ height: 100%;
   width: 100%;
   max-width: 1200px; /* Set a max width for the calendar */
   margin: 0 auto; /* Center the calendar */
+  height: 100%;
+  overflow-y: auto; /* Allow vertical scrolling */
 }
 
 #appointmentsCalendarView {
