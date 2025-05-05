@@ -643,9 +643,10 @@ height: 100%;
 #appointmentsCalendarView {
   color: #000000;
   padding: 15px;
-  background-color: #ffffff; /* White background */
+  background-color: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-height: 600px; /* Ensure visibility even if empty */
 }
 
 #appointmentsCalendar {
@@ -949,11 +950,11 @@ height: 100%;
 
 /* Appointments Views */
 .appointments-view {
-  display: none;
+  display: none !important;
 }
 
 .appointments-view.active {
-  display: block;
+  display: block !important;
 }
 
 /* Table View */

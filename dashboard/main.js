@@ -835,13 +835,28 @@ function populateAppointmentsTable(appointments, dateStr, doctorId = 'all') {
 }
 
 function toggleView(view) {
-  if (view === currentView) return;
-  currentView = view;
+  if (view === currentView) {
+    console.log(`🔄 View unchanged: ${view}`);
+    return;
+  }
+  console.log(`🔄 Switching to ${view} view`);
+
   const tableView = document.getElementById('appointmentsTableView');
   const calendarView = document.getElementById('appointmentsCalendarView');
   const tableBtn = document.getElementById('tableViewBtn');
   const calendarBtn = document.getElementById('calendarViewBtn');
-  const doctorId = document.getElementById('doctorFilter').value || 'all';
+
+  if (!tableView || !calendarView || !tableBtn || !calendarBtn) {
+    console.error('❌ Missing DOM elements:', {
+      tableView: !!tableView,
+      calendarView: !!calendarView,
+      tableBtn: !!tableBtn,
+      calendarBtn: !!calendarBtn
+    });
+    return;
+  }
+
+  const doctorId = document.getElementById('doctorFilter')?.value || 'all';
   const selectedDate = $("#dateFilter").val() || formatDate(new Date());
 
   if (view === 'table') {
@@ -858,7 +873,13 @@ function toggleView(view) {
     fetchAppointmentsByDate(selectedDate, 'all', doctorId);
   }
 
-  console.log(`🔄 Switched to ${view} view`);
+  // Log final state
+  console.log(`🔄 Switched to ${view} view. Classes:`, {
+    tableView: tableView.className,
+    calendarView: calendarView.className,
+    tableBtn: tableBtn.className,
+    calendarBtn: calendarBtn.className
+  });
 }
 // main.js
 function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
@@ -4123,15 +4144,35 @@ $("#addBillsForm").submit(function (e) {
   });
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('tableViewBtn').addEventListener('click', () => toggleView('table'));
-    document.getElementById('calendarViewBtn').addEventListener('click', () => toggleView('calendar'));
-    document.getElementById('doctorFilter').addEventListener('change', (e) => {
+    const tableBtn = document.getElementById('tableViewBtn');
+    const calendarBtn = document.getElementById('calendarViewBtn');
+  
+    if (!tableBtn || !calendarBtn) {
+      console.error('❌ Toggle buttons not found:', {
+        tableBtn: !!tableBtn,
+        calendarBtn: !!calendarBtn
+      });
+      return;
+    }
+  
+    tableBtn.addEventListener('click', () => {
+      console.log('🖱️ Table button clicked');
+      toggleView('table');
+    });
+    calendarBtn.addEventListener('click', () => {
+      console.log('🖱️ Calendar button clicked');
+      toggleView('calendar');
+    });
+  
+    document.getElementById('doctorFilter')?.addEventListener('change', (e) => {
       const doctorId = e.target.value || 'all';
       const selectedDate = $("#dateFilter").val() || formatDate(new Date());
+      console.log(`🔍 Doctor filter changed to: ${doctorId}`);
       fetchAppointmentsByDate(selectedDate, 'all', doctorId);
     });
   
     // Initialize table view
+    console.log('🚀 Initializing table view');
     toggleView('table');
   });
   
