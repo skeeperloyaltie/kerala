@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import Doctor
-from systime.utils import get_current_ist_time  # Import systime utilities
+from systime.utils import get_local_to_ist_time  # Use local-to-IST conversion
 
 class Service(models.Model):
     service_id = models.CharField(max_length=20, unique=True, editable=False)
@@ -15,10 +15,10 @@ class Service(models.Model):
     def save(self, *args, **kwargs):
         if not self.service_id:
             self.service_id = self.generate_service_id()
-        # Ensure created_at and updated_at are IST-aware
+        # Set created_at and updated_at using local system time converted to IST
         if not self.created_at:
-            self.created_at = get_current_ist_time()
-        self.updated_at = get_current_ist_time()
+            self.created_at = get_local_to_ist_time()
+        self.updated_at = get_local_to_ist_time()
         super().save(*args, **kwargs)
 
     def generate_service_id(self):
