@@ -2334,52 +2334,38 @@ function initializePatientForm() {
   });
 
   // Service Search and Dropdown
+  // Service Search and Dropdown
   let services = [];
   let isFetchingServices = false;
-  function fetchServices(attempt = 1, maxAttempts = 3) {
-    if (isFetchingServices) return;
-    isFetchingServices = true;
-    $(".service-search, .dropdown-toggle").prop("disabled", true);
-    $.ajax({
-      url: `${API_BASE_URL}/service/list/`,
-      type: "GET",
-      headers: getAuthHeaders(),
-      success: function (data) {
-        console.log("Raw API response for services:", data);
-        let rawServices = [];
-        if (Array.isArray(data.results)) {
-          rawServices = data.results;
-        } else if (Array.isArray(data)) {
-          rawServices = data;
-        } else if (data && Array.isArray(data.services)) {
-          rawServices = data.services;
-        } else {
-          console.error("Unexpected service data format:", data);
-          services = [];
-          return;
+  function fetchServices() {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: `${API_BASE_URL}/service/list/`,
+        type: 'GET',
+        headers: getAuthHeaders(),
+        success: function (data) {
+          services = data.services || [];
+          allServices = services.map(service => ({
+            id: service.id,
+            service_id: service.service_id || service.code || service.id,
+            name: service.service_name || service.name || 'Unknown Service',
+            code: service.code || service.service_id || '',
+            price: parseFloat(service.service_price || service.price || 0),
+            gst: parseFloat(service.gst || 0), // Add GST if available
+            doctors: service.doctor_details || []
+          }));
+          serviceMap = {};
+          allServices.forEach(service => {
+            serviceMap[service.id] = service;
+          });
+          console.log(`✅ Fetched ${allServices.length} services`);
+          resolve(allServices);
+        },
+        error: function (xhr) {
+          console.error('❌ Failed to fetch services:', xhr.responseJSON || xhr.statusText);
+          reject(new Error(`Failed to fetch services: ${xhr.responseJSON?.error || xhr.statusText}`));
         }
-        services = rawServices.map(service => ({
-          id: service.id,
-          name: service.service_name || service.name || "Unknown Service",
-          price: service.service_price || service.price || 0,
-          code: service.code || "",
-          doctor_details: service.doctor_details || []
-        }));
-        console.log(`Fetched ${services.length} services for autocomplete`, services);
-      },
-      error: function (xhr) {
-        console.error(`Failed to fetch services (attempt ${attempt}): ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
-        if (attempt < maxAttempts) {
-          setTimeout(() => fetchServices(attempt + 1, maxAttempts), 1000);
-        } else {
-          services = [];
-          alert("Failed to load services after multiple attempts. Please try again later.");
-        }
-      },
-      complete: function () {
-        isFetchingServices = false;
-        $(".service-search, .dropdown-toggle").prop("disabled", false);
-      }
+      });
     });
   }
 
@@ -2762,33 +2748,97 @@ function initializePatientForm() {
   }
 
   // Add Bill Item
-  let itemCount = 0;
-  // Add Bill Item
-  $("#addBillItem").on("click", function () {
-    itemCount++;
-    const newRow = `
+  function addBillItem() {
+    const itemCount = $('#billItemsTableBody tr').length + 1;
+    const newItem = `
       <tr>
-        <td class="item-number">${itemCount}</td>
+        <td>${itemCount}</td>
         <td>
           <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fas fa-concierge-bell"></i></span>
-            <input type="text" class="form-control service-search" name="service_name[]" placeholder="Search or select service" required autocomplete="off">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-            <ul class="dropdown-menu autocomplete-dropdown" style="width: 100%; max-height: 200px; overflow-y: auto;"></ul>
-            <input type="hidden" name="service_id[]" class="service-id">
+            <input type="hidden" class="service-id" name="item_service_id[]">
+            <select class="form-select service-select" name="item_service_select[]" style="width: 100%;">
+              <option value="">Select a service</option>
+            </select>
           </div>
+          <small class="form-text text-muted doctor-info">Doctors: No doctors assigned</small>
         </td>
-        <td><input type="text" class="form-control form-control-sm service-code" name="service_code[]" readonly></td>
-        <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" value="1" required></td>
-        <td><input type="number" class="form-control form-control-sm unit-price" name="unit_price[]" min="0" step="0.01" required readonly></td>
-        <td><input type="number" class="form-control form-control-sm gst" name="gst[]" min="0" max="100" step="0.01" value="0" required></td>
-        <td><input type="number" class="form-control form-control-sm discount" name="discount[]" min="0" step="0.01" value="0" required></td>
-        <td><input type="number" class="form-control form-control-sm total-price" name="total_price[]" min="0" step="0.01" readonly style="color: red;"></td>
-        <td><button type="button" class="btn btn-danger btn-sm remove-bill-item"><i class="fas fa-trash"></i></button></td>
-      </tr>`;
-    $("#billItemsTableBody").append(newRow);
-    console.log(`Added bill item #${itemCount}`);
-  });
+        <td><input type="text" class="form-control form-control-sm service-code" name="item_service_code[]" readonly></td>
+        <td><input type="number" class="form-control form-control-sm item-quantity" name="quantity[]" value="1" min="1" required></td>
+        <td><input type="number" class="form-control form-control-sm item-unit-price unit-price" name="unit_price[]" step="0.01" min="0" required></td>
+        <td><input type="number" class="form-control form-control-sm item-gst gst" name="gst[]" step="0.01" min="0" value="0"></td>
+        <td><input type="number" class="form-control form-control-sm item-discount discount" name="discount[]" step="0.01" min="0" value="0"></td>
+        <td><input type="number" class="form-control form-control-sm item-total-price total-price" name="total_price[]" step="0.01" readonly></td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
+      </tr>
+    `;
+    $('#billItemsTableBody').append(newItem);
+  
+    const $newRow = $('#billItemsTableBody tr').last();
+    populateServiceDropdown($newRow);
+  
+    const $select = $newRow.find('.service-select');
+    $select.select2({
+      placeholder: 'Search by name or code',
+      allowClear: true,
+      data: allServices.map(service => ({
+        id: service.id,
+        text: `${service.name} (${service.code})`,
+        code: service.code,
+        price: service.price,
+        gst: service.gst,
+        doctors: service.doctors
+      })),
+      matcher: function(params, data) {
+        if (!params.term || params.term.trim() === '') {
+          return data;
+        }
+        const term = params.term.toLowerCase();
+        if (data.text.toLowerCase().indexOf(term) > -1 || data.code.toLowerCase().indexOf(term) > -1) {
+          return data;
+        }
+        return null;
+      }
+    });
+  
+    $select.on('select2:select', function(e) {
+      const data = e.params.data;
+      const $row = $(this).closest('tr');
+      $row.find('.service-id').val(data.id);
+      $row.find('.service-code').val(data.code);
+      $row.find('.item-unit-price').val(data.price.toFixed(2));
+      $row.find('.item-gst').val(data.gst.toFixed(2));
+      const doctorNames = data.doctors.length > 0
+        ? data.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
+        : 'No doctors assigned';
+      $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
+      calculateBillTotal();
+    });
+  
+    $select.on('select2:clear', function() {
+      const $row = $(this).closest('tr');
+      $row.find('.service-id').val('');
+      $row.find('.service-code').val('');
+      $row.find('.item-unit-price').val('');
+      $row.find('.item-gst').val('0');
+      $row.find('.doctor-info').text('Doctors: No doctors assigned');
+      calculateBillTotal();
+    });
+  }
+
+  function calculateBillTotal() {
+    let total = 0;
+    $('#billItemsTableBody tr').each(function() {
+      const $row = $(this);
+      const quantity = parseInt($row.find('.item-quantity').val()) || 0;
+      const unitPrice = parseFloat($row.find('.item-unit-price').val()) || 0;
+      const gst = parseFloat($row.find('.item-gst').val()) || 0;
+      const discount = parseFloat($row.find('.item-discount').val()) || 0;
+      const itemTotal = (quantity * unitPrice * (1 + gst / 100)) - discount;
+      $row.find('.item-total-price').val(itemTotal.toFixed(2));
+      total += itemTotal;
+    });
+    $('#totalAmount').val(total.toFixed(2));
+  }
 
   // Remove Bill Item and Re-number
   $(document).on("click", ".remove-bill-item", function () {
@@ -3832,7 +3882,7 @@ $("#addBillsForm").submit(function (e) {
 
               $("#addBillsForm")[0].reset();
               $("#newActionModal").modal("hide");
-              sessionStorage.removeItem("billPatientId");
+              // sessionStorage.removeItem("billPatientId");
               alert("Bill and appointment created successfully!");
                // Log appointment status
               if (response.appointment && response.appointment.status) {
@@ -3847,7 +3897,7 @@ $("#addBillsForm").submit(function (e) {
               }
 
               if (appointmentId) {
-                  if (response.appointment && response.appointment.status === "Booked") {
+                  if (response.appointment && response.appointment.status === "booked") {
                       console.log(`ℹ️ Appointment ID ${appointmentId} already has status 'Booked', skipping update.`);
                   } else {
                       console.log(`🔄 Calling postSubmissionAppointment for appointment ID: ${appointmentId}`);
@@ -3883,6 +3933,108 @@ $("#addBillsForm").submit(function (e) {
       });
   });
 });
+function createBill() {
+  const patientId = $('#patientIdForBill').val() || sessionStorage.getItem('billPatientId');
+  if (!patientId) {
+    alert('Please select a patient.');
+    return;
+  }
+
+  const items = [];
+  let hasErrors = false;
+  $('#billItemsTableBody tr').each(function() {
+    const $row = $(this);
+    const serviceId = $row.find('.service-id').val();
+    const quantity = parseInt($row.find('.item-quantity').val()) || 0;
+    const unitPrice = parseFloat($row.find('.item-unit-price').val()) || 0;
+    const gst = parseFloat($row.find('.item-gst').val()) || 0;
+    const discount = parseFloat($row.find('.item-discount').val()) || 0;
+    const totalPrice = parseFloat($row.find('.item-total-price').val()) || 0;
+
+    if (!serviceId) {
+      alert('Please select a valid service for all items.');
+      hasErrors = true;
+      return false;
+    }
+    if (quantity <= 0) {
+      alert('Quantity must be greater than zero.');
+      hasErrors = true;
+      return false;
+    }
+    if (unitPrice <= 0) {
+      alert('Unit price must be greater than zero.');
+      hasErrors = true;
+      return false;
+    }
+
+    items.push({
+      service_id: Number(serviceId),
+      quantity: quantity,
+      unit_price: unitPrice,
+      gst: gst,
+      discount: discount,
+      total_price: totalPrice
+    });
+  });
+
+  if (hasErrors || items.length === 0) {
+    alert('Please add at least one valid item.');
+    return;
+  }
+
+  const totalAmount = parseFloat($('#totalAmount').val()) || 0;
+  const depositAmount = parseFloat($('#depositAmount').val()) || 0;
+  const status = depositAmount >= totalAmount ? 'Paid' : (depositAmount > 0 ? 'Partially Paid' : 'Pending');
+  const notes = $('#billNotes').val();
+  const billDate = $('#billDate').val();
+
+  const billData = {
+    patient_id: patientId,
+    bill_date: billDate,
+    total_amount: totalAmount,
+    deposit_amount: depositAmount,
+    status: status,
+    notes: notes,
+    items: items
+  };
+
+  showAppointmentDatePopup(function(appointmentDate, doctorId) {
+    billData.appointment_date = appointmentDate;
+    billData.doctor_id = doctorId;
+
+    $.ajax({
+      url: `${API_BASE_URL}/bills/create/`,
+      type: 'POST',
+      headers: getAuthHeaders(),
+      data: JSON.stringify(billData),
+      contentType: 'application/json',
+      success: function(response) {
+        console.log('✅ Bill created successfully:', response);
+        $('#addBillsForm')[0].reset();
+        $('#newActionModal').modal('hide');
+        sessionStorage.removeItem('billPatientId');
+        alert('Bill and appointment created successfully!');
+
+        let appointmentId = response.appointment?.id || response.appointment_id;
+        if (appointmentId && (!response.appointment || response.appointment.status !== 'Booked')) {
+          console.log(`🔄 Calling postSubmissionAppointment for appointment ID: ${appointmentId}`);
+          postSubmissionAppointment(appointmentId);
+        }
+
+        let appointmentDateStr = response.appointment?.appointment_date
+          ? new Date(response.appointment.appointment_date).toISOString().split('T')[0]
+          : appointmentDate.split(' ')[0];
+
+        fetchBills();
+        fetchAppointmentsByDate(appointmentDateStr || undefined);
+      },
+      error: function(xhr) {
+        console.error(`❌ Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+        alert(`Failed to create bill: ${xhr.responseJSON?.error || 'Server Unavailable'}`);
+      }
+    });
+  });
+}
 
   // Cancel and Create Buttons
   $("#cancelBillBtn").on("click", function () {
@@ -4190,7 +4342,36 @@ $("#addBillsForm").submit(function (e) {
   bindPagination();
   initializePatientForm();
 
+  $('#newActionTabs a').on('click', function(e) {
+    e.preventDefault();
+    $(this).tab('show');
+    if ($(this).attr('id') === 'addBillsTab') {
+      fetchServices().then(() => {
+        $('#billDate').flatpickr({ defaultDate: 'today' });
+      }).catch(error => {
+        console.error('❌ Failed to load services:', error);
+        alert('Failed to load services. Please try again.');
+      });
+    }
+  });
 
+  $('#addBillItem').on('click', addBillItem);
+  $(document).on('click', '.remove-item', function() {
+    if ($('#billItemsTableBody tr').length === 1) {
+      alert('A bill must have at least one item.');
+      return;
+    }
+    $(this).closest('tr').remove();
+    calculateBillTotal();
+  });
+  $(document).on('input', '.item-quantity, .item-unit-price, .item-gst, .item-discount', calculateBillTotal);
+  $('#addBillsForm').on('submit', function(e) {
+    e.preventDefault();
+    createBill();
+  });
+  $('#todayBillBtn').on('click', function() {
+    $('#billDate').flatpickr('setDate', 'today');
+  });
 
   // Call populateServicesTable when Add Service tab is shown
   $("#addServiceTab").on("shown.bs.tab", function () {
