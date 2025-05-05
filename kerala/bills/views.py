@@ -16,7 +16,6 @@ from users.models import Doctor
 from systime.utils import get_current_ist_time, make_ist_aware, validate_ist_datetime  # Import systime utilities
 
 logger = logging.getLogger(__name__)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateBillView(APIView):
     permission_classes = [IsAuthenticated]
@@ -84,21 +83,27 @@ class CreateBillView(APIView):
                 logger.error(f"Doctor with ID {doctor_id} not found")
                 return Response({"error": "Doctor not found."}, status=status.HTTP_404_NOT_FOUND)
 
+            # Use AppointmentSerializer for validation
             appointment_data = {
-                'patient': patient,
-                'doctor': doctor,
-                'appointment_date': appointment_date,
+                'patient': patient.id,
+                'doctor': doctor.id if doctor else None,
+                'appointment_date': appointment_date.isoformat(),
                 'notes': data.get('notes', ''),
                 'status': 'booked',
                 'is_emergency': False,
-                'created_by': user,
-                'created_at': get_current_ist_time(),
-                'updated_at': get_current_ist_time()
+                'created_by': user.id,
+                'created_at': get_current_ist_time().isoformat(),
+                'updated_at': get_current_ist_time().isoformat(),
             }
-            logger.debug(f"Creating appointment with data: {appointment_data}")
-            appointment = Appointment.objects.create(**appointment_data)
-            logger.info(f"Appointment created: ID {appointment.id}, appointment_date: {appointment.appointment_date}")
-            data['appointment_id'] = appointment.id
+            logger.debug(f"Preparing appointment data for serialization: {appointment_data}")
+            appointment_serializer = AppointmentSerializer(data=appointment_data, context={'request': request})
+            if appointment_serializer.is_valid():
+                appointment = appointment_serializer.save(created_by=user)
+                logger.info(f"Appointment created: ID {appointment.id}, appointment_date: {appointment.appointment_date}")
+                data['appointment_id'] = appointment.id
+            else:
+                logger.error(f"Appointment creation failed: {appointment_serializer.errors}")
+                return Response({"error": "Invalid appointment data", "details": appointment_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         # Ensure items' service_id is treated as integer
         if 'items' in data:
