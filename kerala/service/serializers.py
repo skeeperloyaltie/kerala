@@ -1,4 +1,3 @@
-# service/serializers.py
 from rest_framework import serializers
 from .models import Service
 from users.models import Doctor
@@ -27,10 +26,11 @@ class ServiceSerializer(serializers.ModelSerializer):
             'code',
             'color_code',
             'doctors',
-            'doctor_details',  # Added doctor_details
+            'doctor_details',
             'created_at',
             'updated_at'
         ]
+        read_only_fields = ['service_id', 'created_at', 'updated_at', 'doctor_details']  # Mark timestamps as read-only
 
     def validate(self, data):
         # Only validate doctors if provided in the request (for partial updates)

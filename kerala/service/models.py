@@ -9,8 +9,8 @@ class Service(models.Model):
     code = models.CharField(max_length=20, unique=True)
     color_code = models.CharField(max_length=7, default="#007bff")  # Hex color code
     doctors = models.ManyToManyField(Doctor, related_name="services", blank=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(null=True, blank=True)  # Allow null for serializer compatibility
+    updated_at = models.DateTimeField(null=True, blank=True)  # Allow null for serializer compatibility
 
     def save(self, *args, **kwargs):
         if not self.service_id:
