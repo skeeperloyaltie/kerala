@@ -451,39 +451,52 @@ function adjustUIForRole(userType, roleLevel) {
     });
   }
 
+  // Global view state (assumed to be set by toggleView)
+  let currentView = 'table'; // Default to table view
+
   function fetchAppointmentsByDate(dateStr = null, filter = 'all', doctorId = 'all') {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
-  
-    console.log(`📅 Fetching appointments for date: ${selectedDate}, filter: ${filter}, doctorId: ${doctorId}`);
-  
+
+    console.log(`📅 Fetching appointments for date: ${selectedDate}, filter: ${filter}, doctorId: ${doctorId}, view: ${currentView}`);
+
     // Update #dateFilter to reflect the selected date
     $("#dateFilter").val(selectedDate);
     flatpickr("#dateFilter").setDate(selectedDate, false);
-  
-    // Calculate the start and end of the week
-    const startDate = new Date(selectedDate);
-    startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 6); // End on Saturday
-  
-    const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-    const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-  
-    // Build the API URL with date range and optional doctor filter
-    let url = `${API_BASE_URL}/appointments/list/?start_date=${startDateStr}&end_date=${endDateStr}`;
+
+    // Build API URL based on view
+    let url;
+    let startDateStr, endDateStr;
+
+    if (currentView === 'table') {
+      // Table view: Fetch single day
+      startDateStr = selectedDate;
+      endDateStr = selectedDate; // Same day for single-day query
+      url = `${API_BASE_URL}/appointments/list/?start_date=${startDateStr}&end_date=${endDateStr}`;
+    } else {
+      // Calendar view: Fetch week
+      const startDate = new Date(selectedDate);
+      startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6); // End on Saturday
+
+      startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+      endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+      url = `${API_BASE_URL}/appointments/list/?start_date=${startDateStr}&end_date=${endDateStr}`;
+    }
+
     if (doctorId !== 'all') {
       url += `&doctor_id=${doctorId}`;
     }
-  
+
     $.ajax({
       url: url,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
         console.log(`📥 Raw API response for ${startDateStr} to ${endDateStr}:`, data);
-  
+
         // Normalize appointments data
         let appointmentsArray = [];
         if (Array.isArray(data)) {
@@ -496,10 +509,10 @@ function adjustUIForRole(userType, roleLevel) {
           console.warn(`⚠️ Unexpected response format:`, data);
           appointmentsArray = [];
         }
-  
+
         // Filter by status
         const statusMap = {
-          'all': ['booked', 'arrived', 'on-going', 'reviewed'],
+          'all': ['booked', 'arrived', 'on-going', 'reviewed', 'scheduled'],
           'booked': ['booked'],
           'arrived': ['arrived'],
           'on-going': ['on-going'],
@@ -507,24 +520,33 @@ function adjustUIForRole(userType, roleLevel) {
           'scheduled': ['scheduled']
         };
         const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
-  
+
         appointmentsArray = appointmentsArray.filter(appt => {
           if (!appt || !appt.status) return false;
           return allowedStatuses.includes(appt.status.toLowerCase());
         });
-  
-        // Populate calendar view
-        populateAppointmentsCalendar(appointmentsArray, startDateStr, doctorId);
-  
+
+        // Populate based on current view
+        if (currentView === 'table') {
+          populateAppointmentsTable(appointmentsArray, selectedDate, doctorId);
+        } else {
+          populateAppointmentsCalendar(appointmentsArray, startDateStr, doctorId);
+        }
+
         console.log(`✅ Fetched ${appointmentsArray.length} appointments for ${startDateStr} to ${endDateStr} with filter ${filter} and doctorId ${doctorId}`);
       },
       error: function (xhr) {
         console.error(`❌ Failed to fetch appointments: ${xhr.responseJSON?.error || "Server Unavailable"}`);
         alert(`Failed to fetch appointments: ${xhr.responseJSON?.error || "Server Unavailable"}`);
-        populateAppointmentsCalendar([], startDateStr, doctorId); // Show empty calendar
+        // Show empty view
+        if (currentView === 'table') {
+          populateAppointmentsTable([], selectedDate, doctorId);
+        } else {
+          populateAppointmentsCalendar([], startDateStr, doctorId);
+        }
       }
     });
-  }  
+  } 
   // Bind Navigation Filters
   function bindNavFilters() {
     $(".navbar-secondary .nav-item a").on("click", function (e) {
@@ -709,7 +731,135 @@ function adjustUIForRole(userType, roleLevel) {
         }
     });
 }
-// main.js
+// Initialize view state
+let currentDate = new Date(); // Current date for table view
+let currentWeekStart = new Date(); // Week start for calendar view
+currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay()); // Start of current week (Sunday)
+
+// Format date to YYYY-MM-DD
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+
+// Populate table view for a single day
+function populateAppointmentsTable(appointments, dateStr, doctorId = 'all') {
+  const tableBody = document.getElementById('appointmentsTableBody');
+  tableBody.innerHTML = '';
+
+  const targetDate = new Date(dateStr);
+  if (isNaN(targetDate)) {
+    console.error('Invalid dateStr:', dateStr);
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Invalid date selected.</td></tr>';
+    return;
+  }
+
+  const dateStrFormatted = formatDate(targetDate);
+  console.log(`📅 Populating table for ${dateStrFormatted}, doctorId: ${doctorId}`);
+
+  // Filter appointments for the selected date and doctor
+  let filteredAppointments = appointments;
+  if (doctorId !== 'all') {
+    filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == doctorId);
+  } else {
+    const loggedInDoctorId = sessionStorage.getItem('doctor_id');
+    if (loggedInDoctorId && loggedInDoctorId !== 'null') {
+      filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == loggedInDoctorId);
+      console.log(`🔍 Filtering for logged-in doctor ID: ${loggedInDoctorId}`);
+    }
+  }
+
+  filteredAppointments = filteredAppointments.filter(appt => {
+    if (!appt || !appt.appointment_date) {
+      console.warn(`⚠️ Invalid appointment:`, appt);
+      return false;
+    }
+    const apptDateStr = appt.appointment_date.split('T')[0];
+    return apptDateStr === dateStrFormatted;
+  });
+
+  if (filteredAppointments.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="6" class="text-center">No appointments found for ${dateStrFormatted}.</td></tr>`;
+    console.log(`ℹ️ No appointments for ${dateStrFormatted}, doctorId: ${doctorId}`);
+    return;
+  }
+
+  console.log(`📋 Filtered ${filteredAppointments.length} appointments for ${dateStrFormatted}:`, filteredAppointments.map(appt => ({
+    id: appt.id,
+    appointment_date: appt.appointment_date,
+    status: appt.status
+  })));
+
+  // Sort appointments by time
+  filteredAppointments.sort((a, b) => {
+    const timeA = a.appointment_date.split('T')[1];
+    const timeB = b.appointment_date.split('T')[1];
+    return timeA.localeCompare(timeB);
+  });
+
+  // Populate table rows
+  filteredAppointments.forEach(appt => {
+    const row = document.createElement('tr');
+    const time = appt.appointment_date.split('T')[1].split(':').slice(0, 2).join(':'); // e.g., "08:30"
+    const patientName = appt.patient && appt.patient.first_name
+      ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
+      : 'Unnamed';
+    const doctorName = appt.doctor && appt.doctor.first_name
+      ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
+      : 'N/A';
+    const statusClass = appt.status ? `status-${appt.status.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+
+    row.innerHTML = `
+      <td>${time}</td>
+      <td>${patientName}</td>
+      <td>${doctorName}</td>
+      <td><span class="${statusClass}">${appt.status.toUpperCase()}</span></td>
+      <td>${appt.notes || 'N/A'}</td>
+      <td>
+        <button class="btn btn-primary btn-sm view-details" data-appointment-id="${appt.id}">View</button>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+
+  // Add click handlers for view buttons
+  document.querySelectorAll('.view-details').forEach(button => {
+    button.addEventListener('click', () => {
+      const appointmentId = button.dataset.appointmentId;
+      console.log(`🖱️ View details clicked for appointment ID ${appointmentId}`);
+      showAppointmentDetails(appointmentId);
+    });
+  });
+
+  console.log(`✅ Populated table with ${filteredAppointments.length} appointments for ${dateStrFormatted}, doctorId: ${doctorId}`);
+}
+
+function toggleView(view) {
+  if (view === currentView) return;
+  currentView = view;
+  const tableView = document.getElementById('appointmentsTableView');
+  const calendarView = document.getElementById('appointmentsCalendarView');
+  const tableBtn = document.getElementById('tableViewBtn');
+  const calendarBtn = document.getElementById('calendarViewBtn');
+  const doctorId = document.getElementById('doctorFilter').value || 'all';
+  const selectedDate = $("#dateFilter").val() || formatDate(new Date());
+
+  if (view === 'table') {
+    tableView.classList.add('active');
+    calendarView.classList.remove('active');
+    tableBtn.classList.add('active');
+    calendarBtn.classList.remove('active');
+    fetchAppointmentsByDate(selectedDate, 'all', doctorId);
+  } else {
+    tableView.classList.remove('active');
+    calendarView.classList.add('active');
+    tableBtn.classList.remove('active');
+    calendarBtn.classList.add('active');
+    fetchAppointmentsByDate(selectedDate, 'all', doctorId);
+  }
+
+  console.log(`🔄 Switched to ${view} view`);
+}
 // main.js
 function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
   const calendarBody = document.getElementById("calendarBody");
@@ -3972,6 +4122,19 @@ $("#addBillsForm").submit(function (e) {
     $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
   });
 
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('tableViewBtn').addEventListener('click', () => toggleView('table'));
+    document.getElementById('calendarViewBtn').addEventListener('click', () => toggleView('calendar'));
+    document.getElementById('doctorFilter').addEventListener('change', (e) => {
+      const doctorId = e.target.value || 'all';
+      const selectedDate = $("#dateFilter").val() || formatDate(new Date());
+      fetchAppointmentsByDate(selectedDate, 'all', doctorId);
+    });
+  
+    // Initialize table view
+    toggleView('table');
+  });
+  
   console.log("🚀 Initializing Dashboard...");
   checkAuthentication();
   bindDateFilterButtons();

@@ -928,3 +928,70 @@ height: 100%;
   overflow-y: auto; /* Allow scrolling */
   max-height: 600px; /* Adjust based on your layout */
 }
+
+/* Toggle Buttons */
+.btn-group .btn {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.btn-group .btn.active {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.btn-group .btn:not(.active) {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+/* Appointments Views */
+.appointments-view {
+  display: none;
+}
+
+.appointments-view.active {
+  display: block;
+}
+
+/* Table View */
+#appointmentsTable {
+  font-size: 11px;
+}
+
+#appointmentsTable th,
+#appointmentsTable td {
+  vertical-align: middle;
+  padding: 8px;
+}
+
+#appointmentsTable .status-booked {
+  color: #007bff;
+}
+
+#appointmentsTable .status-arrived {
+  color: #28a745;
+}
+
+#appointmentsTable .status-on-going {
+  color: #ffc107;
+}
+
+#appointmentsTable .status-reviewed {
+  color: #6c757d;
+}
+
+#appointmentsTable .status-scheduled {
+  color: #17a2b8;
+}
+
+#appointmentsTable .status-canceled {
+  color: #dc3545;
+}
+
+#appointmentsTable .btn-sm {
+  font-size: 10px;
+  padding: 4px 8px;
+}

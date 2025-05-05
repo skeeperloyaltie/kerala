@@ -126,7 +126,7 @@ class AppointmentListView(APIView):
                     logger.error(f"Appointment with ID {appointment_id} not found.")
                     return Response({"error": "Appointment not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Existing logic for fetching multiple appointments
+            # Fetch multiple appointments
             appointments = Appointment.objects.all()
             filtered_appointments = []
             status_success = False
@@ -149,14 +149,17 @@ class AppointmentListView(APIView):
                 appointments = appointments.filter(status__in=allowed_statuses)
                 logger.debug(f"Status filter applied: {appointments.count()} appointments")
 
-            # Apply date range filter
-            if start_date_str and end_date_str:
+            # Apply date filter
+            if start_date_str:
                 try:
                     start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
-                    # Localize to IST
                     start_date = make_ist_aware(start_date)
-                    end_date = make_ist_aware(end_date)
+                    if end_date_str:
+                        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+                        end_date = make_ist_aware(end_date)
+                    else:
+                        # Single-day filter: end_date is same as start_date (23:59:59)
+                        end_date = start_date + timedelta(days=1) - timedelta(seconds=1)
                     appointments = appointments.filter(appointment_date__range=[start_date, end_date])
                     if appointments.exists():
                         date_success = True
@@ -170,8 +173,8 @@ class AppointmentListView(APIView):
                     logger.error(f"Invalid date format: start_date={start_date_str}, end_date={end_date_str}")
                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                logger.warning("Missing start_date or end_date parameters")
-                return Response({"error": "Both start_date and end_date are required for fetching multiple appointments."}, status=status.HTTP_400_BAD_REQUEST)
+                logger.warning("Missing start_date parameter")
+                return Response({"error": "start_date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Apply doctor filter
             if doctor_id and doctor_id != 'all':
@@ -195,8 +198,8 @@ class AppointmentListView(APIView):
                 else:
                     logger.debug(f"User.doctor filter returned 0 appointments")
 
-            # For Receptionists: Apply only status and doctor filters, skip date filter if not provided
-            if user.user_type == "Receptionist" and not (start_date_str and end_date_str):
+            # For Receptionists: Apply only status and doctor filters if no date range
+            if user.user_type == "Receptionist" and not start_date_str:
                 filtered_appointments = list(appointments)
                 if filtered_appointments:
                     status_success = True
