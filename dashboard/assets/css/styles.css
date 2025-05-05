@@ -622,6 +622,8 @@ height: 100%;
 .appointments-view {
   transition: opacity 0.3s ease;
   width: 100%;
+  max-width: 1200px; /* Set a max width for the calendar */
+  margin: 0 auto; /* Center the calendar */
 }
 
 #appointmentsCalendarView {
@@ -672,7 +674,7 @@ height: 100%;
 }
 
 .calendar-slot {
-  min-height: 40px;
+  min-height: 60px;
   position: relative;
   background-color: #ffffff; /* White background */
   border: 1px solid #ddd; /* Consistent borders */
