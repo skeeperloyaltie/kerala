@@ -709,215 +709,210 @@ function adjustUIForRole(userType, roleLevel) {
         }
     });
 }
+// main.js
+// main.js
+function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
+  const calendarBody = document.getElementById("calendarBody");
+  const calendarHeader = document.querySelector(".calendar-header");
+  calendarBody.innerHTML = "";
+  calendarHeader.innerHTML = "<div>Time</div>";
+
+  const weekStart = new Date(weekStartDateStr);
+  if (isNaN(weekStart)) {
+    console.error("Invalid weekStartDateStr:", weekStartDateStr);
+    calendarBody.innerHTML = '<div class="text-center">Invalid date selected.</div>';
+    return;
+  }
+
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    return {
+      dateStr: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      display: `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]} ${date.getDate()}/${date.getMonth() + 1}`
+    };
+  });
+
+  days.forEach(day => {
+    const headerCell = document.createElement("div");
+    headerCell.innerText = day.display;
+    calendarHeader.appendChild(headerCell);
+  });
+
+  const loggedInDoctorId = sessionStorage.getItem("doctor_id");
+  console.log(`🔍 Logged-in Doctor ID: ${loggedInDoctorId}, Requested Doctor ID: ${doctorId}`);
+
+  let filteredAppointments = appointments;
+  if (doctorId !== 'all') {
+    filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == doctorId);
+  } else if (loggedInDoctorId && loggedInDoctorId !== 'null') {
+    filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == loggedInDoctorId);
+    console.log(`🔍 Filtering for logged-in doctor's appointments (ID: ${loggedInDoctorId})`);
+  }
+
+  if (filteredAppointments.length === 0) {
+    calendarBody.innerHTML = `<div class="text-center">No appointments found for ${doctorId === 'all' && loggedInDoctorId ? 'your schedule' : doctorId === 'all' ? 'the selected week' : 'this doctor'}.</div>`;
+    console.log(`ℹ️ No appointments to display for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
+    return;
+  }
+
+  // Log appointment details for debugging
+  console.log(`📅 Filtered appointments (${filteredAppointments.length}):`, filteredAppointments.map(appt => ({
+    id: appt.id,
+    appointment_date: appt.appointment_date,
+    status: appt.status
+  })));
+
+  // Get current IST time using system time for the time marker
   
-  // Populate Appointments Table
-  function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
-    const calendarBody = document.getElementById("calendarBody");
-    const calendarHeader = document.querySelector(".calendar-header");
-    calendarBody.innerHTML = "";
-    calendarHeader.innerHTML = "<div>Time</div>";
+  const now = new Date();
 
-    const weekStart = new Date(weekStartDateStr);
-    if (isNaN(weekStart)) {
-        console.error("Invalid weekStartDateStr:", weekStartDateStr);
-        calendarBody.innerHTML = '<div class="text-center">Invalid date selected.</div>';
-        return;
-    }
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const currentDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    const hours = Array.from({ length: 24 }, (_, i) => i);
+  hours.forEach(hour => {
+    const row = document.createElement("div");
+    row.classList.add("calendar-row");
+    row.dataset.hour = hour;
 
-    const days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date(weekStart);
-        date.setDate(weekStart.getDate() + i);
-        return {
-            dateStr: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
-            display: `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]} ${date.getDate()}/${date.getMonth() + 1}`
-        };
+    // Grey out past days and past hours on the current day (based on system IST time)
+    days.forEach(day => {
+      const isPastDay = new Date(day.dateStr) < new Date(currentDateStr);
+      const isCurrentDay = day.dateStr === currentDateStr;
+      if (isPastDay || (isCurrentDay && hour < currentHour)) {
+        row.classList.add("past");
+      }
     });
+
+    const hourLabel = document.createElement("div");
+    hourLabel.innerText = `${String(hour).padStart(2, '0')}:00`;
+    row.appendChild(hourLabel);
 
     days.forEach(day => {
-        const headerCell = document.createElement("div");
-        headerCell.innerText = day.display;
-        calendarHeader.appendChild(headerCell);
-    });
+      const slot = document.createElement("div");
+      slot.classList.add("calendar-slot");
+      slot.style.position = "relative";
+      slot.style.overflowY = "auto";
+      slot.style.maxHeight = "none";
 
-    const loggedInDoctorId = sessionStorage.getItem("doctor_id");
-    console.log(`🔍 Logged-in Doctor ID: ${loggedInDoctorId}, Requested Doctor ID: ${doctorId}`);
+      console.log(`🔄 Processing slot for day ${day.dateStr}, hour ${hour}:00`);
 
-    let filteredAppointments = appointments;
-    if (doctorId !== 'all') {
-        filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == doctorId);
-    } else if (loggedInDoctorId && loggedInDoctorId !== 'null') {
-        filteredAppointments = appointments.filter(appt => appt.doctor && appt.doctor.id == loggedInDoctorId);
-        console.log(`🔍 Filtering for logged-in doctor's appointments (ID: ${loggedInDoctorId})`);
-    }
+      // Add current time marker on current day and hour (based on system IST time)
+      if (day.dateStr === currentDateStr && hour === currentHour) {
+        const marker = document.createElement("div");
+        marker.classList.add("current-time-marker");
+        // Position marker based on minutes (assuming row height is 60px)
+        const minuteOffset = (currentMinute / 60) * 60;
+        marker.style.top = `${minuteOffset}px`;
+        slot.appendChild(marker);
+      }
 
-    if (filteredAppointments.length === 0) {
-        calendarBody.innerHTML = `<div class="text-center">No appointments found for ${doctorId === 'all' && loggedInDoctorId ? 'your schedule' : doctorId === 'all' ? 'the selected week' : 'this doctor'}.</div>`;
-        console.log(`ℹ️ No appointments to display for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
-        return;
-    }
+      const slotAppointments = filteredAppointments.filter(appt => {
+        if (!appt || !appt.appointment_date) {
+          console.warn(`⚠️ Invalid appointment:`, appt);
+          return false;
+        }
 
-    // Log appointment details for debugging
-    console.log(`📅 Filtered appointments (${filteredAppointments.length}):`, filteredAppointments.map(appt => ({
-        id: appt.id,
-        appointment_date: appt.appointment_date,
-        istDate: new Date(new Date(appt.appointment_date).getTime() + (5.5 * 60 * 60 * 1000)).toLocaleString('en-US'),
-        status: appt.status
-    })));
-
-    // Get current IST time
-    const now = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000)); // Adjust to IST
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-    hours.forEach(hour => {
-        const row = document.createElement("div");
-        row.classList.add("calendar-row");
-        row.dataset.hour = hour; // Add data-hour for scrolling
-
-        // Grey out past days and past hours on the current day
-        days.forEach(day => {
-            const isPastDay = new Date(day.dateStr) < new Date(currentDateStr);
-            const isCurrentDay = day.dateStr === currentDateStr;
-            if (isPastDay || (isCurrentDay && hour < currentHour)) {
-                row.classList.add("past"); // Apply grey-out to past slots
-            }
-        });
-
-        const hourLabel = document.createElement("div");
-        hourLabel.innerText = `${hour}:00`;
-        row.appendChild(hourLabel);
-
-        days.forEach(day => {
-            const slot = document.createElement("div");
-            slot.classList.add("calendar-slot");
-            slot.style.position = "relative";
-            slot.style.overflowY = "auto";
-            slot.style.maxHeight = "none";
-
-            console.log(`🔄 Processing slot for day ${day.dateStr}, hour ${hour}:00`);
-
-            // Add current time marker only on current day and hour
-            if (day.dateStr === currentDateStr && hour === currentHour) {
-                const marker = document.createElement("div");
-                marker.classList.add("current-time-marker");
-                // Position marker based on minutes (assuming row height is 60px)
-                const minuteOffset = (currentMinute / 60) * 60; // Scale to row height
-                marker.style.top = `${minuteOffset}px`;
-                slot.appendChild(marker);
-            }
-
-            const slotAppointments = filteredAppointments.filter(appt => {
-                if (!appt || !appt.appointment_date) {
-                    console.warn(`⚠️ Invalid appointment:`, appt);
-                    return false;
-                }
-
-                const apptDate = new Date(appt.appointment_date);
-                if (isNaN(apptDate)) {
-                    console.warn(`⚠️ Invalid appointment_date for ID ${appt.id}:`, appt.appointment_date);
-                    return false;
-                }
-
-                const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000));
-                const apptDateStr = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
-                const apptHour = istDate.getHours();
-                const apptMinute = istDate.getMinutes();
-
-                if (apptDateStr !== day.dateStr) {
-                    console.log(`⚠️ Date mismatch for appointment ID ${appt.id}: apptDateStr=${apptDateStr}, day.dateStr=${day.dateStr}`);
-                    return false;
-                }
-
-                const isInHour = apptHour === hour;
-                if (!isInHour) {
-                    console.log(`⚠️ Hour mismatch for appointment ID ${appt.id}: apptHour=${apptHour}, slotHour=${hour}`);
-                }
-
-                console.log(`🔍 Checking appointment ID ${appt.id}: Date=${apptDateStr}, Raw=${appt.appointment_date}, Parsed=${apptDate.toISOString()}, Local=${istDate.toLocaleString('en-US')}, Hour=${apptHour}:${apptMinute}, Matches=${isInHour ? 'Yes' : 'No'}`);
-
-                return isInHour;
-            });
-
-            slotAppointments.forEach((appt, index) => {
-                const block = document.createElement("div");
-                block.classList.add("appointment-block");
-                block.dataset.appointmentId = appt.id;
-
-                block.style.marginTop = `${index * 22}px`;
-                block.style.zIndex = index + 1;
-
-                const patientName = appt.patient && appt.patient.first_name
-                    ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
-                    : 'Unnamed';
-                const statusClass = appt.status ? `status-${appt.status.toLowerCase().replace(' ', '-')}` : 'status-unknown';
-
-                const istDate = new Date(appt.appointment_date).getTime() + (5.5 * 60 * 60 * 1000);
-                const apptTime = new Date(istDate).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-
-                block.innerHTML = `
-                    <strong>${patientName}</strong><br>
-                    <span class="${statusClass}">${appt.status.toUpperCase()}</span><br>
-                    <small>Time: ${apptTime}</small><br>
-                    ID: ${appt.id}
-                `;
-                block.title = `Doctor: ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'}\nNotes: ${appt.notes || 'N/A'}`;
-
-                slot.appendChild(block);
-            });
-
-            row.appendChild(slot);
-        });
-
-        calendarBody.appendChild(row);
-    });
-
-    // Fallback rendering for unmatched appointments
-    if (document.querySelectorAll(".appointment-block").length === 0) {
-        calendarBody.innerHTML += `<div class="text-center text-warning">No appointments matched calendar slots. Displaying all:</div>`;
-        filteredAppointments.forEach(appt => {
-            const div = document.createElement("div");
-            div.innerHTML = `ID: ${appt.id}, Date: ${appt.appointment_date}, Status: ${appt.status}`;
-            calendarBody.appendChild(div);
-        });
-    }
-
-    const unmatchedAppointments = filteredAppointments.filter(appt => {
         const apptDate = new Date(appt.appointment_date);
-        const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000));
-        const apptDateStr = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
-        return !days.some(day => day.dateStr === apptDateStr);
+        if (isNaN(apptDate)) {
+          console.warn(`⚠️ Invalid appointment_date for ID ${appt.id}:`, appt.appointment_date);
+          return false;
+        }
+
+        // Use raw appointment_date (assumed UTC) without conversion
+        const apptDateStr = appt.appointment_date.split('T')[0]; // e.g., "2025-05-05"
+        const apptTime = appt.appointment_date.split('T')[1]; // e.g., "08:30:00Z"
+        const apptHour = parseInt(apptTime.split(':')[0], 10);
+        const apptMinute = parseInt(apptTime.split(':')[1], 10);
+
+        if (apptDateStr !== day.dateStr) {
+          console.log(`⚠️ Date mismatch for appointment ID ${appt.id}: apptDateStr=${apptDateStr}, day.dateStr=${day.dateStr}`);
+          return false;
+        }
+
+        const isInHour = apptHour === hour;
+        if (!isInHour) {
+          console.log(`⚠️ Hour mismatch for appointment ID ${appt.id}: apptHour=${apptHour}, slotHour=${hour}`);
+        }
+
+        console.log(`🔍 Checking appointment ID ${appt.id}: Date=${apptDateStr}, Raw=${appt.appointment_date}, Hour=${apptHour}:${String(apptMinute).padStart(2, '0')}, Matches=${isInHour ? 'Yes' : 'No'}`);
+
+        return isInHour;
+      });
+
+      slotAppointments.forEach((appt, index) => {
+        const block = document.createElement("div");
+        block.classList.add("appointment-block");
+        block.dataset.appointmentId = appt.id;
+
+        block.style.marginTop = `${index * 22}px`;
+        block.style.zIndex = index + 1;
+
+        const patientName = appt.patient && appt.patient.first_name
+          ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
+          : 'Unnamed';
+        const statusClass = appt.status ? `status-${appt.status.toLowerCase().replace(' ', '-')}` : 'status-unknown';
+
+        // Extract time from raw appointment_date (e.g., "08:30:00Z" -> "08:30")
+        const apptTime = appt.appointment_date.split('T')[1].split(':').slice(0, 2).join(':'); // e.g., "08:30"
+
+        block.innerHTML = `
+          <strong>${patientName}</strong><br>
+          <span class="${statusClass}">${appt.status.toUpperCase()}</span><br>
+          <small>Time: ${apptTime}</small><br>
+          ID: ${appt.id}
+        `;
+        block.title = `Doctor: ${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'}\nNotes: ${appt.notes || 'N/A'}`;
+
+        slot.appendChild(block);
+      });
+
+      row.appendChild(slot);
     });
-    if (unmatchedAppointments.length > 0) {
-        calendarBody.innerHTML += `<div class="text-center text-warning">Warning: ${unmatchedAppointments.length} appointment(s) are outside the selected week.</div>`;
-    }
 
-    // Scroll to current time
-    const currentHourRow = document.querySelector(`.calendar-row[data-hour="${currentHour}"]`);
-    if (currentHourRow) {
-        const calendarContainer = calendarBody.parentElement || calendarBody;
-        const rowOffset = currentHourRow.offsetTop;
-        const containerHeight = calendarContainer.clientHeight;
-        const rowHeight = currentHourRow.clientHeight;
-        // Center the current hour in the viewport
-        calendarContainer.scrollTop = rowOffset - (containerHeight / 2) + (rowHeight / 2);
-    }
+    calendarBody.appendChild(row);
+  });
 
-    document.querySelectorAll(".appointment-block").forEach(block => {
-        block.addEventListener("click", () => {
-            const appointmentId = block.dataset.appointmentId;
-            console.log(`🖱️ Appointment block clicked: ID ${appointmentId}`);
-            showAppointmentDetails(appointmentId);
-        });
+  // Fallback rendering for unmatched appointments
+  if (document.querySelectorAll(".appointment-block").length === 0) {
+    calendarBody.innerHTML += `<div class="text-center text-warning">No appointments matched calendar slots. Displaying all:</div>`;
+    filteredAppointments.forEach(appt => {
+      const div = document.createElement("div");
+      div.innerHTML = `ID: ${appt.id}, Date: ${appt.appointment_date}, Status: ${appt.status}`;
+      calendarBody.appendChild(div);
     });
+  }
 
-    console.log(`✅ Populated calendar with ${filteredAppointments.length} appointments for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
+  const unmatchedAppointments = filteredAppointments.filter(appt => {
+    const apptDateStr = appt.appointment_date.split('T')[0];
+    return !days.some(day => day.dateStr === apptDateStr);
+  });
+  if (unmatchedAppointments.length > 0) {
+    calendarBody.innerHTML += `<div class="text-center text-warning">Warning: ${unmatchedAppointments.length} appointment(s) are outside the selected week.</div>`;
+  }
+
+  // Scroll to current time (based on system IST time)
+  const currentHourRow = document.querySelector(`.calendar-row[data-hour="${currentHour}"]`);
+  if (currentHourRow) {
+    const calendarContainer = calendarBody.parentElement || calendarBody;
+    const rowOffset = currentHourRow.offsetTop;
+    const containerHeight = calendarContainer.clientHeight;
+    const rowHeight = currentHourRow.clientHeight;
+    calendarContainer.scrollTop = rowOffset - (containerHeight / 2) + (rowHeight / 2);
+  }
+
+  document.querySelectorAll(".appointment-block").forEach(block => {
+    block.addEventListener("click", () => {
+      const appointmentId = block.dataset.appointmentId;
+      console.log(`🖱️ Appointment block clicked: ID ${appointmentId}`);
+      showAppointmentDetails(appointmentId);
+    });
+  });
+
+  console.log(`✅ Populated calendar with ${filteredAppointments.length} appointments for week starting ${weekStartDateStr}, doctorId: ${doctorId}`);
 }
 
   // Logout Function
