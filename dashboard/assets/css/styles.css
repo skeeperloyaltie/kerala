@@ -81,13 +81,11 @@ body {
     border-bottom: 2px solid #3b82f6;
   }
   .navbar-secondary .flatpickr-input {
-    background-color: #fff;
-    border: none;
-    border-radius: 5px;
-    padding: 2px 6px;
     width: 100px;
     font-size: 11px;
+    padding: 2px 6px;
     height: 24px;
+    position: relative; /* Ensure positioning context */
   }
   .navbar-secondary .btn-circle {
     width: 24px;
@@ -111,31 +109,36 @@ body {
     height: 24px;
   }
 
+  /* City Autocomplete (Add Patient Form) */
   .city-autocomplete {
     position: absolute;
-    z-index: 1000;
-    width: 100%;
-    max-height: 300px;
+    z-index: 1060; /* Above modal (z-index: 1055) */
+    width: 100%; /* Match input width */
+    max-height: 200px;
     overflow-y: auto;
     background: #fff;
-    border: 1px solid #ccc;
+    border: 1px solid #dee2e6;
     border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     list-style: none;
     padding: 0;
     margin: 0;
-}
-.city-autocomplete li {
+    top: calc(100% + 5px); /* Position below input (26px height + 5px gap) */
+    left: 0;
+  }
+  .city-autocomplete li {
     padding: 8px 12px;
     cursor: pointer;
-}
-.city-autocomplete li:hover {
+  }
+  
+  .city-autocomplete li:hover {
     background-color: #f8f9fa;
-}
-.city-autocomplete li.disabled {
+  }
+  
+  .city-autocomplete li.disabled {
     color: #6c757d;
     cursor: not-allowed;
-}
+  }
 
 /* Collapse Button Styling */
 .collapse-toggle-btn {
@@ -477,6 +480,19 @@ display: none;
 .sticky-footer {
   padding: 5px; /* Reduce padding */
 }
+.flatpickr-calendar {
+  z-index: 1060 !important; /* Above modal (z-index: 1055) and navbar */
+  font-size: 11px;
+  width: 250px; /* Slightly wider for better visibility */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+.flatpickr-calendar.open {
+  top: 30px !important; /* Position below input (24px height + 6px margin) */
+  left: auto !important;
+  right: 10px !important; /* Align to the right of the input */
+}
 
 .sticky-footer .btn {
   font-size: 10px; /* Reduce button font size */
@@ -487,10 +503,6 @@ display: none;
 .navbar-top .nav-link,
 .navbar-secondary .nav-link {
   font-size: 10px;
-}
-
-.navbar-secondary .flatpickr-input {
-  width: 80px;
 }
 
 .table-appointments th,
