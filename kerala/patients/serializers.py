@@ -19,7 +19,7 @@ class PatientSerializer(serializers.ModelSerializer):
             'emergency_contact_number', 'insurance_provider', 'policy_number', 'payment_preference',
             'admission_type', 'hospital_code'
         ]
-        read_only_fields = ['patient_id', 'age']
+        read_only_fields = ['patient_id', 'age', 'cio', 'created_at', 'updated_at']  # Removed 'primary_doctor'
 
     def validate_date_of_birth(self, value):
         today = date.today()

@@ -33,6 +33,8 @@ function initializeDatePickers() {
       dateFormat: isDateOnly ? "Y-m-d" : "Y-m-d H:i",     // Backend format
       enableTime: !isDateOnly,
       time_24hr: false,
+      allowInput: true, // Explicitly allow manual input
+      clickOpens: true, // Allow clicking to open the calendar
       minDate: ["appointmentDate"].includes(inputId)
         ? new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
         : null,
@@ -40,11 +42,12 @@ function initializeDatePickers() {
       defaultDate: ["billDate"].includes(inputId) ? "today" : null,
       appendTo: document.body,
       position: "auto",
-      allowInput: true,
-      // Add year range for patientDOB and maritalSince
-      yearRange: ["patientDOB", "maritalSince"].includes(inputId)
-        ? [1900, new Date().getFullYear()]
-        : undefined,
+      // Enable year and month dropdowns for all inputs
+      yearDropdown: true, // Show year dropdown
+      monthDropdown: true, // Show month dropdown
+      // Set year range for all inputs (1900 to current year + 10 for future appointments)
+      minYear: 1900,
+      maxYear: new Date().getFullYear() + 10,
       onReady: function(selectedDates, dateStr, instance) {
         const calendar = instance.calendarContainer;
         const inputRect = $input[0].getBoundingClientRect();
@@ -52,6 +55,7 @@ function initializeDatePickers() {
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
 
+        // Position calendar to avoid overflow
         calendar.style.top = "";
         calendar.style.left = "";
         calendar.style.bottom = "";
@@ -73,24 +77,7 @@ function initializeDatePickers() {
           calendar.style.right = "auto";
         }
 
-        // Customize year dropdown for patientDOB and maritalSince
-        if (["patientDOB", "maritalSince"].includes(inputId)) {
-          const yearElement = instance.yearElements[0];
-          yearElement.classList.add("flatpickr-year");
-          // Clear existing options
-          yearElement.innerHTML = "";
-          // Populate years from current year to 1900 (descending)
-          const currentYear = new Date().getFullYear();
-          for (let year = currentYear; year >= 1900; year--) {
-            const option = document.createElement("option");
-            option.value = year;
-            option.text = year;
-            yearElement.appendChild(option);
-          }
-          // Ensure the selected year is in view
-          yearElement.value = instance.currentYear || currentYear;
-        }
-
+        // Add OK and Clear buttons
         const buttonContainer = document.createElement("div");
         buttonContainer.style.display = "flex";
         buttonContainer.style.justifyContent = "center";
@@ -99,7 +86,7 @@ function initializeDatePickers() {
 
         const confirmButton = document.createElement("button");
         confirmButton.innerText = "OK";
-        confirmButton.className = "flatpickr-confirm";
+        confirmButton.className = "flatpickr-confirm btn btn-sm btn-primary";
         confirmButton.onclick = function() {
           if (selectedDates.length > 0) {
             instance.close();
@@ -109,7 +96,7 @@ function initializeDatePickers() {
 
         const clearButton = document.createElement("button");
         clearButton.innerText = "Clear";
-        clearButton.className = "flatpickr-clear";
+        clearButton.className = "flatpickr-clear btn btn-sm btn-secondary";
         clearButton.onclick = function() {
           instance.clear();
           $input.val("");
@@ -126,21 +113,14 @@ function initializeDatePickers() {
           instance.altInput.removeAttribute("readonly");
         }
       },
-      onOpen: function(selectedDates, dateStr, instance) {
-        // Ensure year dropdown is updated when picker opens
-        if (["patientDOB", "maritalSince"].includes(inputId)) {
-          const yearElement = instance.yearElements[0];
-          yearElement.value = instance.currentYear || new Date().getFullYear();
-        }
+      onChange: function(selectedDates, dateStr, instance) {
+        console.log(`#${inputId} changed - Selected Date:`, selectedDates[0], "Formatted:", dateStr);
       },
       onClose: function(selectedDates, dateStr, instance) {
         if (selectedDates.length === 0) {
           $input.val("");
           console.log(`Cleared #${inputId} on close due to no selection`);
         }
-      },
-      onChange: function(selectedDates, dateStr, instance) {
-        console.log(`#${inputId} changed - Selected Date:`, selectedDates[0], "Formatted:", dateStr);
       }
     };
 
@@ -148,7 +128,7 @@ function initializeDatePickers() {
     const instance = flatpickr($input[0], config);
     console.log(`Flatpickr initialized for #${inputId} with config:`, config);
 
-    // Ensure readonly state is respected, but only for the visible altInput
+    // Ensure readonly state is respected for the visible altInput
     if ($input.attr("readonly")) {
       $input.next(".flatpickr-input").prop("readonly", true);
     } else {
@@ -178,12 +158,19 @@ function initializeDatePickers() {
   const dateFilterConfig = {
     dateFormat: "Y-m-d",
     defaultDate: new Date(),
-    allowInput: true,
+    allowInput: true, // Explicitly allow manual input
+    clickOpens: true, // Allow clicking to open the calendar
     minDate: "1900-01-01",
     altInput: true,
     altFormat: "F j, Y",
     appendTo: document.body,
     position: "auto",
+    // Enable year and month dropdowns
+    yearDropdown: true, // Show year dropdown
+    monthDropdown: true, // Show month dropdown
+    // Set year range
+    minYear: 1900,
+    maxYear: new Date().getFullYear() + 10,
     onChange: function(selectedDates, dateStr, instance) {
       console.log("📅 Date Filter Changed - Selected date:", dateStr);
       if (dateStr) {
@@ -250,6 +237,7 @@ function initializeDatePickers() {
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
 
+      // Position calendar to avoid overflow
       calendar.style.top = "";
       calendar.style.left = "";
       calendar.style.bottom = "";

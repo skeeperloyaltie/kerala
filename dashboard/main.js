@@ -657,25 +657,32 @@ function adjustUIForRole(userType, roleLevel) {
     });
   }
 
-
   function showAppointmentDetails(appointmentId) {
     console.log(`🔍 Fetching details for appointment ID: ${appointmentId}`);
 
     $.ajax({
-        url: `${API_BASE_URL}/appointments/${appointmentId}/`, // Adjust endpoint if needed (e.g., /appointments/details/${appointmentId}/)
+        url: `${API_BASE_URL}/appointments/list/?appointment_id=${appointmentId}`, // Correct endpoint
         type: "GET",
         headers: getAuthHeaders(),
         success: function (response) {
             console.log(`✅ Appointment details fetched:`, response);
 
+            // Extract appointment data from the response
+            if (!response.appointments || !response.appointments.length) {
+                console.error('No appointment data found in response:', response);
+                alert('No appointment details found.');
+                return;
+            }
+            const appointment = response.appointments[0];
+
             // Format appointment details for display
-            const patientName = response.patient && response.patient.first_name
-                ? `${response.patient.first_name} ${response.patient.last_name || ''}`
+            const patientName = appointment.patient && appointment.patient.first_name
+                ? `${appointment.patient.first_name} ${appointment.patient.last_name || ''}`
                 : 'Unnamed';
-            const doctorName = response.doctor && response.doctor.first_name
-                ? `${response.doctor.first_name} ${response.doctor.last_name || ''}`
+            const doctorName = appointment.doctor && appointment.doctor.first_name
+                ? `${appointment.doctor.first_name} ${appointment.doctor.last_name || ''}`
                 : 'N/A';
-            const apptDate = new Date(response.appointment_date);
+            const apptDate = new Date(appointment.appointment_date);
             const istDate = new Date(apptDate.getTime() + (5.5 * 60 * 60 * 1000)); // Convert to IST
             const formattedDate = istDate.toLocaleString('en-US', {
                 dateStyle: 'medium',
@@ -695,10 +702,10 @@ function adjustUIForRole(userType, roleLevel) {
                                 <p><strong>Patient:</strong> ${patientName}</p>
                                 <p><strong>Doctor:</strong> ${doctorName}</p>
                                 <p><strong>Date & Time:</strong> ${formattedDate}</p>
-                                <p><strong>Status:</strong> ${response.status || 'N/A'}</p>
-                                <p><strong>Notes:</strong> ${response.notes || 'None'}</p>
-                                <p><strong>Illness:</strong> ${response.illness || 'None'}</p>
-                                <p><strong>Emergency:</strong> ${response.is_emergency ? 'Yes' : 'No'}</p>
+                                <p><strong>Status:</strong> ${appointment.status?.toUpperCase() || 'N/A'}</p>
+                                <p><strong>Notes:</strong> ${appointment.notes || 'None'}</p>
+                                <p><strong>Illness:</strong> ${appointment.patient?.current_medications || 'None'}</p>
+                                <p><strong>Emergency:</strong> ${appointment.is_emergency ? 'Yes' : 'No'}</p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -727,7 +734,7 @@ function adjustUIForRole(userType, roleLevel) {
         },
         error: function (xhr) {
             console.error(`❌ Failed to fetch appointment details for ID ${appointmentId}: ${xhr.responseJSON?.error || xhr.statusText}`);
-            alert(`Failed to load appointment details: ${xhr.responseJSON?.error || "Server Unavailable"}`);
+            alert(`Failed to load appointment details: ${xhr.responseJSON?.error || 'Server unavailable. Please try again.'}`);
         }
     });
 }
@@ -881,6 +888,41 @@ function toggleView(view) {
     calendarBtn: calendarBtn.className
   });
 }
+
+
+// Helper function to exit edit mode for a single row
+function exitEditMode($row) {
+  $row.removeClass('editing');
+  $row.find('.edit-controls').addClass('d-none');
+  $row.find('.edit-input').addClass('d-none');
+  $row.find('.display-value').removeClass('d-none');
+
+  // Update display values to reflect current input values (in case of cancel)
+  $row.find('.editable').each(function () {
+    const $cell = $(this);
+    const field = $cell.data('field');
+    const $input = $cell.find('.edit-input');
+    const $display = $cell.find('.display-value');
+
+    if (field === 'price') {
+      $display.text(`₹${parseFloat($input.val()).toFixed(2)}`);
+    } else if (field === 'color_code') {
+      $display.find('span').css('background-color', $input.val());
+    } else if (field === 'doctors') {
+      // Re-fetch doctor names if needed, or rely on server refresh
+      // For simplicity, assume server refresh updates this
+    } else {
+      $display.text($input.val() || 'N/A');
+    }
+  });
+
+  // Check if all rows are done editing to toggle global button
+  if (!$("#servicesTableBody").find('.editing').length) {
+    $('#editServicesBtn').text('Edit').removeClass('btn-warning').addClass('btn-primary').data('editing', false);
+  }
+}
+
+
 // main.js
 function populateAppointmentsCalendar(appointments, weekStartDateStr, doctorId = 'all') {
   const calendarBody = document.getElementById("calendarBody");
@@ -2472,7 +2514,6 @@ function initializePatientForm() {
   }
   // Fetch services on page load
   fetchServices();
-
   function populateServicesTable() {
     $.ajax({
       url: `${API_BASE_URL}/service/list/`,
@@ -2504,38 +2545,33 @@ function initializePatientForm() {
           const doctorNames = service.doctor_details && service.doctor_details.length
             ? service.doctor_details.map(d => `${d.first_name} ${d.last_name || ''}`.trim()).join(', ') || 'All Doctors'
             : 'N/A';
-          const serviceId = service.id; // Ensure service ID is captured
+          const serviceId = service.id;
           const $row = $(`
             <tr data-service-id="${serviceId}">
               <td>${index + 1}</td>
               <td class="editable" data-field="name">
                 <span class="display-value">${service.service_name || service.name || 'Unknown Service'}</span>
                 <input type="text" class="edit-input form-control form-control-sm d-none" value="${service.service_name || service.name || ''}">
-                <i class="fas fa-edit edit-icon ms-2"></i>
               </td>
               <td class="editable" data-field="code">
                 <span class="display-value">${service.code || 'N/A'}</span>
                 <input type="text" class="edit-input form-control form-control-sm d-none" value="${service.code || ''}">
-                <i class="fas fa-edit edit-icon ms-2"></i>
               </td>
               <td class="editable" data-field="price">
                 <span class="display-value">₹${parseFloat(service.service_price || service.price || 0).toFixed(2)}</span>
                 <input type="number" step="0.01" min="0" class="edit-input form-control form-control-sm d-none" value="${parseFloat(service.service_price || service.price || 0).toFixed(2)}">
-                <i class="fas fa-edit edit-icon ms-2"></i>
               </td>
               <td class="editable" data-field="color_code">
                 <span class="display-value">
                   <span style="display: inline-block; width: 20px; height: 20px; background-color: ${service.color_code || '#000000'}; border: 1px solid #ccc;"></span>
                 </span>
                 <input type="color" class="edit-input form-control form-control-sm d-none" value="${service.color_code || '#000000'}">
-                <i class="fas fa-edit edit-icon ms-2"></i>
               </td>
               <td class="editable" data-field="doctors">
                 <span class="display-value">${doctorNames}</span>
                 <select multiple class="edit-input form-select form-select-sm d-none" data-original-value="${service.all_doctors ? 'all' : service.doctors.join(',')}">
                   <!-- Options populated dynamically -->
                 </select>
-                <i class="fas fa-edit edit-icon ms-2"></i>
               </td>
               <td class="edit-controls d-none">
                 <button class="btn btn-success btn-sm save-edit me-1"><i class="fas fa-check"></i></button>
@@ -2545,86 +2581,104 @@ function initializePatientForm() {
           `);
           $tbody.append($row);
   
+          // Store original values for cancel functionality
+          $row.find('.edit-input').each(function () {
+            const $input = $(this);
+            $input.data('original-value', $input.val());
+          });
+  
           // Populate doctor dropdown for editing
           populateDoctorOptions($row.find('select.edit-input'), service.all_doctors, service.doctors);
         });
   
         console.log(`Populated services table with ${rawServices.length} entries`);
   
-        // Bind edit icon click event
-        $tbody.find('.edit-icon').on('click', function () {
-          const $cell = $(this).closest('td');
-          const $row = $cell.closest('tr');
-          const field = $cell.data('field');
+        // Bind global edit button click event (assumes button with ID #editServicesBtn exists)
+        $('#editServicesBtn').off('click').on('click', function () {
+          const $button = $(this);
+          const isEditing = $button.data('editing') || false;
   
-          // Exit if another cell is being edited
-          if ($tbody.find('.editing').length && !$cell.hasClass('editing')) {
-            alert('Please save or cancel the current edit before editing another field.');
-            return;
+          if (isEditing) {
+            // If already editing, warn if any rows are in edit mode
+            if ($tbody.find('.editing').length) {
+              alert('Please save or cancel all edits before exiting edit mode.');
+              return;
+            }
+            // Exit edit mode
+            $button.text('Edit').removeClass('btn-warning').addClass('btn-primary').data('editing', false);
+            $tbody.find('tr').removeClass('editing');
+            $tbody.find('.edit-controls').addClass('d-none');
+            $tbody.find('.edit-input').addClass('d-none');
+            $tbody.find('.display-value').removeClass('d-none');
+          } else {
+            // Enter edit mode for all rows
+            $button.text('Done').removeClass('btn-primary').addClass('btn-warning').data('editing', true);
+            $tbody.find('tr').addClass('editing');
+            $tbody.find('.edit-controls').removeClass('d-none');
+            $tbody.find('.edit-input').removeClass('d-none');
+            $tbody.find('.display-value').addClass('d-none');
           }
-  
-          // Toggle edit mode for this cell
-          $cell.addClass('editing');
-          $row.find('.edit-controls').removeClass('d-none');
-          $cell.find('.display-value').addClass('d-none');
-          $cell.find('.edit-input').removeClass('d-none').focus();
-  
-          // Hide edit icons in other cells
-          $row.find('.edit-icon').addClass('d-none');
         });
   
-        // Bind save button click event
-        $tbody.find('.save-edit').on('click', function () {
+        // Bind save button click event (per row)
+        $tbody.on('click', '.save-edit', function () {
           const $row = $(this).closest('tr');
           const serviceId = $row.data('service-id');
-          const $cell = $row.find('.editing');
-          const field = $cell.data('field');
-          const $input = $cell.find('.edit-input');
-          let newValue = $input.val();
+          const updateData = {};
   
-          // Validate input
-          if (!validateServiceField(field, newValue)) {
-            alert(`Invalid value for ${field}.`);
+          // Collect all changed fields
+          $row.find('.editable').each(function () {
+            const $cell = $(this);
+            const field = $cell.data('field');
+            const $input = $cell.find('.edit-input');
+            let newValue = $input.val();
+  
+            // Validate input
+            if (!validateServiceField(field, newValue)) {
+              alert(`Invalid value for ${field} in row.`);
+              return false; // Stop processing this row
+            }
+  
+            // Format new value based on field
+            if (field === 'doctors') {
+              newValue = $input.val().includes('all') ? { all_doctors: true, doctors: [] } : { all_doctors: false, doctors: $input.val().map(id => parseInt(id)) };
+              updateData.all_doctors = newValue.all_doctors;
+              updateData.doctors = newValue.doctors;
+            } else if (field === 'price') {
+              newValue = parseFloat(newValue);
+              updateData[field] = newValue;
+            } else {
+              updateData[field] = newValue;
+            }
+          });
+  
+          // If validation failed, exit
+          if (Object.keys(updateData).length === 0) {
             return;
           }
   
-          // Format new value based on field
-          if (field === 'doctors') {
-            newValue = $input.val().includes('all') ? { all_doctors: true, doctors: [] } : { all_doctors: false, doctors: $input.val().map(id => parseInt(id)) };
-          } else if (field === 'price') {
-            newValue = parseFloat(newValue);
-          }
-  
-          // Prepare data for PATCH request
-          const updateData = field === 'doctors' ? newValue : { [field]: newValue };
-  
           // Send update to server
-          updateService(serviceId, updateData, $row);
+          updateService(serviceId, updateData, $row, () => {
+            // On success, exit edit mode for this row
+            exitEditMode($row);
+          });
         });
   
-        // Bind cancel button click event
-        $tbody.find('.cancel-edit').on('click', function () {
+        // Bind cancel button click event (per row)
+        $tbody.on('click', '.cancel-edit', function () {
           const $row = $(this).closest('tr');
-          const $cell = $row.find('.editing');
-          const field = $cell.data('field');
-          const $input = $cell.find('.edit-input');
-          const $display = $cell.find('.display-value');
-  
-          // Reset input to original value
-          if (field === 'doctors') {
-            const originalValue = $input.data('original-value').split(',');
-            $input.val(originalValue);
-          } else {
-            $input.val($display.data('original-value') || $input.val());
-          }
-  
-          // Exit edit mode
+          // Reset inputs to original values
+          $row.find('.edit-input').each(function () {
+            const $input = $(this);
+            $input.val($input.data('original-value'));
+          });
+          // Exit edit mode for this row
           exitEditMode($row);
         });
       },
       error: function (xhr) {
         console.error(`Failed to fetch services for table: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
-        $("#servicesTableBody").empty().append('<tr><td colspan="6" class="text-center">Failed to load services.</td></tr>');
+        $tbody.empty().append('<tr><td colspan="6" class="text-center">Failed to load services.</td></tr>');
       }
     });
   }

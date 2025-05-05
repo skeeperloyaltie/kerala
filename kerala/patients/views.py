@@ -10,6 +10,7 @@ import logging
 from rest_framework import status, generics, permissions, pagination
 
 
+
 logger = logging.getLogger(__name__)
 
 class CreatePatientView(APIView):
@@ -19,15 +20,79 @@ class CreatePatientView(APIView):
         user = request.user
         logger.info(f"Received patient creation request from user {user.username}: {request.data}")
 
+        # Permission check
         if not (user.is_superuser or user.has_perm('appointments.add_appointment')):
             logger.warning(f"Unauthorized patient creation attempt by {user.username} ({user.user_type} - {user.role_level})")
             raise PermissionDenied("Only Medium or Senior roles can create patients.")
 
-        serializer = PatientSerializer(data=request.data)
+        # Create a mutable copy of request.data
+        data = request.data.copy()
+
+        # Assign primary_doctor based on user role
+        try:
+            if user.user_type == "Doctor":
+                # For doctors, set primary_doctor to themselves
+                if not hasattr(user, 'doctor'):
+                    logger.error(f"User {user.username} is a Doctor but has no associated Doctor instance.")
+                    return Response({"error": "User is not properly linked to a Doctor profile."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                data['primary_doctor'] = user.doctor.id
+                logger.info(f"Assigned primary_doctor to Doctor {user.doctor.id} for user {user.username}")
+            elif user.user_type == "Receptionist":
+                # For receptionists, use provided primary_doctor or assign a default
+                if 'primary_doctor' in data and data['primary_doctor']:
+                    try:
+                        doctor = Doctor.objects.get(id=data['primary_doctor'])
+                        logger.info(f"Receptionist {user.username} specified primary_doctor: {doctor.id}")
+                    except Doctor.DoesNotExist:
+                        logger.error(f"Invalid primary_doctor ID {data['primary_doctor']} provided by {user.username}")
+                        return Response({"error": "Specified primary doctor not found."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    # Assign a default doctor associated with the receptionist
+                    try:
+                        receptionist = Receptionist.objects.get(user=user)
+                        # Assume Receptionist has a ManyToManyField 'doctors'
+                        if hasattr(receptionist, 'doctors') and receptionist.doctors.exists():
+                            default_doctor = receptionist.doctors.first()
+                            data['primary_doctor'] = default_doctor.id
+                            logger.info(f"Assigned default primary_doctor {default_doctor.id} for receptionist {user.username}")
+                        else:
+                            # Fallback: Use the first available doctor
+                            default_doctor = Doctor.objects.first()
+                            if default_doctor:
+                                data['primary_doctor'] = default_doctor.id
+                                logger.info(f"No associated doctors found; assigned system default doctor {default_doctor.id} for receptionist {user.username}")
+                            else:
+                                logger.warning(f"No doctors available to assign as primary_doctor for receptionist {user.username}")
+                                data['primary_doctor'] = None  # Allow null
+                    except Receptionist.DoesNotExist:
+                        logger.error(f"User {user.username} is a Receptionist but has no associated Receptionist instance.")
+                        return Response({"error": "User is not properly linked to a Receptionist profile."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                # For superusers or other roles, use provided primary_doctor or None
+                if 'primary_doctor' in data and data['primary_doctor']:
+                    try:
+                        Doctor.objects.get(id=data['primary_doctor'])
+                        logger.info(f"Using provided primary_doctor {data['primary_doctor']} for user {user.username}")
+                    except Doctor.DoesNotExist:
+                        logger.error(f"Invalid primary_doctor ID {data['primary_doctor']} provided by {user.username}")
+                        return Response({"error": "Specified primary doctor not found."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    data['primary_doctor'] = None
+                    logger.info(f"No primary_doctor specified for user {user.username}; setting to null")
+
+        except Exception as e:
+            logger.error(f"Error assigning primary_doctor for user {user.username}: {str(e)}", exc_info=True)
+            return Response({"error": "An error occurred while assigning the primary doctor."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Validate and save patient
+        serializer = PatientSerializer(data=data)
         if serializer.is_valid():
             patient = serializer.save()
             logger.info(f"Patient created successfully: {patient.patient_id} by {user.username}")
-            return Response({"message": "Patient created successfully.", "patient": PatientSerializer(patient).data}, status=status.HTTP_201_CREATED)
+            return Response(
+                {"message": "Patient created successfully.", "patient": PatientSerializer(patient).data},
+                status=status.HTTP_201_CREATED
+            )
         logger.error(f"Patient creation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
