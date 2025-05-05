@@ -9,3 +9,4 @@ postfix
 pytz
 python-dateutil
 django-simple-history
+tzlocal
