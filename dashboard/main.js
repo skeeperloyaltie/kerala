@@ -146,7 +146,7 @@ $(document).ready(function () {
           .filter(city => city.name && typeof city.name === "string") // Ensure valid names
           .map(city => ({
             name: city.name.trim().replace(/\s+/g, " "), // Normalize whitespace
-            state: city.state ? city.state.trim() : ""
+            // state: city.state ? city.state.trim() : ""
           }));
         console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 10)); // Log first 10
         isFetchingCities = false;
@@ -2828,7 +2828,7 @@ function addBillItem() {
       <td>
         <div class="input-group input-group-sm">
           <input type="hidden" class="service-id" name="item_service_id[]">
-          <input type="text" class="form-control form-control-sm service-search" name="item_service_name[]" placeholder="Search Service" style="width: 100%;">
+          <input type="text" class="form-control form-control-sm service-search" name="item_service_name[]" placeholder="Search or select service" style="width: 100%;">
         </div>
         <small class="form-text text-muted doctor-info">Doctors: No doctors assigned</small>
       </td>
@@ -2844,7 +2844,7 @@ function addBillItem() {
   $('#billItemsTableBody').append(newItem);
   const $newRow = $('#billItemsTableBody tr').last();
 
-  // Initialize autocomplete for service name
+  // Initialize autocomplete with dropdown for service name
   const $serviceSearch = $newRow.find('.service-search');
   if ($.fn.autocomplete) {
     $serviceSearch.autocomplete({
@@ -2857,7 +2857,7 @@ function addBillItem() {
         );
         response(filteredServices.map(service => ({
           label: `${service.name} (${service.service_id || service.code || service.id})`,
-          value: service.name,
+          value: `${service.name} (${service.service_id || service.code || service.id})`,
           id: service.id,
           code: service.service_id || service.code || service.id,
           price: service.price || 0,
@@ -2865,7 +2865,14 @@ function addBillItem() {
           doctors: service.doctors || []
         })));
       },
-      minLength: 2,
+      minLength: 0, // Show all services when clicking the input
+      open: function () {
+        $(this).autocomplete('widget').css('z-index', 1051); // Ensure dropdown appears above modals
+      },
+      focus: function (event, ui) {
+        // Prevent value from updating on focus
+        return false;
+      },
       select: function (event, ui) {
         const $row = $(this).closest('tr');
         $row.find('.service-id').val(ui.item.id);
@@ -2876,7 +2883,7 @@ function addBillItem() {
           ? ui.item.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
           : 'No doctors assigned';
         $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
-        $(this).val(`${ui.item.value} (${ui.item.code})`);
+        $(this).val(ui.item.value);
         calculateBillTotal();
         return false;
       },
@@ -2892,6 +2899,10 @@ function addBillItem() {
           calculateBillTotal();
         }
       }
+    })
+    .on('focus', function () {
+      // Show all services when the input is focused
+      $(this).autocomplete('search', '');
     });
   } else {
     console.warn('⚠️ jQuery UI Autocomplete not available. Falling back to select.');
