@@ -2,12 +2,11 @@
 
 $(document).ready(function () {
   // main.js
-import moment from 'moment-timezone';
-import { Calendar } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import listPlugin from '@fullcalendar/list';
-import interactionPlugin from '@fullcalendar/interaction';
+// Ensure global dependencies are available
+const moment = window.moment;
+const { Calendar } = window.FullCalendar;
+const $ = window.jQuery;
+
   const API_BASE_URL = "http://smarthospitalmaintain.com:8000"; // Adjust to your Django API
 
   // Initialize intl-tel-input for phone numbers
