@@ -3080,7 +3080,7 @@ $(document).on("input", "[name='quantity[]'], .item-gst, .item-discount, #deposi
 
 // main.js (partial, focusing on showAppointmentDatePopup)
 
-// Assumes moment, jQuery, and Bootstrap are loaded
+// Assumes jQuery and Bootstrap are loaded
 function showAppointmentDatePopup(callback) {
   // Create modal HTML with two input fields for date and time
   const modal = $(`
@@ -3093,12 +3093,12 @@ function showAppointmentDatePopup(callback) {
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label for="appointmentDateInput" class="form-label">Appointment Date (YYYY-MMM-DD)</label>
-              <input type="text" class="form-control" id="appointmentDateInput" placeholder="e.g., 2025-Jan-01">
+              <label for="appointmentDateInput" class="form-label">Date (YYYY-MM-DD)</label>
+              <input type="text" class="form-control" id="appointmentDateInput" placeholder="e.g., 2025-01-01">
             </div>
             <div class="mb-3">
-              <label for="appointmentTimeInput" class="form-label">Appointment Time (HH:MM)</label>
-              <input type="text" class="form-control" id="appointmentTimeInput" placeholder="e.g., 14:30">
+              <label for="appointmentTimeInput" class="form-label">Time (HH:MM)</label>
+              <input type="text" class="form-control" id="appointmentTimeInput" placeholder="e.g., 10:10">
             </div>
             <div class="mb-3">
               <label for="billDoctor" class="form-label">Doctor</label>
@@ -3129,60 +3129,47 @@ function showAppointmentDatePopup(callback) {
 
   // Validation functions
   function validateDate(dateStr) {
-    const dateRegex = /^(\d{4})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{2})$/i;
-    if (!dateRegex.test(dateStr)) {
-      return { valid: false, message: 'Date must be in YYYY-MMM-DD format (e.g., 2025-Jan-01).' };
+    const regex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    if (!regex.test(dateStr)) {
+      return { valid: false, message: 'Date must be in YYYY-MM-DD format (e.g., 2025-01-01).' };
     }
 
-    const [, year, month, day] = dateStr.match(dateRegex);
+    const [, year, month, day] = dateStr.match(regex);
     const yearNum = parseInt(year, 10);
+    const monthNum = parseInt(month, 10);
     const dayNum = parseInt(day, 10);
 
     // Validate year
-    const currentYear = moment().tz('Asia/Kolkata').year();
+    const currentYear = new Date().getFullYear();
     if (yearNum < currentYear) {
       return { valid: false, message: `Year must be ${currentYear} or later.` };
     }
 
     // Validate month
-    const monthMap = {
-      Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
-      Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
-    };
-    const monthNum = monthMap[month.charAt(0).toUpperCase() + month.slice(1).toLowerCase()];
-    if (!monthNum) {
-      return { valid: false, message: 'Invalid month. Use 3-letter abbreviation (e.g., Jan, Feb).' };
+    if (monthNum < 1 || monthNum > 12) {
+      return { valid: false, message: 'Month must be between 01 and 12.' };
     }
 
     // Validate day
-    const daysInMonth = moment(`${year}-${monthNum}`, 'YYYY-M').daysInMonth();
+    const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
     if (dayNum < 1 || dayNum > daysInMonth) {
-      return { valid: false, message: `Day must be between 01 and ${daysInMonth} for ${month}.` };
+      return { valid: false, message: `Day must be between 01 and ${daysInMonth}.` };
     }
 
-    return { valid: true, year, month, day };
+    return { valid: true };
   }
 
   function validateTime(timeStr) {
-    const timeRegex = /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/;
-    if (!timeRegex.test(timeStr)) {
-      return { valid: false, message: 'Time must be in HH:MM format (e.g., 14:30).' };
+    const regex = /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/;
+    if (!regex.test(timeStr)) {
+      return { valid: false, message: 'Time must be in HH:MM format (e.g., 10:10).' };
     }
-
-    const [, hour, minute] = timeStr.match(timeRegex);
-    const minuteNum = parseInt(minute, 10);
-
-    // Validate minute (15-minute intervals)
-    if (![0, 15, 30, 45].includes(minuteNum)) {
-      return { valid: false, message: 'Minutes must be 00, 15, 30, or 45.' };
-    }
-
-    return { valid: true, hour, minute };
+    return { valid: true };
   }
 
   // Handle Confirm button click
   $('#confirmAppointmentDate').on('click', function () {
-    const dateStr = $('#appointmentDateInput').val().trim(); // YYYY-MMM-DD
+    const dateStr = $('#appointmentDateInput').val().trim(); // YYYY-MM-DD
     const timeStr = $('#appointmentTimeInput').val().trim(); // HH:MM
     const doctorId = $('#billDoctor').val();
 
@@ -3215,30 +3202,24 @@ function showAppointmentDatePopup(callback) {
     }
 
     // Combine date and time
-    const { year, month, day } = dateValidation;
-    const { hour, minute } = timeValidation;
-    const monthMap = {
-      Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
-      Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
-    };
-    const monthNum = monthMap[month.charAt(0).toUpperCase() + month.slice(1).toLowerCase()];
-    const dateTimeStr = `${year}-${monthNum}-${day} ${hour}:${minute}`;
+    const dateTimeStr = `${dateStr}T${timeStr}`;
+    const selectedDate = new Date(dateTimeStr);
 
-    // Parse and validate in IST
-    const selectedDate = moment.tz(dateTimeStr, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
-    if (!selectedDate.isValid()) {
-      alert('Invalid date/time. Please enter a valid date and time.');
+    // Check if date is valid
+    if (isNaN(selectedDate.getTime())) {
+      alert('Invalid date or time. Please check your input.');
       return;
     }
 
-    const now = moment.tz('Asia/Kolkata');
-    if (selectedDate.isSameOrBefore(now)) {
+    // Check if date is in the future
+    const now = new Date();
+    if (selectedDate <= now) {
       alert('Selected date/time is in the past or current time. Please choose a future date.');
       return;
     }
 
     // Format output as YYYY-MM-DD HH:mm
-    const formattedDate = selectedDate.format('YYYY-MM-DD HH:mm');
+    const formattedDate = `${dateStr} ${timeStr}`;
     console.log(`Confirmed appointment date: ${formattedDate}, doctorId: ${doctorId}`);
 
     // Update hidden input (if used elsewhere)
