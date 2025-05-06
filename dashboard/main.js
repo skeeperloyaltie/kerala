@@ -29,12 +29,27 @@ $(document).ready(function () {
   });
 
   // Initialize Bootstrap Datepicker for Bill Date
-  $("#billDate").datepicker({
-    format: "yyyy-mm-dd",
-    autoclose: true,
-    todayHighlight: true,
-    startDate: "1900-01-01"
-  }).datepicker("setDate", new Date());
+  function validateDateInput(inputId, format = 'YYYY-MM-DD') {
+    const $input = $(`#${inputId}`);
+    $input.on('input', function() {
+      const value = $input.val();
+      const regex = format === 'YYYY-MM-DD' ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+      if (value && !regex.test(value)) {
+        $input.addClass('is-invalid');
+        $input.next('.invalid-feedback').remove();
+        $input.after('<div class="invalid-feedback">Please use format ' + format + '</div>');
+      } else {
+        $input.removeClass('is-invalid');
+        $input.next('.invalid-feedback').remove();
+      }
+    });
+  }
+  
+  $(document).ready(function() {
+    validateDateInput('billDate');
+    validateDateInput('patientDOB');
+    validateDateInput('appointmentDate', 'YYYY-MM-DD HH:mm');
+  });
 
   // Get Authentication Headers
   function getAuthHeaders() {
