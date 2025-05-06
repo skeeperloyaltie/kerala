@@ -2843,7 +2843,7 @@ function updateTotalPrice($row) {
   updateTotalBillAmount();
   updateDepositColor();
 }
-unction updateTotalBillAmount() {
+function updateTotalBillAmount() {
   const total = Array.from($(".item-total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
   $("#totalAmount").val(total.toFixed(2));
 }
@@ -3854,8 +3854,6 @@ $("#goBackBtn").on("click", function () {
   console.log("Navigated back to Add Patient tab");
 });
 
-  // Global variable for selected patient ID
-let selectedPatientId = null;
 
 function updateBillDetails(patientId) {
   const effectivePatientId = patientId || selectedPatientId || $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
