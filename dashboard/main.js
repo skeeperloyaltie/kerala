@@ -37,7 +37,7 @@ $(document).ready(function () {
       if (value && !regex.test(value)) {
         $input.addClass('is-invalid');
         $input.next('.invalid-feedback').remove();
-        $input.after('<div class="invalid-feedback">Please use format ' + format + '</div>');
+        // $input.after('<div class="invalid-feedback">Please use format ' + format + '</div>');
       } else {
         $input.removeClass('is-invalid');
         $input.next('.invalid-feedback').remove();
