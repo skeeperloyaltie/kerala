@@ -2828,8 +2828,12 @@ function addBillItem() {
   `;
   $('#billItemsTableBody').append(newItem);
   const $newRow = $('#billItemsTableBody tr').last();
-  populateServiceDropdown($newRow);
+  
+  // Populate the service dropdown after row is initialized
   const $select = $newRow.find('.service-select');
+  populateServiceDropdown($select, allServices);
+
+  // Initialize Select2 for search by name or code
   $select.select2({
     placeholder: 'Search by name or code',
     allowClear: true,
@@ -2852,6 +2856,8 @@ function addBillItem() {
       return null;
     }
   });
+
+  // Handle Select2 selection
   $select.on('select2:select', function(e) {
     const data = e.params.data;
     const $row = $(this).closest('tr');
@@ -2865,6 +2871,8 @@ function addBillItem() {
     $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
     calculateBillTotal();
   });
+
+  // Handle Select2 clear
   $select.on('select2:clear', function() {
     const $row = $(this).closest('tr');
     $row.find('.service-id').val('');
