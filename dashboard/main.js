@@ -28,7 +28,7 @@ $(document).ready(function () {
     $(this).next('label').addClass('active');
   });
 
-  // Initialize Bootstrap Datepicker for Bill Date
+  // Initialize Bootstrap for Bill Date
   function validateDateInput(inputId, format = 'YYYY-MM-DD') {
     const $input = $(`#${inputId}`);
     $input.on('input', function() {
@@ -431,6 +431,7 @@ function markAppointmentsForDate(dateStr) {
       }
     });
   });
+  bindDateFilterButtons();
 
   // Set today's date and trigger fetch/marking
   const today = new Date().toISOString().split('T')[0];
@@ -447,51 +448,64 @@ function markAppointmentsForDate(dateStr) {
 
   console.log("🟢 Date Filter Initialized with default date: Today");
 
-  // Bind Date Filter Buttons
-  function bindDateFilterButtons() {
-    $(".btn:contains('Set')").on("click", function () {
-      const dateStr = $("#dateFilter").val();
-      console.log("🖱️ Set Date Clicked:", dateStr);
-      if (dateStr) {
+  // Bind actions to date filter buttons
+function bindDateFilterButtons() {
+  // "Set" button: Validate and fetch appointments
+  $(".btn:contains('Set')").on("click", function() {
+    const dateStr = $("#dateFilter").val();
+    console.log("🖱️ Set Date Clicked:", dateStr);
+    if (dateStr) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         fetchAppointmentsByDate(dateStr);
       } else {
-        alert("Please select a date.");
+        alert("Please enter a valid date in YYYY-MM-DD format.");
+        $("#dateFilter").addClass('is-invalid');
+        $("#dateFilter").next('.invalid-feedback').remove();
+        $("#dateFilter").after('<div class="invalid-feedback">Please use format YYYY-MM-DD</div>');
       }
-    });
+    } else {
+      alert("Please enter a date.");
+    }
+  });
 
-    $(".btn:contains('Today')").on("click", function () {
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-      console.log("🖱️ Today Clicked:", todayStr);
-      $("#dateFilter").val(todayStr);
-      $("#dateFilter").datepicker("setDate", todayStr);
-      fetchAppointmentsByDate(todayStr);
-    });
+  // "Today" button: Set today's date and fetch appointments
+  $(".btn:contains('Today')").on("click", function() {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    console.log("🖱️ Today Clicked:", todayStr);
+    $("#dateFilter").val(todayStr).trigger('input'); // Trigger validation and fetch
+  });
 
-    $("#calendarTrigger").on("click", function () {
-      $("#dateFilter").datepicker("show");
-      console.log("🗓️ Calendar button clicked, opening date picker");
-    });
-  }
+  // Calendar Trigger: Optional action (e.g., toggle FullCalendar or disabled)
+  $("#calendarTrigger").on("click", function() {
+    console.log("🗓️ Calendar button clicked");
+    // Option 1: Toggle FullCalendar visibility (if implemented)
+    $("#appointmentsCalendar").toggle();
+    
+    // Option 2: Show a message (temporary)
+    alert("Calendar view is not available. Please enter a date manually in YYYY-MM-DD format.");
+    
+    // Option 3: Disable button (uncomment to disable)
+    // $(this).prop('disabled', true).addClass('disabled');
+  });
+}
 
   // Global view state (assumed to be set by toggleView)
   let currentView = 'table'; // Default to table view
-
   function fetchAppointmentsByDate(dateStr = null, filter = 'all', doctorId = 'all') {
     const today = new Date();
     const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const selectedDate = dateStr || defaultDate;
-
+  
     console.log(`📅 Fetching appointments for date: ${selectedDate}, filter: ${filter}, doctorId: ${doctorId}, view: ${currentView}`);
-
+  
     // Update #dateFilter to reflect the selected date
-    $("#dateFilter").val(selectedDate);
-    $("#dateFilter").datepicker("setDate", selectedDate);
-
+    $("#dateFilter").val(selectedDate).trigger('input'); // Trigger validation and related logic
+  
     // Build API URL based on view
     let url;
     let startDateStr, endDateStr;
-
+  
     if (currentView === 'table') {
       // Table view: Fetch single day
       startDateStr = selectedDate;
@@ -503,23 +517,23 @@ function markAppointmentsForDate(dateStr) {
       startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 6); // End on Saturday
-
+  
       startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
       endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
       url = `${API_BASE_URL}/appointments/list/?start_date=${startDateStr}&end_date=${endDateStr}`;
     }
-
+  
     if (doctorId !== 'all') {
       url += `&doctor_id=${doctorId}`;
     }
-
+  
     $.ajax({
       url: url,
       type: "GET",
       headers: getAuthHeaders(),
       success: function (data) {
         console.log(`📥 Raw API response for ${startDateStr} to ${endDateStr}:`, data);
-
+  
         // Normalize appointments data
         let appointmentsArray = [];
         if (Array.isArray(data)) {
@@ -532,7 +546,7 @@ function markAppointmentsForDate(dateStr) {
           console.warn(`⚠️ Unexpected response format:`, data);
           appointmentsArray = [];
         }
-
+  
         // Filter by status
         const statusMap = {
           'all': ['booked', 'arrived', 'on-going', 'reviewed', 'scheduled'],
@@ -543,19 +557,19 @@ function markAppointmentsForDate(dateStr) {
           'scheduled': ['scheduled']
         };
         const allowedStatuses = statusMap[filter.toLowerCase()] || statusMap['all'];
-
+  
         appointmentsArray = appointmentsArray.filter(appt => {
           if (!appt || !appt.status) return false;
           return allowedStatuses.includes(appt.status.toLowerCase());
         });
-
+  
         // Populate based on current view
         if (currentView === 'table') {
           populateAppointmentsTable(appointmentsArray, selectedDate, doctorId);
         } else {
           populateAppointmentsCalendar(appointmentsArray, startDateStr, doctorId);
         }
-
+  
         console.log(`✅ Fetched ${appointmentsArray.length} appointments for ${startDateStr} to ${endDateStr} with filter ${filter} and doctorId ${doctorId}`);
       },
       error: function (xhr) {
@@ -1660,7 +1674,6 @@ function renderAppointmentsTable(appointments, patientId) {
   console.log(`✅ Rendered appointments table for patient ${patientId} with ${appointments.length} entries`);
 }
 
-// New Function: Edit Appointment (Frontend Modal)
 function editAppointment(appointmentId) {
   $.ajax({
     url: `${API_BASE_URL}/appointments/edit/${appointmentId}/`,
@@ -1681,11 +1694,13 @@ function editAppointment(appointmentId) {
               <div class="modal-body">
                 <div class="mb-3">
                   <label for="editApptDate" class="form-label">Date</label>
-                  <input type="text" class="form-control" id="editApptDate" value="${appt.appointment_date ? appt.appointment_date.split('T')[0] : ''}">
+                  <input type="text" class="form-control" id="editApptDate" value="${appt.appointment_date ? appt.appointment_date.split('T')[0] : ''}" placeholder="YYYY-MM-DD">
+                  <div class="invalid-feedback">Please use format YYYY-MM-DD</div>
                 </div>
                 <div class="mb-3">
                   <label for="editApptTime" class="form-label">Time (HH:mm, 24hr)</label>
                   <input type="text" class="form-control" id="editApptTime" value="${appt.appointment_date ? appt.appointment_date.split('T')[1].split(':').slice(0, 2).join(':') : ''}" placeholder="HH:mm">
+                  <div class="invalid-feedback">Please use format HH:mm (24hr)</div>
                 </div>
                 <div class="mb-3">
                   <label for="editApptDoctor" class="form-label">Doctor</label>
@@ -1718,13 +1733,15 @@ function editAppointment(appointmentId) {
       const bsModal = new bootstrap.Modal(modal[0]);
       bsModal.show();
 
-      // Initialize Bootstrap Datepicker for date
-      $("#editApptDate").datepicker({
-        format: "yyyy-mm-dd",
-        autoclose: true,
-        todayHighlight: true,
-        startDate: new Date()
-      }).datepicker("setDate", appt.appointment_date ? appt.appointment_date.split('T')[0] : new Date());
+      // Validate date input (YYYY-MM-DD)
+      $("#editApptDate").on("input", function () {
+        const date = $(this).val();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          $(this).addClass("is-invalid");
+        } else {
+          $(this).removeClass("is-invalid");
+        }
+      });
 
       // Basic time input validation (HH:mm, 24hr format)
       $("#editApptTime").on("input", function () {
@@ -1744,8 +1761,14 @@ function editAppointment(appointmentId) {
       modal.find('.save-appointment').on('click', function () {
         const date = $('#editApptDate').val();
         const time = $('#editApptTime').val();
-        if (!date || !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time)) {
-          alert("Please enter a valid date and time (HH:mm, 24hr format).");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time)) {
+          alert("Please enter a valid date (YYYY-MM-DD) and time (HH:mm, 24hr format).");
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            $('#editApptDate').addClass("is-invalid");
+          }
+          if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time)) {
+            $('#editApptTime').addClass("is-invalid");
+          }
           return;
         }
         const updatedData = {
