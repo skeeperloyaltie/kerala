@@ -4030,16 +4030,14 @@ $("#addBillsForm").submit(function (e) {
   e.preventDefault();
 
   const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
-  if (!patientId) {
-    alert("Please select a patient.");
+  if (!patientId || isNaN(parseInt(patientId))) {
+    alert("Please select a valid patient.");
     return;
   }
 
   const billDate = $("#billDate").val();
-  let hasErrors = false;
   if (!billDate || !/^\d{4}-\d{2}-\d{2}$/.test(billDate)) {
     alert("Please enter a valid bill date in format YYYY-MM-DD.");
-    hasErrors = true;
     return;
   }
   const billDateObj = new Date(billDate);
@@ -4047,11 +4045,11 @@ $("#addBillsForm").submit(function (e) {
   now.setHours(0, 0, 0, 0);
   if (billDateObj < now) {
     alert("Bill date cannot be in the past.");
-    hasErrors = true;
     return;
   }
 
   const items = [];
+  let hasErrors = false;
   $("#billItemsTableBody tr").each(function () {
     const $row = $(this);
     const serviceId = $row.find(".service-id").val();
@@ -4098,7 +4096,7 @@ $("#addBillsForm").submit(function (e) {
   const notes = $("#billNotes").val();
 
   const billData = {
-    patient_id: patientId,
+    patient: Number(patientId), // Changed from patient_id to patient
     bill_date: billDate,
     total_amount: totalAmount,
     deposit_amount: depositAmount,
@@ -4108,8 +4106,17 @@ $("#addBillsForm").submit(function (e) {
   };
 
   showAppointmentDatePopup(function (appointmentDate, doctorId) {
+    if (!doctorId || isNaN(parseInt(doctorId))) {
+      alert("Please select a valid doctor.");
+      return;
+    }
+
+    // Add appointment data (flat structure)
     billData.appointment_date = appointmentDate;
-    billData.doctor_id = doctorId;
+    billData.doctor = Number(doctorId); // Changed from doctor_id to doctor
+
+    // Log the data being sent for debugging
+    console.log("📤 Sending bill data:", JSON.stringify(billData, null, 2));
 
     $.ajax({
       url: `${API_BASE_URL}/bills/create/`,
@@ -4149,6 +4156,7 @@ $("#addBillsForm").submit(function (e) {
       },
       error: function (xhr) {
         console.error(`❌ Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
+        console.error("🔍 Error response:", JSON.stringify(xhr.responseJSON, null, 2));
         alert(`Failed to create bill: ${xhr.responseJSON?.error || "Server Unavailable"}`);
       }
     });
