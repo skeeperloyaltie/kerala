@@ -2134,10 +2134,8 @@ $("#addPatientForm").submit(function (e) {
     errors.push("Appointment Date is required for editing an appointment.");
   }
 
-  const primaryDoctor = $("#doctor").val();
-  if (!primaryDoctor) {
-    errors.push("Primary Doctor is required.");
-  }
+  const primaryDoctor = $("#doctor").val() || null; // Use selected value or null
+  
 
   if (errors.length > 0) {
     alert("Please fix the following errors:\n- " + errors.join("\n- "));
