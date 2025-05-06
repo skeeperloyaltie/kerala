@@ -1507,68 +1507,57 @@ function resetModalView() {
 let selectedPatientId = null;
 
 function setupPatientSearch() {
-  const $input = $("#patientSearch");
-  const $dropdown = $('<ul class="autocomplete-dropdown patient-autocomplete"></ul>').hide();
-  $input.after($dropdown);
+  console.log("🔍 Setting up patient search...");
+  const $searchInput = $('.navbar-top .form-control.patient-search');
+  const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
+  $searchInput.after($dropdown);
 
-  $input.on("input", debounce(function () {
-    const query = $input.val().trim().toLowerCase();
-    console.log(`🔍 Patient search: "${query}"`);
-
-    $dropdown.empty();
-
-    if (query.length < 2) {
-      $dropdown.append('<li class="dropdown-item disabled">Type at least 2 characters</li>');
-      $dropdown.show();
+  $searchInput.on('input', debounce(function () {
+    const query = $searchInput.val().trim();
+    console.log("✨ Search input triggered:", query);
+    if (query.length < 1) {
+      $dropdown.hide().empty();
       return;
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/patients/search/?q=${encodeURIComponent(query)}`,
+      url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
       type: "GET",
       headers: getAuthHeaders(),
-      success: function (response) {
-        const patients = response.results || response.patients || [];
-        console.log(`🔍 Found ${patients.length} patients:`, patients);
-
-        if (patients.length === 0) {
-          $dropdown.append('<li class="dropdown-item disabled">No patients found</li>');
-        } else {
-          patients.slice(0, 10).forEach(patient => {
-            $dropdown.append(
-              `<li class="dropdown-item" data-patient-id="${patient.id}" data-patient-name="${patient.name}">
-                ${patient.name} (${patient.email || 'No email'})
-              </li>`
-            );
+      success: function (data) {
+        console.log("✅ Patient search results:", data);
+        $dropdown.empty();
+        if (data.patients && data.patients.length > 0) {
+          data.patients.forEach(patient => {
+            const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
+            $dropdown.append($li);
           });
+          $dropdown.show();
+        } else {
+          $dropdown.hide(); // Hide dropdown if no patients found
+          showCreatePatientPrompt(query);
         }
-        $dropdown.show();
       },
       error: function (xhr) {
-        console.error("❌ Patient search failed:", xhr.responseJSON?.error || xhr.statusText);
-        $dropdown.append('<li class="dropdown-item disabled">Error loading patients</li>');
-        $dropdown.show();
+        console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
+        $dropdown.hide();
       }
     });
   }, 300));
 
-  $dropdown.on("click", "li:not(.disabled)", function () {
-    const patientId = $(this).data("patient-id");
-    const patientName = $(this).data("patient-name");
-    console.log(`✅ Selected patient: ${patientName} (ID: ${patientId})`);
-
-    // Update patient ID
-    $("#patientIdForBill").val(patientId);
-    sessionStorage.setItem("billPatientId", patientId);
-
-    // Update search input and trigger bill details update
-    $input.val(patientName);
+  // Handle patient selection
+  $dropdown.on('click', 'li', function () {
+    const patientId = $(this).data('patient-id');
+    $searchInput.val($(this).text());
     $dropdown.hide();
-    updateBillDetails(patientId);
+    console.log("👤 Patient selected, ID:", patientId);
+    selectedPatientId = patientId; // Store globally
+    fetchPatientDetails(patientId, 'addBillsTab'); // Default to Add Bills tab
   });
 
-  $(document).on("click", function (e) {
-    if (!$(e.target).closest("#patientSearch, .patient-autocomplete").length) {
+  // Hide dropdown when clicking outside
+  $(document).on('click', function (e) {
+    if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
       $dropdown.hide();
     }
   });
