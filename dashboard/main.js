@@ -2705,50 +2705,66 @@ function populateServicesTable() {
 function populateServiceDropdown($dropdown, servicesToShow) {
   $dropdown.empty();
 
-  // Check if services are being fetched
   if (isFetchingServices) {
-    $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
+    if ($dropdown.is('select')) {
+      $dropdown.append('<option value="">Loading services...</option>');
+    } else {
+      $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
+    }
     return;
   }
 
-  // Check if servicesToShow is valid (array and not undefined)
   if (!Array.isArray(servicesToShow)) {
-    $dropdown.append(
-      '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
-    );
-    $dropdown.on("click", ".add-service-link", function (e) {
-      e.preventDefault();
-      $("#addServiceTab").tab("show");
-      $dropdown.removeClass("show");
-    });
-    console.warn("⚠️ servicesToShow is not an array or is undefined:", servicesToShow);
+    console.warn('⚠️ servicesToShow is not an array or is undefined:', servicesToShow);
+    if ($dropdown.is('select')) {
+      $dropdown.append('<option value="">No services available</option>');
+    } else {
+      $dropdown.append(
+        '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
+      );
+      $dropdown.on('click', '.add-service-link', function (e) {
+        e.preventDefault();
+        $('#addServiceTab').tab('show');
+        $dropdown.removeClass('show');
+      });
+    }
     return;
   }
 
-  // Filter valid services
   const validServices = servicesToShow.filter(
-    s => s && s.id && s.name && typeof s.price !== "undefined"
+    s => s && s.id && s.name && typeof s.price !== 'undefined'
   );
 
-  // Check if there are valid services
   if (!validServices.length) {
-    $dropdown.append(
-      '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
-    );
-    $dropdown.on("click", ".add-service-link", function (e) {
-      e.preventDefault();
-      $("#addServiceTab").tab("show");
-      $dropdown.removeClass("show");
-    });
+    if ($dropdown.is('select')) {
+      $dropdown.append('<option value="">No services available</option>');
+    } else {
+      $dropdown.append(
+        '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
+      );
+      $dropdown.on('click', '.add-service-link', function (e) {
+        e.preventDefault();
+        $('#addServiceTab').tab('show');
+        $dropdown.removeClass('show');
+      });
+    }
     return;
   }
 
-  // Populate dropdown with valid services
-  validServices.forEach(service => {
-    $dropdown.append(
-      `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
-    );
-  });
+  if ($dropdown.is('select')) {
+    $dropdown.append('<option value="">Select a service</option>');
+    validServices.forEach(service => {
+      $dropdown.append(
+        `<option value="${service.id}" data-code="${service.code}" data-price="${service.price}" data-gst="${service.gst}">${service.name} (${service.code})</option>`
+      );
+    });
+  } else {
+    validServices.forEach(service => {
+      $dropdown.append(
+        `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
+      );
+    });
+  }
 }
 
 // Handle service search input
@@ -2803,6 +2819,7 @@ function populateDoctorDropdownForBill() {
   $doctorSelect.empty().append('<option value="" selected>Select Doctor</option>');
   populateDoctorOptions($doctorSelect, false, []);
 }
+
 function addBillItem() {
   const itemCount = $('#billItemsTableBody tr').length + 1;
   const newItem = `
@@ -2811,13 +2828,11 @@ function addBillItem() {
       <td>
         <div class="input-group input-group-sm">
           <input type="hidden" class="service-id" name="item_service_id[]">
-          <select class="form-select service-select" name="item_service_select[]" style="width: 100%;">
-            <option value="">Select a service</option>
-          </select>
+          <input type="text" class="form-control form-control-sm service-search" name="item_service_name[]" placeholder="Search Service" style="width: 100%;">
         </div>
         <small class="form-text text-muted doctor-info">Doctors: No doctors assigned</small>
       </td>
-      <td><input type="text" class="form-control form-control-sm service-code" name="item_service_code[]" readonly></td>
+      <td><input type="text" class="form-control form-control-sm service-code" name="item_service_code[]" placeholder="Enter Code"></td>
       <td><input type="number" class="form-control form-control-sm item-quantity" name="quantity[]" value="1" min="1" required></td>
       <td><input type="number" class="form-control form-control-sm item-unit-price unit-price" name="unit_price[]" step="0.01" min="0" required></td>
       <td><input type="number" class="form-control form-control-sm item-gst gst" name="gst[]" step="0.01" min="0" value="0"></td>
@@ -2828,60 +2843,127 @@ function addBillItem() {
   `;
   $('#billItemsTableBody').append(newItem);
   const $newRow = $('#billItemsTableBody tr').last();
-  
-  // Populate the service dropdown after row is initialized
-  const $select = $newRow.find('.service-select');
-  populateServiceDropdown($select, allServices);
 
-  // Initialize Select2 for search by name or code
-  $select.select2({
-    placeholder: 'Search by name or code',
-    allowClear: true,
-    data: allServices.map(service => ({
-      id: service.id,
-      text: `${service.name} (${service.code})`,
-      code: service.code,
-      price: service.price,
-      gst: service.gst,
-      doctors: service.doctors
-    })),
-    matcher: function(params, data) {
-      if (!params.term || params.term.trim() === '') {
-        return data;
+  // Initialize autocomplete for service name
+  const $serviceSearch = $newRow.find('.service-search');
+  if ($.fn.autocomplete) {
+    $serviceSearch.autocomplete({
+      source: function (request, response) {
+        const term = request.term.toLowerCase();
+        const filteredServices = allServices.filter(service =>
+          service.name.toLowerCase().includes(term) ||
+          (service.code && service.code.toLowerCase().includes(term)) ||
+          (service.service_id && service.service_id.toLowerCase().includes(term))
+        );
+        response(filteredServices.map(service => ({
+          label: `${service.name} (${service.service_id || service.code || service.id})`,
+          value: service.name,
+          id: service.id,
+          code: service.service_id || service.code || service.id,
+          price: service.price || 0,
+          gst: service.gst || 0,
+          doctors: service.doctors || []
+        })));
+      },
+      minLength: 2,
+      select: function (event, ui) {
+        const $row = $(this).closest('tr');
+        $row.find('.service-id').val(ui.item.id);
+        $row.find('.service-code').val(ui.item.code);
+        $row.find('.item-unit-price').val(ui.item.price.toFixed(2));
+        $row.find('.item-gst').val(ui.item.gst.toFixed(2));
+        const doctorNames = ui.item.doctors.length > 0
+          ? ui.item.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
+          : 'No doctors assigned';
+        $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
+        $(this).val(`${ui.item.value} (${ui.item.code})`);
+        calculateBillTotal();
+        return false;
+      },
+      change: function (event, ui) {
+        if (!ui.item) {
+          const $row = $(this).closest('tr');
+          $row.find('.service-id').val('');
+          $row.find('.service-code').val('');
+          $row.find('.item-unit-price').val('');
+          $row.find('.item-gst').val('0');
+          $row.find('.doctor-info').text('Doctors: No doctors assigned');
+          $(this).val('');
+          calculateBillTotal();
+        }
       }
-      const term = params.term.toLowerCase();
-      if (data.text.toLowerCase().indexOf(term) > -1 || data.code.toLowerCase().indexOf(term) > -1) {
-        return data;
+    });
+  } else {
+    console.warn('⚠️ jQuery UI Autocomplete not available. Falling back to select.');
+    const $select = $(`
+      <select class="form-control form-control-sm service-select" name="item_service_name[]">
+        <option value="">Select Service</option>
+        ${allServices.map(service => `
+          <option value="${service.id}" data-code="${service.code}" data-price="${service.price}" data-gst="${service.gst}">
+            ${service.name} (${service.service_id || service.code || service.id})
+          </option>
+        `).join('')}
+      </select>
+    `);
+    $serviceSearch.replaceWith($select);
+    $select.on('change', function () {
+      const $row = $(this).closest('tr');
+      const serviceId = $(this).val();
+      const service = allServices.find(s => s.id === Number(serviceId));
+      if (service) {
+        $row.find('.service-id').val(service.id);
+        $row.find('.service-code').val(service.service_id || service.code || service.id);
+        $row.find('.item-unit-price').val(service.price.toFixed(2));
+        $row.find('.item-gst').val(service.gst.toFixed(2));
+        const doctorNames = service.doctors && service.doctors.length > 0
+          ? service.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
+          : 'No doctors assigned';
+        $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
+      } else {
+        $row.find('.service-id').val('');
+        $row.find('.service-code').val('');
+        $row.find('.item-unit-price').val('');
+        $row.find('.item-gst').val('0');
+        $row.find('.doctor-info').text('Doctors: No doctors assigned');
       }
-      return null;
+      calculateBillTotal();
+    });
+  }
+
+  // Handle service code input
+  const $serviceCode = $newRow.find('.service-code');
+  $serviceCode.on('input blur', function () {
+    const code = $(this).val().trim().toLowerCase();
+    const $row = $(this).closest('tr');
+    const service = allServices.find(service =>
+      (service.code && service.code.toLowerCase() === code) ||
+      (service.service_id && service.service_id.toLowerCase() === code)
+    );
+
+    if (service) {
+      $row.find('.service-id').val(service.id);
+      $row.find('.service-search').val(`${service.name} (${service.service_id || service.code || service.id})`);
+      $row.find('.item-unit-price').val(service.price.toFixed(2));
+      $row.find('.item-gst').val(service.gst.toFixed(2));
+      const doctorNames = service.doctors && service.doctors.length > 0
+        ? service.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
+        : 'No doctors assigned';
+      $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
+    } else {
+      // Only clear fields if the code is non-empty and invalid
+      if (code) {
+        $row.find('.service-id').val('');
+        $row.find('.service-search').val('');
+        $row.find('.item-unit-price').val('');
+        $row.find('.item-gst').val('0');
+        $row.find('.doctor-info').text('Doctors: No doctors assigned');
+      }
     }
-  });
-
-  // Handle Select2 selection
-  $select.on('select2:select', function(e) {
-    const data = e.params.data;
-    const $row = $(this).closest('tr');
-    $row.find('.service-id').val(data.id);
-    $row.find('.service-code').val(data.code);
-    $row.find('.item-unit-price').val(data.price.toFixed(2));
-    $row.find('.item-gst').val(data.gst.toFixed(2));
-    const doctorNames = data.doctors.length > 0
-      ? data.doctors.map(d => `${d.first_name} ${d.last_name}`).join(', ')
-      : 'No doctors assigned';
-    $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
     calculateBillTotal();
   });
 
-  // Handle Select2 clear
-  $select.on('select2:clear', function() {
-    const $row = $(this).closest('tr');
-    $row.find('.service-id').val('');
-    $row.find('.service-code').val('');
-    $row.find('.item-unit-price').val('');
-    $row.find('.item-gst').val('0');
-    $row.find('.doctor-info').text('Doctors: No doctors assigned');
-    calculateBillTotal();
-  });
+  // Handle input changes for quantity, unit price, GST, and discount
+  $newRow.find('.item-quantity, .item-unit-price, .item-gst, .item-discount').on('input', calculateBillTotal);
 }
 
 
