@@ -279,6 +279,7 @@ function checkAuthentication() {
       reception: 'Reception Dashboard',
     };
     
+  const username = sessionStorage.getItem('username') || 'Unknown User';
     const dashboardType = dashboardMap[userType.toLowerCase()] || 'Unknown Dashboard';
     const dashboardTypeElement = document.getElementById('dashboardType');
     const usernameElement = document.getElementById('usernameDisplay');
