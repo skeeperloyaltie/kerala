@@ -3046,23 +3046,36 @@ $(document).on("input", "[name='quantity[]'], .item-gst, .item-discount, #deposi
   updateDepositColor();
 });
 
+// main.js (partial, focusing on showAppointmentDatePopup)
+
+// Assumes moment, jQuery, Bootstrap, and bootstrap-datepicker are loaded
 function showAppointmentDatePopup(callback) {
+  // Create modal HTML with datepicker and time dropdown
   const modal = $(`
-    <div class="modal fade" id="appointmentDateModal" tabindex="-1">
+    <div class="modal fade" id="appointmentDateModal" tabindex="-1" aria-labelledby="appointmentDateModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Select Appointment Date</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <h5 class="modal-title" id="appointmentDateModalLabel">Select Appointment Date</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label for="appointmentDateInput" class="form-label">Appointment Date and Time</label>
-              <input type="text" class="form-control" id="appointmentDateInput" placeholder="YYYY-MM-DD HH:mm">
+              <label for="appointmentDateInput" class="form-label">Appointment Date</label>
+              <input type="text" class="form-control" id="appointmentDateInput" placeholder="YYYY-MM-DD" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="appointmentTimeInput" class="form-label">Appointment Time</label>
+              <select class="form-select" id="appointmentTimeInput">
+                <option value="" selected disabled>Select time</option>
+                <!-- Populated dynamically -->
+              </select>
             </div>
             <div class="mb-3">
               <label for="billDoctor" class="form-label">Doctor</label>
-              <select class="form-select" id="billDoctor" name="doctor_id"></select>
+              <select class="form-select" id="billDoctor" name="doctor_id">
+                <option value="" selected disabled>Select a doctor</option>
+              </select>
             </div>
           </div>
           <div class="modal-footer">
@@ -3073,34 +3086,100 @@ function showAppointmentDatePopup(callback) {
       </div>
     </div>
   `);
+
+  // Append modal to body and show it
   $('body').append(modal);
-  const bsModal = new bootstrap.Modal(modal[0]);
+  const bsModal = new bootstrap.Modal(modal[0], {
+    backdrop: 'static', // Prevent closing on backdrop click
+    keyboard: true,     // Allow closing with ESC key
+  });
   bsModal.show();
+
+  // Populate doctor dropdown (assumed to be defined elsewhere)
   populateDoctorDropdownForBill();
-  $("#confirmAppointmentDate").on("click", function () {
-    const dateStr = $("#appointmentDateInput").val();
-    const doctorId = $("#billDoctor").val();
-    if (!dateStr || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(dateStr)) {
-      alert("Please enter a valid date in format YYYY-MM-DD HH:mm.");
+
+  // Initialize Bootstrap Datepicker
+  $('#appointmentDateInput').datepicker({
+    format: 'yyyy-mm-dd',
+    autoclose: true,
+    todayHighlight: true,
+    startDate: moment().tz('Asia/Kolkata').format('YYYY-MM-DD'), // Disable past dates
+    orientation: 'bottom auto',
+    templates: {
+      leftArrow: '<i class="bi bi-chevron-left"></i>',
+      rightArrow: '<i class="bi bi-chevron-right"></i>',
+    },
+  }).on('changeDate', function (e) {
+    // Log selected date
+    console.log('Selected date:', e.format());
+  });
+
+  // Populate time dropdown (00:00 to 23:30, 30-minute intervals)
+  const timeSelect = $('#appointmentTimeInput');
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      timeSelect.append(`<option value="${timeStr}">${timeStr}</option>`);
+    }
+  }
+
+  // Handle Confirm button click
+  $('#confirmAppointmentDate').on('click', function () {
+    const dateStr = $('#appointmentDateInput').val(); // YYYY-MM-DD
+    const timeStr = $('#appointmentTimeInput').val(); // HH:mm
+    const doctorId = $('#billDoctor').val();
+
+    // Validate inputs
+    if (!dateStr) {
+      alert('Please select a date.');
+      return;
+    }
+    if (!timeStr) {
+      alert('Please select a time.');
       return;
     }
     if (!doctorId) {
-      alert("Please select a doctor.");
+      alert('Please select a doctor.');
       return;
     }
-    const selectedDate = new Date(dateStr.replace(' ', 'T') + ':00');
-    const now = new Date();
-    if (selectedDate <= now) {
-      alert("Selected date is in the past or current time. Please choose a future date.");
+
+    // Combine date and time
+    const dateTimeStr = `${dateStr} ${timeStr}`;
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(dateTimeStr)) {
+      alert('Invalid date/time format. Please select a valid date and time.');
       return;
     }
-    const formattedDate = dateStr;
-    $("#billAppointmentDate").val(formattedDate);
+
+    // Parse and validate in IST
+    const selectedDate = moment.tz(dateTimeStr, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
+    if (!selectedDate.isValid()) {
+      alert('Invalid date/time. Please select a valid date and time.');
+      return;
+    }
+
+    const now = moment.tz('Asia/Kolkata');
+    if (selectedDate.isSameOrBefore(now)) {
+      alert('Selected date/time is in the past or current time. Please choose a future date.');
+      return;
+    }
+
+    // Format output as YYYY-MM-DD HH:mm
+    const formattedDate = selectedDate.format('YYYY-MM-DD HH:mm');
+    console.log(`Confirmed appointment date: ${formattedDate}, doctorId: ${doctorId}`);
+
+    // Update hidden input (if used elsewhere)
+    $('#billAppointmentDate').val(formattedDate);
+
+    // Call callback with formatted date and doctorId
     callback(formattedDate, doctorId);
+
+    // Hide and remove modal
     bsModal.hide();
-    modal.remove();
   });
+
+  // Clean up modal on close
   modal.on('hidden.bs.modal', function () {
+    bsModal.dispose();
     modal.remove();
   });
 }
