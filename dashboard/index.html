@@ -27,8 +27,9 @@
   <!-- Main Content -->
   <div class="main-content" id="mainContent">
     <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-top">
+    <nav class="navbar navbar-expand-lg navbar-top bg-light">
       <div class="container-fluid">
+        <!-- Left Section: Brand and Navigation -->
         <div class="d-flex align-items-center">
           <a class="navbar-brand" href="#">
             <i class="fas fa-hospital fa-lg fa-icon"></i>
@@ -41,12 +42,28 @@
             <li class="nav-item"><a class="nav-link" href="#" data-action="tele-consults"><i class="fas fa-video fa-icon"></i>Tele Consults</a></li>
           </ul>
         </div>
+        <!-- Center Section: Dashboard Type and Username -->
+        <div class="d-flex align-items-center justify-content-center mx-auto">
+          <span class="navbar-text fw-bold text-primary me-3" data-action="dashboard-type">
+            <i class="fas fa-tachometer-alt fa-icon me-1"></i>
+            <span id="dashboardType">Loading Dashboard...</span>
+          </span>
+          <span class="navbar-text fw-bold text-primary" data-action="username-display">
+            <i class="fas fa-user fa-icon me-1"></i>
+            <span id="usernameDisplay">Loading...</span>
+          </span>
+        </div>
+        <!-- Right Section: Actions and User Dropdowns -->
         <div class="d-flex align-items-center">
           <button class="btn btn-primary me-2" data-action="new"><i class="fas fa-plus fa-icon"></i>New</button>
-          <form class="d-flex me-2"><input class="form-control patient-search" type="search" placeholder="Search Patient" aria-label="Search"></form>
+          <form class="d-flex me-2">
+            <input class="form-control patient-search" type="search" placeholder="Search Patient" aria-label="Search">
+          </form>
           <a class="nav-link me-2" href="#" data-action="support"><i class="fas fa-headset fa-icon"></i>Support</a>
           <div class="dropdown me-2">
-            <a class="nav-link dropdown-toggle" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-th fa-icon"></i></a>
+            <a class="nav-link dropdown-toggle" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-th fa-icon"></i>
+            </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardDropdown">
               <li><a class="dropdown-item" href="#">Admin Dashboard</a></li>
               <li><a class="dropdown-item" href="#">Doctor Dashboard</a></li>
@@ -54,7 +71,9 @@
             </ul>
           </div>
           <div class="dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-icon"></i></a>
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user fa-icon"></i>
+            </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="#">Username</a></li>
               <li><a class="dropdown-item" href="#">Profile</a></li>

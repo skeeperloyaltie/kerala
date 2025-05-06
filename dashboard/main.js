@@ -46,7 +46,6 @@ const $ = window.jQuery;
         $input.next('.invalid-feedback').remove();
         // $input.after('<div class="invalid-feedback">Please use format ' + format + '</div>');
       } else {
-        // $input.removeClass('is-invalid');
         $input.next('.invalid-feedback').remove();
       }
     });
@@ -65,59 +64,61 @@ const $ = window.jQuery;
   }
 
   // Authentication Check
-  function checkAuthentication() {
-    const token = sessionStorage.getItem("token");
-    const userType = sessionStorage.getItem("user_type");
-    const roleLevel = sessionStorage.getItem("role_level");
-    const permissions = sessionStorage.getItem("permissions");
-  
-    console.log("🔍 Checking Authentication - Stored Data:", {
-      token: token ? "Present" : "Missing",
-      userType: userType || "Missing",
-      roleLevel: roleLevel || "Missing",
-      permissions: permissions ? "Present" : "Missing"
+  // Function to check authentication and set dashboard type/username
+function checkAuthentication() {
+  const token = sessionStorage.getItem('token');
+  const userType = sessionStorage.getItem('user_type');
+  const roleLevel = sessionStorage.getItem('role_level');
+  const permissions = sessionStorage.getItem('permissions');
+
+  console.log('🔍 Checking Authentication - Stored Data:', {
+    token: token ? 'Present' : 'Missing',
+    userType: userType || 'Missing',
+    roleLevel: roleLevel || 'Missing',
+    permissions: permissions ? 'Present' : 'Missing',
+  });
+
+  if (!token || !userType || !roleLevel || !permissions) {
+    console.error('❌ Missing authentication data in sessionStorage:', {
+      token: !!token,
+      userType: !!userType,
+      roleLevel: !!roleLevel,
+      permissions: !!permissions,
     });
-  
-    if (!token || !userType || !roleLevel || !permissions) {
-      console.error("❌ Missing authentication data in sessionStorage:", {
-        token: !!token,
-        userType: !!userType,
-        roleLevel: !!roleLevel,
-        permissions: !!permissions
-      });
-      alert("Authentication failed: Missing required data. Please log in again.");
-      window.location.href = "../login/login.html";
-      return;
-    }
-  
-    $.ajax({
-      url: `${API_BASE_URL}/users/profile/`,
-      type: "GET",
-      headers: { "Authorization": `Token ${token}` },
-      success: function (data) {
-        console.log("🟢 User Profile Fetched Successfully:", data);
-        if (data.doctor_id) {
-          sessionStorage.setItem("doctor_id", data.doctor_id);
-          console.log(`👨‍⚕️ Stored Doctor ID: ${data.doctor_id}`);
-        }
-        adjustUIForRole(userType, roleLevel);
-        if (data.doctor_code) {
-          console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
-          $(".doctor-code").text(`Doctor Code: ${data.doctor_code}`);
-        }
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-        fetchAppointmentsByDate(todayStr); // Explicitly fetch today's appointments
-      },
-      error: function (xhr) {
-        console.error("❌ Authentication Error:", xhr.responseJSON || xhr.statusText);
-        sessionStorage.clear();
-        console.log("🗑️ Cleared sessionStorage due to authentication failure");
-        alert("Authentication failed: Invalid token. Please log in again.");
-        window.location.href = "../login/login.html";
-      }
-    });
+    alert('Authentication failed: Missing required data. Please log in again.');
+    window.location.href = '../login/login.html';
+    return;
   }
+
+  $.ajax({
+    url: `${API_BASE_URL}/users/profile/`,
+    type: 'GET',
+    headers: { Authorization: `Token ${token}` },
+    success: function (data) {
+      console.log('🟢 User Profile Fetched Successfully:', data);
+      if (data.doctor_id) {
+        sessionStorage.setItem('doctor_id', data.doctor_id);
+        console.log(`👨‍⚕️ Stored Doctor ID: ${data.doctor_id}`);
+      }
+      // Pass username to adjustUIForRole
+      adjustUIForRole(userType, roleLevel, data.username || 'Unknown User');
+      if (data.doctor_code) {
+        console.log(`👨‍⚕️ Updating Doctor Code: ${data.doctor_code}`);
+        $('.doctor-code').text(`Doctor Code: ${data.doctor_code}`);
+      }
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      fetchAppointmentsByDate(todayStr); // Explicitly fetch today's appointments
+    },
+    error: function (xhr) {
+      console.error('❌ Authentication Error:', xhr.responseJSON || xhr.statusText);
+      sessionStorage.clear();
+      console.log('🗑️ Cleared sessionStorage due to authentication failure');
+      alert('Authentication failed: Invalid token. Please log in again.');
+      window.location.href = '../login/login.html';
+    },
+  });
+}
 
   // Fetch Indian Cities for Autocomplete
   let indianCities = [];
@@ -153,7 +154,7 @@ const $ = window.jQuery;
           .filter(city => city.name && typeof city.name === "string") // Ensure valid names
           .map(city => ({
             name: city.name.trim().replace(/\s+/g, " "), // Normalize whitespace
-            // state: city.state ? city.state.trim() : ""
+            state: city.state ? city.state.trim() : ""
           }));
         console.log(`✅ Loaded ${indianCities.length} Indian cities`, indianCities.slice(0, 10)); // Log first 10
         isFetchingCities = false;
@@ -229,7 +230,7 @@ const $ = window.jQuery;
       } else {
         filteredCities.slice(0, 10).forEach(city => {
           $dropdown.append(
-            `<li class="dropdown-item" data-city="${city.name}">${city.name}</li>`
+            `<li class="dropdown-item" data-city="${city.name}">${city.name}, ${city.state}</li>`
           );
         });
       }
@@ -272,6 +273,29 @@ const $ = window.jQuery;
   // Role-Based UI Adjustments
   function adjustUIForRole(userType, roleLevel) {
     console.log(`🎭 Adjusting UI for UserType: ${userType}, RoleLevel: ${roleLevel}`);
+    const dashboardMap = {
+      admin: 'Admin Dashboard',
+      doctor: 'Doctor Dashboard',
+      reception: 'Reception Dashboard',
+    };
+    
+    const dashboardType = dashboardMap[userType.toLowerCase()] || 'Unknown Dashboard';
+    const dashboardTypeElement = document.getElementById('dashboardType');
+    const usernameElement = document.getElementById('usernameDisplay');
+    
+    if (dashboardTypeElement) {
+      dashboardTypeElement.textContent = dashboardType;
+      console.log(`📊 Updated dashboard type to: ${dashboardType}`);
+    } else {
+      console.error('❌ Dashboard type element (#dashboardType) not found');
+    }
+  
+    if (usernameElement) {
+      usernameElement.textContent = username;
+      console.log(`👤 Updated username to: ${username}`);
+    } else {
+      console.error('❌ Username element (#usernameDisplay) not found');
+    }
     const navItems = $(".navbar-top .nav-item");
     const secondaryNavItems = $(".navbar-secondary .nav-item");
     const buttons = $(".navbar-top .btn, .navbar-secondary .btn");
