@@ -434,7 +434,7 @@ function markAppointmentsForDate(dateStr) {
   bindDateFilterButtons();
 
   // Set today's date and trigger fetch/marking
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
   $("#dateFilter").val(today).trigger('input');
 
   // Optional: Initialize Bootstrap tooltip for appointment times
