@@ -380,53 +380,72 @@ $(document).ready(function () {
     setupPatientSearch();
   }
 
+  // Mark appointments for a given date
+function markAppointmentsForDate(dateStr) {
+  if (!appointmentsData || !Array.isArray(appointmentsData)) return;
+
+  // Clear any existing appointment indicators
+  const $dateFilter = $("#dateFilter");
+  $dateFilter.removeAttr('data-appointment-times').removeClass('has-appointment');
+
+  // Process appointments for the selected date
+  const appointmentTimes = [];
+  appointmentsData.forEach(appt => {
+    if (!appt.appointment_date) return;
+    const apptDate = new Date(appt.appointment_date);
+    const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, "0")}-${String(apptDate.getDate()).padStart(2, "0")}`;
+    if (apptDateStr === dateStr) {
+      const apptTime = apptDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+      appointmentTimes.push(apptTime);
+    }
+  });
+
+  // If there are appointments, mark the input
+  if (appointmentTimes.length > 0) {
+    $dateFilter.addClass('has-appointment');
+    $dateFilter.attr('data-appointment-times', appointmentTimes.join(', '));
+    console.log(`🟢 Marked appointments for ${dateStr}:`, appointmentTimes);
+  } else {
+    console.log(`ℹ️ No appointments for ${dateStr}`);
+  }
+}
   // main.js (replace relevant sections)
   let appointmentsData = [];
 
-  // Initialize Bootstrap Datepicker for Date Filter
-  $("#dateFilter").datepicker({
-    format: "yyyy-mm-dd",
-    autoclose: true,
-    todayHighlight: true,
-    startDate: "1900-01-01"
-  }).datepicker("setDate", new Date()).on("changeDate", function (e) {
-    const dateStr = $(this).val();
-    console.log("📅 Date Filter Changed - Selected date:", dateStr);
-    if (dateStr) {
-      fetchAppointmentsByDate(dateStr); // Fetch appointments immediately
-    }
-  }).on("show", function () {
-    const currentDate = $(this).val();
+  validateDateInput('dateFilter', function(dateStr) {
+    // Fetch appointments for the selected date
     $.ajax({
-      url: `${API_BASE_URL}/appointments/list/?date=${currentDate}`,
+      url: `${API_BASE_URL}/appointments/list/?date=${dateStr}`,
       type: "GET",
       headers: getAuthHeaders(),
-      success: function (data) {
+      success: function(data) {
         appointmentsData = Array.isArray(data.appointments) ? data.appointments : [];
-        console.log(`📅 Loaded appointments for calendar:`, appointmentsData);
-        $("#dateFilter").datepicker("update");
+        console.log(`📅 Loaded appointments for ${dateStr}:`, appointmentsData);
+        fetchAppointmentsByDate(dateStr); // Update UI
+        markAppointmentsForDate(dateStr); // Mark appointments
       },
-      error: function (xhr) {
-        console.warn(`⚠️ Failed to load appointments for calendar: ${xhr.responseJSON?.error || "Server Unavailable"}`);
+      error: function(xhr) {
+        console.warn(`⚠️ Failed to load appointments for ${dateStr}: ${xhr.responseJSON?.error || "Server Unavailable"}`);
         appointmentsData = [];
-        $("#dateFilter").datepicker("update");
+        markAppointmentsForDate(dateStr); // Clear markers on error
       }
     });
   });
 
-  // Mark dates with appointments
-  $("#dateFilter").datepicker("setDatesDisabled", []); // Clear disabled dates
-  $("#dateFilter").on("changeDate", function () {
-    appointmentsData.forEach(appt => {
-      if (!appt.appointment_date) return;
-      const apptDate = new Date(appt.appointment_date);
-      const apptDateStr = `${apptDate.getFullYear()}-${String(apptDate.getMonth() + 1).padStart(2, "0")}-${String(apptDate.getDate()).padStart(2, "0")}`;
-      const apptTime = apptDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
-      $(`#dateFilter`).find(`[data-date="${apptDateStr}"]`).addClass("has-appointment").attr("data-appointment-time", apptTime);
-    });
+  // Set today's date and trigger fetch/marking
+  const today = new Date().toISOString().split('T')[0];
+  $("#dateFilter").val(today).trigger('input');
+
+  // Optional: Initialize Bootstrap tooltip for appointment times
+  $("#dateFilter").tooltip({
+    title: function() {
+      return $(this).hasClass('has-appointment') ? `Appointments: ${$(this).attr('data-appointment-times')}` : 'No appointments';
+    },
+    trigger: 'hover',
+    placement: 'bottom'
   });
 
-  console.log("🟢 Bootstrap Datepicker Initialized for #dateFilter with default date: Today");
+  console.log("🟢 Date Filter Initialized with default date: Today");
 
   // Bind Date Filter Buttons
   function bindDateFilterButtons() {
@@ -4130,7 +4149,7 @@ $("#addServiceTab").on("shown.bs.tab", function () {
   populateServicesTable();
 });
 
-const today = new Date();
+// const today = new Date();
 const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 fetchAppointmentsByDate(todayStr);
 console.log("✅ Dashboard Initialization Complete");
