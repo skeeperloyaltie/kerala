@@ -4029,7 +4029,15 @@ function postSubmissionAppointment(appointmentId) {
 $("#addBillsForm").submit(function (e) {
   e.preventDefault();
 
+  // Retrieve patientId from input or sessionStorage
   const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+  
+  // Debugging logs
+  console.log("🔍 #patientIdForBill value:", $("#patientIdForBill").val());
+  console.log("🔍 sessionStorage.billPatientId:", sessionStorage.getItem("billPatientId"));
+  console.log("🔍 Final patientId:", patientId);
+
+  // Validate patientId
   if (!patientId || isNaN(parseInt(patientId))) {
     alert("Please select a valid patient.");
     return;
@@ -4096,7 +4104,7 @@ $("#addBillsForm").submit(function (e) {
   const notes = $("#billNotes").val();
 
   const billData = {
-    patient: Number(patientId), // Changed from patient_id to patient
+    patient: Number(patientId), // Using 'patient' as per previous fix
     bill_date: billDate,
     total_amount: totalAmount,
     deposit_amount: depositAmount,
@@ -4111,11 +4119,9 @@ $("#addBillsForm").submit(function (e) {
       return;
     }
 
-    // Add appointment data (flat structure)
     billData.appointment_date = appointmentDate;
-    billData.doctor = Number(doctorId); // Changed from doctor_id to doctor
+    billData.doctor = Number(doctorId); // Using 'doctor' as per previous fix
 
-    // Log the data being sent for debugging
     console.log("📤 Sending bill data:", JSON.stringify(billData, null, 2));
 
     $.ajax({
@@ -4126,8 +4132,6 @@ $("#addBillsForm").submit(function (e) {
       contentType: "application/json",
       success: function (response) {
         console.log("✅ Bill created successfully:", response);
-        console.log("🔍 Bill creation response:", JSON.stringify(response, null, 2));
-
         $("#addBillsForm")[0].reset();
         $("#newActionModal").modal("hide");
         sessionStorage.removeItem("billPatientId");
@@ -4137,8 +4141,6 @@ $("#addBillsForm").submit(function (e) {
         if (appointmentId && (!response.appointment || response.appointment.status !== "Booked")) {
           console.log(`🔄 Calling postSubmissionAppointment for appointment ID: ${appointmentId}`);
           postSubmissionAppointment(appointmentId);
-        } else {
-          console.log(`ℹ️ Appointment ID ${appointmentId} already has status 'Booked' or no ID found, skipping update.`);
         }
 
         let appointmentDateStr = response.appointment?.appointment_date
@@ -4155,7 +4157,6 @@ $("#addBillsForm").submit(function (e) {
         }
       },
       error: function (xhr) {
-        console.error(`❌ Failed to create bill: ${xhr.responseJSON?.error || xhr.statusText}`);
         console.error("🔍 Error response:", JSON.stringify(xhr.responseJSON, null, 2));
         alert(`Failed to create bill: ${xhr.responseJSON?.error || "Server Unavailable"}`);
       }
