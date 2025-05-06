@@ -1507,57 +1507,68 @@ function resetModalView() {
 let selectedPatientId = null;
 
 function setupPatientSearch() {
-  console.log("🔍 Setting up patient search...");
-  const $searchInput = $('.navbar-top .form-control.patient-search');
-  const $dropdown = $('<ul class="autocomplete-dropdown"></ul>').hide();
-  $searchInput.after($dropdown);
+  const $input = $("#patientSearch");
+  const $dropdown = $('<ul class="autocomplete-dropdown patient-autocomplete"></ul>').hide();
+  $input.after($dropdown);
 
-  $searchInput.on('input', debounce(function () {
-    const query = $searchInput.val().trim();
-    console.log("✨ Search input triggered:", query);
-    if (query.length < 1) {
-      $dropdown.hide().empty();
+  $input.on("input", debounce(function () {
+    const query = $input.val().trim().toLowerCase();
+    console.log(`🔍 Patient search: "${query}"`);
+
+    $dropdown.empty();
+
+    if (query.length < 2) {
+      $dropdown.append('<li class="dropdown-item disabled">Type at least 2 characters</li>');
+      $dropdown.show();
       return;
     }
 
     $.ajax({
-      url: `${API_BASE_URL}/patients/search/?query=${encodeURIComponent(query)}`,
+      url: `${API_BASE_URL}/patients/search/?q=${encodeURIComponent(query)}`,
       type: "GET",
       headers: getAuthHeaders(),
-      success: function (data) {
-        console.log("✅ Patient search results:", data);
-        $dropdown.empty();
-        if (data.patients && data.patients.length > 0) {
-          data.patients.forEach(patient => {
-            const $li = $(`<li data-patient-id="${patient.patient_id}">${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})</li>`);
-            $dropdown.append($li);
-          });
-          $dropdown.show();
+      success: function (response) {
+        const patients = response.results || response.patients || [];
+        console.log(`🔍 Found ${patients.length} patients:`, patients);
+
+        if (patients.length === 0) {
+          $dropdown.append('<li class="dropdown-item disabled">No patients found</li>');
         } else {
-          $dropdown.hide(); // Hide dropdown if no patients found
-          showCreatePatientPrompt(query);
+          patients.slice(0, 10).forEach(patient => {
+            $dropdown.append(
+              `<li class="dropdown-item" data-patient-id="${patient.id}" data-patient-name="${patient.name}">
+                ${patient.name} (${patient.email || 'No email'})
+              </li>`
+            );
+          });
         }
+        $dropdown.show();
       },
       error: function (xhr) {
-        console.error("❌ Search error:", xhr.status, xhr.statusText, xhr.responseText);
-        $dropdown.hide();
+        console.error("❌ Patient search failed:", xhr.responseJSON?.error || xhr.statusText);
+        $dropdown.append('<li class="dropdown-item disabled">Error loading patients</li>');
+        $dropdown.show();
       }
     });
   }, 300));
 
-  // Handle patient selection
-  $dropdown.on('click', 'li', function () {
-    const patientId = $(this).data('patient-id');
-    $searchInput.val($(this).text());
+  $dropdown.on("click", "li:not(.disabled)", function () {
+    const patientId = $(this).data("patient-id");
+    const patientName = $(this).data("patient-name");
+    console.log(`✅ Selected patient: ${patientName} (ID: ${patientId})`);
+
+    // Update patient ID
+    $("#patientIdForBill").val(patientId);
+    sessionStorage.setItem("billPatientId", patientId);
+
+    // Update search input and trigger bill details update
+    $input.val(patientName);
     $dropdown.hide();
-    console.log("👤 Patient selected, ID:", patientId);
-    selectedPatientId = patientId; // Store globally
-    fetchPatientDetails(patientId, 'addBillsTab'); // Default to Add Bills tab
+    updateBillDetails(patientId);
   });
 
-  // Hide dropdown when clicking outside
-  $(document).on('click', function (e) {
-    if (!$(e.target).closest('.navbar-top .form-control.patient-search, .autocomplete-dropdown').length) {
+  $(document).on("click", function (e) {
+    if (!$(e.target).closest("#patientSearch, .patient-autocomplete").length) {
       $dropdown.hide();
     }
   });
@@ -4029,15 +4040,12 @@ function postSubmissionAppointment(appointmentId) {
 $("#addBillsForm").submit(function (e) {
   e.preventDefault();
 
-  // Retrieve patientId from input or sessionStorage
   const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
   
-  // Debugging logs
   console.log("🔍 #patientIdForBill value:", $("#patientIdForBill").val());
   console.log("🔍 sessionStorage.billPatientId:", sessionStorage.getItem("billPatientId"));
   console.log("🔍 Final patientId:", patientId);
 
-  // Validate patientId
   if (!patientId || isNaN(parseInt(patientId))) {
     alert("Please select a valid patient.");
     return;
@@ -4104,7 +4112,7 @@ $("#addBillsForm").submit(function (e) {
   const notes = $("#billNotes").val();
 
   const billData = {
-    patient: Number(patientId), // Using 'patient' as per previous fix
+    patient: Number(patientId),
     bill_date: billDate,
     total_amount: totalAmount,
     deposit_amount: depositAmount,
@@ -4120,7 +4128,7 @@ $("#addBillsForm").submit(function (e) {
     }
 
     billData.appointment_date = appointmentDate;
-    billData.doctor = Number(doctorId); // Using 'doctor' as per previous fix
+    billData.doctor = Number(doctorId);
 
     console.log("📤 Sending bill data:", JSON.stringify(billData, null, 2));
 
@@ -4135,6 +4143,7 @@ $("#addBillsForm").submit(function (e) {
         $("#addBillsForm")[0].reset();
         $("#newActionModal").modal("hide");
         sessionStorage.removeItem("billPatientId");
+        $("#patientIdForBill").val(""); // Clear patient ID
         alert("Bill and appointment created successfully!");
 
         let appointmentId = response.appointment?.id || response.appointment_id;
@@ -4186,9 +4195,9 @@ $("#goBackBtn").on("click", function () {
 
 
 function updateBillDetails(patientId) {
-  const effectivePatientId = patientId || selectedPatientId || $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
-  if (!effectivePatientId) {
-    console.warn("No patient ID found for bill details update");
+  const effectivePatientId = patientId || $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
+  if (!effectivePatientId || isNaN(parseInt(effectivePatientId))) {
+    console.warn("No valid patient ID found for bill details update");
     $("#billServiceName").val("");
     $("#billDoctorName").val("");
     $("#billAppointmentDate").val("");
@@ -4201,6 +4210,7 @@ function updateBillDetails(patientId) {
     type: "GET",
     headers: getAuthHeaders(),
     success: function (data) {
+      console.log("🔍 Patient API response:", data);
       const patient = data.patient || data;
       const firstRowService = $("#billItemsTableBody tr:first .service-select");
       $("#billServiceName").val(firstRowService.length ? firstRowService.find('option:selected').text() || "" : "");
@@ -4211,10 +4221,10 @@ function updateBillDetails(patientId) {
       );
       $("#billAppointmentDate").val("");
       $("#billDuration").val("30");
-      $("#patientIdForBill").val(patient.patient_id);
-      sessionStorage.setItem("billPatientId", patient.patient_id);
-      selectedPatientId = patient.patient_id;
-      console.log(`Updated bill details for patient ${patient.patient_id}`);
+      const patientId = patient.id || patient.patient_id; // Handle both id and patient_id
+      $("#patientIdForBill").val(patientId);
+      sessionStorage.setItem("billPatientId", patientId);
+      console.log(`Updated bill details for patient ID: ${patientId}`);
     },
     error: function (xhr) {
       console.error(`Failed to fetch patient for bill details: ${xhr.status} ${xhr.statusText}`, xhr.responseJSON);
@@ -4228,14 +4238,16 @@ function updateBillDetails(patientId) {
 }
 
 $("#addBillsTab").on("shown.bs.tab", function () {
-  const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId") || selectedPatientId;
+  const patientId = $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
   const $form = $("#addBillsForm");
   const $alert = $form.find(".alert-warning");
   $alert.remove();
-  if (patientId) {
+
+  console.log("🔍 addBillsTab patientId:", patientId);
+
+  if (patientId && !isNaN(parseInt(patientId))) {
     $("#patientIdForBill").val(patientId);
     sessionStorage.setItem("billPatientId", patientId);
-    selectedPatientId = patientId;
     updateBillDetails(patientId);
     $form.find("input, button, select").prop("disabled", false);
     $("#createBillBtn, #addBillItem").prop("disabled", false);
@@ -4243,7 +4255,7 @@ $("#addBillsTab").on("shown.bs.tab", function () {
       $("#addBillItem").click();
     }
   } else {
-    console.warn("No patient ID found for bill details update");
+    console.warn("No valid patient ID found for bill details update");
     $form.find("input, button, select").prop("disabled", true);
     $("#createBillBtn, #addBillItem").prop("disabled", true);
     $form.prepend(
@@ -4257,13 +4269,16 @@ $("#addBillsTab").on("shown.bs.tab", function () {
       e.preventDefault();
       $("#addPatientTab").tab("show");
     });
-    $form[0].reset();
+    // Avoid resetting form to preserve any existing patient ID
     $("#billServiceName").val("");
     $("#billDoctorName").val("");
     $("#billAppointmentDate").val("");
     $("#billDuration").val("");
     $("#billItemsTableBody").empty();
   }
+
+  // Initialize patient search
+  setupPatientSearch();
 });
 
 function populateDoctorDropdown(selectId, specialtyId) {
