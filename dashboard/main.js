@@ -2843,6 +2843,7 @@ function updateTotalPrice($row) {
   updateTotalBillAmount();
   updateDepositColor();
 }
+
 function updateTotalBillAmount() {
   const total = Array.from($(".item-total-price")).reduce((sum, el) => sum + (parseFloat($(el).val()) || 0), 0);
   $("#totalAmount").val(total.toFixed(2));
