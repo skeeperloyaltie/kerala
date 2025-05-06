@@ -113,7 +113,9 @@ body {
   .city-autocomplete {
     position: absolute;
     z-index: 1060; /* Above modal (z-index: 1055) */
-    width: 100%; /* Match input width */
+    min-width: 250px; /* Base width to accommodate longer city names */
+    max-width: 400px; /* Prevent excessive width on large screens */
+    width: auto; /* Allow dynamic width based on content */
     max-height: 200px;
     overflow-y: auto;
     background: #fff;
@@ -123,18 +125,26 @@ body {
     list-style: none;
     padding: 0;
     margin: 0;
-    top: calc(100% + 5px); /* Position below input (26px height + 5px gap) */
+    top: calc(100% + 5px); /* Position below input */
     left: 0;
+    font-size: 11px; /* Match global font size */
   }
+
+  /* Ensure dropdown items wrap long names gracefully */
   .city-autocomplete li {
     padding: 8px 12px;
     cursor: pointer;
+    white-space: normal; /* Allow text wrapping for long names */
+    line-height: 1.4; /* Improve readability */
+    display: block; /* Ensure full width */
   }
-  
+
+  /* Hover state */
   .city-autocomplete li:hover {
     background-color: #f8f9fa;
   }
-  
+
+  /* Disabled items */
   .city-autocomplete li.disabled {
     color: #6c757d;
     cursor: not-allowed;
