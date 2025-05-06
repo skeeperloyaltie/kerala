@@ -2870,8 +2870,7 @@ function addBillItem() {
         $(this).autocomplete('widget').css('z-index', 1051); // Ensure dropdown appears above modals
       },
       focus: function (event, ui) {
-        // Prevent value from updating on focus
-        return false;
+        return false; // Prevent value from updating on focus
       },
       select: function (event, ui) {
         const $row = $(this).closest('tr');
@@ -2888,8 +2887,17 @@ function addBillItem() {
         return false;
       },
       change: function (event, ui) {
-        if (!ui.item) {
-          const $row = $(this).closest('tr');
+        // Only clear fields if no valid selection and no valid code-based update
+        const $row = $(this).closest('tr');
+        const currentCode = $row.find('.service-code').val().trim().toLowerCase();
+        const codeService = currentCode
+          ? allServices.find(service =>
+              (service.code && service.code.toLowerCase() === currentCode) ||
+              (service.service_id && service.service_id.toLowerCase() === currentCode)
+            )
+          : null;
+
+        if (!ui.item && !codeService) {
           $row.find('.service-id').val('');
           $row.find('.service-code').val('');
           $row.find('.item-unit-price').val('');
@@ -2901,8 +2909,7 @@ function addBillItem() {
       }
     })
     .on('focus', function () {
-      // Show all services when the input is focused
-      $(this).autocomplete('search', '');
+      $(this).autocomplete('search', ''); // Show all services on focus
     });
   } else {
     console.warn('⚠️ jQuery UI Autocomplete not available. Falling back to select.');
@@ -2952,8 +2959,10 @@ function addBillItem() {
     );
 
     if (service) {
+      console.log('✅ Found service for code:', { code, service });
       $row.find('.service-id').val(service.id);
-      $row.find('.service-search').val(`${service.name} (${service.service_id || service.code || service.id})`);
+      const serviceDisplay = `${service.name} (${service.service_id || service.code || service.id})`;
+      $row.find('.service-search').val(serviceDisplay).trigger('change'); // Trigger change to sync autocomplete
       $row.find('.item-unit-price').val(service.price.toFixed(2));
       $row.find('.item-gst').val(service.gst.toFixed(2));
       const doctorNames = service.doctors && service.doctors.length > 0
@@ -2961,10 +2970,10 @@ function addBillItem() {
         : 'No doctors assigned';
       $row.find('.doctor-info').text(`Doctors: ${doctorNames}`);
     } else {
-      // Only clear fields if the code is non-empty and invalid
+      console.log('⚠️ No service found for code:', code);
       if (code) {
         $row.find('.service-id').val('');
-        $row.find('.service-search').val('');
+        $row.find('.service-search').val('').trigger('change'); // Clear and sync autocomplete
         $row.find('.item-unit-price').val('');
         $row.find('.item-gst').val('0');
         $row.find('.doctor-info').text('Doctors: No doctors assigned');
