@@ -2702,33 +2702,54 @@ function populateServicesTable() {
     });
 }
 
-  // Populate Service Dropdown
-  function populateServiceDropdown($dropdown, servicesToShow) {
-    $dropdown.empty();
-    if (isFetchingServices) {
-      $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
-      return;
-    }
-    const validServices = servicesToShow.filter(
-      s => s.id && s.name && typeof s.price !== "undefined"
-    );
-    if (!validServices.length) {
-      $dropdown.append(
-        '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
-      );
-      $dropdown.on("click", ".add-service-link", function (e) {
-        e.preventDefault();
-        $("#addServiceTab").tab("show");
-        $dropdown.removeClass("show");
-      });
-      return;
-    }
-    validServices.forEach(service => {
-      $dropdown.append(
-        `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
-      );
-    });
+function populateServiceDropdown($dropdown, servicesToShow) {
+  $dropdown.empty();
+
+  // Check if services are being fetched
+  if (isFetchingServices) {
+    $dropdown.append('<li><a class="dropdown-item disabled">Loading services...</a></li>');
+    return;
   }
+
+  // Check if servicesToShow is valid (array and not undefined)
+  if (!Array.isArray(servicesToShow)) {
+    $dropdown.append(
+      '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
+    );
+    $dropdown.on("click", ".add-service-link", function (e) {
+      e.preventDefault();
+      $("#addServiceTab").tab("show");
+      $dropdown.removeClass("show");
+    });
+    console.warn("⚠️ servicesToShow is not an array or is undefined:", servicesToShow);
+    return;
+  }
+
+  // Filter valid services
+  const validServices = servicesToShow.filter(
+    s => s && s.id && s.name && typeof s.price !== "undefined"
+  );
+
+  // Check if there are valid services
+  if (!validServices.length) {
+    $dropdown.append(
+      '<li><a class="dropdown-item disabled">No services available. <a href="#" class="add-service-link">Add a service</a>.</a></li>'
+    );
+    $dropdown.on("click", ".add-service-link", function (e) {
+      e.preventDefault();
+      $("#addServiceTab").tab("show");
+      $dropdown.removeClass("show");
+    });
+    return;
+  }
+
+  // Populate dropdown with valid services
+  validServices.forEach(service => {
+    $dropdown.append(
+      `<li><a class="dropdown-item" href="#" data-service-id="${service.id}" data-price="${service.price}">${service.name}</a></li>`
+    );
+  });
+}
 
 // Handle service search input
 
