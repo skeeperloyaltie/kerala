@@ -8,6 +8,17 @@ from .models import Patient
 from .serializers import PatientSerializer
 import logging
 from rest_framework import status, generics, permissions, pagination
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status, generics
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from .models import Patient
+from .serializers import PatientSerializer
+from users.models import Doctor, Receptionist  # Import Doctor and Receptionist models
+import logging
+from rest_framework import status, generics, permissions, pagination
 
 
 
@@ -38,7 +49,7 @@ class CreatePatientView(APIView):
                 data['primary_doctor'] = user.doctor.id
                 logger.info(f"Assigned primary_doctor to Doctor {user.doctor.id} for user {user.username}")
             elif user.user_type == "Receptionist":
-                # For receptionists, use provided primary_doctor or assign a default
+                # For receptionists, use provided primary_doctor if valid, otherwise set to None
                 if 'primary_doctor' in data and data['primary_doctor']:
                     try:
                         doctor = Doctor.objects.get(id=data['primary_doctor'])
@@ -47,31 +58,13 @@ class CreatePatientView(APIView):
                         logger.error(f"Invalid primary_doctor ID {data['primary_doctor']} provided by {user.username}")
                         return Response({"error": "Specified primary doctor not found."}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    # Assign a default doctor associated with the receptionist
-                    try:
-                        receptionist = Receptionist.objects.get(user=user)
-                        # Assume Receptionist has a ManyToManyField 'doctors'
-                        if hasattr(receptionist, 'doctors') and receptionist.doctors.exists():
-                            default_doctor = receptionist.doctors.first()
-                            data['primary_doctor'] = default_doctor.id
-                            logger.info(f"Assigned default primary_doctor {default_doctor.id} for receptionist {user.username}")
-                        else:
-                            # Fallback: Use the first available doctor
-                            default_doctor = Doctor.objects.first()
-                            if default_doctor:
-                                data['primary_doctor'] = default_doctor.id
-                                logger.info(f"No associated doctors found; assigned system default doctor {default_doctor.id} for receptionist {user.username}")
-                            else:
-                                logger.warning(f"No doctors available to assign as primary_doctor for receptionist {user.username}")
-                                data['primary_doctor'] = None  # Allow null
-                    except Receptionist.DoesNotExist:
-                        logger.error(f"User {user.username} is a Receptionist but has no associated Receptionist instance.")
-                        return Response({"error": "User is not properly linked to a Receptionist profile."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    data['primary_doctor'] = None
+                    logger.info(f"No primary_doctor provided by receptionist {user.username}; setting to null")
             else:
-                # For superusers or other roles, use provided primary_doctor or None
+                # For superusers or other roles, use provided primary_doctor if valid, otherwise None
                 if 'primary_doctor' in data and data['primary_doctor']:
                     try:
-                        Doctor.objects.get(id=data['primary_doctor'])
+                        doctor = Doctor.objects.get(id=data['primary_doctor'])
                         logger.info(f"Using provided primary_doctor {data['primary_doctor']} for user {user.username}")
                     except Doctor.DoesNotExist:
                         logger.error(f"Invalid primary_doctor ID {data['primary_doctor']} provided by {user.username}")
