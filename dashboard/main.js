@@ -222,7 +222,7 @@ $(document).ready(function () {
       } else {
         filteredCities.slice(0, 10).forEach(city => {
           $dropdown.append(
-            `<li class="dropdown-item" data-city="${city.name}">${city.name}, ${city.state}</li>`
+            `<li class="dropdown-item" data-city="${city.name}">${city.name}</li>`
           );
         });
       }
