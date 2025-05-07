@@ -5,6 +5,9 @@ from patients.models import Patient
 from appointments.models import Appointment
 from appointments.serializers import AppointmentSerializer
 from service.serializers import ServiceSerializer
+from users.models import Doctor
+from users.serializers import DoctorSerializer
+from django.utils import timezone
 
 class BillItemSerializer(serializers.ModelSerializer):
     service = ServiceSerializer(read_only=True)
