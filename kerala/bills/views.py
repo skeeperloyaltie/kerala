@@ -13,9 +13,10 @@ from appointments.models import Appointment
 from appointments.serializers import AppointmentSerializer
 from patients.models import Patient
 from users.models import Doctor
-from systime.utils import get_current_ist_time, make_ist_aware, validate_ist_datetime  # Import systime utilities
+from systime.utils import get_current_ist_time, make_ist_aware, validate_ist_datetime
 
 logger = logging.getLogger(__name__)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateBillView(APIView):
     permission_classes = [IsAuthenticated]
@@ -38,8 +39,8 @@ class CreateBillView(APIView):
             return Response({"error": "patient_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Handle appointment creation if appointment_date is provided
-        appointment_date = data.pop('appointment_date', None)
-        doctor_id = data.pop('doctor_id', None)
+        appointment_date = data.get('appointment_date')
+        doctor_id = data.get('doctor_id')
         appointment = None
         if appointment_date:
             logger.debug(f"Processing appointment_date: {appointment_date}")
@@ -85,15 +86,12 @@ class CreateBillView(APIView):
 
             # Use AppointmentSerializer for validation
             appointment_data = {
-                'patient': patient.id,
-                'doctor': doctor.id if doctor else None,
+                'patient_id': patient_id,  # String ID
+                'doctor_id': doctor.id if doctor else None,
                 'appointment_date': appointment_date.isoformat(),
                 'notes': data.get('notes', ''),
                 'status': 'booked',
                 'is_emergency': False,
-                'created_by': user.id,
-                'created_at': get_current_ist_time().isoformat(),
-                'updated_at': get_current_ist_time().isoformat(),
             }
             logger.debug(f"Preparing appointment data for serialization: {appointment_data}")
             appointment_serializer = AppointmentSerializer(data=appointment_data, context={'request': request})
