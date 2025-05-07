@@ -4035,7 +4035,7 @@ $("#addBillsForm").submit(function (e) {
   console.log("🔍 sessionStorage.billPatientId:", sessionStorage.getItem("billPatientId"));
   console.log("🔍 Final patientId:", patientId);
 
-  if (!patientId || isNaN(parseInt(patientId))) {
+  if (!patientId) {
     alert("Please select a valid patient.");
     return;
   }
@@ -4101,7 +4101,7 @@ $("#addBillsForm").submit(function (e) {
   const notes = $("#billNotes").val();
 
   const billData = {
-    patient: Number(patientId),
+    patient_id: patientId, // String, e.g., "KHOU115001"
     bill_date: billDate,
     total_amount: totalAmount,
     deposit_amount: depositAmount,
@@ -4111,13 +4111,13 @@ $("#addBillsForm").submit(function (e) {
   };
 
   showAppointmentDatePopup(function (appointmentDate, doctorId) {
-    if (!doctorId || isNaN(parseInt(doctorId))) {
+    if (!doctorId) {
       alert("Please select a valid doctor.");
       return;
     }
 
     billData.appointment_date = appointmentDate;
-    billData.doctor = Number(doctorId);
+    billData.doctor_id = Number(doctorId); // Numeric, e.g., 1
 
     console.log("📤 Sending bill data:", JSON.stringify(billData, null, 2));
 
@@ -4132,7 +4132,7 @@ $("#addBillsForm").submit(function (e) {
         $("#addBillsForm")[0].reset();
         $("#newActionModal").modal("hide");
         sessionStorage.removeItem("billPatientId");
-        $("#patientIdForBill").val(""); // Clear patient ID
+        $("#patientIdForBill").val("");
         alert("Bill and appointment created successfully!");
 
         let appointmentId = response.appointment?.id || response.appointment_id;
@@ -4185,8 +4185,8 @@ $("#goBackBtn").on("click", function () {
 
 function updateBillDetails(patientId) {
   const effectivePatientId = patientId || $("#patientIdForBill").val() || sessionStorage.getItem("billPatientId");
-  if (!effectivePatientId || isNaN(parseInt(effectivePatientId))) {
-    console.warn("No valid patient ID found for bill details update");
+  if (!effectivePatientId) {
+    console.warn("No patient ID found for bill details update");
     $("#billServiceName").val("");
     $("#billDoctorName").val("");
     $("#billAppointmentDate").val("");
@@ -4210,7 +4210,7 @@ function updateBillDetails(patientId) {
       );
       $("#billAppointmentDate").val("");
       $("#billDuration").val("30");
-      const patientId = patient.id || patient.patient_id; // Handle both id and patient_id
+      const patientId = patient.patient_id || patient.id; // Handle both patient_id and id
       $("#patientIdForBill").val(patientId);
       sessionStorage.setItem("billPatientId", patientId);
       console.log(`Updated bill details for patient ID: ${patientId}`);
@@ -4234,7 +4234,7 @@ $("#addBillsTab").on("shown.bs.tab", function () {
 
   console.log("🔍 addBillsTab patientId:", patientId);
 
-  if (patientId && !isNaN(parseInt(patientId))) {
+  if (patientId) {
     $("#patientIdForBill").val(patientId);
     sessionStorage.setItem("billPatientId", patientId);
     updateBillDetails(patientId);
@@ -4244,7 +4244,7 @@ $("#addBillsTab").on("shown.bs.tab", function () {
       $("#addBillItem").click();
     }
   } else {
-    console.warn("No valid patient ID found for bill details update");
+    console.warn("No patient ID found for bill details update");
     $form.find("input, button, select").prop("disabled", true);
     $("#createBillBtn, #addBillItem").prop("disabled", true);
     $form.prepend(
@@ -4258,7 +4258,6 @@ $("#addBillsTab").on("shown.bs.tab", function () {
       e.preventDefault();
       $("#addPatientTab").tab("show");
     });
-    // Avoid resetting form to preserve any existing patient ID
     $("#billServiceName").val("");
     $("#billDoctorName").val("");
     $("#billAppointmentDate").val("");
@@ -4269,7 +4268,6 @@ $("#addBillsTab").on("shown.bs.tab", function () {
   // Initialize patient search
   setupPatientSearch();
 });
-
 function populateDoctorDropdown(selectId, specialtyId) {
   const doctorSelect = $(`#${selectId}`);
   doctorSelect.empty().append('<option value="" disabled>Loading doctors...</option>');
