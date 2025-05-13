@@ -92,7 +92,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body" id="notificationMessage">
@@ -190,8 +190,23 @@
       // Redirect to Appropriate Dashboard
       function redirectToDashboard() {
         const isSuperuser = sessionStorage.getItem('is_superuser') === 'true';
-        console.log('🟢 Redirecting to:', isSuperuser ? 'Admin Dashboard' : 'User Dashboard');
-        window.location.href = isSuperuser ? '/dashboard/admin.html' : '/dashboard/index.html';
+        const userType = sessionStorage.getItem('user_type')?.toLowerCase();
+        const roleLevel = sessionStorage.getItem('role_level')?.toLowerCase();
+
+        if (isSuperuser) {
+          console.log('🟢 Redirecting to Admin Dashboard');
+          window.location.href = '/dashboard/admin.html';
+        } else if (userType === 'staff' && roleLevel === 'receptionist') {
+          console.log('🟢 Redirecting to Receptionist Dashboard');
+          window.location.href = '/receptionist/index.html';
+        } else if ( roleLevel === 'doctor') {
+          console.log('Redirecting to doctors dashboard');
+          window.location.href = '/dashboard/index.html';
+        } else {
+          console.log('🟢 Redirecting to General Dashboard');
+          // window.location.href = '/dashboard/index.html';
+          alert('No user profile recorded for this user')
+        }
       }
 
       // Handle Username/Password Login
