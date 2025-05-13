@@ -1,0 +1,1022 @@
+body {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-size: 11px;
+  margin: 0;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+  /* Top Navbar Styling */
+  .navbar-top {
+    background-color: #1a2a6c;
+    padding: 0;
+    width: 100%;
+    margin: 0;
+  }
+  .navbar-top .container-fluid {
+    padding: 2px 10px;
+  }
+  .navbar-top .navbar-brand {
+    color: #fff;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 15px;
+  }
+  .navbar-top .nav-link {
+    color: #fff;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 5px;
+  }
+  .navbar-top .nav-link:hover {
+    color: #d1d5db;
+  }
+  .navbar-top .btn {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+  .navbar-top .btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .navbar-top .dropdown-menu {
+    font-size: 11px;
+    min-width: 150px;
+  }
+  .navbar-top .dropdown-item {
+    padding: 5px 10px;
+  }
+  .navbar-top .form-control {
+    width: 120px;
+    font-size: 11px;
+    padding: 2px 6px;
+    height: 24px;
+  }
+  .navbar-top .fa-icon {
+    margin-bottom: 2px;
+  }
+  /* Secondary Navbar Styling */
+  .navbar-secondary {
+    background-color: #e9ecef;
+    padding: 2px 10px;
+    border-bottom: 1px solid #dee2e6;
+  }
+  .navbar-secondary .nav-link {
+    color: #1a2a6c;
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+  .navbar-secondary .nav-link:hover {
+    color: #3b82f6;
+  }
+  .navbar-secondary .nav-link.active {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+  }
+  .navbar-secondary .flatpickr-input {
+    width: 100px;
+    font-size: 11px;
+    padding: 2px 6px;
+    height: 24px;
+    position: relative; /* Ensure positioning context */
+  }
+  .navbar-secondary .btn-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    padding: 0;
+    margin-right: 5px;
+  }
+  .navbar-secondary .btn-outline-primary {
+    font-size: 11px;
+    padding: 2px 6px;
+    height: 24px;
+  }
+  .navbar-secondary .form-control {
+    font-size: 11px;
+    padding: 2px 6px;
+    height: 24px;
+  }
+
+  /* City Autocomplete (Add Patient Form) */
+  .city-autocomplete {
+    position: absolute;
+    z-index: 1060; /* Above modal (z-index: 1055) */
+    min-width: 250px; /* Base width to accommodate longer city names */
+    max-width: 400px; /* Prevent excessive width on large screens */
+    width: auto; /* Allow dynamic width based on content */
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    top: calc(100% + 5px); /* Position below input */
+    left: 0;
+    font-size: 11px; /* Match global font size */
+  }
+
+  /* Ensure dropdown items wrap long names gracefully */
+  .city-autocomplete li {
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: normal; /* Allow text wrapping for long names */
+    line-height: 1.4; /* Improve readability */
+    display: block; /* Ensure full width */
+  }
+
+  /* Hover state */
+  .city-autocomplete li:hover {
+    background-color: #f8f9fa;
+  }
+
+  /* Disabled items */
+  .city-autocomplete li.disabled {
+    color: #6c757d;
+    cursor: not-allowed;
+  }
+
+/* Collapse Button Styling */
+.collapse-toggle-btn {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 6px 12px;
+font-size: 11px;
+border: 1px solid #dee2e6;
+border-radius: 4px;
+background-color: #f8f9fa;
+color: #ebecf1;
+}
+
+.collapse-toggle-btn:hover {
+background-color: #e9ecef;
+}
+
+.collapse-toggle-btn::after {
+content: '\f078'; /* Font Awesome chevron-down */
+font-family: 'Font Awesome 6 Free';
+font-weight: 900;
+font-size: 10px;
+transition: transform 0.2s;
+}
+
+.collapse-toggle-btn[aria-expanded="true"]::after {
+transform: rotate(180deg);
+}
+
+.collapse .card-body {
+border: none;
+padding: 12px;
+background-color: #fff;
+}
+
+/* Adjust collapse spacing */
+.collapse + .collapse {
+margin-top: 8px;
+}
+  /* Table Styling */
+  .table-appointments {
+    font-size: 11px;
+  }
+  .table-appointments th, .table-appointments td {
+    padding: 6px;
+    vertical-align: middle;
+  }
+  .table-appointments .status-reviewed {
+    color: #28a745;
+    font-weight: 500;
+  }
+  .iti {
+    width: 100%;
+  }
+  .iti__flag-container {
+    font-size: 11px;
+  }
+  .iti__country-list {
+    font-size: 11px;
+  }
+ /* Modal Styling */
+.modal-dialog-centered-custom {
+display: flex;
+align-items: center;
+justify-content: center;
+min-height: calc(100vh - 60px);
+margin: 30px auto;
+width: 1200px; /* Match the modal-content width to prevent overflow */
+max-width: none; /* Override Bootstrap's default max-width */
+}
+
+#newActionModal .modal-content {
+font-size: 11px;
+border-radius: 8px;
+width: 1200px; /* Fixed width set here */
+height: 800px; /* Fixed height set here */
+overflow-y: auto; /* Handle vertical overflow */
+overflow-x: hidden; /* Prevent horizontal overflow */
+}
+
+#newActionModal .modal-header {
+background-color: #1a2a6c;
+color: white;
+padding: 6px 12px;
+height: 60px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+width: 100%; /* Ensure header spans full width */
+}
+
+#newActionModal .modal-header .patient-details {
+display: flex;
+align-items: center;
+font-size: 11px;
+}
+
+#newActionModal .modal-header .patient-details i {
+font-size: 15px;
+margin-right: 6px;
+}
+
+#newActionModal .modal-header .patient-info {
+display: flex;
+flex-direction: column;
+}
+
+#newActionModal .modal-header .patient-info .patient-name {
+font-size: 12px;
+font-weight: 500;
+margin-right: 6px;
+}
+
+#newActionModal .modal-header .patient-info .patient-meta {
+font-size: 10px;
+color: #d1d5db;
+}
+
+#newActionModal .modal-header .visit-pad-btn {
+font-size: 10px;
+padding: 3px 7px;
+margin-left: 6px;
+height: 22px;
+line-height: 1;
+}
+
+#newActionModal .modal-header .nav-tabs {
+border: none;
+display: flex;
+align-items: center;
+flex-wrap: nowrap;
+margin-left: 20px;
+}
+
+#newActionModal .modal-header .nav-tabs .nav-link {
+color: white;
+padding: 3px 7px;
+font-size: 11px;
+border: none;
+display: flex;
+flex-direction: column; /* Stack icon and text vertically */
+align-items: center; /* Center items horizontally */
+justify-content: center; /* Center items vertically */
+white-space: nowrap;
+}
+
+#newActionModal .modal-header .nav-tabs .nav-link.active {
+background-color: rgba(255, 255, 255, 0.2);
+border-radius: 4px;
+}
+
+#newActionModal .modal-header .nav-tabs .nav-link i {
+font-size: 13px;
+margin-bottom: 3px; /* Add space between icon and text */
+margin-right: 0; /* Remove right margin since we're stacking vertically */
+}
+
+
+#newActionModal .modal-header .btn-close {
+font-size: 13px;
+margin-left: 10px;
+}
+
+#newActionModal .modal-body {
+padding: 12px;
+height: calc(100% - 60px); /* Adjust for header height */
+overflow-y: auto;
+overflow-x: hidden; /* Prevent horizontal overflow */
+width: 100%; /* Ensure body spans full width */
+position: relative;
+}
+
+#newActionModal .modal-body .form-label {
+font-size: 11px;
+margin-bottom: 2px;
+}
+
+#newActionModal .modal-body .form-control,
+#newActionModal .modal-body .form-select {
+font-size: 11px;
+padding: 3px 7px;
+height: 26px;
+}
+
+#newActionModal .modal-body .btn {
+font-size: 11px;
+padding: 3px 9px;
+}
+
+#newActionModal .modal-body .row {
+margin-bottom: 6px;
+}
+/* Two-Column Layout for Modal */
+#modalBody {
+position: relative;
+}
+
+.main-content-area {
+transition: width 0.3s ease;
+}
+
+.sidebar-content-area {
+width: 25%;
+border-left: 1px solid #dee2e6;
+padding: 12px;
+overflow-y: auto;
+height: calc(100% - 60px);
+display: none;
+max-height: calc(100% - 60px); /* Ensure it doesn’t exceed modal height */
+}
+
+#modalBody.split-view .main-content-area {
+width: 75%;
+}
+
+#modalBody.split-view .sidebar-content-area {
+display: block;
+}
+
+/* Ensure sidebar tab content fits */
+#sidebarTabContent .tab-pane {
+padding: 0;
+}
+
+/* Adjust visit pad button visibility */
+#visitPadBtn {
+display: none;
+}
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+.modal-dialog-centered-custom {
+  width: 95%; /* Override fixed width for smaller screens */
+  margin: 15px auto; /* Reduce margin for better fit */
+}
+
+#newActionModal .modal-content {
+  width: 95%; /* Override fixed width for smaller screens */
+  height: 90vh; /* Override fixed height for smaller screens */
+}
+
+/* Compress Modal Header */
+#newActionModal .modal-header {
+  flex-wrap: wrap; /* Allow wrapping for small screens */
+  padding: 4px 8px; /* Reduce padding */
+  height: auto; /* Allow dynamic height */
+}
+
+#newActionModal .modal-header .patient-details {
+  flex: 1 1 100%; /* Take full width on small screens */
+  margin-bottom: 5px; /* Add spacing below */
+}
+
+#newActionModal .modal-header .patient-info {
+  flex-direction: row; /* Align name and meta horizontally */
+  flex-wrap: wrap;
+}
+
+#newActionModal .modal-header .patient-info .patient-name {
+  font-size: 10px; /* Reduce font size */
+  margin-right: 5px;
+}
+
+#newActionModal .modal-header .patient-info .patient-meta {
+  font-size: 9px; /* Reduce font size */
+}
+
+#newActionModal .modal-header .nav-tabs {
+  margin-left: 0; /* Remove left margin */
+  flex: 1 1 100%; /* Take full width */
+  justify-content: flex-start; /* Align tabs to start */
+  overflow-x: auto; /* Allow horizontal scrolling for tabs */
+  white-space: nowrap; /* Prevent tab wrapping */
+}
+
+#newActionModal .modal-header .nav-tabs .nav-link {
+  font-size: 10px; /* Reduce font size */
+  padding: 2px 5px; /* Reduce padding */
+}
+
+#newActionModal .modal-header .nav-tabs .nav-link i {
+  font-size: 12px; /* Reduce icon size */
+  margin-bottom: 2px;
+}
+
+#newActionModal .modal-header .btn-close {
+  font-size: 12px; /* Reduce close button size */
+  margin-left: 5px;
+}
+
+/* Adjust Modal Body Form Fields */
+#newActionModal .modal-body .row {
+  margin-bottom: 4px; /* Reduce spacing between rows */
+}
+
+#newActionModal .modal-body .col-md-4,
+#newActionModal .modal-body .col-md-6,
+#newActionModal .modal-body .col-md-8,
+#newActionModal .modal-body .col-md-12 {
+  flex: 0 0 100%; /* Stack all columns on small screens */
+  max-width: 100%;
+}
+
+#newActionModal .modal-body .form-label {
+  font-size: 10px; /* Reduce label font size */
+}
+
+#newActionModal .modal-body .form-control,
+#newActionModal .modal-body .form-select {
+  font-size: 10px; /* Reduce input font size */
+  padding: 2px 5px; /* Reduce padding */
+  height: 24px; /* Reduce height */
+}
+
+#newActionModal .modal-body .btn {
+  font-size: 10px; /* Reduce button font size */
+  padding: 2px 6px; /* Reduce padding */
+}
+.flatpickr-day.has-appointment {
+  background-color: #e3f2fd !important;
+  border-color: #90caf9 !important;
+  position: relative;
+}
+.flatpickr-day.has-appointment::after {
+  content: attr(data-appointment-time);
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2196f3;
+  color: white;
+  padding: 2px 5px;
+  font-size: 10px;
+  border-radius: 3px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+/* Adjust Sticky Footer */
+.sticky-footer {
+  padding: 5px; /* Reduce padding */
+}
+.flatpickr-calendar {
+  z-index: 1060 !important; /* Above modal (z-index: 1055) and navbar */
+  font-size: 11px;
+  width: 250px; /* Slightly wider for better visibility */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+.flatpickr-calendar.open {
+  top: 30px !important; /* Position below input (24px height + 6px margin) */
+  left: auto !important;
+  right: 10px !important; /* Align to the right of the input */
+}
+
+.sticky-footer .btn {
+  font-size: 10px; /* Reduce button font size */
+  padding: 2px 6px; /* Reduce padding */
+}
+
+/* Adjust Navbar */
+.navbar-top .nav-link,
+.navbar-secondary .nav-link {
+  font-size: 10px;
+}
+
+.table-appointments th,
+.table-appointments td {
+  font-size: 10px;
+  padding: 4px;
+}
+.table-appointments th:nth-child(5),
+.table-appointments td:nth-child(5) {
+    min-width: 180px; /* Adjust as needed for date and time */
+  }
+
+.navbar-top .form-control {
+  width: 100px;
+}
+
+.navbar-secondary .btn-circle {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+
+.navbar-secondary .btn-outline-primary {
+  font-size: 10px;
+  padding: 2px 4px;
+}
+}
+
+/* Autocomplete Dropdown Styling */
+.autocomplete-dropdown {
+position: absolute;
+width: 120px; /* Match input width */
+z-index: 1000;
+max-height: 200px;
+overflow-y: auto;
+font-size: 11px;
+padding: 0;
+margin: 0;
+border: 1px solid #dee2e6;
+border-radius: 4px;
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+background-color: white;
+list-style: none; /* Remove default bullets */
+}
+
+.autocomplete-dropdown li {
+padding: 5px 10px;
+cursor: pointer;
+}
+
+.autocomplete-dropdown li:hover {
+background-color: #f8f9fa;
+}
+
+
+.autocomplete-dropdown .dropdown-item {
+padding: 8px 12px;
+cursor: pointer;
+}
+.autocomplete-dropdown .dropdown-item:hover {
+background-color: #f8f9fa;
+}
+.autocomplete-dropdown .dropdown-item.disabled {
+color: #6c757d;
+cursor: not-allowed;
+}
+.input-group .service-search {
+border-right: 0; /* Seamless transition to dropdown button */
+}
+.input-group .dropdown-toggle {
+min-width: 30px; /* Ensure button is clickable */
+}
+
+/* Sticky Footer Styling */
+.sticky-footer {
+position: sticky;
+bottom: 0;
+background-color: #fff;
+padding: 10px;
+border-top: 1px solid #dee2e6;
+display: flex;
+justify-content: flex-end;
+z-index: 10;
+}
+
+.status-booked { background-color: #007bff; color: white; padding: 2px 6px; border-radius: 4px; }
+.status-rescheduled { background-color: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; }
+.status-completed { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; }
+.status-canceled { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; }
+.status-reviewed { background-color: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; }
+.status-pending { background-color: #ffc107; color: black; padding: 2px 6px; border-radius: 4px; }
+.status-active { background-color: #fd7e14; color: white; padding: 2px 6px; border-radius: 4px; }
+#newActionModal .modal-body .form-control[readonly] {
+background-color: #e9ecef;
+}  
+
+
+
+/* Ensure modals have a high z-index */
+.modal {
+z-index: 1055 !important;
+}
+
+.modal-backdrop {
+z-index: 1050 !important; /* Ensure backdrop is just below the modal */
+}
+
+/* Ensure modal is centered and interactive */
+.modal-dialog-centered {
+display: flex;
+align-items: center;
+min-height: calc(100% - 1rem);
+}
+
+/* Prevent interaction with elements behind the modal */
+.modal-open {
+overflow: hidden;
+}
+
+/* Fix any overlapping issues with other modals */
+#noPatientFoundModal {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+}
+/* Appointments Section */
+.appointments-view {
+  transition: opacity 0.3s ease;
+  width: 100%;
+  max-width: 1200px; /* Set a max width for the calendar */
+  margin: 0 auto; /* Center the calendar */
+  height: 100%;
+  overflow-y: auto; /* Allow vertical scrolling */
+}
+
+#appointmentsCalendarView {
+  color: #000000;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-height: 600px; /* Ensure visibility even if empty */
+}
+
+#appointmentsCalendar {
+  width: 100%; /* Span full width */
+  background-color: #ffffff; /* White background */
+  color: #000000; /* Black text */
+}
+
+/* Calendar Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border: 1px solid #ccc;
+  width: 100%; /* Span full width */
+  box-sizing: border-box;
+}
+
+.calendar-header,
+.calendar-row {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr); /* Fixed width for time column, equal for days */
+  background-color: #ffffff; /* White background */
+}
+
+.calendar-header > div,
+.calendar-row > div {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  font-size: 11px; /* Match global font size */
+  background-color: #ffffff; /* White background */
+  color: #000000; /* Black text */
+  box-sizing: border-box;
+}
+
+.calendar-header > div:first-child,
+.calendar-row > div:first-child {
+  font-weight: 500; /* Slightly bolder for time column */
+  background-color: #f5f5f5; /* Very light gray for time column */
+}
+
+.calendar-slot {
+  min-height: 60px;
+  position: relative;
+  background-color: #ffffff; /* White background */
+  border: 1px solid #ddd; /* Consistent borders */
+}
+
+.appointment-block {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  background: #e0e0e0; /* Light gray for appointment blocks */
+  color: #000000; /* Black text */
+  font-size: 10px; /* Slightly smaller for compact display */
+  padding: 2px 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appointment-block:hover {
+  background: #d0d0d0; /* Slightly darker gray on hover */
+  cursor: pointer;
+}
+
+/* Doctor Filter */
+.doctor-filter-container {
+  display: flex;
+  align-items: center;
+  max-width: 300px; /* Limits filter width */
+}
+
+.doctor-filter-container .form-label {
+  font-size: 11px; /* Match global font size */
+  font-weight: 500;
+  margin-bottom: 0;
+  white-space: nowrap;
+  color: #000000; /* Black text */
+}
+
+.doctor-filter-container .form-select {
+  width: 180px; /* Fixed width for dropdown */
+  font-size: 11px; /* Match global font size */
+  padding: 2px 6px; /* Compact padding */
+  height: 24px; /* Consistent with navbar inputs */
+  background-color: #ffffff; /* White background */
+  color: #000000; /* Black text */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Flatpickr Styling (consistent with global styles) */
+.flatpickr-day.has-appointment {
+  background-color: #f5f5f5 !important; /* Very light gray */
+  border: 1px solid #ccc !important;
+  color: #000000 !important; /* Black text */
+}
+
+/* Status Classes (aligned with modal and table) */
+.status-booked {
+  background-color: #007bff; /* Keep blue for consistency */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.status-arrived {
+  background-color: #28a745; /* Keep green */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.status-on-going {
+  background-color: #ffc107; /* Keep yellow */
+  color: black;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.status-reviewed {
+  background-color: #6c757d; /* Keep gray */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .doctor-filter-container {
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .doctor-filter-container .form-select {
+    width: 150px;
+  }
+
+  .calendar-header,
+  .calendar-row {
+    grid-template-columns: 60px repeat(7, 1fr); /* Smaller time column */
+    font-size: 10px; /* Slightly smaller text */
+  }
+
+  .calendar-slot {
+    min-height: 30px; /* Smaller slots for mobile */
+  }
+
+  .appointment-block {
+    font-size: 9px; /* Smaller text for mobile */
+    padding: 1px 3px;
+  }
+}
+
+
+/* Ensure Select2 dropdown is full-width and styled */
+.select2-container {
+  width: 100% !important;
+}
+
+.select2-container .select2-selection--multiple {
+  min-height: 32px;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+.select2-container .select2-selection--multiple .select2-selection__rendered {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.25rem 0.5rem;
+}
+
+.select2-container .select2-selection--multiple .select2-selection__choice {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  margin: 0.125rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.select2-container .select2-selection--multiple .select2-selection__choice__remove {
+  color: white;
+  margin-right: 0.5rem;
+}
+
+.select2-container .select2-search--inline .select2-search__field {
+  margin: 0.25rem;
+  padding: 0;
+}
+
+.select2-dropdown {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+/* Fix input group alignment */
+.input-group .select2-container {
+  flex-grow: 1;
+}
+
+.input-group .select2-selection {
+  height: calc(1.5em + 0.5rem + 2px) !important; /* Match input-group-sm height */
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.editable {
+  position: relative;
+}
+.edit-icon {
+  cursor: pointer;
+  color: #007bff;
+}
+.edit-icon:hover {
+  color: #0056b3;
+}
+.edit-input {
+  width: 100%;
+}
+.edit-controls {
+  white-space: nowrap;
+}
+.table-sm td {
+  vertical-align: middle;
+}
+
+/* styles.css or relevant stylesheet */
+.status-paid {
+  color: #28a745; /* Green for Paid */
+  font-weight: bold;
+}
+
+.status-partially-paid {
+  color: #ffc107; /* Yellow for Partially Paid */
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #dc3545; /* Red for Pending */
+  font-weight: bold;
+}
+
+.amount-paid {
+  color: #28a745; /* Green for Paid */
+}
+
+.amount-partially-paid {
+  color: #ffc107; /* Yellow for Partially Paid */
+}
+
+.amount-pending {
+  color: #dc3545; /* Red for Pending */
+}
+
+
+.calendar-row.past {
+  background-color: #e0e0e0; /* Grey background for past slots */
+  opacity: 0.7; /* Slightly reduce opacity for contrast */
+}
+
+.current-time-marker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: red; /* Red line for visibility */
+  z-index: 10;
+}
+
+#calendarBody {
+  position: relative; /* Ensure relative positioning for absolute markers */
+  overflow-y: auto; /* Allow scrolling */
+  max-height: 600px; /* Adjust based on your layout */
+}
+
+/* Toggle Buttons */
+.btn-group .btn {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.btn-group .btn.active {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.btn-group .btn:not(.active) {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+/* Appointments Views */
+.appointments-view {
+  display: none !important;
+}
+
+.appointments-view.active {
+  display: block !important;
+}
+
+/* Table View */
+#appointmentsTable {
+  font-size: 11px;
+}
+
+#appointmentsTable th,
+#appointmentsTable td {
+  vertical-align: middle;
+  padding: 8px;
+}
+
+#appointmentsTable .status-booked {
+  color: #ecedef;
+}
+
+#appointmentsTable .status-arrived {
+  color: #28a745;
+}
+
+#appointmentsTable .status-on-going {
+  color: #ffc107;
+}
+
+#appointmentsTable .status-reviewed {
+  color: #6c757d;
+}
+
+#appointmentsTable .status-scheduled {
+  color: #17a2b8;
+}
+
+#appointmentsTable .status-canceled {
+  color: #dc3545;
+}
+
+#appointmentsTable .btn-sm {
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.select2-container--default .select2-selection--single {
+  height: 26px;
+  font-size: 11px;
+  padding: 3px 7px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 24px;
+}
+.flatpickr-year, .flatpickr-month {
+  width: 80px;
+  padding: 2px;
+  border-radius: 4px;
+}
