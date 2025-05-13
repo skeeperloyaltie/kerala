@@ -191,21 +191,22 @@
       function redirectToDashboard() {
         const isSuperuser = sessionStorage.getItem('is_superuser') === 'true';
         const userType = sessionStorage.getItem('user_type')?.toLowerCase();
-        const roleLevel = sessionStorage.getItem('role_level')?.toLowerCase();
 
         if (isSuperuser) {
           console.log('🟢 Redirecting to Admin Dashboard');
           window.location.href = '/dashboard/admin.html';
-        } else if (userType === 'staff' && roleLevel === 'receptionist') {
+        } else if (userType === 'receptionist') {
           console.log('🟢 Redirecting to Receptionist Dashboard');
           window.location.href = '/receptionist/index.html';
-        } else if ( roleLevel === 'doctor') {
-          console.log('Redirecting to doctors dashboard');
-          window.location.href = '/dashboard/index.html';
+        } else if (userType === 'doctor') {
+          console.log('🟢 Redirecting to Doctor Dashboard');
+          window.location.href = '/dashboard/doctor.html';
+        } else if (userType === 'nurse') {
+          console.log('🟢 Redirecting to Nurse Dashboard');
+          window.location.href = '/dashboard/nurse.html';
         } else {
-          console.log('🟢 Redirecting to General Dashboard');
-          // window.location.href = '/dashboard/index.html';
-          alert('No user profile recorded for this user')
+          console.log('🟠 No valid user profile recorded');
+          alert('No user profile recorded for this user');
         }
       }
 
