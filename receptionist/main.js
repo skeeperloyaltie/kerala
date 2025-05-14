@@ -1120,9 +1120,7 @@ function logoutUser() {
 // Initialize
 $(document).ready(function () {
   try {
-    if (!window.jQuery || !window.bootstrap || !window.moment || !window.intlTelInput || !$.fn.select2 || !$.fn.datepicker) {
-      throw new Error('Missing dependencies');
-    }
+    console.log('[Main] Initializing...');
 
     checkAuthentication();
     bindNavFilters();
