@@ -113,27 +113,39 @@ class GetPatientDetailsView(APIView):
         except Patient.DoesNotExist:
             return Response({"error": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
 
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q
+from .models import Patient
+from .serializers import PatientSerializer
+from appointments.serializers import AppointmentSerializer
+from users.models import Doctor, Receptionist
+import logging
+
+logger = logging.getLogger(__name__)
+
 class PatientListView(generics.ListAPIView):
     """
-    Returns a list of patients based on the user's role.
+    Returns a list of patients with their associated appointments based on the user's role.
     - Doctors: Only see patients assigned to them (via primary_doctor or appointments).
     - Receptionists: See all patients.
-    Includes patient details, appointments, doctors, and vitals.
+    Includes patient details and their appointments (ID, date, doctor, status, notes).
     """
     serializer_class = PatientSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """
-        Customize the queryset based on the user's role.
+        Customize the queryset based on the user's role, prefetching appointments for performance.
         """
         user = self.request.user
         logger.info(f"User {user.username} ({user.user_type if hasattr(user, 'user_type') else 'Unknown'}) requesting patient list.")
 
         # Base queryset with prefetching for performance
         base_qs = Patient.objects.prefetch_related(
-            "appointments__doctor",
-            "appointments__vitals"
+            "appointments__doctor",  # Prefetch doctor details for appointments
+            "appointments__vitals"   # Prefetch vitals if needed
         )
 
         # Role-based filtering
@@ -145,27 +157,40 @@ class PatientListView(generics.ListAPIView):
             ).distinct()  # Avoid duplicates
             logger.info(f"Doctor {user.username} fetched {queryset.count()} patients.")
             return queryset
-
         elif hasattr(user, 'receptionist'):  # Receptionist role
             # Receptionists can see all patients
             queryset = base_qs.all()
             logger.info(f"Receptionist {user.username} fetched {queryset.count()} patients.")
             return queryset
-
         else:
             # Unauthorized user type (e.g., patient or other roles)
             logger.warning(f"Unauthorized attempt by {user.username} to access patient list.")
-            # Return empty queryset for safety; could also raise PermissionDenied
             return base_qs.none()
 
     def list(self, request, *args, **kwargs):
         """
-        Override the list method to handle the response and logging.
+        Override the list method to include appointments in the response.
         """
         try:
             queryset = self.get_queryset()
-            serializer = self.get_serializer(queryset, many=True)
-            return Response({"patients": serializer.data}, status=status.HTTP_200_OK)
+            # Serialize patients
+            patient_serializer = self.get_serializer(queryset, many=True)
+            patients_data = patient_serializer.data
+
+            # Add appointments to each patient's data
+            for patient_data in patients_data:
+                patient = Patient.objects.get(patient_id=patient_data['patient_id'])
+                # Filter appointments based on user role
+                if hasattr(request.user, 'doctor'):
+                    appointments = patient.appointments.filter(doctor=request.user.doctor)
+                else:
+                    appointments = patient.appointments.all()
+                # Serialize appointments
+                appointment_serializer = AppointmentSerializer(appointments, many=True)
+                patient_data['appointments'] = appointment_serializer.data
+
+            logger.info(f"Returning {len(patients_data)} patients with appointments for user {request.user.username}")
+            return Response({"patients": patients_data}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error fetching patient list for {request.user.username}: {str(e)}", exc_info=True)
             return Response({"error": "An error occurred while retrieving patients."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

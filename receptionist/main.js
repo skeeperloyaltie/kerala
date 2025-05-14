@@ -32,6 +32,15 @@ $(document).ready(function () {
     $(this).next('label').addClass('active');
   });
 
+
+// Debounce function
+function debounce(func, wait) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
   // Initialize Bootstrap for Bill Date and DOB
   function validateDateInput(inputId, format = 'YYYY-MM-DD') {
     const $input = $(`#${inputId}`);
