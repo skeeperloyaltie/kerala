@@ -5,7 +5,7 @@ const CONFIG = {
   API_BASE_URL: window.location.hostname === 'localhost'
     ? 'http://localhost:8000'
     : 'http://smarthospitalmaintain.com:8000', // Adjust based on environment
-  CITY_API_URL: 'https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json', // Backend endpoint; fallback to external if needed
+  CITY_API_URL: 'https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json', // External source
   FALLBACK_CITIES: [
     { name: 'Mumbai', state: 'Maharashtra' },
     { name: 'Delhi', state: 'Delhi' },
@@ -626,12 +626,12 @@ function fetchIndianCities(attempt = 1, maxAttempts = 3) {
   isFetchingCities = true;
 
   $.ajax({
-    url: `${CONFIG.API_BASE_URL}${CONFIG.CITY_API_URL}`,
+    url: CONFIG.CITY_API_URL, // Use external URL directly
     type: 'GET',
     cache: true,
     timeout: 5000,
     success: function (data) {
-      indianCities = data.cities?.map(city => ({
+      indianCities = data.map(city => ({
         name: city.name.trim(),
         state: city.state?.trim() || ''
       })) || CONFIG.FALLBACK_CITIES;
@@ -947,7 +947,7 @@ function showPatientAppointments(patientId) {
     success: function (data) {
       const appointments = data.appointments || [];
       const modalHtml = `
-        <div classirdi="patientAppointmentsModal" tabindex="-1" aria-labelledby="patientAppointmentsModalLabel">
+        <div class="modal fade" id="patientAppointmentsModal" tabindex="-1" aria-labelledby="patientAppointmentsModalLabel">
           <div class="modal-dialog modal-lg">
             <div class="modal-content">
               <div class="modal-header">
@@ -1120,8 +1120,6 @@ function logoutUser() {
 // Initialize
 $(document).ready(function () {
   try {
-    console.log('[Main] Initializing...');
-
     checkAuthentication();
     bindNavFilters();
     bindModalActions();
