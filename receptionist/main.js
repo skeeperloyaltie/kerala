@@ -4,8 +4,8 @@
 const CONFIG = {
   API_BASE_URL: window.location.hostname === 'localhost'
     ? 'http://localhost:8000'
-    : 'http://smarthospitalmaintain.com:8000', // Adjust based on environment
-  CITY_API_URL: 'https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json', // External source
+    : 'http://smarthospitalmaintain.com:8000',
+  CITY_API_URL: 'https://raw.githubusercontent.com/nshntarora/indian-cities-json/master/cities.json',
   FALLBACK_CITIES: [
     { name: 'Mumbai', state: 'Maharashtra' },
     { name: 'Delhi', state: 'Delhi' },
@@ -112,7 +112,6 @@ function adjustUIForRole(userType, roleLevel, username) {
   const $dashboardDropdown = $('#dashboardDropdown').parent();
   const $modalTabs = $('#newActionTabs .nav-item');
 
-  // Default visibility
   $navItems.show();
   $secondaryNav.show();
   $buttons.show();
@@ -162,7 +161,7 @@ function fetchAppointmentsByDate(dateStr = null, filter = 'all') {
   const todayStr = moment().format('YYYY-MM-DD');
   const selectedDate = dateStr || todayStr;
 
-  console.log(`[fetchAppointmentsByDate] Date: ${selectedDate}, Filter: ${filter}`);
+  console.log(`[fetchAppointmentsByDate] Fetching for date: ${selectedDate}, Filter: ${filter}`);
   $('#dateFilter').val(selectedDate).trigger('input');
 
   $.ajax({
@@ -250,7 +249,7 @@ function populateAppointmentsTable(appointments, dateStr) {
     showAppointmentDetails($(this).data('appointment-id'));
   });
 
-  console.log(`[populateAppointmentsTable] Populated ${filteredAppointments.length} appointments`);
+  console.log(`[populateAppointmentsTable] Populated ${filteredAppointments.length} appointments for ${dateStr}`);
 }
 
 // Appointments: Mark Dates
@@ -277,6 +276,7 @@ function showAppointmentDetails(appointmentId) {
     headers: getAuthHeaders(),
     success: function (response) {
       if (!response.appointments?.length) {
+        console.warn('[showAppointmentDetails] No appointment details found for ID:', appointmentId);
         alert('No appointment details found.');
         return;
       }
@@ -323,6 +323,7 @@ function showAppointmentDetails(appointmentId) {
       $('#appointmentDetailsModal').on('hidden.bs.modal', function () {
         $(this).remove();
       });
+      console.log(`[showAppointmentDetails] Displayed details for ID: ${appointmentId}`);
     },
     error: function (xhr) {
       logError('showAppointmentDetails', xhr);
@@ -333,6 +334,7 @@ function showAppointmentDetails(appointmentId) {
 
 // Appointments: Edit
 function editAppointment(appointmentId) {
+  console.log(`[editAppointment] Fetching appointment ID: ${appointmentId}`);
   $.ajax({
     url: `${CONFIG.API_BASE_URL}/appointments/edit/${appointmentId}/`,
     type: 'GET',
@@ -451,6 +453,7 @@ function setupPatientSearch() {
     return;
   }
 
+  console.log('[setupPatientSearch] Initializing Select2 for patient search');
   $searchInput.select2({
     placeholder: 'Search Patient',
     allowClear: true,
@@ -460,15 +463,21 @@ function setupPatientSearch() {
       type: 'GET',
       headers: getAuthHeaders(),
       delay: 500,
-      data: params => ({ query: params.term }),
-      processResults: data => ({
-        results: data.patients?.map(patient => ({
+      data: params => {
+        console.log('[setupPatientSearch] Search query:', params.term);
+        return { query: params.term };
+      },
+      processResults: data => {
+        const results = data.patients?.map(patient => ({
           id: patient.patient_id,
           text: `${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})`
-        })) || []
-      }),
+        })) || [];
+        console.log('[setupPatientSearch] Search results:', results);
+        return { results };
+      },
       error: xhr => {
-        logError('setupPatientSearch', xhr);
+        logError('setupPatientSearch', xhr, 'Patient search failed');
+        alert('Failed to search patients.');
         return { results: [] };
       }
     }
@@ -482,7 +491,7 @@ function setupPatientSearch() {
 
   $searchInput.on('select2:clear', () => {
     selectedPatientId = null;
-    console.log('[setupPatientSearch] Cleared selection');
+    console.log('[setupPatientSearch] Cleared patient selection');
     updateDetailsSection(null);
     resetModalView();
   });
@@ -490,6 +499,7 @@ function setupPatientSearch() {
 
 // Patient: Fetch Details
 function fetchPatientDetails(patientId, targetTab = 'profileTab') {
+  console.log(`[fetchPatientDetails] Fetching details for patient ID: ${patientId}`);
   $.ajax({
     url: `${CONFIG.API_BASE_URL}/patients/patients/${patientId}/`,
     type: 'GET',
@@ -502,7 +512,7 @@ function fetchPatientDetails(patientId, targetTab = 'profileTab') {
       updateDetailsSection(patient);
       $('#newActionModal').modal('show');
       $(`#${targetTab}`).tab('show');
-      console.log(`[fetchPatientDetails] Loaded patient ID: ${patientId}`);
+      console.log(`[fetchPatientDetails] Loaded patient ID: ${patientId}`, patient);
     },
     error: function (xhr) {
       logError('fetchPatientDetails', xhr);
@@ -524,10 +534,12 @@ function updateDetailsSection(patient) {
     $title.text(fullName || 'Unnamed');
     $meta.text(`${patient.gender || 'N/A'} | ${age} Years | ${patient.patient_id}`);
     $visitPadBtn.show();
+    console.log(`[updateDetailsSection] Updated details for patient: ${fullName}`);
   } else {
     $title.text('No Patient Selected');
     $meta.text('N/A | N/A | N/A');
     $visitPadBtn.hide();
+    console.log('[updateDetailsSection] No patient selected');
   }
 }
 
@@ -574,17 +586,22 @@ function populateProfileTab(patient) {
             pincode: $('#profilePin').val()
           }),
           contentType: 'application/json',
-          success: () => alert('Address updated successfully!'),
+          success: () => {
+            console.log(`[toggleProfileEdit] Address updated for patient ID: ${selectedPatientId}`);
+            alert('Address updated successfully!');
+          },
           error: xhr => {
             logError('toggleProfileEdit', xhr);
             alert('Failed to update address.');
           }
         });
       }
+      console.log(`[toggleProfileEdit] Toggled edit mode: ${isReadonly ? 'Editing' : 'Saved'}`);
     });
   }
 
   setupCityAutocomplete('profileCity');
+  console.log('[populateProfileTab] Populated profile tab for patient ID:', patient.patient_id);
 }
 
 // Patient: Populate Add Patient Form
@@ -618,15 +635,21 @@ function populateAddPatientForm(patient, appointment = null) {
   $('#addPatientForm').data('edit-mode', !!patient.patient_id)
     .data('patient-id', patient.patient_id)
     .data('appointment-id', appointment?.id || null);
+
+  console.log('[populateAddPatientForm] Populated form for patient ID:', patient.patient_id || 'new patient');
 }
 
 // Cities: Fetch
 function fetchIndianCities(attempt = 1, maxAttempts = 3) {
-  if (isFetchingCities) return;
+  if (isFetchingCities) {
+    console.log('[fetchIndianCities] Fetch already in progress, skipping');
+    return;
+  }
   isFetchingCities = true;
+  console.log(`[fetchIndianCities] Attempt ${attempt} to fetch cities from ${CONFIG.CITY_API_URL}`);
 
   $.ajax({
-    url: CONFIG.CITY_API_URL, // Use external URL directly
+    url: CONFIG.CITY_API_URL,
     type: 'GET',
     cache: true,
     timeout: 5000,
@@ -635,18 +658,19 @@ function fetchIndianCities(attempt = 1, maxAttempts = 3) {
         name: city.name.trim(),
         state: city.state?.trim() || ''
       })) || CONFIG.FALLBACK_CITIES;
-      console.log(`[fetchIndianCities] Loaded ${indianCities.length} cities`);
+      console.log(`[fetchIndianCities] Successfully loaded ${indianCities.length} cities`);
       isFetchingCities = false;
       setupCityAutocomplete('patientCity');
       setupCityAutocomplete('profileCity');
     },
     error: function (xhr) {
-      logError('fetchIndianCities', xhr, `Attempt ${attempt}`);
+      logError('fetchIndianCities', xhr, `Attempt ${attempt} failed`);
       isFetchingCities = false;
       if (attempt < maxAttempts) {
+        console.log(`[fetchIndianCities] Retrying, attempt ${attempt + 1}`);
         setTimeout(() => fetchIndianCities(attempt + 1, maxAttempts), 1000);
       } else {
-        console.warn('[fetchIndianCities] Using fallback cities');
+        console.warn('[fetchIndianCities] All attempts failed, using fallback cities');
         indianCities = CONFIG.FALLBACK_CITIES;
         setupCityAutocomplete('patientCity');
         setupCityAutocomplete('profileCity');
@@ -658,13 +682,32 @@ function fetchIndianCities(attempt = 1, maxAttempts = 3) {
 // Cities: Autocomplete
 function setupCityAutocomplete(inputId) {
   const $input = $(`#${inputId}`);
+  if (!$input.length) {
+    console.error(`[setupCityAutocomplete] Input #${inputId} not found`);
+    return;
+  }
+
+  console.log(`[setupCityAutocomplete] Setting up autocomplete for #${inputId}, cities available: ${indianCities.length}`);
   $input.autocomplete({
-    source: indianCities.map(city => `${city.name}, ${city.state}`),
+    source: function (request, response) {
+      const term = request.term.toLowerCase();
+      const matches = indianCities
+        .filter(city => city.name.toLowerCase().includes(term))
+        .map(city => `${city.name}, ${city.state}`);
+      console.log(`[setupCityAutocomplete] Search term: ${term}, matches found: ${matches.length}`);
+      response(matches);
+    },
     minLength: 2,
-    select: (event, ui) => {
+    select: function (event, ui) {
       $input.val(ui.item.value.split(',')[0].trim());
-      console.log(`[setupCityAutocomplete] Selected: ${ui.item.value}`);
+      console.log(`[setupCityAutocomplete] Selected city: ${ui.item.value} for #${inputId}`);
       return false;
+    },
+    open: function () {
+      console.log(`[setupCityAutocomplete] Autocomplete dropdown opened for #${inputId}`);
+    },
+    close: function () {
+      console.log(`[setupCityAutocomplete] Autocomplete dropdown closed for #${inputId}`);
     }
   });
 }
@@ -674,6 +717,7 @@ function populateDoctorDropdown(selectId, specialtyId = null) {
   const $select = $(`#${selectId}`);
   $select.empty().append('<option value="" disabled selected>Select Doctor</option>');
 
+  console.log(`[populateDoctorDropdown] Fetching doctors for #${selectId}`);
   $.ajax({
     url: `${CONFIG.API_BASE_URL}/appointments/doctors/list/`,
     type: 'GET',
@@ -688,12 +732,15 @@ function populateDoctorDropdown(selectId, specialtyId = null) {
       if (specialtyId) {
         $select.on('change', function () {
           $(`#${specialtyId}`).val($(this).find('option:selected').data('specialty') || '');
+          console.log(`[populateDoctorDropdown] Updated specialty for #${specialtyId}`);
         });
       }
+      console.log(`[populateDoctorDropdown] Populated ${doctors.length} doctors for #${selectId}`);
     },
     error: function (xhr) {
       logError('populateDoctorDropdown', xhr);
       $select.append('<option value="" disabled>Failed to load doctors</option>');
+      console.error('[populateDoctorDropdown] Failed to load doctors');
     }
   });
 }
@@ -703,7 +750,7 @@ function bindModalActions() {
   $('[data-action]').off('click').on('click', function (e) {
     e.preventDefault();
     const action = $(this).data('action');
-    console.log(`[bindModalActions] Action: ${action}`);
+    console.log(`[bindModalActions] Triggered action: ${action}`);
 
     if (action === 'new') {
       selectedPatientId = null;
@@ -719,25 +766,30 @@ function bindModalActions() {
   $('#addPatientForm').off('submit').on('submit', function (e) {
     e.preventDefault();
     const buttonId = e.originalEvent.submitter?.id;
+    console.log(`[bindModalActions] Form submitted with button: ${buttonId}`);
     createPatientAndAppointment(buttonId);
   });
 
   $('#goBackBtn').off('click').on('click', function () {
+    console.log('[bindModalActions] Go Back button clicked');
     resetModalView();
     $('#newActionModal').modal('hide');
   });
 
   $('#editProfileBtn').off('click').on('click', function () {
     if (selectedPatientId) {
+      console.log(`[bindModalActions] Edit Profile clicked for patient ID: ${selectedPatientId}`);
       fetchPatientDetails(selectedPatientId, 'addPatientTab');
     }
   });
 
   $('#viewAppointmentsBtn').off('click').on('click', function () {
     if (selectedPatientId) {
+      console.log(`[bindModalActions] View Appointments clicked for patient ID: ${selectedPatientId}`);
       showPatientAppointments(selectedPatientId);
     } else {
       alert('No patient selected.');
+      console.warn('[bindModalActions] View Appointments clicked with no patient selected');
     }
   });
 }
@@ -757,10 +809,12 @@ function resetModalView() {
   $('#addPatientForm').removeData('edit-mode').removeData('patient-id').removeData('appointment-id');
   $('#personalDetailsCollapse').addClass('show');
   $('#contactDetailsCollapse, #medicalInfoCollapse, #additionalPersonalDetailsCollapse, #appointmentDetailsCollapse, #insuranceDetailsCollapse, #imageUploadCollapse').removeClass('show');
+  console.log('[resetModalView] Modal view reset');
 }
 
 // Patient: Create and Appointment
 function createPatientAndAppointment(buttonId) {
+  console.log('[createPatientAndAppointment] Starting form validation');
   const requiredFields = [
     { id: 'patientFirstName', name: 'First Name' },
     { id: 'patientLastName', name: 'Last Name' },
@@ -768,8 +822,7 @@ function createPatientAndAppointment(buttonId) {
     { id: 'patientDOB', name: 'Date of Birth' },
     { id: 'patientPhone', name: 'Phone Number' },
     { id: 'preferredLanguage', name: 'Preferred Language' },
-    { id: 'maritalStatus', name: 'Marital Status' },
-    { id: 'referredBy', name: 'Referred By' }
+    { id: 'maritalStatus', name: 'Marital Status' }
   ];
 
   const errors = [];
@@ -795,6 +848,7 @@ function createPatientAndAppointment(buttonId) {
   if ($('#addPatientForm').data('appointment-id') && !apptDate) errors.push('Appointment Date required for editing.');
 
   if (errors.length) {
+    console.error('[createPatientAndAppointment] Validation errors:', errors);
     alert('Please fix:\n- ' + errors.join('\n- '));
     return;
   }
@@ -810,7 +864,7 @@ function createPatientAndAppointment(buttonId) {
     preferred_language: $('#preferredLanguage').val(),
     marital_status: $('#maritalStatus').val(),
     marital_since: $('#maritalSince').val() || null,
-    referred_by: $('#referredBy').val(),
+    referred_by: $('#referredBy').val() || null,
     channel: $('#channel').val(),
     cio: $('#cio').val(),
     occupation: $('#occupation').val(),
@@ -845,6 +899,8 @@ function createPatientAndAppointment(buttonId) {
   const patientId = $('#addPatientForm').data('patient-id');
   const appointmentId = $('#addPatientForm').data('appointment-id');
 
+  console.log(`[createPatientAndAppointment] Submitting data - Edit mode: ${isEditMode}, Patient ID: ${patientId}, Appointment ID: ${appointmentId}`);
+
   const handleSuccess = (data) => {
     updateDetailsSection(data);
     populateProfileTab(data);
@@ -856,6 +912,7 @@ function createPatientAndAppointment(buttonId) {
     } else {
       $('#newActionModal').modal('hide');
     }
+    console.log(`[createPatientAndAppointment] Success: Patient ${isEditMode ? 'updated' : 'created'}, ID: ${data.patient_id}`);
     alert(`Patient ${isEditMode ? 'updated' : 'created'} successfully!`);
   };
 
@@ -940,12 +997,14 @@ function createPatientAndAppointment(buttonId) {
 
 // Patient: Show Appointments
 function showPatientAppointments(patientId) {
+  console.log(`[showPatientAppointments] Fetching appointments for patient ID: ${patientId}`);
   $.ajax({
     url: `${CONFIG.API_BASE_URL}/appointments/list/?patient_id=${patientId}`,
     type: 'GET',
     headers: getAuthHeaders(),
     success: function (data) {
       const appointments = data.appointments || [];
+      console.log(`[showPatientAppointments] Fetched ${appointments.length} appointments for patient ID: ${patientId}`);
       const modalHtml = `
         <div class="modal fade" id="patientAppointmentsModal" tabindex="-1" aria-labelledby="patientAppointmentsModalLabel">
           <div class="modal-dialog modal-lg">
@@ -1005,6 +1064,7 @@ function showPatientAppointments(patientId) {
 // Appointment: Post-Submission Status Update
 function postSubmissionAppointment(appointmentId) {
   if (!appointmentId) return;
+  console.log(`[postSubmissionAppointment] Setting status to Booked for appointment ID: ${appointmentId}`);
   $.ajax({
     url: `${CONFIG.API_BASE_URL}/appointments/edit/${appointmentId}/`,
     type: 'PATCH',
@@ -1021,7 +1081,7 @@ function bindNavFilters() {
   $('.navbar-secondary .nav-item a').off('click').on('click', function (e) {
     e.preventDefault();
     const section = $(this).data('section');
-    console.log(`[bindNavFilters] Filter: ${section}`);
+    console.log(`[bindNavFilters] Applying filter: ${section}`);
     $('.navbar-secondary .nav-link').removeClass('active');
     $(this).addClass('active');
     const dateStr = $('#dateFilter').val() || moment().format('YYYY-MM-DD');
@@ -1061,6 +1121,7 @@ function bindDateFilterButtons() {
 
   $setBtn.off('click').on('click', () => {
     const dateStr = $('#dateFilter').val();
+    console.log(`[bindDateFilterButtons] Set button clicked, date: ${dateStr}`);
     if (dateStr) {
       fetchAppointmentsByDate(dateStr);
     } else {
@@ -1070,6 +1131,7 @@ function bindDateFilterButtons() {
 
   $todayBtn.off('click').on('click', () => {
     const todayStr = moment().format('YYYY-MM-DD');
+    console.log('[bindDateFilterButtons] Today button clicked');
     $('#dateFilter').val(todayStr).trigger('changeDate');
   });
 }
@@ -1084,7 +1146,7 @@ function initializePhoneInputs() {
         separateDialCode: true,
         utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js'
       });
-      console.log(`[initializePhoneInputs] Initialized: ${id}`);
+      console.log(`[initializePhoneInputs] Initialized phone input: ${id}`);
     }
   });
 }
@@ -1093,7 +1155,7 @@ function initializePhoneInputs() {
 function bindGenderSelection() {
   $('input[name="patientGender"]').off('change').on('change', function () {
     $('#patientGender').val($(this).val());
-    console.log(`[bindGenderSelection] Gender: ${$(this).val()}`);
+    console.log(`[bindGenderSelection] Selected gender: ${$(this).val()}`);
     $('.btn-group label').removeClass('active');
     $(this).next('label').addClass('active');
   });
@@ -1101,16 +1163,19 @@ function bindGenderSelection() {
 
 // Logout
 function logoutUser() {
+  console.log('[logoutUser] Initiating logout');
   $.ajax({
     url: `${CONFIG.API_BASE_URL}/users/logout/`,
     type: 'POST',
     headers: getAuthHeaders(),
     success: () => {
+      console.log('[logoutUser] Logout successful');
       sessionStorage.clear();
       window.location.href = '../login/login.html';
     },
     error: xhr => {
       logError('logoutUser', xhr);
+      console.warn('[logoutUser] Logout failed, clearing session anyway');
       sessionStorage.clear();
       window.location.href = '../login/login.html';
     }
@@ -1120,6 +1185,7 @@ function logoutUser() {
 // Initialize
 $(document).ready(function () {
   try {
+    console.log('[Main] Starting initialization');
     checkAuthentication();
     bindNavFilters();
     bindModalActions();
@@ -1135,15 +1201,17 @@ $(document).ready(function () {
 
     $('.dropdown-item:contains("Logout")').on('click', e => {
       e.preventDefault();
+      console.log('[Main] Logout dropdown item clicked');
       logoutUser();
     });
 
     $('#newActionTabs a').on('click', function (e) {
       e.preventDefault();
+      console.log(`[Main] Tab clicked: ${$(this).attr('id')}`);
       $(this).tab('show');
     });
 
-    console.log('[Main] Initialized');
+    console.log('[Main] Initialization completed');
   } catch (error) {
     console.error('[Main] Initialization error:', error);
     alert('Failed to load dashboard. Please refresh or contact support.');
