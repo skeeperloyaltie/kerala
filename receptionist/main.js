@@ -40,6 +40,36 @@ function debounce(func, wait) {
   };
 }
 
+// Utility: Format Date to YYYY-MM-DD
+function formatDateToYYYYMMDD(date) {
+  return date.toISOString().split('T')[0]; // e.g., "2025-05-16"
+}
+
+// Utility: Format Date to Readable String
+function formatDateTimeReadable(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(date); // e.g., "May 16, 2025 9:36 AM"
+}
+
+// Utility: Format Time to HH:mm
+function formatTimeHHMM(date) {
+  return date.toTimeString().slice(0, 5); // e.g., "09:36"
+}
+
+// Utility: Validate YYYY-MM-DD
+function isValidDateFormat(dateStr) {
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(dateStr)) return false;
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+}
+
 // Authentication: Get Headers
 function getAuthHeaders() {
   const token = sessionStorage.getItem('token');
@@ -84,7 +114,7 @@ function checkAuthentication() {
         return;
       }
       adjustUIForRole(userType, roleLevel, data.username || 'Unknown User');
-      const todayStr = moment().format('YYYY-MM-DD');
+      const todayStr = formatDateToYYYYMMDD(new Date()); // Replaced moment
       fetchAppointmentsByDate(todayStr);
     },
     error: function (xhr) {
@@ -158,7 +188,7 @@ function adjustUIForRole(userType, roleLevel, username) {
 
 // Appointments: Fetch
 function fetchAppointmentsByDate(dateStr = null, filter = 'all') {
-  const todayStr = moment().format('YYYY-MM-DD');
+  const todayStr = formatDateToYYYYMMDD(new Date()); // Replaced moment
   const selectedDate = dateStr || todayStr;
 
   console.log(`[fetchAppointmentsByDate] Fetching for date: ${selectedDate}, Filter: ${filter}`);
@@ -204,15 +234,15 @@ function populateAppointmentsTable(appointments, dateStr) {
   }
   $tableBody.empty();
 
-  const targetDate = moment(dateStr, 'YYYY-MM-DD');
-  if (!targetDate.isValid()) {
+  if (!isValidDateFormat(dateStr)) {
     $tableBody.html('<tr><td colspan="6" class="text-center">Invalid date selected.</td></tr>');
     return;
   }
 
   const filteredAppointments = appointments.filter(appt => {
     if (!appt?.appointment_date) return false;
-    return moment(appt.appointment_date).format('YYYY-MM-DD') === dateStr;
+    const apptDate = new Date(appt.appointment_date);
+    return formatDateToYYYYMMDD(apptDate) === dateStr;
   });
 
   if (!filteredAppointments.length) {
@@ -220,10 +250,11 @@ function populateAppointmentsTable(appointments, dateStr) {
     return;
   }
 
-  filteredAppointments.sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
+  filteredAppointments.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
 
   filteredAppointments.forEach(appt => {
-    const time = moment(appt.appointment_date).format('HH:mm');
+    const apptDate = new Date(appt.appointment_date);
+    const time = formatTimeHHMM(apptDate);
     const patientName = appt.patient?.first_name
       ? `${appt.patient.first_name} ${appt.patient.last_name || ''}`
       : 'Unnamed';
@@ -258,8 +289,12 @@ function markAppointmentsForDate(dateStr) {
   $dateFilter.removeAttr('data-appointment-times').removeClass('has-appointment');
 
   const appointmentTimes = appointmentsData
-    .filter(appt => appt?.appointment_date && moment(appt.appointment_date).format('YYYY-MM-DD') === dateStr)
-    .map(appt => moment(appt.appointment_date).format('HH:mm'));
+    .filter(appt => {
+      if (!appt?.appointment_date) return false;
+      const apptDate = new Date(appt.appointment_date);
+      return formatDateToYYYYMMDD(apptDate) === dateStr;
+    })
+    .map(appt => formatTimeHHMM(new Date(appt.appointment_date)));
 
   if (appointmentTimes.length) {
     $dateFilter.addClass('has-appointment').attr('data-appointment-times', appointmentTimes.join(', '));
@@ -287,7 +322,7 @@ function showAppointmentDetails(appointmentId) {
       const doctorName = appt.doctor?.first_name
         ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}`
         : 'N/A';
-      const formattedDate = moment(appt.appointment_date).format('MMMM D, YYYY h:mm A');
+      const formattedDate = formatDateTimeReadable(new Date(appt.appointment_date));
 
       const modalHtml = `
         <div class="modal fade" id="appointmentDetailsModal" tabindex="-1" aria-labelledby="appointmentDetailsModalLabel">
@@ -340,6 +375,7 @@ function editAppointment(appointmentId) {
     type: 'GET',
     headers: getAuthHeaders(),
     success: function (appt) {
+      const apptDate = new Date(appt.appointment_date);
       const modal = $(`
         <div class="modal fade" id="editAppointmentModal" tabindex="-1">
           <div class="modal-dialog">
@@ -351,12 +387,12 @@ function editAppointment(appointmentId) {
               <div class="modal-body">
                 <div class="mb-3">
                   <label for="editApptDate" class="form-label">Date</label>
-                  <input type="text" class="form-control" id="editApptDate" value="${moment(appt.appointment_date).format('YYYY-MM-DD')}">
+                  <input type="text" class="form-control" id="editApptDate" value="${formatDateToYYYYMMDD(apptDate)}">
                   <div class="invalid-feedback">Use YYYY-MM-DD format.</div>
                 </div>
                 <div class="mb-3">
                   <label for="editApptTime" class="form-label">Time (HH:mm, 24hr)</label>
-                  <input type="text" class="form-control" id="editApptTime" value="${moment(appt.appointment_date).format('HH:mm')}">
+                  <input type="text" class="form-control" id="editApptTime" value="${formatTimeHHMM(apptDate)}">
                   <div class="invalid-feedback">Use HH:mm format.</div>
                 </div>
                 <div class="mb-3">
@@ -408,8 +444,13 @@ function editAppointment(appointmentId) {
           alert('Please enter valid date (YYYY-MM-DD) and time (HH:mm).');
           return;
         }
+        const dateTime = new Date(`${date}T${time}:00+05:30`);
+        if (isNaN(dateTime.getTime())) {
+          alert('Invalid date or time format.');
+          return;
+        }
         const updatedData = {
-          appointment_date: moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DDTHH:mm:ssZ'),
+          appointment_date: dateTime.toISOString(),
           doctor_id: $('#editApptDoctor').val(),
           status: $('#editApptStatus').val(),
           notes: $('#editApptNotes').val()
@@ -425,7 +466,7 @@ function editAppointment(appointmentId) {
             console.log(`[editAppointment] Updated ID: ${appointmentId}`);
             alert('Appointment updated successfully!');
             bsModal.hide();
-            fetchAppointmentsByDate(moment().format('YYYY-MM-DD'));
+            fetchAppointmentsByDate(formatDateToYYYYMMDD(new Date()));
           },
           error: function (xhr) {
             logError('editAppointment', xhr);
@@ -529,8 +570,8 @@ function updateDetailsSection(patient) {
 
   if (patient?.patient_id) {
     const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
-    const dob = patient.date_of_birth ? moment(patient.date_of_birth) : null;
-    const age = dob ? Math.floor(moment().diff(dob, 'years')) : 'N/A';
+    const dob = patient.date_of_birth ? new Date(patient.date_of_birth) : null;
+    const age = dob && !isNaN(dob.getTime()) ? Math.floor((Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25)) : 'N/A';
     $title.text(fullName || 'Unnamed');
     $meta.text(`${patient.gender || 'N/A'} | ${age} Years | ${patient.patient_id}`);
     $visitPadBtn.show();
@@ -626,7 +667,8 @@ function populateAddPatientForm(patient, appointment = null) {
   });
 
   if (appointment) {
-    $('#appointmentDate').val(moment(appointment.appointment_date).format('YYYY-MM-DD HH:mm'));
+    const apptDate = new Date(appointment.appointment_date);
+    $('#appointmentDate').val(`${formatDateToYYYYMMDD(apptDate)} ${formatTimeHHMM(apptDate)}`);
     $('#doctor').val(appointment.doctor?.id || '');
     $('#doctorSpecialty').val(appointment.doctor?.specialization || '');
     $('#appointmentNotes').val(appointment.notes || '');
@@ -654,10 +696,15 @@ function fetchIndianCities(attempt = 1, maxAttempts = 3) {
     cache: true,
     timeout: 5000,
     success: function (data) {
-      indianCities = data.map(city => ({
-        name: city.name.trim(),
-        state: city.state?.trim() || ''
-      })) || CONFIG.FALLBACK_CITIES;
+      if (!Array.isArray(data)) {
+        console.error('[fetchIndianCities] Response is not an array:', data);
+        indianCities = CONFIG.FALLBACK_CITIES;
+      } else {
+        indianCities = data.map(city => ({
+          name: city.name.trim(),
+          state: city.state?.trim() || ''
+        })) || CONFIG.FALLBACK_CITIES;
+      }
       console.log(`[fetchIndianCities] Successfully loaded ${indianCities.length} cities`);
       isFetchingCities = false;
       setupCityAutocomplete('patientCity');
@@ -686,7 +733,16 @@ function setupCityAutocomplete(inputId) {
     console.error(`[setupCityAutocomplete] Input #${inputId} not found`);
     return;
   }
-
+  if (!$.fn.autocomplete) {
+    console.warn(`[setupCityAutocomplete] jQuery UI Autocomplete unavailable, using plain input for #${inputId}`);
+    $input.attr('list', `${inputId}-datalist`);
+    const $datalist = $(`<datalist id="${inputId}-datalist"></datalist>`);
+    indianCities.forEach(city => {
+      $datalist.append(`<option value="${city.name}, ${city.state}">`);
+    });
+    $input.after($datalist);
+    return;
+  }
   console.log(`[setupCityAutocomplete] Setting up autocomplete for #${inputId}, cities available: ${indianCities.length}`);
   $input.autocomplete({
     source: function (request, response) {
@@ -889,7 +945,7 @@ function createPatientAndAppointment(buttonId) {
   };
 
   const appointmentData = apptDate ? {
-    appointment_date: moment(apptDate, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DDTHH:mm:ss+05:30'),
+    appointment_date: new Date(`${apptDate}:00+05:30`).toISOString(),
     notes: $('#appointmentNotes').val(),
     doctor_id: $('#doctor').val() || null,
     is_emergency: false
@@ -1025,15 +1081,18 @@ function showPatientAppointments(patientId) {
                     </tr>
                   </thead>
                   <tbody>
-                    ${appointments.length ? appointments.map(appt => `
+                    ${appointments.length ? appointments.map(appt => {
+                      const apptDate = new Date(appt.appointment_date);
+                      return `
                       <tr>
-                        <td>${moment(appt.appointment_date).format('MMM D, YYYY')}</td>
-                        <td>${moment(appt.appointment_date).format('HH:mm')}</td>
+                        <td>${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(apptDate)}</td>
+                        <td>${formatTimeHHMM(apptDate)}</td>
                         <td>${appt.doctor ? `${appt.doctor.first_name} ${appt.doctor.last_name || ''}` : 'N/A'}</td>
                         <td>${appt.status?.toUpperCase() || 'N/A'}</td>
                         <td>${appt.notes || 'N/A'}</td>
                       </tr>
-                    `).join('') : '<tr><td colspan="5" class="text-center">No appointments found.</td></tr>'}
+                    `;
+                    }).join('') : '<tr><td colspan="5" class="text-center">No appointments found.</td></tr>'}
                   </tbody>
                 </table>
               </div>
@@ -1084,7 +1143,7 @@ function bindNavFilters() {
     console.log(`[bindNavFilters] Applying filter: ${section}`);
     $('.navbar-secondary .nav-link').removeClass('active');
     $(this).addClass('active');
-    const dateStr = $('#dateFilter').val() || moment().format('YYYY-MM-DD');
+    const dateStr = $('#dateFilter').val() || formatDateToYYYYMMDD(new Date());
     fetchAppointmentsByDate(dateStr, section);
   });
 }
@@ -1093,7 +1152,7 @@ function bindNavFilters() {
 function validateDateInput(inputId) {
   const $input = $(`#${inputId}`);
   if (!$input.length) {
-    console.error(`[validateDateInput] Input #${inputId} not found`);
+    console.warn(`[validateDateInput] Input #${inputId} not found, skipping initialization`);
     return;
   }
 
@@ -1103,7 +1162,7 @@ function validateDateInput(inputId) {
     todayHighlight: true
   }).on('changeDate', function () {
     const value = $input.val();
-    const isValid = moment(value, 'YYYY-MM-DD', true).isValid();
+    const isValid = isValidDateFormat(value);
     $input.toggleClass('is-invalid', !isValid);
     if (isValid) {
       fetchAppointmentsByDate(value);
@@ -1130,7 +1189,7 @@ function bindDateFilterButtons() {
   });
 
   $todayBtn.off('click').on('click', () => {
-    const todayStr = moment().format('YYYY-MM-DD');
+    const todayStr = formatDateToYYYYMMDD(new Date());
     console.log('[bindDateFilterButtons] Today button clicked');
     $('#dateFilter').val(todayStr).trigger('changeDate');
   });
@@ -1191,7 +1250,7 @@ $(document).ready(function () {
     bindModalActions();
     validateDateInput('dateFilter');
     validateDateInput('patientDOB');
-    validateDateInput('billDate');
+    // Removed validateDateInput('billDate') due to missing element
     bindDateFilterButtons();
     initializePhoneInputs();
     fetchIndianCities();
