@@ -127,7 +127,6 @@ function checkAuthentication() {
   return true;
 }
 
-// UI: Adjust for Role
 function adjustUIForRole(userType, roleLevel, username) {
   console.log(`[adjustUIForRole] User: ${username}, Role: ${userType}-${roleLevel}`);
   $('#dashboardType').text('Receptionist Dashboard');
@@ -170,7 +169,7 @@ function adjustUIForRole(userType, roleLevel, username) {
       $navItems.filter(':contains("All Bills"), :contains("Add Services"), :contains("Tele Consults")').hide();
       $modalTabs.filter(':contains("Add Service"), :contains("Add Bills")').hide();
       $buttons.hide();
-      $searchInput.hide();
+      $searchInput.hide(); // Hides patient search
       $dateFilter.hide();
       $secondaryNav.filter(':contains("Arrived"), :contains("On-Going"), :contains("Reviewed")').hide();
       $dashboardDropdown.hide();
@@ -184,6 +183,10 @@ function adjustUIForRole(userType, roleLevel, username) {
       $modalTabs.hide();
       window.location.href = '../login/login.html';
   }
+  console.log('[adjustUIForRole] Visible elements:', {
+    searchInput: $searchInput.is(':visible'),
+    modalTabs: $modalTabs.map((i, el) => $(el).text()).get()
+  });
 }
 
 // Appointments: Fetch
@@ -486,7 +489,6 @@ function editAppointment(appointmentId) {
   });
 }
 
-// Patient Search: Setup
 function setupPatientSearch() {
   const $searchInput = $('.patient-search');
   if (!$searchInput.length) {
@@ -510,11 +512,11 @@ function setupPatientSearch() {
       type: 'GET',
       headers: getAuthHeaders(),
       delay: 500,
-      data: params => {
+      data: function (params) {
         console.log('[setupPatientSearch] Search query:', params.term);
         return { query: params.term };
       },
-      processResults: data => {
+      processResults: function (data) {
         const results = data.patients?.map(patient => ({
           id: patient.patient_id,
           text: `${patient.first_name} ${patient.last_name || ''} (ID: ${patient.patient_id})`
@@ -522,29 +524,32 @@ function setupPatientSearch() {
         console.log('[setupPatientSearch] Search results:', results);
         return { results };
       },
-      error: xhr => {
+      error: function (xhr) {
         logError('setupPatientSearch', xhr, 'Patient search failed');
-        alert('Failed to search patients.');
+        alert(`Failed to search patients: ${xhr.status} ${xhr.statusText}`);
+        console.log('[setupPatientSearch] Full error:', xhr);
         return { results: [] };
       }
     }
-  });
-
-  $searchInput.on('select2:select', e => {
+  }).on('select2:select', function (e) {
     selectedPatientId = e.params.data.id;
     console.log(`[setupPatientSearch] Selected patient ID: ${selectedPatientId}`);
     fetchPatientDetails(selectedPatientId, 'profileTab');
-  });
-
-  $searchInput.on('select2:clear', () => {
+  }).on('select2:clear', function () {
     selectedPatientId = null;
     console.log('[setupPatientSearch] Cleared patient selection');
     updateDetailsSection(null);
     resetModalView();
+  }).on('select2:open', function () {
+    console.log('[setupPatientSearch] Select2 dropdown opened');
   });
 }
 
 // Patient: Fetch Details
+// Add to top of file (if using datetimepicker)
+$.fn.datetimepicker = $.fn.datetimepicker || $.fn.datepicker; // Fallback if datetimepicker is not loaded
+
+// Updated fetchPatientDetails
 function fetchPatientDetails(patientId, targetTab = 'profileTab') {
   console.log(`[fetchPatientDetails] Fetching details for patient ID: ${patientId}`);
   $.ajax({
@@ -552,14 +557,32 @@ function fetchPatientDetails(patientId, targetTab = 'profileTab') {
     type: 'GET',
     headers: getAuthHeaders(),
     success: function (data) {
+      console.log('[fetchPatientDetails] API response:', data);
       const patient = data.patient || data;
       selectedPatientId = patient.patient_id;
-      populateProfileTab(patient);
-      populateAddPatientForm(patient);
-      updateDetailsSection(patient);
-      $('#newActionModal').modal('show');
-      $(`#${targetTab}`).tab('show');
-      console.log(`[fetchPatientDetails] Loaded patient ID: ${patientId}`, patient);
+      $.ajax({
+        url: `${CONFIG.API_BASE_URL}/appointments/list/?patient_id=${patientId}`,
+        type: 'GET',
+        headers: getAuthHeaders(),
+        success: function (apptData) {
+          patient.appointments = apptData.appointments || [];
+          populateProfileTab(patient);
+          populateAddPatientForm(patient, patient.appointments[0] || null);
+          updateDetailsSection(patient);
+          $('#newActionModal').modal('show');
+          $(`#${targetTab}`).tab('show');
+          console.log(`[fetchPatientDetails] Loaded patient ID: ${patientId}`, patient);
+        },
+        error: function (xhr) {
+          logError('fetchPatientDetails', xhr, 'Failed to fetch appointments');
+          patient.appointments = [];
+          populateProfileTab(patient);
+          populateAddPatientForm(patient);
+          updateDetailsSection(patient);
+          $('#newActionModal').modal('show');
+          $(`#${targetTab}`).tab('show');
+        }
+      });
     },
     error: function (xhr) {
       logError('fetchPatientDetails', xhr);
@@ -590,7 +613,7 @@ function updateDetailsSection(patient) {
   }
 }
 
-// Patient: Populate Profile Tab
+// Updated populateProfileTab
 function populateProfileTab(patient) {
   const fields = [
     'first_name', 'last_name', 'mobile_number:phone', 'gender', 'date_of_birth:dob',
@@ -610,6 +633,11 @@ function populateProfileTab(patient) {
       $input.val(patient[apiField] || '');
     }
   });
+
+  $('#profileAppointmentDate').val(patient.appointments?.length ? formatDateTimeReadable(new Date(patient.appointments[0].appointment_date)) : '');
+  $('#profileDoctor').val(patient.primary_doctor ? `${patient.primary_doctor.first_name} ${patient.primary_doctor.last_name || ''}` : '');
+  $('#profileDoctorSpecialty').val(patient.primary_doctor?.specialization || '');
+  $('#profileAppointmentNotes').val(patient.appointments?.length ? patient.appointments[0].notes || '' : '');
 
   $('#profileCity, #profileAddress, #profilePin').prop('readonly', true);
 
@@ -643,7 +671,6 @@ function populateProfileTab(patient) {
           }
         });
       }
-      console.log(`[toggleProfileEdit] Toggled edit mode: ${isReadonly ? 'Editing' : 'Saved'}`);
     });
   }
 
@@ -732,6 +759,7 @@ function fetchIndianCities(attempt = 1, maxAttempts = 3) {
   });
 }
 
+// Cities: Autocomplete
 // Cities: Autocomplete
 function setupCityAutocomplete(inputId) {
   const $input = $(`#${inputId}`);
