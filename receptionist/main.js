@@ -114,7 +114,7 @@ function checkAuthentication() {
         return;
       }
       adjustUIForRole(userType, roleLevel, data.username || 'Unknown User');
-      const todayStr = formatDateToYYYYMMDD(new Date()); // Replaced moment
+      const todayStr = formatDateToYYYYMMDD(new Date());
       fetchAppointmentsByDate(todayStr);
     },
     error: function (xhr) {
@@ -188,7 +188,7 @@ function adjustUIForRole(userType, roleLevel, username) {
 
 // Appointments: Fetch
 function fetchAppointmentsByDate(dateStr = null, filter = 'all') {
-  const todayStr = formatDateToYYYYMMDD(new Date()); // Replaced moment
+  const todayStr = formatDateToYYYYMMDD(new Date());
   const selectedDate = dateStr || todayStr;
 
   console.log(`[fetchAppointmentsByDate] Fetching for date: ${selectedDate}, Filter: ${filter}`);
@@ -491,6 +491,12 @@ function setupPatientSearch() {
   const $searchInput = $('.patient-search');
   if (!$searchInput.length) {
     console.error('[setupPatientSearch] Search input not found');
+    return;
+  }
+
+  if (!$.fn.select2) {
+    console.error('[setupPatientSearch] Select2 library is not loaded');
+    alert('Patient search functionality is unavailable. Please contact support.');
     return;
   }
 
@@ -1250,7 +1256,6 @@ $(document).ready(function () {
     bindModalActions();
     validateDateInput('dateFilter');
     validateDateInput('patientDOB');
-    // Removed validateDateInput('billDate') due to missing element
     bindDateFilterButtons();
     initializePhoneInputs();
     fetchIndianCities();
